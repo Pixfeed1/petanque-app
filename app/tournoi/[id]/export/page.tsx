@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -162,32 +161,48 @@ export default function ExportTournamentPage() {
  const loadTournamentData = async () => {
    try {
      // Charger le tournoi
-     const { data: tournamentData } = await supabase
-       .from('tournois')
-       .select('*')
-       .eq('id', params.id)
-       .single()
+     const tournamentResponse = await fetch(`/api/tournois/${params.id}`, {
+       credentials: 'include'
+     })
+     if (!tournamentResponse.ok) throw new Error('Erreur chargement tournoi')
+     const tournamentData = await tournamentResponse.json()
 
      if (tournamentData) {
        setTournament(tournamentData)
 
-       // Charger les équipes avec joueurs
-       const { data: teamsData } = await supabase
-         .from('equipes')
-         .select(`
-           *,
-           equipes_joueurs(
-             joueur:joueurs(*),
-             role
-           )
-         `)
-         .eq('tournoi_id', params.id)
+       // Charger les équipes
+       const teamsResponse = await fetch(`/api/equipes?tournoi_id=${params.id}`, {
+         credentials: 'include'
+       })
+       if (!teamsResponse.ok) throw new Error('Erreur chargement équipes')
+       let teamsData = await teamsResponse.json()
+
+       // Enrichir chaque équipe avec les joueurs
+       teamsData = await Promise.all(
+         teamsData.map(async (team: any) => {
+           if (team.joueur_ids && team.joueur_ids.length > 0) {
+             const enrichedResponse = await fetch(`/api/equipes/${team.id}`, {
+               credentials: 'include'
+             })
+             if (enrichedResponse.ok) {
+               const enrichedTeam = await enrichedResponse.json()
+               if (enrichedTeam.joueurs) {
+                 team.equipes_joueurs = enrichedTeam.joueurs.map((j: any) => ({
+                   joueur: j,
+                   role: 'joueur'
+                 }))
+               }
+             }
+           }
+           return team
+         })
+       )
 
        setTeams(teamsData || [])
 
        // Extraire tous les joueurs uniques
        const allPlayers = new Set<Player>()
-       teamsData?.forEach(team => {
+       teamsData?.forEach((team: any) => {
          team.equipes_joueurs?.forEach((ej: any) => {
            if (ej.joueur) {
              allPlayers.add(ej.joueur)
@@ -196,29 +211,15 @@ export default function ExportTournamentPage() {
        })
        setPlayers(Array.from(allPlayers))
 
-       // Charger les matchs avec mènes
-       const { data: matchesData } = await supabase
-         .from('matches')
-         .select(`
-           *,
-           equipe_a:equipes!equipe_a_id(
-             *,
-             equipes_joueurs(
-               joueur:joueurs(*)
-             )
-           ),
-           equipe_b:equipes!equipe_b_id(
-             *,
-             equipes_joueurs(
-               joueur:joueurs(*)
-             )
-           )
-         `)
-         .eq('tournoi_id', params.id)
-         .order('tour', { ascending: true })
+       // Charger les matchs
+       const matchesResponse = await fetch(`/api/matches?tournoi_id=${params.id}`, {
+         credentials: 'include'
+       })
+       if (!matchesResponse.ok) throw new Error('Erreur chargement matchs')
+       const matchesData = await matchesResponse.json()
 
        // Transformer manches_json en menes pour cohérence
-       const matchesWithMenes = matchesData?.map(match => ({
+       const matchesWithMenes = matchesData?.map((match: any) => ({
          ...match,
          menes: match.manches_json || []
        })) || []
