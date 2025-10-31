@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import confetti from 'canvas-confetti'
 
@@ -106,67 +105,34 @@ export default function PodiumPage() {
  const loadPodiumData = async () => {
    try {
      // Charger le tournoi
-     const { data: tournamentData } = await supabase
-       .from('tournois')
-       .select('*')
-       .eq('id', params.id)
-       .single()
-
+     const tournamentResponse = await fetch(`/api/tournois/${params.id}`, {
+       credentials: 'include'
+     })
+     if (!tournamentResponse.ok) throw new Error('Erreur chargement tournoi')
+     const tournamentData = await tournamentResponse.json()
      setTournament(tournamentData)
 
-     // Charger la finale et la petite finale
-     const { data: finaleData } = await supabase
-       .from('matches')
-       .select(`
-         *,
-         equipe_a:equipes!equipe_a_id(
-           *,
-           equipes_joueurs(
-             joueur:joueurs(*)
-           )
-         ),
-         equipe_b:equipes!equipe_b_id(
-           *,
-           equipes_joueurs(
-             joueur:joueurs(*)
-           )
-         )
-       `)
-       .eq('tournoi_id', params.id)
-       .eq('type', 'finale')
-       .single()
+     // Charger tous les matchs du tournoi
+     const matchesResponse = await fetch(`/api/matches?tournoi_id=${params.id}`, {
+       credentials: 'include'
+     })
+     if (!matchesResponse.ok) throw new Error('Erreur chargement matchs')
+     const allMatches = await matchesResponse.json()
 
-     const { data: petiteFinaleData } = await supabase
-       .from('matches')
-       .select(`
-         *,
-         equipe_a:equipes!equipe_a_id(
-           *,
-           equipes_joueurs(
-             joueur:joueurs(*)
-           )
-         ),
-         equipe_b:equipes!equipe_b_id(
-           *,
-           equipes_joueurs(
-             joueur:joueurs(*)
-           )
-         )
-       `)
-       .eq('tournoi_id', params.id)
-       .eq('type', 'petite_finale')
-       .single()
+     // Trouver la finale et la petite finale
+     const finaleData = allMatches.find((m: any) => m.type === 'finale')
+     const petiteFinaleData = allMatches.find((m: any) => m.type === 'petite_finale')
 
      // Construire le podium
      const podiumData: PodiumTeam[] = []
 
      // Champion (1er)
      if (finaleData && finaleData.status === 'termine') {
-       const champion = finaleData.score_a > finaleData.score_b 
-         ? finaleData.equipe_a 
+       const champion = finaleData.score_a > finaleData.score_b
+         ? finaleData.equipe_a
          : finaleData.equipe_b
-       const finaliste = finaleData.score_a > finaleData.score_b 
-         ? finaleData.equipe_b 
+       const finaliste = finaleData.score_a > finaleData.score_b
+         ? finaleData.equipe_b
          : finaleData.equipe_a
 
        podiumData.push({
@@ -184,8 +150,8 @@ export default function PodiumPage() {
 
      // 3ème place
      if (petiteFinaleData && petiteFinaleData.status === 'termine') {
-       const troisieme = petiteFinaleData.score_a > petiteFinaleData.score_b 
-         ? petiteFinaleData.equipe_a 
+       const troisieme = petiteFinaleData.score_a > petiteFinaleData.score_b
+         ? petiteFinaleData.equipe_a
          : petiteFinaleData.equipe_b
 
        podiumData.push({
@@ -197,14 +163,13 @@ export default function PodiumPage() {
 
      // Charger les stats complètes pour chaque équipe du podium
      for (const item of podiumData) {
-       const { data: matchesData } = await supabase
-         .from('matches')
-         .select('*')
-         .eq('tournoi_id', params.id)
-         .or(`equipe_a_id.eq.${item.team.id},equipe_b_id.eq.${item.team.id}`)
-         .eq('status', 'termine')
+       // Filtrer les matchs terminés pour cette équipe
+       const matchesData = allMatches.filter((match: any) =>
+         match.status === 'termine' &&
+         (match.equipe_a_id === item.team.id || match.equipe_b_id === item.team.id)
+       )
 
-       if (matchesData) {
+       if (matchesData.length > 0) {
          const stats = {
            victories: 0,
            defeats: 0,
@@ -212,7 +177,7 @@ export default function PodiumPage() {
            pointsAgainst: 0
          }
 
-         matchesData.forEach(match => {
+         matchesData.forEach((match: any) => {
            if (match.equipe_a_id === item.team.id) {
              if (match.score_a > match.score_b) stats.victories++
              else stats.defeats++
