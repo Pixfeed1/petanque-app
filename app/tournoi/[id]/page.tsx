@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 
@@ -166,7 +165,7 @@ interface Match {
 export default function TournamentDetailPage() {
   const router = useRouter()
   const params = useParams()
-  const { user, organization, supabase, loading: authLoading } = useAuth()
+  const { user, organization, loading: authLoading } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [tournament, setTournament] = useState<Tournament | null>(null)
