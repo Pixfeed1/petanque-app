@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 
@@ -126,16 +125,12 @@ export default function MatchScorePage() {
 
   const loadMatch = async () => {
     try {
-      const { data } = await supabase
-        .from('matches')
-        .select(`
-          *,
-          equipe_a:equipes!equipe_a_id(*),
-          equipe_b:equipes!equipe_b_id(*),
-          tournoi:tournois!tournoi_id(*)
-        `)
-        .eq('id', params.id)
-        .single()
+      const response = await fetch(`/api/matches/${params.id}`, {
+        credentials: 'include'
+      })
+
+      if (!response.ok) throw new Error('Erreur chargement match')
+      const data = await response.json()
 
       if (data) {
         setMatch(data)
@@ -200,9 +195,11 @@ export default function MatchScorePage() {
   const finishMatch = async (finalScoreA: number, finalScoreB: number, allManches: any[]) => {
     setSaving(true)
     try {
-      const { error } = await supabase
-        .from('matches')
-        .update({
+      const response = await fetch(`/api/matches/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
           score_a: finalScoreA,
           score_b: finalScoreB,
           manches_json: allManches,
@@ -210,9 +207,9 @@ export default function MatchScorePage() {
           ended_at: new Date().toISOString(),
           validated_at: new Date().toISOString()
         })
-        .eq('id', params.id)
+      })
 
-      if (!error) {
+      if (response.ok) {
         // Rediriger après 2 secondes
         setTimeout(() => {
           router.push(`/tournoi/${match.tournoi.id}`)
@@ -245,13 +242,15 @@ export default function MatchScorePage() {
         updateData.validated_at = new Date().toISOString()
       }
 
-      const { error } = await supabase
-        .from('matches')
-        .update(updateData)
-        .eq('id', params.id)
+      const response = await fetch(`/api/matches/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(updateData)
+      })
 
-      if (error) {
-        console.error('Erreur sauvegarde:', error)
+      if (!response.ok) {
+        console.error('Erreur sauvegarde')
       }
     } catch (error) {
       console.error('Erreur sauvegarde:', error)
