@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
-import { supabase } from '@/lib/supabase'
 
 // Icônes premium améliorées
 const Icons = {
@@ -219,20 +218,17 @@ export default function CreateTournamentPage() {
 
   const loadPlayers = async () => {
     if (!organization) return
-    
+
     setLoadingPlayers(true)
     try {
-      const { data: playersData, error } = await supabase
-        .from('joueurs')
-        .select('*')
-        .eq('org_id', organization.id)
-        .order('name')
+      const response = await fetch(`/api/joueurs?org_id=${organization.id}`, {
+        credentials: 'include'
+      })
 
-      if (error) throw error
-      
-      if (playersData) {
-        setAvailablePlayers(playersData)
-      }
+      if (!response.ok) throw new Error('Erreur chargement joueurs')
+
+      const playersData = await response.json()
+      setAvailablePlayers(playersData)
     } catch (error) {
       console.error('Erreur chargement joueurs:', error)
     } finally {
@@ -428,37 +424,34 @@ export default function CreateTournamentPage() {
 
   // Helper pour créer une équipe avec ses joueurs
   const createTeamWithPlayers = async (tournoiId: string, teamNumber: number, playerIds: string[]) => {
-    const { data: equipe, error: equipeError } = await supabase
-      .from('equipes')
-      .insert({
-        tournoi_id: tournoiId,
-        name: `Équipe ${teamNumber}`
+    try {
+      const response = await fetch('/api/equipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          tournoi_id: tournoiId,
+          name: `Équipe ${teamNumber}`,
+          joueur_ids: playerIds,
+          stats: {
+            victoires: 0,
+            defaites: 0,
+            points_pour: 0,
+            points_contre: 0
+          }
+        })
       })
-      .select()
-      .single()
-    
-    if (equipeError) {
-      console.error('Erreur création équipe:', equipeError)
-      return
-    }
-    
-    if (equipe) {
-      for (let j = 0; j < playerIds.length; j++) {
-        const role = j === 0 ? 'capitaine' : 'joueur'
-        
-        const { error: assignError } = await supabase
-          .from('equipes_joueurs')
-          .insert({
-            equipe_id: equipe.id,
-            joueur_id: playerIds[j],
-            role: role,
-            ordre: j + 1
-          })
-        
-        if (assignError) {
-          console.error(`Erreur assignation joueur:`, assignError)
-        }
+
+      if (!response.ok) {
+        console.error('Erreur création équipe')
+        return null
       }
+
+      const equipe = await response.json()
+      return equipe
+    } catch (error) {
+      console.error('Erreur création équipe:', error)
+      return null
     }
   }
 
@@ -535,9 +528,11 @@ export default function CreateTournamentPage() {
       }
       
       // Sauvegarder la configuration pour les rotations futures
-      await supabase
-        .from('tournois')
-        .update({
+      await fetch(`/api/tournois/${tournoi.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
           settings: {
             ...tournoi.settings,
             melee_tournante_players: allPlayerIds,
@@ -545,23 +540,29 @@ export default function CreateTournamentPage() {
             current_round: 1
           }
         })
-        .eq('id', tournoi.id)
+      })
     }
   }
 
   // Fonction pour créer les matchs de poules
   const createPoolMatches = async (tournoi: any) => {
     // Récupérer toutes les équipes créées
-    const { data: equipes, error: equipesError } = await supabase
-      .from('equipes')
-      .select('*')
-      .eq('tournoi_id', tournoi.id)
-      .order('name')
-    
-    if (equipesError || !equipes || equipes.length === 0) {
-      console.error('Erreur récupération équipes:', equipesError)
-      return
-    }
+    try {
+      const response = await fetch(`/api/equipes?tournoi_id=${tournoi.id}`, {
+        credentials: 'include'
+      })
+
+      if (!response.ok) {
+        console.error('Erreur récupération équipes')
+        return
+      }
+
+      const equipes = await response.json()
+
+      if (!equipes || equipes.length === 0) {
+        console.error('Aucune équipe trouvée')
+        return
+      }
 
     // Diviser en poules
     const equipesParPoule = formData.pouleSize
@@ -579,29 +580,30 @@ export default function CreateTournamentPage() {
         for (let j = i + 1; j < equipesPoule.length; j++) {
           const terrainNum = (globalMatchNum % formData.terrains) + 1
           const tour = Math.floor(globalMatchNum / formData.terrains) + 1
-          
-          const { error: matchError } = await supabase
-            .from('matches')
-            .insert({
-              tournoi_id: tournoi.id,
-              equipe_a_id: equipesPoule[i].id,
-              equipe_b_id: equipesPoule[j].id,
-              terrain: terrainNum,
-              tour: tour,
-              status: 'a_jouer',
-              score_a: 0,
-              score_b: 0,
-              manches_json: []
+
+          try {
+            await fetch('/api/matches', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                tournoi_id: tournoi.id,
+                equipe_a_id: equipesPoule[i].id,
+                equipe_b_id: equipesPoule[j].id,
+                terrain: terrainNum,
+                tour: tour,
+                status: 'a_jouer'
+              })
             })
-            .select()
-            .single()
-          
-          if (matchError) {
-            console.error(`Erreur création match:`, matchError)
+          } catch (error) {
+            console.error(`Erreur création match:`, error)
           }
+
           globalMatchNum++
         }
       }
+    } catch (error) {
+      console.error('Erreur création matchs de poule:', error)
     }
   }
 
@@ -656,28 +658,34 @@ export default function CreateTournamentPage() {
       
       for (const newPlayer of formData.newPlayers) {
         if (newPlayer.name.trim()) {
-          const emailToSave = newPlayer.email?.trim() && isValidEmail(newPlayer.email) 
-            ? newPlayer.email.trim() 
+          const emailToSave = newPlayer.email?.trim() && isValidEmail(newPlayer.email)
+            ? newPlayer.email.trim()
             : null
-          
-          const { data, error } = await supabase
-            .from('joueurs')
-            .insert({
-              org_id: organization.id,
-              name: newPlayer.name.trim(),
-              gender: newPlayer.gender || 'H',
-              email: emailToSave,
-              phone: newPlayer.phone?.trim() || null
+
+          try {
+            const response = await fetch('/api/joueurs', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                org_id: organization.id,
+                name: newPlayer.name.trim(),
+                email: emailToSave,
+                phone: newPlayer.phone?.trim() || null,
+                stats: { gender: newPlayer.gender || 'H' }
+              })
             })
-            .select()
-            .single()
-          
-          if (error) {
-            throw new Error(`Impossible de créer le joueur ${newPlayer.name}`)
-          } else if (data) {
+
+            if (!response.ok) {
+              throw new Error(`Impossible de créer le joueur ${newPlayer.name}`)
+            }
+
+            const data = await response.json()
             newPlayerIds.push(data.id)
             // IMPORTANT: Ajouter le nouveau joueur à la liste locale pour createTeamsWithMixity
             allAvailablePlayersUpdated.push(data)
+          } catch (error) {
+            throw new Error(`Impossible de créer le joueur ${newPlayer.name}`)
           }
         }
       }
@@ -719,15 +727,19 @@ export default function CreateTournamentPage() {
         }
       }
       
-      const { data: tournoi, error: tournoiError } = await supabase
-        .from('tournois')
-        .insert(tournoiData)
-        .select()
-        .single()
+      const tournoiResponse = await fetch('/api/tournois', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(tournoiData)
+      })
 
-      if (tournoiError) {
-        throw tournoiError
+      if (!tournoiResponse.ok) {
+        const error = await tournoiResponse.json()
+        throw new Error(error.error || 'Erreur lors de la création du tournoi')
       }
+
+      const tournoi = await tournoiResponse.json()
 
       if (!tournoi) {
         throw new Error('Erreur lors de la création du tournoi')
@@ -740,9 +752,11 @@ export default function CreateTournamentPage() {
       await createPoolMatches(tournoi)
       
       // 5. Mettre à jour le statut du tournoi
-      await supabase
-        .from('tournois')
-        .update({ 
+      await fetch(`/api/tournois/${tournoi.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
           status: 'en_cours',
           settings: {
             ...tournoi.settings,
@@ -750,7 +764,7 @@ export default function CreateTournamentPage() {
             start_time: new Date().toISOString()
           }
         })
-        .eq('id', tournoi.id)
+      })
       
       // 6. Animation de succès
       setSuccessAnimation(true)
