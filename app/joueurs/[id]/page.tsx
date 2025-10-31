@@ -163,10 +163,27 @@ export default function PlayersManagementPage() {
 
     try {
       if (editingPlayer) {
-        // Modifier - Note: L'API PUT pour joueurs n'existe pas encore, donc on recharge juste
-        // TODO: Créer PUT /api/joueurs/[id]
-        console.warn('PUT /api/joueurs/[id] pas encore implémenté')
-        closeModal()
+        // Modifier
+        const response = await fetch(`/api/joueurs/${editingPlayer.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: formData.name,
+            gender: formData.gender,
+            email: formData.email || null,
+            phone: formData.phone || null
+          })
+        })
+
+        if (response.ok) {
+          await loadPlayers()
+          closeModal()
+        } else {
+          const error = await response.json()
+          console.error('Erreur modification:', error)
+          alert(error.error || 'Erreur lors de la modification')
+        }
       } else {
         // Créer
         const response = await fetch('/api/joueurs', {
@@ -185,6 +202,10 @@ export default function PlayersManagementPage() {
         if (response.ok) {
           await loadPlayers()
           closeModal()
+        } else {
+          const error = await response.json()
+          console.error('Erreur création:', error)
+          alert(error.error || 'Erreur lors de la création')
         }
       }
     } catch (error) {
@@ -195,21 +216,44 @@ export default function PlayersManagementPage() {
   const handleDeletePlayer = async (playerId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')) return
 
-    // Note: L'API DELETE pour joueurs n'existe pas encore
-    // TODO: Créer DELETE /api/joueurs/[id]
-    console.warn('DELETE /api/joueurs/[id] pas encore implémenté')
+    try {
+      const response = await fetch(`/api/joueurs/${playerId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        await loadPlayers()
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Erreur lors de la suppression')
+      }
+    } catch (error) {
+      console.error('Erreur suppression joueur:', error)
+      alert('Erreur lors de la suppression du joueur')
+    }
   }
 
   const handleBulkDelete = async () => {
     if (!confirm(`Supprimer ${selectedPlayers.length} joueur(s) ?`)) return
 
-    // Note: L'API DELETE pour joueurs n'existe pas encore
-    // TODO: Créer DELETE /api/joueurs/[id]
-    console.warn('DELETE /api/joueurs/[id] pas encore implémenté')
-    }
+    try {
+      for (const playerId of selectedPlayers) {
+        const response = await fetch(`/api/joueurs/${playerId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          const error = await response.json()
+          console.error(`Erreur suppression ${playerId}:`, error)
+        }
+      }
 
-    setSelectedPlayers([])
-    await loadPlayers()
+      setSelectedPlayers([])
+      await loadPlayers()
+    } catch (error) {
+      console.error('Erreur bulk delete:', error)
+    }
   }
 
   const handleExport = () => {
