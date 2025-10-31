@@ -72,9 +72,9 @@ CREATE TABLE tournois (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
-  format VARCHAR(50) NOT NULL, -- simple, double, triple
-  mode VARCHAR(50) NOT NULL, -- elimination, poule, mixte
-  status VARCHAR(50) DEFAULT 'preparation', -- preparation, en_cours, termine
+  format VARCHAR(50) NOT NULL, -- 'doublette', 'triplette'
+  mode VARCHAR(50) NOT NULL, -- 'choisi', 'melee_fixe', 'melee_tournante'
+  status VARCHAR(50) DEFAULT 'preparation', -- 'preparation', 'en_cours', 'termine'
   settings JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -83,6 +83,7 @@ CREATE TABLE tournois (
 
 CREATE INDEX idx_tournois_org_id ON tournois(org_id);
 CREATE INDEX idx_tournois_status ON tournois(status);
+CREATE INDEX idx_tournois_mode ON tournois(mode);
 
 -- ===================================
 -- TABLE JOUEURS
@@ -91,6 +92,7 @@ CREATE TABLE joueurs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
+  gender VARCHAR(10) CHECK (gender IN ('H', 'F')), -- H = Homme, F = Femme
   email VARCHAR(255),
   phone VARCHAR(50),
   stats JSONB DEFAULT '{}'::jsonb,
@@ -100,6 +102,7 @@ CREATE TABLE joueurs (
 
 CREATE INDEX idx_joueurs_org_id ON joueurs(org_id);
 CREATE INDEX idx_joueurs_name ON joueurs(name);
+CREATE INDEX idx_joueurs_gender ON joueurs(gender);
 
 -- ===================================
 -- TABLE EQUIPES
@@ -127,8 +130,14 @@ CREATE TABLE matches (
   equipe_b_id UUID REFERENCES equipes(id) ON DELETE SET NULL,
   score_a INTEGER DEFAULT 0,
   score_b INTEGER DEFAULT 0,
-  status VARCHAR(50) DEFAULT 'a_jouer', -- a_jouer, en_cours, termine
+  status VARCHAR(50) DEFAULT 'a_jouer', -- 'a_jouer', 'en_cours', 'termine'
+  type VARCHAR(50), -- 'poule', 'huitieme', 'quart', 'demi', 'finale', 'petite_finale'
+  poule VARCHAR(10), -- 'A', 'B', 'C', etc. (pour matches de poule)
   winner_id UUID REFERENCES equipes(id) ON DELETE SET NULL,
+  manches_json JSONB DEFAULT '[]'::jsonb, -- Détails des manches jouées
+  started_at TIMESTAMP, -- Quand le match a commencé
+  ended_at TIMESTAMP, -- Quand le match s'est terminé
+  validated_at TIMESTAMP, -- Quand le score a été validé
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   played_at TIMESTAMP
@@ -136,6 +145,8 @@ CREATE TABLE matches (
 
 CREATE INDEX idx_matches_tournoi_id ON matches(tournoi_id);
 CREATE INDEX idx_matches_status ON matches(status);
+CREATE INDEX idx_matches_type ON matches(type);
+CREATE INDEX idx_matches_poule ON matches(poule);
 CREATE INDEX idx_matches_equipe_a_id ON matches(equipe_a_id);
 CREATE INDEX idx_matches_equipe_b_id ON matches(equipe_b_id);
 

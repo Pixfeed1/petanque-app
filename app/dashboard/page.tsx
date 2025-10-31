@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
 import { loadStripe } from '@stripe/stripe-js'
@@ -33,11 +32,6 @@ ChartJS.register(
   Legend,
   Filler
 )
-
-// Initialisation Supabase locale
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Initialisation Stripe
 const stripePromise = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
@@ -251,35 +245,28 @@ export default function Dashboard() {
     if (!user || !organization) return
 
     try {
-      // 1. Récupérer le plan de l'utilisateur
-      const { data: orgData } = await supabase
-        .from('organisations')
-        .select('settings')
-        .eq('id', organization.id)
-        .single()
-
-      if (orgData?.settings?.plan) {
-        setUserPlan(orgData.settings.plan)
+      // 1. Le plan de l'utilisateur vient déjà de organization.settings
+      if (organization?.settings?.plan) {
+        setUserPlan(organization.settings.plan)
       }
 
       // 2. Charger les tournois
-      const { data: tournoiData, count: tournoiCount } = await supabase
-        .from('tournois')
-        .select('*', { count: 'exact' })
-        .eq('org_id', organization.id)
-        .order('created_at', { ascending: false })
+      const tournoiResponse = await fetch(`/api/tournois?org_id=${organization.id}`, {
+        credentials: 'include'
+      })
 
-      if (tournoiData) {
+      if (tournoiResponse.ok) {
+        const tournoiData = await tournoiResponse.json()
         setTournois(tournoiData)
-        
-        const enCours = tournoiData.filter(t => t.status === 'en_cours').length
+
+        const enCours = tournoiData.filter((t: any) => t.status === 'en_cours').length
         const lastMonth = new Date()
         lastMonth.setMonth(lastMonth.getMonth() - 1)
-        const recentTournois = tournoiData.filter(t => new Date(t.created_at) > lastMonth).length
-        
+        const recentTournois = tournoiData.filter((t: any) => new Date(t.created_at) > lastMonth).length
+
         setStats(prev => ({
           ...prev,
-          totalTournois: tournoiCount || 0,
+          totalTournois: tournoiData.length,
           tournoiEnCours: enCours,
           growth: {
             ...prev.growth,
@@ -289,52 +276,59 @@ export default function Dashboard() {
       }
 
       // 3. Charger les joueurs
-      const { count: playersCount } = await supabase
-        .from('joueurs')
-        .select('*', { count: 'exact', head: true })
-        .eq('org_id', organization.id)
+      const joueursResponse = await fetch(`/api/joueurs?org_id=${organization.id}`, {
+        credentials: 'include'
+      })
 
-      const lastMonth = new Date()
-      lastMonth.setMonth(lastMonth.getMonth() - 1)
-      const { count: recentPlayersCount } = await supabase
-        .from('joueurs')
-        .select('*', { count: 'exact', head: true })
-        .eq('org_id', organization.id)
-        .gte('created_at', lastMonth.toISOString())
+      if (joueursResponse.ok) {
+        const joueursData = await joueursResponse.json()
+        const lastMonth = new Date()
+        lastMonth.setMonth(lastMonth.getMonth() - 1)
+        const recentPlayers = joueursData.filter((j: any) => new Date(j.created_at) > lastMonth)
 
-      setStats(prev => ({
-        ...prev,
-        totalJoueurs: playersCount || 0,
-        growth: {
-          ...prev.growth,
-          joueurs: recentPlayersCount || 0
+        setStats(prev => ({
+          ...prev,
+          totalJoueurs: joueursData.length,
+          growth: {
+            ...prev.growth,
+            joueurs: recentPlayers.length
+          }
+        }))
+      }
+
+      // 4. Charger TOUS les matchs de l'organisation (via tous les tournois)
+      const allMatches: any[] = []
+
+      // On charge les matchs pour chaque tournoi
+      const tournoiResponse2 = await fetch(`/api/tournois?org_id=${organization.id}`, {
+        credentials: 'include'
+      })
+
+      if (tournoiResponse2.ok) {
+        const tournois = await tournoiResponse2.json()
+
+        // Charger les matchs de chaque tournoi
+        for (const tournoi of tournois) {
+          const matchResponse = await fetch(`/api/matches?tournoi_id=${tournoi.id}`, {
+            credentials: 'include'
+          })
+          if (matchResponse.ok) {
+            const matches = await matchResponse.json()
+            allMatches.push(...matches.map((m: any) => ({ ...m, tournoi })))
+          }
         }
-      }))
+      }
 
-      // 4. Charger les matchs et calculer les performances
-      const { data: allMatches } = await supabase
-        .from('matches')
-        .select(`
-          *,
-          equipe_a:equipes!equipe_a_id(name),
-          equipe_b:equipes!equipe_b_id(name),
-          tournoi:tournois!tournoi_id(name, org_id)
-        `)
-        .eq('tournoi.org_id', organization.id)
-        .order('updated_at', { ascending: false })
+      if (allMatches.length > 0) {
+        const lastMonth = new Date()
+        lastMonth.setMonth(lastMonth.getMonth() - 1)
 
-      if (allMatches) {
-        // Total des matchs
         setStats(prev => ({
           ...prev,
           totalMatchs: allMatches.length,
           growth: {
             ...prev.growth,
-            matchs: allMatches.filter(m => {
-              const lastMonth = new Date()
-              lastMonth.setMonth(lastMonth.getMonth() - 1)
-              return new Date(m.created_at) > lastMonth
-            }).length
+            matchs: allMatches.filter(m => new Date(m.created_at) > lastMonth).length
           }
         }))
 
