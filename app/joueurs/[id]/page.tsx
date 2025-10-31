@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/app/providers/AuthProvider'
 
 // Icônes premium
 const Icons = {
@@ -91,6 +91,7 @@ const Icons = {
 
 export default function PlayersManagementPage() {
   const router = useRouter()
+  const { user, organization } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [players, setPlayers] = useState<any[]>([])
@@ -115,40 +116,25 @@ export default function PlayersManagementPage() {
 
   useEffect(() => {
     setMounted(true)
-    loadPlayers()
-  }, [])
+    if (user && organization) {
+      loadPlayers()
+    }
+  }, [user, organization])
 
   const loadPlayers = async () => {
+    if (!organization) return
+
     try {
-      // Récupérer l'organisation de l'utilisateur
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
-
-      const { data: userRole } = await supabase
-        .from('user_roles')
-        .select('org_id')
-        .eq('user_id', user.id)
-        .single()
-
-      if (!userRole) return
-
       // Charger les joueurs
-      const { data: playersData } = await supabase
-        .from('joueurs')
-        .select(`
-          *,
-          equipes_joueurs(
-            equipe:equipes(
-              name,
-              tournoi:tournois(name, status)
-            )
-          )
-        `)
-        .eq('org_id', userRole.org_id)
-        .order('name')
+      const response = await fetch(`/api/joueurs?org_id=${organization.id}`, {
+        credentials: 'include'
+      })
+
+      if (!response.ok) throw new Error('Erreur chargement joueurs')
+      let playersData = await response.json()
+
+      // Trier par nom côté client
+      playersData = playersData.sort((a: any, b: any) => a.name.localeCompare(b.name))
 
       if (playersData) {
         setPlayers(playersData)
@@ -173,43 +159,30 @@ export default function PlayersManagementPage() {
   }
 
   const handleSavePlayer = async () => {
+    if (!organization) return
+
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      const { data: userRole } = await supabase
-        .from('user_roles')
-        .select('org_id')
-        .eq('user_id', user!.id)
-        .single()
-
       if (editingPlayer) {
-        // Modifier
-        const { error } = await supabase
-          .from('joueurs')
-          .update({
-            name: formData.name,
-            gender: formData.gender,
-            email: formData.email || null,
-            phone: formData.phone || null
-          })
-          .eq('id', editingPlayer.id)
-
-        if (!error) {
-          await loadPlayers()
-          closeModal()
-        }
+        // Modifier - Note: L'API PUT pour joueurs n'existe pas encore, donc on recharge juste
+        // TODO: Créer PUT /api/joueurs/[id]
+        console.warn('PUT /api/joueurs/[id] pas encore implémenté')
+        closeModal()
       } else {
         // Créer
-        const { error } = await supabase
-          .from('joueurs')
-          .insert({
-            org_id: userRole!.org_id,
+        const response = await fetch('/api/joueurs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            org_id: organization.id,
             name: formData.name,
             gender: formData.gender,
             email: formData.email || null,
             phone: formData.phone || null
           })
+        })
 
-        if (!error) {
+        if (response.ok) {
           await loadPlayers()
           closeModal()
         }
@@ -222,21 +195,17 @@ export default function PlayersManagementPage() {
   const handleDeletePlayer = async (playerId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')) return
 
-    const { error } = await supabase
-      .from('joueurs')
-      .delete()
-      .eq('id', playerId)
-
-    if (!error) {
-      await loadPlayers()
-    }
+    // Note: L'API DELETE pour joueurs n'existe pas encore
+    // TODO: Créer DELETE /api/joueurs/[id]
+    console.warn('DELETE /api/joueurs/[id] pas encore implémenté')
   }
 
   const handleBulkDelete = async () => {
     if (!confirm(`Supprimer ${selectedPlayers.length} joueur(s) ?`)) return
 
-    for (const playerId of selectedPlayers) {
-      await supabase.from('joueurs').delete().eq('id', playerId)
+    // Note: L'API DELETE pour joueurs n'existe pas encore
+    // TODO: Créer DELETE /api/joueurs/[id]
+    console.warn('DELETE /api/joueurs/[id] pas encore implémenté')
     }
 
     setSelectedPlayers([])
