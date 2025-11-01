@@ -2,18 +2,12 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+import { query } from '@/lib/db'
 
 // Initialiser Stripe avec la clé secrète
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
  apiVersion: '2024-06-20' // Utiliser la dernière version
 })
-
-// Initialiser Supabase Admin
-const supabaseAdmin = createClient(
- process.env.NEXT_PUBLIC_SUPABASE_URL!,
- process.env.SUPABASE_SERVICE_ROLE_KEY! // Clé service pour opérations admin
-)
 
 export async function POST(request: NextRequest) {
  try {
@@ -36,18 +30,20 @@ export async function POST(request: NextRequest) {
 
    // Si c'est le plan gratuit, pas besoin de Stripe
    if (!priceId) {
-     // Mettre à jour l'utilisateur en gratuit dans Supabase
-     const { error: updateError } = await supabaseAdmin
-       .from('user_profiles')
-       .upsert({
-         user_id: userId,
-         subscription_status: 'free',
-         subscription_plan: 'gratuit',
-         updated_at: new Date().toISOString()
-       })
-
-     if (updateError) {
-       console.error('Erreur mise à jour profil:', updateError)
+     // Mettre à jour l'utilisateur en gratuit dans la DB
+     try {
+       await query(
+         `UPDATE users
+          SET metadata = jsonb_set(
+            COALESCE(metadata, '{}'::jsonb),
+            '{subscription}',
+            '{"status": "free", "plan": "gratuit"}'::jsonb
+          )
+          WHERE id = $1`,
+         [userId]
+       )
+     } catch (error) {
+       console.error('Erreur mise à jour profil:', error)
      }
 
      return NextResponse.json({
@@ -58,13 +54,16 @@ export async function POST(request: NextRequest) {
    }
 
    // Vérifier si l'utilisateur n'est pas déjà Premium
-   const { data: existingProfile } = await supabaseAdmin
-     .from('user_profiles')
-     .select('subscription_status, stripe_customer_id')
-     .eq('user_id', userId)
-     .single()
+   const userResult = await query(
+     `SELECT metadata FROM users WHERE id = $1`,
+     [userId]
+   )
 
-   if (existingProfile?.subscription_status === 'premium') {
+   const existingProfile = userResult.rows[0]
+   const metadata = existingProfile?.metadata || {}
+   const subscription = metadata.subscription || {}
+
+   if (subscription.status === 'premium') {
      return NextResponse.json(
        { error: 'Vous êtes déjà Premium' },
        { status: 400 }
@@ -72,27 +71,29 @@ export async function POST(request: NextRequest) {
    }
 
    // Créer ou récupérer le customer Stripe
-   let customerId = existingProfile?.stripe_customer_id
+   let customerId = subscription.stripe_customer_id
 
    if (!customerId) {
      // Créer un nouveau customer Stripe
      const customer = await stripe.customers.create({
        email: userEmail,
        metadata: {
-         supabase_user_id: userId
+         user_id: userId
        }
      })
      customerId = customer.id
 
-     // Sauvegarder le customer ID dans Supabase
-     await supabaseAdmin
-       .from('user_profiles')
-       .upsert({
-         user_id: userId,
-         stripe_customer_id: customerId,
-         email: userEmail,
-         updated_at: new Date().toISOString()
-       })
+     // Sauvegarder le customer ID dans la DB
+     await query(
+       `UPDATE users
+        SET metadata = jsonb_set(
+          COALESCE(metadata, '{}'::jsonb),
+          '{subscription,stripe_customer_id}',
+          $1::jsonb
+        )
+        WHERE id = $2`,
+       [JSON.stringify(customerId), userId]
+     )
    }
 
    // Créer le prix Premium (4,99€ achat unique)
@@ -165,16 +166,12 @@ export async function POST(request: NextRequest) {
    })
 
    // Créer un enregistrement de la tentative de paiement
-   await supabaseAdmin
-     .from('payment_attempts')
-     .insert({
-       user_id: userId,
-       stripe_session_id: session.id,
-       amount: 499,
-       currency: 'eur',
-       status: 'pending',
-       created_at: new Date().toISOString()
-     })
+   await query(
+     `INSERT INTO payment_attempts
+      (user_id, stripe_session_id, stripe_customer_id, amount, currency, status)
+      VALUES ($1, $2, $3, $4, $5, $6)`,
+     [userId, session.id, customerId, 499, 'eur', 'pending']
+   )
 
    // Retourner l'ID de session pour la redirection
    return NextResponse.json({
@@ -231,30 +228,39 @@ export async function GET(request: NextRequest) {
    // Vérifier le statut du paiement
    if (session.payment_status === 'paid') {
      // Mettre à jour l'utilisateur en Premium
-     const { error: updateError } = await supabaseAdmin
-       .from('user_profiles')
-       .update({
-         subscription_status: 'premium',
-         subscription_plan: 'premium_lifetime',
-         premium_since: new Date().toISOString(),
-         stripe_payment_intent: session.payment_intent as string,
-         updated_at: new Date().toISOString()
-       })
-       .eq('user_id', userId)
+     try {
+       await query(
+         `UPDATE users
+          SET metadata = jsonb_set(
+            jsonb_set(
+              jsonb_set(
+                COALESCE(metadata, '{}'::jsonb),
+                '{subscription,status}',
+                '"premium"'::jsonb
+              ),
+              '{subscription,plan}',
+              '"premium_lifetime"'::jsonb
+            ),
+            '{subscription,premium_since}',
+            $1::jsonb
+          )
+          WHERE id = $2`,
+         [JSON.stringify(new Date().toISOString()), userId]
+       )
 
-     if (updateError) {
+       // Mettre à jour l'enregistrement de paiement
+       await query(
+         `UPDATE payment_attempts
+          SET status = $1,
+              completed_at = CURRENT_TIMESTAMP,
+              stripe_payment_intent = $2
+          WHERE stripe_session_id = $3`,
+         ['completed', session.payment_intent as string, sessionId]
+       )
+     } catch (updateError) {
        console.error('Erreur mise à jour profil:', updateError)
        throw updateError
      }
-
-     // Mettre à jour l'enregistrement de paiement
-     await supabaseAdmin
-       .from('payment_attempts')
-       .update({
-         status: 'completed',
-         completed_at: new Date().toISOString()
-       })
-       .eq('stripe_session_id', sessionId)
 
      return NextResponse.json({
        success: true,
