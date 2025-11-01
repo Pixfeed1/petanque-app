@@ -5,19 +5,29 @@ import Stripe from 'stripe'
 import { headers } from 'next/headers'
 import { query } from '@/lib/db'
 
-// Initialiser Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
- apiVersion: '2024-06-20'
-})
+// Initialiser Stripe uniquement si la clé est disponible
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20'
+    })
+  : null
 
 // Webhook secret depuis Stripe Dashboard
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || ''
 
 export async function POST(request: NextRequest) {
  try {
+   // Vérifier que Stripe est initialisé
+   if (!stripe) {
+     return NextResponse.json(
+       { error: 'Stripe non configuré' },
+       { status: 500 }
+     )
+   }
+
    // Récupérer le body brut pour la vérification de signature
    const body = await request.text()
-   
+
    // Récupérer la signature Stripe depuis les headers
    const signature = headers().get('stripe-signature')
 
@@ -31,7 +41,7 @@ export async function POST(request: NextRequest) {
 
    // Vérifier la signature du webhook
    let event: Stripe.Event
-   
+
    try {
      event = stripe.webhooks.constructEvent(
        body,

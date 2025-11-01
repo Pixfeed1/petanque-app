@@ -4,18 +4,28 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { query } from '@/lib/db'
 
-// Initialiser Stripe avec la clé secrète
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
- apiVersion: '2024-06-20' // Utiliser la dernière version
-})
+// Initialiser Stripe uniquement si la clé est disponible
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20'
+    })
+  : null
 
 export async function POST(request: NextRequest) {
  try {
+   // Vérifier que Stripe est initialisé
+   if (!stripe) {
+     return NextResponse.json(
+       { error: 'Stripe non configuré' },
+       { status: 500 }
+     )
+   }
+
    // Récupérer les données de la requête
    const body = await request.json()
-   const { 
-     priceId, 
-     userId, 
+   const {
+     priceId,
+     userId,
      userEmail,
      mode = 'payment' // Achat unique par défaut
    } = body
@@ -211,6 +221,14 @@ export async function POST(request: NextRequest) {
 // Endpoint pour vérifier le statut de paiement
 export async function GET(request: NextRequest) {
  try {
+   // Vérifier que Stripe est initialisé
+   if (!stripe) {
+     return NextResponse.json(
+       { error: 'Stripe non configuré' },
+       { status: 500 }
+     )
+   }
+
    const { searchParams } = new URL(request.url)
    const sessionId = searchParams.get('session_id')
    const userId = searchParams.get('user_id')

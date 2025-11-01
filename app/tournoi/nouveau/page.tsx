@@ -564,42 +564,43 @@ export default function CreateTournamentPage() {
         return
       }
 
-    // Diviser en poules
-    const equipesParPoule = formData.pouleSize
-    const nbPoules = Math.ceil(equipes.length / equipesParPoule)
-    
-    let globalMatchNum = 0
-    
-    for (let pouleNum = 0; pouleNum < nbPoules; pouleNum++) {
-      const pouleStart = pouleNum * equipesParPoule
-      const pouleEnd = Math.min(pouleStart + equipesParPoule, equipes.length)
-      const equipesPoule = equipes.slice(pouleStart, pouleEnd)
-      
-      // Créer tous les matchs de cette poule (round-robin)
-      for (let i = 0; i < equipesPoule.length; i++) {
-        for (let j = i + 1; j < equipesPoule.length; j++) {
-          const terrainNum = (globalMatchNum % formData.terrains) + 1
-          const tour = Math.floor(globalMatchNum / formData.terrains) + 1
+      // Diviser en poules
+      const equipesParPoule = formData.pouleSize
+      const nbPoules = Math.ceil(equipes.length / equipesParPoule)
 
-          try {
-            await fetch('/api/matches', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                tournoi_id: tournoi.id,
-                equipe_a_id: equipesPoule[i].id,
-                equipe_b_id: equipesPoule[j].id,
-                terrain: terrainNum,
-                tour: tour,
-                status: 'a_jouer'
+      let globalMatchNum = 0
+
+      for (let pouleNum = 0; pouleNum < nbPoules; pouleNum++) {
+        const pouleStart = pouleNum * equipesParPoule
+        const pouleEnd = Math.min(pouleStart + equipesParPoule, equipes.length)
+        const equipesPoule = equipes.slice(pouleStart, pouleEnd)
+
+        // Créer tous les matchs de cette poule (round-robin)
+        for (let i = 0; i < equipesPoule.length; i++) {
+          for (let j = i + 1; j < equipesPoule.length; j++) {
+            const terrainNum = (globalMatchNum % formData.terrains) + 1
+            const tour = Math.floor(globalMatchNum / formData.terrains) + 1
+
+            try {
+              await fetch('/api/matches', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                  tournoi_id: tournoi.id,
+                  equipe_a_id: equipesPoule[i].id,
+                  equipe_b_id: equipesPoule[j].id,
+                  terrain: terrainNum,
+                  tour: tour,
+                  status: 'a_jouer'
+                })
               })
-            })
-          } catch (error) {
-            console.error(`Erreur création match:`, error)
-          }
+            } catch (error) {
+              console.error(`Erreur création match:`, error)
+            }
 
-          globalMatchNum++
+            globalMatchNum++
+          }
         }
       }
     } catch (error) {
