@@ -5,15 +5,17 @@ import { query, queryOne } from '@/lib/db'
 // GET /api/joueurs/[id] - Récupérer un joueur par ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
 
+    const { id } = await params
+
     const joueur = await queryOne(
       'SELECT * FROM joueurs WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     if (!joueur) {
@@ -30,11 +32,13 @@ export async function GET(
 // PUT /api/joueurs/[id] - Modifier un joueur
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
+
+    const { id } = await params
 
     const body = await request.json()
     const { name, gender, email, phone, stats } = body
@@ -42,7 +46,7 @@ export async function PUT(
     // Vérifier que le joueur existe
     const joueur = await queryOne(
       'SELECT * FROM joueurs WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     if (!joueur) {
@@ -87,7 +91,7 @@ export async function PUT(
     updates.push(`updated_at = NOW()`)
 
     // Ajouter l'ID à la fin
-    values.push(params.id)
+    values.push(id)
 
     const result = await query(
       `UPDATE joueurs SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
@@ -98,7 +102,7 @@ export async function PUT(
       return apiError('Joueur introuvable', 404)
     }
 
-    console.log('✅ Joueur modifié:', params.id)
+    console.log('✅ Joueur modifié:', id)
     return apiSuccess(result.rows[0])
   } catch (error) {
     console.error('❌ Erreur PUT /api/joueurs/[id]:', error)
@@ -109,16 +113,18 @@ export async function PUT(
 // DELETE /api/joueurs/[id] - Supprimer un joueur
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
 
+    const { id } = await params
+
     // Vérifier que le joueur existe
     const joueur = await queryOne(
       'SELECT * FROM joueurs WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     if (!joueur) {
@@ -134,7 +140,7 @@ export async function DELETE(
        WHERE e.joueur_ids @> $1::jsonb
        AND t.status IN ('preparation', 'en_cours')
        LIMIT 1`,
-      [JSON.stringify([params.id])]
+      [JSON.stringify([id])]
     )
 
     if (activeTeams.rows.length > 0) {
@@ -147,14 +153,14 @@ export async function DELETE(
     // Supprimer le joueur
     const result = await query(
       'DELETE FROM joueurs WHERE id = $1 RETURNING *',
-      [params.id]
+      [id]
     )
 
     if (result.rowCount === 0) {
       return apiError('Joueur introuvable', 404)
     }
 
-    console.log('✅ Joueur supprimé:', params.id)
+    console.log('✅ Joueur supprimé:', id)
     return apiSuccess({ message: 'Joueur supprimé avec succès', joueur: result.rows[0] })
   } catch (error) {
     console.error('❌ Erreur DELETE /api/joueurs/[id]:', error)

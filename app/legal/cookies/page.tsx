@@ -352,9 +352,9 @@ export default function CookiesPage() {
                     </div>
                     {!category.required && (
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          checked={cookiePreferences[category.id]}
+                        <input
+                          type="checkbox"
+                          checked={cookiePreferences[category.id as keyof typeof cookiePreferences]}
                           onChange={(e) => setCookiePreferences({
                             ...cookiePreferences,
                             [category.id]: e.target.checked
@@ -568,9 +568,9 @@ export default function CookiesPage() {
                         </p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          checked={category.required || cookiePreferences[category.id]}
+                        <input
+                          type="checkbox"
+                          checked={category.required || cookiePreferences[category.id as keyof typeof cookiePreferences]}
                           onChange={(e) => !category.required && setCookiePreferences({
                             ...cookiePreferences,
                             [category.id]: e.target.checked

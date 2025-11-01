@@ -8,14 +8,14 @@ import { queryOne, query } from '@/lib/db'
 // GET - Récupérer un tournoi par ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
 
     const { user } = authResult
-    const { id } = params
+    const { id } = await params
 
     // Récupérer le tournoi
     const tournoi = await queryOne(
@@ -43,14 +43,14 @@ export async function GET(
 // PUT - Mettre à jour un tournoi
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
 
     const { user } = authResult
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     // Récupérer le tournoi existant
@@ -114,14 +114,14 @@ export async function PUT(
 // DELETE - Supprimer un tournoi
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
 
     const { user } = authResult
-    const { id } = params
+    const { id } = await params
 
     // Récupérer le tournoi
     const tournoi = await queryOne(

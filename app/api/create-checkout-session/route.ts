@@ -7,7 +7,7 @@ import { query } from '@/lib/db'
 // Initialiser Stripe uniquement si la clé est disponible
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2024-06-20'
+      apiVersion: '2025-07-30.basil'
     })
   : null
 
@@ -113,8 +113,6 @@ export async function POST(request: NextRequest) {
      unit_amount: 499, // 4,99€ en centimes
      product_data: {
        name: 'Tournoi Pétanque Premium',
-       description: 'Accès à vie - Sans publicité - Support prioritaire',
-       images: ['https://votre-site.com/logo-premium.png'], // Remplacer par votre logo
        metadata: {
          product_type: 'lifetime_access'
        }

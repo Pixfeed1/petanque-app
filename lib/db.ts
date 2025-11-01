@@ -1,7 +1,7 @@
 // lib/db.ts
 // Couche de connexion PostgreSQL centralisée
 
-import { Pool, QueryResult } from 'pg'
+import { Pool, QueryResult, QueryResultRow } from 'pg'
 
 // Configuration du pool de connexions PostgreSQL
 const pool = new Pool({
@@ -32,7 +32,7 @@ pool.on('connect', () => {
  * @param params - Paramètres de la requête
  * @returns Résultat de la requête
  */
-export async function query<T = any>(
+export async function query<T extends QueryResultRow = any>(
   text: string,
   params?: any[]
 ): Promise<QueryResult<T>> {
@@ -87,7 +87,7 @@ export async function transaction<T>(
 /**
  * Récupère une seule ligne
  */
-export async function queryOne<T = any>(
+export async function queryOne<T extends QueryResultRow = any>(
   text: string,
   params?: any[]
 ): Promise<T | null> {
@@ -98,7 +98,7 @@ export async function queryOne<T = any>(
 /**
  * Récupère plusieurs lignes
  */
-export async function queryMany<T = any>(
+export async function queryMany<T extends QueryResultRow = any>(
   text: string,
   params?: any[]
 ): Promise<T[]> {

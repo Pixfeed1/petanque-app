@@ -8,7 +8,7 @@ import { query } from '@/lib/db'
 // Initialiser Stripe uniquement si la clé est disponible
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2024-06-20'
+      apiVersion: '2025-07-30.basil'
     })
   : null
 
@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
    const body = await request.text()
 
    // Récupérer la signature Stripe depuis les headers
-   const signature = headers().get('stripe-signature')
+   const headersList = await headers()
+   const signature = headersList.get('stripe-signature')
 
    if (!signature) {
      console.error('Webhook: Signature manquante')

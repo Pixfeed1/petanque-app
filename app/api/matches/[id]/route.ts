@@ -8,13 +8,13 @@ import { queryOne, query } from '@/lib/db'
 // GET - Récupérer un match par ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
 
-    const { id } = params
+    const { id } = await params
 
     const match = await queryOne(
       `SELECT m.*,
@@ -43,13 +43,13 @@ export async function GET(
 // PUT - Mettre à jour un match (score, statut, etc.)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
 
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     const existingMatch = await queryOne(
@@ -119,13 +119,13 @@ export async function PUT(
 // DELETE - Supprimer un match
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
 
-    const { id } = params
+    const { id } = await params
 
     const match = await queryOne('SELECT id FROM matches WHERE id = $1', [id])
 

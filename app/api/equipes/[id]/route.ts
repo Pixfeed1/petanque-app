@@ -8,13 +8,13 @@ import { queryOne, query, queryMany } from '@/lib/db'
 // GET - Récupérer une équipe par ID avec les détails des joueurs
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
 
-    const { id } = params
+    const { id } = await params
 
     const equipe = await queryOne(
       'SELECT * FROM equipes WHERE id = $1',
@@ -44,13 +44,13 @@ export async function GET(
 // PUT - Mettre à jour une équipe
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
 
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     const existingEquipe = await queryOne(
@@ -105,13 +105,13 @@ export async function PUT(
 // DELETE - Supprimer une équipe
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
 
-    const { id } = params
+    const { id } = await params
 
     const equipe = await queryOne('SELECT id FROM equipes WHERE id = $1', [id])
 

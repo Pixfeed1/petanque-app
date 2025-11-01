@@ -176,6 +176,16 @@ const Icons = {
   )
 }
 
+// Type pour les actions en attente
+interface PendingAction {
+  type: string
+  icon: React.ReactElement
+  title: string
+  description: string
+  tournoi?: string
+  action: () => void
+}
+
 export default function Dashboard() {
   const router = useRouter()
   const { user, organization, loading: authLoading, signOut } = useAuth()
@@ -203,7 +213,7 @@ export default function Dashboard() {
       matchs: 0
     }
   })
-  const [pendingActions, setPendingActions] = useState<any[]>([])
+  const [pendingActions, setPendingActions] = useState<PendingAction[]>([])
   const [upcomingMatches, setUpcomingMatches] = useState<any[]>([])
   const [performance, setPerformance] = useState({
     winRate: 0,
@@ -298,6 +308,7 @@ export default function Dashboard() {
 
       // 4. Charger TOUS les matchs de l'organisation (via tous les tournois)
       const allMatches: any[] = []
+      let tournois: any[] = []
 
       // On charge les matchs pour chaque tournoi
       const tournoiResponse2 = await fetch(`/api/tournois?org_id=${organization.id}`, {
@@ -305,7 +316,7 @@ export default function Dashboard() {
       })
 
       if (tournoiResponse2.ok) {
-        const tournois = await tournoiResponse2.json()
+        tournois = await tournoiResponse2.json()
 
         // Charger les matchs de chaque tournoi
         for (const tournoi of tournois) {
@@ -422,7 +433,7 @@ export default function Dashboard() {
         }
 
         // Actions en attente
-        const actions = []
+        const actions: PendingAction[] = []
         
         // Matchs sans score
         const matchesWithoutScore = allMatches.filter(m => 
@@ -440,8 +451,8 @@ export default function Dashboard() {
         })
         
         // Tournois à démarrer
-        if (tournoiData) {
-          const tournoiToStart = tournoiData.filter(t => t.status === 'preparation')
+        if (tournois) {
+          const tournoiToStart = tournois.filter(t => t.status === 'preparation')
           tournoiToStart.forEach(tournoi => {
             actions.push({
               type: 'start_tournament',
@@ -502,23 +513,23 @@ export default function Dashboard() {
 
   const getStatusBadge = (status: string) => {
     const configs = {
-      'en_cours': { 
-        bg: 'from-green-400 to-emerald-500', 
+      'en_cours': {
+        bg: 'from-green-400 to-emerald-500',
         text: 'En cours',
-        pulse: true 
+        pulse: true
       },
-      'preparation': { 
-        bg: 'from-yellow-400 to-orange-500', 
+      'preparation': {
+        bg: 'from-yellow-400 to-orange-500',
         text: 'Préparation',
-        pulse: false 
+        pulse: false
       },
-      'termine': { 
-        bg: 'from-gray-400 to-gray-500', 
+      'termine': {
+        bg: 'from-gray-400 to-gray-500',
         text: 'Terminé',
-        pulse: false 
+        pulse: false
       }
     }
-    return configs[status] || configs.termine
+    return configs[status as keyof typeof configs] || configs.termine
   }
 
   // Configuration des graphiques Chart.js
@@ -535,7 +546,7 @@ export default function Dashboard() {
         borderRadius: 8,
         titleFont: {
           size: 14,
-          weight: 'bold'
+          weight: 'bold' as const
         },
         bodyFont: {
           size: 12
@@ -710,7 +721,7 @@ export default function Dashboard() {
                     {user?.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <span className="text-sm font-medium text-gray-700">
-                    {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Utilisateur'}
+                    {user?.full_name || user?.email?.split('@')[0] || 'Utilisateur'}
                   </span>
                   {Icons.chevronDown}
                 </button>
@@ -799,7 +810,7 @@ export default function Dashboard() {
               <div className="flex justify-between items-start">
                 <div>
                   <h1 className="text-4xl font-bold mb-2">
-                    Bonjour {user?.user_metadata?.name?.split(' ')[0] || 'Champion'} ! 👋
+                    Bonjour {user?.full_name?.split(' ')[0] || 'Champion'} ! 👋
                   </h1>
                   <p className="text-green-100 text-lg">
                     {stats.tournoiEnCours > 0 

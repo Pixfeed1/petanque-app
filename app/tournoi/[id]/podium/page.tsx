@@ -629,9 +629,9 @@ export default function PodiumPage() {
                <h4 className="text-xl font-bold text-gray-900 mb-2">{podium[1]?.team.name}</h4>
                
                <div className="space-y-2 mb-4">
-                 {podium[1]?.team.equipes_joueurs?.map((ej: any, i: number) => (
+                 {podium[1]?.team.players?.map((player: any, i: number) => (
                    <p key={i} className="text-sm text-gray-700">
-                     {ej.joueur?.name}
+                     {player?.name}
                    </p>
                  ))}
                </div>
@@ -683,9 +683,9 @@ export default function PodiumPage() {
                <h4 className="text-2xl font-bold text-gray-900 mb-3">{podium[0]?.team.name}</h4>
                
                <div className="space-y-2 mb-4">
-                 {podium[0]?.team.equipes_joueurs?.map((ej: any, i: number) => (
+                 {podium[0]?.team.players?.map((player: any, i: number) => (
                    <p key={i} className="text-sm font-medium text-gray-800">
-                     ⭐ {ej.joueur?.name}
+                     ⭐ {player?.name}
                    </p>
                  ))}
                </div>
@@ -736,9 +736,9 @@ export default function PodiumPage() {
                {podium[2] && (
                  <>
                    <div className="space-y-2 mb-4">
-                     {podium[2]?.team.equipes_joueurs?.map((ej: any, i: number) => (
+                     {podium[2]?.team.players?.map((player: any, i: number) => (
                        <p key={i} className="text-sm text-gray-700">
-                         {ej.joueur?.name}
+                         {player?.name}
                        </p>
                      ))}
                    </div>

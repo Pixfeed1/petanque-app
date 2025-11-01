@@ -93,7 +93,7 @@ export default function RGPDPage() {
     { id: 'securite', name: 'Sécurité', icon: Icons.shield }
   ]
 
-  const scrollToSection = (sectionId) => {
+  const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId)
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' })
   }

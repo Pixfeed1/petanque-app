@@ -138,9 +138,9 @@ const BracketMatch = ({
        <div className="p-4">
          {/* Équipe A */}
          <div className={`flex items-center justify-between p-3 rounded-lg mb-2 transition-all ${
-           winner === 'A' 
-             ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500' 
-             : match.status === 'termine' && winner !== 'A'
+           winner === 'A'
+             ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500'
+             : match.status === 'termine'
              ? 'opacity-50'
              : 'bg-gray-50'
          }`}>
@@ -164,9 +164,9 @@ const BracketMatch = ({
 
          {/* Équipe B */}
          <div className={`flex items-center justify-between p-3 rounded-lg transition-all ${
-           winner === 'B' 
-             ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500' 
-             : match.status === 'termine' && winner !== 'B'
+           winner === 'B'
+             ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500'
+             : match.status === 'termine'
              ? 'opacity-50'
              : 'bg-gray-50'
          }`}>

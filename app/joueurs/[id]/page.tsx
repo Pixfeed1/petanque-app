@@ -131,7 +131,7 @@ export default function PlayersManagementPage() {
       })
 
       if (!response.ok) throw new Error('Erreur chargement joueurs')
-      let playersData = await response.json()
+      let playersData: any[] = await response.json()
 
       // Trier par nom côté client
       playersData = playersData.sort((a: any, b: any) => a.name.localeCompare(b.name))
