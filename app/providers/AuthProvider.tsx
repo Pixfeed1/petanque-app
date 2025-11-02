@@ -61,14 +61,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading) {
-      const publicRoutes = ['/login', '/signup', '/quiz', '/']
-      const isPublicRoute = publicRoutes.includes(pathname)
+      // Liste des routes publiques (accessibles sans authentification)
+      const publicRoutes = [
+        '/',
+        '/login',
+        '/signup',
+        '/quiz',
+        '/quizz',
+        '/modes',
+        '/features',
+        '/guide',
+        '/faq',
+        '/contact',
+      ]
+
+      // Vérifier si la route est publique (exact match ou wildcard pour /legal/*)
+      const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith('/legal/')
 
       if (user) {
+        // Si l'utilisateur est connecté et tente d'accéder à login/signup, rediriger vers dashboard
         if (pathname === '/login' || pathname === '/signup') {
           router.push('/dashboard')
         }
       } else {
+        // Si l'utilisateur n'est pas connecté et tente d'accéder à une route protégée
         if (!isPublicRoute) {
           router.push('/login')
         }
