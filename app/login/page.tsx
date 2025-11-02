@@ -259,8 +259,9 @@ export default function LoginPage() {
   }
 
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
-    // TODO: Implémenter OAuth avec le backend custom
-    setError('Connexion sociale temporairement indisponible. Utilisez email/mot de passe.')
+    // Rediriger vers l'endpoint OAuth
+    const authUrl = `/api/auth/oauth/${provider}/login`
+    window.location.href = authUrl
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
