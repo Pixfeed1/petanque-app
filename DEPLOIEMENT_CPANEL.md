@@ -185,10 +185,14 @@ Puis en SSH :
 psql -h localhost -U petanque_user -d petanque_app
 
 # Si ça demande le mot de passe et se connecte → OK
-# Importez le schéma :
-\i /home/votre_user/petanque-app/database/schema.sql
+# Importez le schéma SANS UUID (pour serveurs sans pgcrypto) :
+\i /home/votre_user/petanque-app/database/schema_nouid.sql
+# OU le schéma avec UUID (si votre serveur a pgcrypto) :
+# \i /home/votre_user/petanque-app/database/schema.sql
 \q
 ```
+
+**⚠️ IMPORTANT** : `schema_nouid.sql` utilise des ID en **BIGINT** (number) au lieu d'**UUID** (string). Si votre serveur PostgreSQL n'a pas l'extension `pgcrypto` ou `uuid-ossp`, utilisez ce schéma.
 
 ---
 
@@ -230,6 +234,8 @@ NODE_ENV=production
 
 ### Étape 5 : Build
 
+**⚠️ IMPORTANT : Le build est OBLIGATOIRE en production !**
+
 ```bash
 npm run build
 ```
@@ -241,39 +247,79 @@ NODE_OPTIONS="--max-old-space-size=2048" npm run build
 
 ---
 
-### Étape 6 : Lancer avec PM2
+### Étape 6 : Configurer PM2
+
+Copiez le fichier de configuration exemple :
 
 ```bash
-# Installer PM2
-npm install -g pm2
+cp ecosystem.config.js.example ecosystem.config.js
+nano ecosystem.config.js
+```
 
-# Lancer l'app
-pm2 start npm --name "petanque" -- start
+Modifiez les valeurs :
+- `POSTGRES_DATABASE`, `POSTGRES_USER`, `POSTGRES_PASSWORD` : vos identifiants DB
+- `JWT_SECRET` : générez-en un avec `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+- `NEXT_PUBLIC_APP_URL` : votre domaine
+
+**⚠️ ATTENTION : Ne commitez PAS ecosystem.config.js avec les vraies valeurs !**
+
+---
+
+### Étape 7 : Lancer avec PM2
+
+```bash
+# Si PM2 n'est pas installé globalement, utilisez le chemin local :
+./node_modules/.bin/pm2 start ecosystem.config.js
+
+# OU si vous avez PM2 global :
+npm install -g pm2
+pm2 start ecosystem.config.js
 
 # Vérifier
-pm2 list
-pm2 logs petanque
+./node_modules/.bin/pm2 list
+./node_modules/.bin/pm2 logs petanque
 
 # Sauvegarder pour auto-restart
-pm2 save
-pm2 startup
+./node_modules/.bin/pm2 save
+./node_modules/.bin/pm2 startup
 # IMPORTANT : Copiez et exécutez la commande affichée
 ```
 
 ---
 
-### Étape 7 : Configurer le proxy dans cPanel
+### Étape 8 : Configurer le proxy Apache
 
 **Option A : Via .htaccess** (plus simple)
 
-Dans le dossier `public_html` de votre domaine, créez `.htaccess` :
+Copiez le fichier `.htaccess.production` à la racine de votre domaine :
+
+```bash
+cp .htaccess.production ~/public_html/.htaccess
+# OU selon votre config cPanel :
+cp .htaccess.production ~/domains/petanquepro.fr/public_html/.htaccess
+```
+
+Contenu du fichier (déjà dans le repo) :
 
 ```apache
+# Désactiver l'index par défaut d'Apache
+DirectoryIndex disabled
+
+# Activer le module de réécriture
 RewriteEngine On
+RewriteBase /
+
+# Rediriger index.php vers la racine pour éviter les conflits
+RewriteRule ^index\.php$ / [R=301,L]
+
+# Proxy vers l'application Node.js sur le port 3000
+RewriteRule ^$ http://127.0.0.1:3000/ [P,L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ http://localhost:3000/$1 [P,L]
+RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L]
 ```
+
+**⚠️ IMPORTANT** : `DirectoryIndex disabled` évite les conflits avec Apache qui essaie de servir un `index.php` inexistant.
 
 **Option B : Via Apache Virtual Host** (plus propre)
 
