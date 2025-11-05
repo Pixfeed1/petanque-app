@@ -63,7 +63,7 @@ export default function Footer({ scrollToSection }: FooterProps) {
                 </Link>
               </li>
               <li>
-                <Link href="/quiz" className="hover:text-white transition">
+                <Link href="/quizz" className="hover:text-white transition">
                   Quiz
                 </Link>
               </li>
