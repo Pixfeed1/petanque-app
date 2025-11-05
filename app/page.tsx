@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-import Footer from './components/Footer'
+import Footer from './components/footer'
 
 // Initialisation Supabase
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
