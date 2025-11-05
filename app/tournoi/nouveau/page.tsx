@@ -145,7 +145,7 @@ export default function CreateTournamentPage() {
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   
   // Joueurs depuis la base
-  const [availablePlayers, setAvailablePlayers] = useState<any[]>([])
+  const [availablePlayers, setAvailablePlayers] = useState<Record<string, unknown>[]>([])
   
   // État du formulaire complet avec TOUTES les options pétanque
   const [formData, setFormData] = useState({
@@ -207,6 +207,7 @@ export default function CreateTournamentPage() {
       alert('Configuration de votre espace en cours...')
       router.push('/dashboard')
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, organization, router, authLoading])
 
   useEffect(() => {
@@ -463,7 +464,7 @@ export default function CreateTournamentPage() {
   }
 
   // Fonction corrigée pour créer les équipes avec mixité
-  const createTeamsWithMixity = async (tournoi: any, allPlayerIds: string[], updatedPlayersList: any[]) => {
+  const createTeamsWithMixity = async (tournoi: Record<string, unknown>, allPlayerIds: string[], updatedPlayersList: Record<string, unknown>[]) => {
     const playersPerTeam = formData.format === 'doublette' ? 2 : 3
     const nbEquipes = Math.floor(allPlayerIds.length / playersPerTeam)
     
@@ -550,7 +551,7 @@ export default function CreateTournamentPage() {
   }
 
   // Fonction pour créer les matchs de poules
-  const createPoolMatches = async (tournoi: any) => {
+  const createPoolMatches = async (tournoi: Record<string, unknown>) => {
     // Récupérer toutes les équipes créées
     const { data: equipes, error: equipesError } = await supabase
       .from('equipes')
@@ -1245,7 +1246,7 @@ export default function CreateTournamentPage() {
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                     <div>
                       <p className="font-medium text-gray-900">Notation fair-play</p>
-                      <p className="text-xs text-gray-500">Évaluer l'esprit sportif</p>
+                      <p className="text-xs text-gray-500">Évaluer l&apos;esprit sportif</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input 
