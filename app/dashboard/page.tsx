@@ -108,7 +108,7 @@ export default function Dashboard() {
       <header className="bg-white/80 backdrop-blur sticky top-0 z-40 px-4 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-700">Bonjour {user?.name?.split(' ')[0]}</p>
+            <p className="text-sm text-gray-700">Bonjour {user?.full_name?.split(' ')[0] || 'Organisateur'}</p>
             <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
           </div>
           <div className="flex items-center gap-2">
