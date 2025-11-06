@@ -117,8 +117,9 @@ export default function HomePage() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeFeature, setActiveFeature] = useState(0)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
 
   // Vérifier si l'utilisateur est connecté
@@ -433,7 +434,7 @@ export default function HomePage() {
 
             {/* Subtitle */}
             <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto mb-10">
-              L'application tout-en-un pour organiser, gérer et suivre vos tournois. 
+              L&apos;application tout-en-un pour organiser, gérer et suivre vos tournois.
               Simple, puissante et accessible.
             </p>
 
@@ -518,7 +519,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Tout ce qu'il vous faut
+              Tout ce qu&apos;il vous faut
             </h2>
             <p className="text-xl text-gray-600">
               Des fonctionnalités pensées par et pour les organisateurs
@@ -577,7 +578,7 @@ export default function HomePage() {
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700">Stratégie d'équipe</span>
+                  <span className="text-gray-700">Stratégie d&apos;équipe</span>
                 </li>
               </ul>
             </div>
@@ -658,7 +659,7 @@ export default function HomePage() {
                     <span key={i} className="text-yellow-400">{Icons.star}</span>
                   ))}
                 </div>
-                <p className="text-gray-700 mb-6 italic">"{testimonial.content}"</p>
+                <p className="text-gray-700 mb-6 italic">&ldquo;{testimonial.content}&rdquo;</p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold">
                     {testimonial.name[0]}
@@ -793,7 +794,7 @@ export default function HomePage() {
                 Prêt à révolutionner vos tournois ?
               </h2>
               <p className="text-xl mb-8 text-green-100">
-                Rejoignez des milliers d'organisateurs qui ont déjà adopté Pétanque Pro
+                Rejoignez des milliers d&apos;organisateurs qui ont déjà adopté Pétanque Pro
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button 

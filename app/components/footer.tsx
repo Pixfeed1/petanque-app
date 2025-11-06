@@ -45,7 +45,7 @@ export default function Footer({ scrollToSection }: FooterProps) {
               </span>
             </Link>
             <p className="text-sm">
-              L'application de référence pour organiser vos tournois de pétanque.
+              L&apos;application de référence pour organiser vos tournois de pétanque.
             </p>
           </div>
           
@@ -88,7 +88,7 @@ export default function Footer({ scrollToSection }: FooterProps) {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/guide" className="hover:text-white transition">
-                  Guide d'utilisation
+                  Guide d&apos;utilisation
                 </Link>
               </li>
               <li>
@@ -117,7 +117,7 @@ export default function Footer({ scrollToSection }: FooterProps) {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/legal/terms" className="hover:text-white transition">
-                  Conditions d'utilisation
+                  Conditions d&apos;utilisation
                 </Link>
               </li>
               <li>

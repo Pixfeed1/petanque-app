@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import Footer from '../components/footer'
 
 // Types
@@ -251,16 +252,16 @@ export default function GameModesPage() {
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <a href="/" className="flex items-center space-x-3">
+            <Link href="/" className="flex items-center space-x-3">
               {Icons.logo}
               <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 Pétanque Pro
               </span>
-            </a>
+            </Link>
             <div className="hidden md:flex items-center space-x-4">
-              <a href="/" className="px-4 py-2 text-gray-700 hover:text-gray-900 transition">
+              <Link href="/" className="px-4 py-2 text-gray-700 hover:text-gray-900 transition">
                 Accueil
-              </a>
+              </Link>
               <a href="/login" className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full hover:shadow-lg transition-all hover:scale-105">
                 Commencer
               </a>
@@ -489,7 +490,7 @@ export default function GameModesPage() {
                     <span className="text-purple-500 mr-2 mt-1">{Icons.check}</span>
                     <div>
                       <p className="font-medium text-gray-900">Tolérance flexible</p>
-                      <p className="text-sm text-gray-600">S'adapte si la répartition parfaite est impossible</p>
+                      <p className="text-sm text-gray-600">S&apos;adapte si la répartition parfaite est impossible</p>
                     </div>
                   </li>
                 </ul>
@@ -571,15 +572,15 @@ export default function GameModesPage() {
                 Quel mode choisirez-vous ?
               </h2>
               <p className="text-xl mb-8 text-green-100">
-                Tous les modes sont disponibles dans l'application
+                Tous les modes sont disponibles dans l&apos;application
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="/login" className="px-8 py-4 bg-white text-green-600 text-lg rounded-full hover:shadow-2xl transition-all transform hover:scale-105 font-bold">
+                <Link href="/login" className="px-8 py-4 bg-white text-green-600 text-lg rounded-full hover:shadow-2xl transition-all transform hover:scale-105 font-bold">
                   Créer mon tournoi
-                </a>
-                <a href="/" className="px-8 py-4 bg-transparent text-white text-lg rounded-full border-2 border-white hover:bg-white hover:text-green-600 transition-all">
+                </Link>
+                <Link href="/" className="px-8 py-4 bg-transparent text-white text-lg rounded-full border-2 border-white hover:bg-white hover:text-green-600 transition-all">
                   En savoir plus
-                </a>
+                </Link>
               </div>
             </div>
           </div>

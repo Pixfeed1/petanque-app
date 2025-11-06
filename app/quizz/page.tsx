@@ -90,6 +90,7 @@ export default function QuizPage() {
   const [selectedDifficulty, setSelectedDifficulty] = useState('debutant')
   const [selectedQuestions, setSelectedQuestions] = useState('20')
   const [scrolled, setScrolled] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [playerStats, setPlayerStats] = useState({
     totalGames: 42,
     bestScore: 95,
@@ -498,7 +499,7 @@ export default function QuizPage() {
                 <h3 className="font-bold text-gray-900 mb-2">Bonus série</h3>
                 <p className="text-sm text-gray-600">
                   +1 point pour 5 bonnes<br/>
-                  réponses d'affilée<br/>
+                  réponses d&apos;affilée<br/>
                   +5 si 100% sur 10 questions
                 </p>
               </div>
@@ -539,7 +540,7 @@ export default function QuizPage() {
                 <span className="text-xl font-bold text-white">Pétanque Pro</span>
               </div>
               <p className="text-sm">
-                L'application de référence pour organiser vos tournois de pétanque.
+                L&apos;application de référence pour organiser vos tournois de pétanque.
               </p>
             </div>
             
@@ -556,7 +557,7 @@ export default function QuizPage() {
             <div>
               <h4 className="text-white font-semibold mb-4">Support</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition">Guide d'utilisation</a></li>
+                <li><a href="#" className="hover:text-white transition">Guide d&apos;utilisation</a></li>
                 <li><a href="#" className="hover:text-white transition">FAQ</a></li>
                 <li><a href="#" className="hover:text-white transition">Contact</a></li>
                 <li><a href="#" className="hover:text-white transition">Communauté</a></li>
@@ -566,7 +567,7 @@ export default function QuizPage() {
             <div>
               <h4 className="text-white font-semibold mb-4">Légal</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition">Conditions d'utilisation</a></li>
+                <li><a href="#" className="hover:text-white transition">Conditions d&apos;utilisation</a></li>
                 <li><a href="#" className="hover:text-white transition">Confidentialité</a></li>
                 <li><a href="#" className="hover:text-white transition">Cookies</a></li>
                 <li><a href="#" className="hover:text-white transition">RGPD</a></li>

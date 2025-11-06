@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey)
 interface Organization {
   id: string
   name: string
-  settings: any
+  settings: Record<string, unknown>
   created_at: string
   updated_at: string
   created_by?: string
@@ -21,7 +21,7 @@ interface Organization {
 }
 
 interface AuthContextType {
-  user: any
+  user: Record<string, unknown> | null
   organization: Organization | null
   loading: boolean
   signOut: () => Promise<void>
@@ -49,7 +49,7 @@ export const useAuth = () => useContext(AuthContext)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
   const [organization, setOrganization] = useState<Organization | null>(null)
 
@@ -61,20 +61,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log('🔄 Auth state changed:', _event, session?.user?.id)
       setUser(session?.user ?? null)
-      
+
       // Si connecté, charger l'organisation
       if (session?.user) {
         await loadUserOrganization(session.user)
       } else {
         setOrganization(null)
       }
-      
+
       setLoading(false)
     })
 
     return () => {
       listener?.subscription.unsubscribe()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -116,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const loadUserOrganization = async (user: any) => {
+  const loadUserOrganization = async (user: Record<string, unknown>) => {
     try {
       console.log('🏢 Chargement organisation pour user:', user.id)
       
