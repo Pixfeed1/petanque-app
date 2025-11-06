@@ -133,8 +133,8 @@ export default function TournamentList({ tournois, loading, onCreateNew }: Tourn
         {filteredTournois.length > 0 ? (
           filteredTournois.map((tournoi) => {
             const statusConfig = getStatusConfig(tournoi.status)
-            const progress = tournoi.nb_matchs_total > 0
-              ? (tournoi.nb_matchs_joues / tournoi.nb_matchs_total) * 100
+            const progress = (tournoi.nb_matchs_total || 0) > 0
+              ? ((tournoi.nb_matchs_joues || 0) / (tournoi.nb_matchs_total || 1)) * 100
               : 0
 
             return (
@@ -182,7 +182,7 @@ export default function TournamentList({ tournois, loading, onCreateNew }: Tourn
                     </div>
 
                     {/* Barre de progression */}
-                    {tournoi.nb_matchs_total > 0 && (
+                    {(tournoi.nb_matchs_total || 0) > 0 && (
                       <div className="flex items-center gap-3">
                         <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                           <div
