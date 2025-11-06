@@ -189,7 +189,7 @@ export default function Dashboard() {
     })
 
     // Trier par priorité : high > medium > low
-    const priorityOrder = { high: 0, medium: 1, low: 2 }
+    const priorityOrder: Record<'high' | 'medium' | 'low', number> = { high: 0, medium: 1, low: 2 }
     actions.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
 
     setActionItems(actions)
