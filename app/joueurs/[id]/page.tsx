@@ -158,8 +158,8 @@ export default function PlayersManagementPage() {
           total: playersData.length,
           hommes: playersData.filter(p => p.gender === 'H').length,
           femmes: playersData.filter(p => p.gender === 'F').length,
-          actifs: playersData.filter(p => 
-            p.equipes_joueurs?.some((ej>: Record<string, unknown>) => 
+          actifs: playersData.filter(p =>
+            p.equipes_joueurs?.some((ej: Record<string, unknown>) =>
               ej.equipe?.tournoi?.status === 'en_cours'
             )
           ).length

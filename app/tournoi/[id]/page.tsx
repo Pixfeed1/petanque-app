@@ -147,7 +147,7 @@ interface Tournament {
 interface Team {
   id: string
   name: string
-  equipes_joueurs?>: Record<string, unknown>[]
+  equipes_joueurs?: Record<string, unknown>[]
 }
 
 interface Match {
