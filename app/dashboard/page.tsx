@@ -10,7 +10,7 @@ import { loadStripe } from '@stripe/stripe-js'
 
 // Import des composants
 import DashboardHeader from './components/DashboardHeader'
-import ActionCenter from './components/ActionCenter'
+import ActionCenter, { ActionItem } from './components/ActionCenter'
 import ActiveTournaments from './components/ActiveTournaments'
 import { useDashboardData } from './hooks/useDashboardData'
 
@@ -66,7 +66,7 @@ export default function Dashboard() {
   const [userPlan, setUserPlan] = useState('free')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [processingPayment, setProcessingPayment] = useState(false)
-  const [actionItems, setActionItems] = useState<any[]>([])
+  const [actionItems, setActionItems] = useState<ActionItem[]>([])
 
   // États pour recherche et filtres
   const [searchQuery, setSearchQuery] = useState('')
@@ -106,7 +106,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!tournois.length) return
 
-    const actions: any[] = []
+    const actions: ActionItem[] = []
     const now = new Date()
 
     tournois.forEach(tournoi => {
