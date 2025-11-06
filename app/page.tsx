@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Footer from './components/footer'
+import Footer from './components/Footer'
 
 // Icônes personnalisées professionnelles
 const Icons = {

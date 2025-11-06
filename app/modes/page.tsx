@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Footer from '../components/footer'
+import Footer from '../components/Footer'
 
 // Types
 type ModeType = 'choisi' | 'melee-fixe' | 'melee-tournante'
