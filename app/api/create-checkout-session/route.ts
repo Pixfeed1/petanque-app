@@ -19,10 +19,11 @@ export async function POST(request: NextRequest) {
  try {
    // Récupérer les données de la requête
    const body = await request.json()
-   const { 
-     priceId, 
-     userId, 
+   const {
+     priceId,
+     userId,
      userEmail,
+     // eslint-disable-next-line @typescript-eslint/no-unused-vars
      mode = 'payment' // Achat unique par défaut
    } = body
 
@@ -182,7 +183,7 @@ export async function POST(request: NextRequest) {
      url: session.url
    })
 
- } catch (error: any) {
+ } catch (error: unknown) {
    console.error('Erreur création session Stripe:', error)
    
    // Gestion des erreurs spécifiques Stripe
@@ -269,7 +270,7 @@ export async function GET(request: NextRequest) {
      message: 'Paiement en attente ou échoué'
    })
 
- } catch (error: any) {
+ } catch (error: unknown) {
    console.error('Erreur vérification paiement:', error)
    return NextResponse.json(
      { error: 'Erreur lors de la vérification du paiement' },

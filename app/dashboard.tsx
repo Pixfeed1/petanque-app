@@ -5,14 +5,15 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null)
-  const [tournois, setTournois] = useState<any[]>([])
+  const [user, setUser] = useState<Record<string, unknown> | null>(null)
+  const [tournois, setTournois] = useState<Record<string, unknown>[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
     checkUser()
     loadTournois()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const checkUser = async () => {
@@ -25,7 +26,7 @@ export default function DashboardPage() {
   }
 
   const loadTournois = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('tournois')
       .select('*')
       .order('created_at', { ascending: false })

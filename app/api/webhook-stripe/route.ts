@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
        signature,
        webhookSecret
      )
-   } catch (err: any) {
+   } catch (err: unknown) {
      console.error('Webhook: Erreur signature:', err.message)
      return NextResponse.json(
        { error: `Webhook Error: ${err.message}` },
@@ -267,7 +267,7 @@ export async function POST(request: NextRequest) {
      processed: new Date().toISOString()
    })
 
- } catch (error: any) {
+ } catch (error: unknown) {
    console.error('Erreur webhook:', error)
    
    // Retourner 200 même en cas d'erreur pour éviter les retries
