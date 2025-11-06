@@ -103,10 +103,10 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-amber-50 pb-20 lg:pb-0">
       {/* Header simple */}
       <header className="bg-white/80 backdrop-blur sticky top-0 z-40 px-4 py-4 shadow-sm">
-        <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-700">Bonjour {user?.full_name?.split(' ')[0] || 'Organisateur'}</p>
             <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
@@ -120,46 +120,48 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Stats rapides - Horizontal scroll */}
-      <div className="px-4 py-4">
-        <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
-          <StatCard icon={Icons.target} label="Aujourd'hui" value={`${todayMatches} matchs`} color="from-green-400 to-emerald-500" />
-          <StatCard icon={Icons.users} label="Joueurs" value={stats.totalJoueurs} color="from-blue-400 to-indigo-500" />
-          <StatCard icon={Icons.chart} label="En cours" value={activeTournaments.length} color="from-purple-400 to-pink-500" />
-          <StatCard icon={Icons.check} label="Terminés" value={finishedTournaments} color="from-amber-400 to-orange-500" />
+      {/* Contenu centré sur desktop */}
+      <div className="max-w-7xl mx-auto">
+        {/* Stats rapides - Horizontal scroll */}
+        <div className="px-4 py-4">
+          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory lg:justify-center">
+            <StatCard icon={Icons.target} label="Aujourd'hui" value={`${todayMatches} matchs`} color="from-green-500 to-emerald-600" />
+            <StatCard icon={Icons.users} label="Joueurs" value={stats.totalJoueurs} color="from-green-400 to-green-500" />
+            <StatCard icon={Icons.chart} label="En cours" value={activeTournaments.length} color="from-emerald-500 to-teal-600" />
+            <StatCard icon={Icons.check} label="Terminés" value={finishedTournaments} color="from-amber-500 to-orange-600" />
+          </div>
         </div>
-      </div>
 
-      {/* Tabs simples */}
-      <div className="px-4 mb-4">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setActiveTab('active')}
-            className={`flex-1 py-3 px-4 rounded-xl font-medium transition ${
-              activeTab === 'active'
-                ? 'bg-green-600 text-white shadow-lg'
-                : 'bg-white text-gray-700'
-            }`}
-            aria-label={`Tournois actifs (${activeTournaments.length})`}
-          >
-            Actifs ({activeTournaments.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('actions')}
-            className={`flex-1 py-3 px-4 rounded-xl font-medium transition ${
-              activeTab === 'actions'
-                ? 'bg-green-600 text-white shadow-lg'
-                : 'bg-white text-gray-700'
-            }`}
-            aria-label="Actions rapides"
-          >
-            Actions rapides
-          </button>
+        {/* Tabs simples */}
+        <div className="px-4 mb-4">
+          <div className="flex gap-2 max-w-2xl mx-auto">
+            <button
+              onClick={() => setActiveTab('active')}
+              className={`flex-1 py-3 px-4 rounded-xl font-medium transition ${
+                activeTab === 'active'
+                  ? 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg'
+                  : 'bg-white text-gray-700'
+              }`}
+              aria-label={`Tournois actifs (${activeTournaments.length})`}
+            >
+              Actifs ({activeTournaments.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('actions')}
+              className={`flex-1 py-3 px-4 rounded-xl font-medium transition ${
+                activeTab === 'actions'
+                  ? 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg'
+                  : 'bg-white text-gray-700'
+              }`}
+              aria-label="Actions rapides"
+            >
+              Actions rapides
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Contenu principal */}
-      <main className="px-4">
+        {/* Contenu principal */}
+        <main className="px-4 max-w-2xl mx-auto">
         {activeTab === 'active' ? (
           <div className="space-y-3">
             {activeTournaments.length > 0 ? (
@@ -199,9 +201,10 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+      </div>
 
-      {/* Bottom Navigation Mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200" role="navigation" aria-label="Navigation principale">
+      {/* Bottom Navigation Mobile - cachée sur desktop */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200" role="navigation" aria-label="Navigation principale">
         <div className="flex justify-around py-2">
           <NavButton
             icon={Icons.home}
