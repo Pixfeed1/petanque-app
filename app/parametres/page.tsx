@@ -171,19 +171,31 @@ export default function Parametres() {
 
     setLoading(true)
     try {
-      // Note: La suppression de compte nécessite une API dédiée
-      // Pour l'instant, nous informons l'utilisateur de contacter le support
+      const response = await fetch('/api/account/delete', {
+        method: 'POST',
+        credentials: 'include'
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Erreur lors de la suppression')
+      }
+
+      const data = await response.json()
+
+      // Afficher un message de confirmation
       alert(
-        `Pour supprimer votre compte, veuillez contacter le support à support@petanquepro.fr\n\n` +
-        `Email du compte: ${user?.email}\n` +
-        `${isPremium ? 'Statut Premium: Oui (sera conservé avec votre email)' : 'Statut Premium: Non'}`
+        `✅ Votre compte a été fermé avec succès.\n\n` +
+        `Vos données seront supprimées le ${new Date(data.deletion_date).toLocaleDateString('fr-FR')}.\n\n` +
+        `${isPremium ? '💎 Votre statut Premium est conservé avec votre email (' + user?.email + ').\n\n' : ''}` +
+        `💡 Vous pouvez annuler cette suppression en vous reconnectant dans les 30 prochains jours.`
       )
 
-      setShowDeleteModal(false)
-      setDeleteConfirmation('')
+      // Rediriger vers la page d'accueil
+      router.push('/')
     } catch (error) {
       console.error('Erreur suppression:', error)
-      alert('Erreur lors de la suppression du compte')
+      alert('Erreur lors de la suppression du compte : ' + (error instanceof Error ? error.message : 'Erreur inconnue'))
     } finally {
       setLoading(false)
     }
