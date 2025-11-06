@@ -94,6 +94,11 @@ export default function ActiveTournaments({ tournois, loading }: ActiveTournamen
         const isEnCours = tournoi.status === 'en_cours'
         const matchsRestants = (tournoi.nb_matchs_total || 0) - (tournoi.nb_matchs_joues || 0)
 
+        // Détection des badges discrets
+        const hasOddPlayers = tournoi.status === 'preparation' && tournoi.nb_joueurs && tournoi.nb_joueurs % 2 !== 0
+        const isReady = tournoi.status === 'preparation' && tournoi.nb_joueurs && tournoi.nb_joueurs % 2 === 0 && tournoi.nb_joueurs >= 4
+        const notEnoughPlayers = tournoi.status === 'preparation' && (!tournoi.nb_joueurs || tournoi.nb_joueurs < 4)
+
         return (
           <div
             key={tournoi.id}
@@ -105,6 +110,8 @@ export default function ActiveTournaments({ tournois, loading }: ActiveTournamen
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-xl font-semibold text-gray-900">{tournoi.name}</h3>
+
+                    {/* Badge statut */}
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                       isEnCours
                         ? 'bg-green-100 text-green-800'
@@ -112,6 +119,26 @@ export default function ActiveTournaments({ tournois, loading }: ActiveTournamen
                     }`}>
                       {isEnCours ? 'En cours' : 'Préparation'}
                     </span>
+
+                    {/* Badges discrets pour alertes */}
+                    {hasOddPlayers && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
+                        Nombre impair
+                      </span>
+                    )}
+                    {isReady && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                        Prêt
+                      </span>
+                    )}
+                    {notEnoughPlayers && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                        <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
+                        {tournoi.nb_joueurs || 0}/4 min
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm text-gray-600">
                     {tournoi.format} • {tournoi.mode.replace('_', ' ')}

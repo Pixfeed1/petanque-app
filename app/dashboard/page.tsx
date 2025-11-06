@@ -10,7 +10,6 @@ import { loadStripe } from '@stripe/stripe-js'
 
 // Import des composants
 import DashboardHeader from './components/DashboardHeader'
-import ActionCenter, { ActionItem } from './components/ActionCenter'
 import ActiveTournaments from './components/ActiveTournaments'
 import { useDashboardData } from './hooks/useDashboardData'
 
@@ -66,7 +65,6 @@ export default function Dashboard() {
   const [userPlan, setUserPlan] = useState('free')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [processingPayment, setProcessingPayment] = useState(false)
-  const [actionItems, setActionItems] = useState<any[]>([])
 
   // États pour recherche et filtres
   const [searchQuery, setSearchQuery] = useState('')
@@ -101,108 +99,6 @@ export default function Dashboard() {
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [router])
-
-  // Générer les actions requises - INTELLIGENT
-  useEffect(() => {
-    if (!tournois.length) return
-
-    const actions: ActionItem[] = []
-    const now = new Date()
-
-    tournois.forEach(tournoi => {
-      // 1. Tournois avec nombre de joueurs impair (impossible de faire des équipes)
-      if (tournoi.status === 'preparation' && tournoi.nb_joueurs && tournoi.nb_joueurs % 2 !== 0) {
-        actions.push({
-          id: `odd-players-${tournoi.id}`,
-          type: 'tournament_delayed',
-          priority: 'high',
-          title: 'Nombre de joueurs impair',
-          description: tournoi.name,
-          actionLabel: 'Corriger',
-          actionUrl: `/tournoi/${tournoi.id}`,
-          meta: `${tournoi.nb_joueurs} joueurs (impossible de créer des équipes)`
-        })
-      }
-
-      // 2. Tournois prêts à démarrer (avec joueurs pairs)
-      if (tournoi.status === 'preparation' && tournoi.nb_joueurs && tournoi.nb_joueurs % 2 === 0 && tournoi.nb_joueurs >= 4) {
-        actions.push({
-          id: `start-${tournoi.id}`,
-          type: 'tournament_ready',
-          priority: 'high',
-          title: 'Tournoi prêt à démarrer',
-          description: tournoi.name,
-          actionLabel: 'Démarrer',
-          actionUrl: `/tournoi/${tournoi.id}`,
-          meta: `${tournoi.nb_joueurs} joueurs inscrits`
-        })
-      }
-
-      // 3. Tournois en préparation avec trop peu de joueurs
-      if (tournoi.status === 'preparation' && (!tournoi.nb_joueurs || tournoi.nb_joueurs < 4)) {
-        actions.push({
-          id: `low-players-${tournoi.id}`,
-          type: 'tournament_delayed',
-          priority: 'medium',
-          title: 'Pas assez de joueurs',
-          description: tournoi.name,
-          actionLabel: 'Ajouter',
-          actionUrl: `/tournoi/${tournoi.id}`,
-          meta: `${tournoi.nb_joueurs || 0} joueurs (minimum 4 requis)`
-        })
-      }
-
-      // 4. Tournois en cours avec matchs restants
-      if (tournoi.status === 'en_cours') {
-        const restants = (tournoi.nb_matchs_total || 0) - (tournoi.nb_matchs_joues || 0)
-        if (restants > 0) {
-          actions.push({
-            id: `manage-${tournoi.id}`,
-            type: 'match_pending',
-            priority: 'medium',
-            title: 'Matchs en attente',
-            description: tournoi.name,
-            actionLabel: 'Gérer',
-            actionUrl: `/tournoi/${tournoi.id}`,
-            meta: `${restants} match${restants > 1 ? 's' : ''} restant${restants > 1 ? 's' : ''}`
-          })
-        }
-      }
-
-      // 5. Tournois terminés depuis >24h (à clôturer)
-      if (tournoi.status === 'termine') {
-        const createdAt = new Date(tournoi.created_at)
-        const hoursSinceEnd = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60)
-        if (hoursSinceEnd > 24) {
-          actions.push({
-            id: `close-${tournoi.id}`,
-            type: 'tournament_delayed',
-            priority: 'low',
-            title: 'Tournoi à clôturer',
-            description: tournoi.name,
-            actionLabel: 'Voir résultats',
-            actionUrl: `/tournoi/${tournoi.id}/podium`,
-            meta: `Terminé il y a ${Math.floor(hoursSinceEnd)}h`
-          })
-        }
-      }
-    })
-
-    // Trier par priorité : high > medium > low
-    const priorityOrder: Record<'high' | 'medium' | 'low', number> = { high: 0, medium: 1, low: 2 }
-    actions.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
-
-    setActionItems(actions)
-  }, [tournois])
-
-  // Générer les actions rapides pour les notifications header
-  const pendingActionsForHeader = actionItems.map(action => ({
-    type: action.type,
-    icon: Icons.plus,
-    title: action.title,
-    description: action.description,
-    action: () => router.push(action.actionUrl)
-  }))
 
   // Filtrer les tournois selon recherche et statut
   const filteredTournois = tournois.filter(tournoi => {
@@ -272,8 +168,6 @@ export default function Dashboard() {
       <DashboardHeader
         user={user}
         organization={organization}
-        pendingActionsCount={actionItems.length}
-        pendingActions={pendingActionsForHeader}
         userPlan={userPlan}
         onLogout={handleLogout}
         onOpenUpgrade={() => setShowUpgradeModal(true)}
@@ -281,11 +175,6 @@ export default function Dashboard() {
 
       {/* Contenu principal */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Action Center - priorité #1 */}
-        <div className="mb-8">
-          <ActionCenter actions={actionItems} loading={loading} />
-        </div>
-
         {/* Layout 2 colonnes */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Tournois actifs - 2/3 */}
