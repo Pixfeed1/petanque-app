@@ -22,8 +22,12 @@ export const metadata: Metadata = {
     siteName: "Pétanque Pro",
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-icon.png",
+    icon: [
+      { url: "/logo.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico" }
+    ],
+    apple: "/logo.svg",
+    shortcut: "/logo.svg",
   },
   // viewport a été retiré d'ici
 }
