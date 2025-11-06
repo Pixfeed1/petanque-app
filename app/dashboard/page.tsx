@@ -195,12 +195,12 @@ export default function Dashboard() {
             <div className="grid grid-cols-3 gap-4 mt-8">
               <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
                 <p className="text-green-100 text-sm mb-1">Cette semaine</p>
-                <p className="text-2xl font-bold text-white">{stats.growth.matchs}</p>
+                <p className="text-2xl font-bold text-white">{stats.nouveauxMatchs}</p>
                 <p className="text-green-50 text-xs mt-1">matchs joués</p>
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
                 <p className="text-green-100 text-sm mb-1">Nouveaux</p>
-                <p className="text-2xl font-bold text-white">+{stats.growth.joueurs}</p>
+                <p className="text-2xl font-bold text-white">+{stats.nouveauxJoueurs}</p>
                 <p className="text-green-50 text-xs mt-1">joueurs</p>
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
