@@ -106,17 +106,32 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-amber-50 pb-20 lg:pb-0">
       {/* Header simple */}
       <header className="bg-white/80 backdrop-blur sticky top-0 z-40 px-4 py-4 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-700">Bonjour {user?.full_name?.split(' ')[0] || 'Organisateur'}</p>
-            <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="text-green-600">
-              {Icons.trophy}
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-sm text-gray-700">Bonjour {user?.full_name?.split(' ')[0] || 'Organisateur'}</p>
+              <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
             </div>
-            <span className="text-sm font-semibold text-gray-900">{stats.totalTournois}</span>
+            <div className="flex items-center gap-2">
+              <div className="text-green-600">
+                {Icons.trophy}
+              </div>
+              <span className="text-sm font-semibold text-gray-900">{stats.totalTournois}</span>
+            </div>
           </div>
+
+          {/* Live bar */}
+          {activeTournaments.length > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-green-700">
+                {activeTournaments.length} tournoi{activeTournaments.length > 1 ? 's' : ''} en cours
+              </span>
+              {todayMatches > 0 && (
+                <span className="text-xs text-green-600">• {todayMatches} matchs aujourd'hui</span>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
@@ -313,17 +328,22 @@ function TournamentCard({ tournament, onClick }: any) {
     ? Math.round((tournament.nb_matchs_joues / tournament.nb_matchs_total) * 100)
     : 0
 
+  // Détections pour badges
+  const hasOddPlayers = tournament.status === 'preparation' && tournament.nb_joueurs && tournament.nb_joueurs % 2 !== 0
+  const isReady = tournament.status === 'preparation' && tournament.nb_joueurs && tournament.nb_joueurs >= 4 && tournament.nb_joueurs % 2 === 0
+  const notEnoughPlayers = tournament.status === 'preparation' && (!tournament.nb_joueurs || tournament.nb_joueurs < 4)
+
   return (
     <div
       onClick={onClick}
-      className="bg-white rounded-2xl p-4 shadow-md active:scale-95 transition cursor-pointer"
+      className="bg-white rounded-2xl p-4 shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer animate-in fade-in slide-in-from-bottom-2 duration-300"
       role="button"
       tabIndex={0}
       aria-label={`Voir le tournoi ${tournament.name}`}
       onKeyDown={(e) => e.key === 'Enter' && onClick()}
     >
       <div className="flex items-center justify-between mb-3">
-        <div>
+        <div className="flex-1">
           <h3 className="font-bold text-gray-900">{tournament.name}</h3>
           <p className="text-sm text-gray-700">{tournament.format} • {tournament.nb_joueurs || 0} joueurs</p>
         </div>
@@ -332,10 +352,32 @@ function TournamentCard({ tournament, onClick }: any) {
         )}
       </div>
 
+      {/* Badges d'alerte */}
+      {tournament.status === 'preparation' && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {hasOddPlayers && (
+            <span className="inline-flex items-center gap-1 text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-semibold animate-pulse">
+              ⚠️ Nombre impair
+            </span>
+          )}
+          {isReady && (
+            <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
+              ✅ Prêt à démarrer
+            </span>
+          )}
+          {notEnoughPlayers && (
+            <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-semibold">
+              👥 Manque de joueurs
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Progress bar pour tournois en cours */}
       {tournament.status === 'en_cours' && (
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
           <div
-            className="bg-gradient-to-r from-green-400 to-emerald-500 h-2 rounded-full transition-all"
+            className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
             role="progressbar"
             aria-valuenow={progress}
@@ -346,16 +388,23 @@ function TournamentCard({ tournament, onClick }: any) {
         </div>
       )}
 
-      {tournament.status === 'preparation' && (
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-amber-600 font-medium">En préparation</span>
-          {tournament.nb_joueurs && tournament.nb_joueurs % 2 !== 0 && (
-            <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-semibold">
-              Nombre impair!
-            </span>
-          )}
-        </div>
-      )}
+      {/* Status */}
+      <div className="flex items-center justify-between text-sm">
+        <span className={`font-medium ${
+          tournament.status === 'en_cours' ? 'text-green-600' :
+          tournament.status === 'preparation' ? 'text-amber-600' :
+          'text-gray-600'
+        }`}>
+          {tournament.status === 'en_cours' && '🎯 En cours'}
+          {tournament.status === 'preparation' && '⏳ En préparation'}
+          {tournament.status === 'termine' && '✅ Terminé'}
+        </span>
+        {tournament.status === 'en_cours' && tournament.nb_matchs_total > 0 && (
+          <span className="text-gray-600">
+            {tournament.nb_matchs_joues || 0}/{tournament.nb_matchs_total} matchs
+          </span>
+        )}
+      </div>
     </div>
   )
 }
