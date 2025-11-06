@@ -72,7 +72,7 @@ const Icons = {
 interface Team {
  id: string
  name: string
- players?: any[]
+ players?>: Record<string, unknown>[]
 }
 
 interface PodiumTeam {
@@ -266,7 +266,7 @@ export default function PodiumPage() {
      return Math.random() * (max - min) + min
    }
 
-   const interval: any = setInterval(function() {
+   const interval>: Record<string, unknown> = setInterval(function() {
      const timeLeft = animationEnd - Date.now()
 
      if (timeLeft <= 0) {
@@ -664,7 +664,7 @@ export default function PodiumPage() {
                <h4 className="text-xl font-bold text-gray-900 mb-2">{podium[1]?.team.name}</h4>
                
                <div className="space-y-2 mb-4">
-                 {podium[1]?.team.equipes_joueurs?.map((ej: any, i: number) => (
+                 {podium[1]?.team.equipes_joueurs?.map((ej>: Record<string, unknown>, i: number) => (
                    <p key={i} className="text-sm text-gray-700">
                      {ej.joueur?.name}
                    </p>
@@ -718,7 +718,7 @@ export default function PodiumPage() {
                <h4 className="text-2xl font-bold text-gray-900 mb-3">{podium[0]?.team.name}</h4>
                
                <div className="space-y-2 mb-4">
-                 {podium[0]?.team.equipes_joueurs?.map((ej: any, i: number) => (
+                 {podium[0]?.team.equipes_joueurs?.map((ej>: Record<string, unknown>, i: number) => (
                    <p key={i} className="text-sm font-medium text-gray-800">
                      ⭐ {ej.joueur?.name}
                    </p>
@@ -771,7 +771,7 @@ export default function PodiumPage() {
                {podium[2] && (
                  <>
                    <div className="space-y-2 mb-4">
-                     {podium[2]?.team.equipes_joueurs?.map((ej: any, i: number) => (
+                     {podium[2]?.team.equipes_joueurs?.map((ej>: Record<string, unknown>, i: number) => (
                        <p key={i} className="text-sm text-gray-700">
                          {ej.joueur?.name}
                        </p>

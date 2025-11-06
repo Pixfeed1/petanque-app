@@ -197,7 +197,7 @@ export default function MatchScorePage() {
     }
   }
 
-  const finishMatch = async (finalScoreA: number, finalScoreB: number, allManches: any[]) => {
+  const finishMatch = async (finalScoreA: number, finalScoreB: number, allManches>: Record<string, unknown>[]) => {
     setSaving(true)
     try {
       const { error } = await supabase
@@ -225,10 +225,10 @@ export default function MatchScorePage() {
     }
   }
 
-  const saveProgress = async (finalScoreA: number, finalScoreB: number, allManches: any[], isFinished: boolean) => {
+  const saveProgress = async (finalScoreA: number, finalScoreB: number, allManches>: Record<string, unknown>[], isFinished: boolean) => {
     setSaving(true)
     try {
-      const updateData: any = {
+      const updateData>: Record<string, unknown> = {
         score_a: finalScoreA,
         score_b: finalScoreB,
         manches_json: allManches,

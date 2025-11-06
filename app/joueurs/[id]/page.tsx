@@ -159,7 +159,7 @@ export default function PlayersManagementPage() {
           hommes: playersData.filter(p => p.gender === 'H').length,
           femmes: playersData.filter(p => p.gender === 'F').length,
           actifs: playersData.filter(p => 
-            p.equipes_joueurs?.some((ej: any) => 
+            p.equipes_joueurs?.some((ej>: Record<string, unknown>) => 
               ej.equipe?.tournoi?.status === 'en_cours'
             )
           ).length
@@ -263,7 +263,7 @@ export default function PlayersManagementPage() {
     a.click()
   }
 
-  const openModal = (player?: any) => {
+  const openModal = (player?>: Record<string, unknown>) => {
     if (player) {
       setEditingPlayer(player)
       setFormData({
@@ -571,7 +571,7 @@ export default function PlayersManagementPage() {
 
                     <div className="flex items-center space-x-3">
                       {/* Tournois actifs */}
-                      {player.equipes_joueurs?.some((ej: any) => ej.equipe?.tournoi?.status === 'en_cours') && (
+                      {player.equipes_joueurs?.some((ej>: Record<string, unknown>) => ej.equipe?.tournoi?.status === 'en_cours') && (
                         <div className="flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
                           {Icons.trophy}
                           <span className="ml-1">Actif</span>

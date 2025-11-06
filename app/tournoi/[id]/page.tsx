@@ -147,7 +147,7 @@ interface Tournament {
 interface Team {
   id: string
   name: string
-  equipes_joueurs?: any[]
+  equipes_joueurs?>: Record<string, unknown>[]
 }
 
 interface Match {
@@ -1016,7 +1016,7 @@ export default function TournamentDetailPage() {
                           onClick={() => {/* Ouvrir modal édition équipe */}}
                           className="mt-4 w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all text-sm font-medium"
                         >
-                          Modifier l'équipe
+                          Modifier l&apos;équipe
                         </button>
                       )}
                     </div>

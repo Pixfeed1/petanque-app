@@ -66,7 +66,7 @@ const Icons = {
 interface Team {
  id: string
  name: string
- players?: any[]
+ players?>: Record<string, unknown>[]
 }
 
 interface Match {

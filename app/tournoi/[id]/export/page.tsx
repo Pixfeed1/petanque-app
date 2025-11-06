@@ -110,7 +110,7 @@ interface Tournament {
 interface Team {
  id: string
  name: string
- players: any[]
+ players>: Record<string, unknown>[]
 }
 
 interface Match {
@@ -188,7 +188,7 @@ export default function ExportTournamentPage() {
        // Extraire tous les joueurs uniques
        const allPlayers = new Set<Player>()
        teamsData?.forEach(team => {
-         team.equipes_joueurs?.forEach((ej: any) => {
+         team.equipes_joueurs?.forEach((ej>: Record<string, unknown>) => {
            if (ej.joueur) {
              allPlayers.add(ej.joueur)
            }
@@ -291,7 +291,7 @@ export default function ExportTournamentPage() {
 
    matches.filter(m => m.status === 'termine').forEach(match => {
      // Joueurs équipe A
-     match.equipe_a?.equipes_joueurs?.forEach((ej: any) => {
+     match.equipe_a?.equipes_joueurs?.forEach((ej>: Record<string, unknown>) => {
        const player = ej.joueur
        if (!player) return
 
@@ -317,7 +317,7 @@ export default function ExportTournamentPage() {
      })
 
      // Joueurs équipe B
-     match.equipe_b?.equipes_joueurs?.forEach((ej: any) => {
+     match.equipe_b?.equipes_joueurs?.forEach((ej>: Record<string, unknown>) => {
        const player = ej.joueur
        if (!player) return
 
@@ -445,7 +445,7 @@ export default function ExportTournamentPage() {
 
          pdf.setFontSize(10)
          pdf.setFont('helvetica', 'normal')
-         team.players?.forEach((player: any) => {
+         team.players?.forEach((player>: Record<string, unknown>) => {
            const role = player.role === 'capitaine' ? ' (C)' : ''
            const gender = player.joueur?.gender === 'H' ? '♂' : '♀'
            pdf.text(`   ${gender} ${player.joueur?.name}${role}`, 25, yPosition)
@@ -726,7 +726,7 @@ export default function ExportTournamentPage() {
        const teamsData = [
          ['Équipe', 'Joueur', 'Genre', 'Rôle'],
          ...teams.flatMap(team => 
-           team.players?.map((p: any) => [
+           team.players?.map((p>: Record<string, unknown>) => [
              team.name,
              p.joueur?.name,
              p.joueur?.gender === 'H' ? 'Homme' : 'Femme',
