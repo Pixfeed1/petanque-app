@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
 import { loadStripe } from '@stripe/stripe-js'
@@ -78,11 +78,12 @@ export default function Dashboard() {
     }
   }, [organization])
 
-  // Raccourcis clavier
+  // Raccourcis clavier (desktop uniquement)
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // Ignorer si focus dans un input
-      if ((e.target as HTMLElement).tagName === 'INPUT') return
+      // Ignorer si focus dans un input ou textarea
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
 
       switch(e.key.toLowerCase()) {
         case 'n':
@@ -160,11 +161,11 @@ export default function Dashboard() {
             id: `manage-${tournoi.id}`,
             type: 'match_pending',
             priority: 'medium',
-            title: 'Matchs en attente',
+            title: `${restants} match${restants > 1 ? 's' : ''} à arbitrer`,
             description: tournoi.name,
             actionLabel: 'Gérer',
             actionUrl: `/tournoi/${tournoi.id}`,
-            meta: `${restants} match${restants > 1 ? 's' : ''} restant${restants > 1 ? 's' : ''}`
+            meta: `${tournoi.nb_matchs_joues || 0}/${tournoi.nb_matchs_total || 0} joués`
           })
         }
       }
@@ -204,18 +205,29 @@ export default function Dashboard() {
     action: () => router.push(action.actionUrl)
   }))
 
+  // Calculer les compteurs une seule fois (performance)
+  const counts = useMemo(() => ({
+    all: tournois.length,
+    preparation: tournois.filter(t => t.status === 'preparation').length,
+    en_cours: tournois.filter(t => t.status === 'en_cours').length,
+    termine: tournois.filter(t => t.status === 'termine').length
+  }), [tournois])
+
   // Filtrer les tournois selon recherche et statut
-  const filteredTournois = tournois.filter(tournoi => {
-    // Filtre de recherche
-    const matchesSearch = searchQuery === '' ||
-      tournoi.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tournoi.format.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredTournois = useMemo(() => {
+    return tournois.filter(tournoi => {
+      // Filtre de recherche (avec null checks)
+      const matchesSearch = searchQuery === '' ||
+        tournoi.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tournoi.format?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        false
 
-    // Filtre de statut
-    const matchesStatus = statusFilter === 'all' || tournoi.status === statusFilter
+      // Filtre de statut
+      const matchesStatus = statusFilter === 'all' || tournoi.status === statusFilter
 
-    return matchesSearch && matchesStatus
-  })
+      return matchesSearch && matchesStatus
+    })
+  }, [tournois, searchQuery, statusFilter])
 
   const handleLogout = async () => {
     await signOut()
@@ -295,11 +307,12 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">Tournois actifs</h2>
-                  <p className="text-gray-600 text-sm mt-1">
+                  <p className="text-gray-900 text-sm mt-1 font-medium">
                     {filteredTournois.length} tournoi{filteredTournois.length > 1 ? 's' : ''} trouvé{filteredTournois.length > 1 ? 's' : ''}
                   </p>
                 </div>
-                <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-lg">
+                {/* Raccourcis visibles uniquement sur desktop */}
+                <div className="hidden lg:block text-xs text-gray-700 bg-gray-100 px-3 py-1 rounded-lg">
                   Raccourcis: <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border">N</kbd> nouveau, <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border">J</kbd> joueurs, <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border">/</kbd> recherche
                 </div>
               </div>
@@ -307,7 +320,8 @@ export default function Dashboard() {
               {/* Barre de recherche */}
               <div className="flex gap-3 mb-4">
                 <div className="relative flex-1">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <label htmlFor="search-input" className="sr-only">Rechercher un tournoi</label>
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   <input
@@ -316,12 +330,14 @@ export default function Dashboard() {
                     placeholder="Rechercher un tournoi par nom ou format..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600"
+                    aria-label="Rechercher un tournoi par nom ou format"
                   />
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900 p-1"
+                      aria-label="Effacer la recherche"
                     >
                       {Icons.x}
                     </button>
@@ -329,8 +345,8 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Filtres de statut */}
-              <div className="flex gap-2">
+              {/* Filtres de statut - scroll horizontal sur mobile */}
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 snap-x snap-mandatory">
                 {(['all', 'preparation', 'en_cours', 'termine'] as const).map(status => {
                   const labels = {
                     all: 'Tous',
@@ -338,146 +354,166 @@ export default function Dashboard() {
                     en_cours: 'En cours',
                     termine: 'Terminés'
                   }
-                  const counts = {
-                    all: tournois.length,
-                    preparation: tournois.filter(t => t.status === 'preparation').length,
-                    en_cours: tournois.filter(t => t.status === 'en_cours').length,
-                    termine: tournois.filter(t => t.status === 'termine').length
-                  }
 
                   return (
                     <button
                       key={status}
                       onClick={() => setStatusFilter(status)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`flex-shrink-0 snap-start px-4 py-3 rounded-lg text-base font-semibold transition-colors min-h-[44px] ${
                         statusFilter === status
-                          ? 'bg-green-600 text-white'
-                          : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                          ? 'bg-green-600 text-white shadow-md'
+                          : 'bg-white text-gray-900 border-2 border-gray-300 hover:border-green-600'
                       }`}
+                      aria-label={`Filtrer par ${labels[status]}`}
                     >
-                      {labels[status]} <span className="text-xs opacity-75">({counts[status]})</span>
+                      {labels[status]} <span className="text-sm opacity-90 ml-1">({counts[status]})</span>
                     </button>
                   )
                 })}
               </div>
             </div>
-            <ActiveTournaments tournois={filteredTournois} loading={loading} />
+
+            {/* État vide si recherche sans résultats */}
+            {searchQuery && filteredTournois.length === 0 ? (
+              <div className="bg-white rounded-lg border-2 border-gray-200 p-8 text-center">
+                <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Aucun tournoi trouvé</h3>
+                <p className="text-gray-700 mb-4">
+                  Aucun résultat pour "{searchQuery}"
+                </p>
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors min-h-[44px]"
+                  aria-label="Effacer la recherche"
+                >
+                  Effacer la recherche
+                </button>
+              </div>
+            ) : (
+              <ActiveTournaments tournois={filteredTournois} loading={loading} />
+            )}
           </div>
 
           {/* Sidebar - 1/3 */}
           <div className="space-y-6">
             {/* Actions rapides */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Actions rapides</h3>
-              <div className="space-y-2">
+            <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
+              <h3 className="font-bold text-gray-900 mb-4 text-lg">Actions rapides</h3>
+              <div className="space-y-3">
                 <button
                   onClick={() => router.push('/tournoi/nouveau')}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
+                  className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 rounded-lg transition-colors border-2 border-gray-300 hover:border-green-600 min-h-[56px]"
+                  aria-label="Créer un nouveau tournoi"
                 >
                   {Icons.plus}
-                  <span className="font-medium text-gray-900">Nouveau tournoi</span>
+                  <span className="font-semibold text-gray-900 text-base">Nouveau tournoi</span>
                 </button>
                 <button
                   onClick={() => router.push('/joueurs')}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
+                  className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 rounded-lg transition-colors border-2 border-gray-300 hover:border-green-600 min-h-[56px]"
+                  aria-label="Gérer les joueurs"
                 >
                   {Icons.users}
-                  <span className="font-medium text-gray-900">Gérer les joueurs</span>
+                  <span className="font-semibold text-gray-900 text-base">Gérer les joueurs</span>
                 </button>
                 <button
                   onClick={() => router.push('/quiz')}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
+                  className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 rounded-lg transition-colors border-2 border-gray-300 hover:border-green-600 min-h-[56px]"
+                  aria-label="Faire le quiz pétanque"
                 >
                   {Icons.book}
-                  <span className="font-medium text-gray-900">Quiz pétanque</span>
+                  <span className="font-semibold text-gray-900 text-base">Quiz pétanque</span>
                 </button>
               </div>
             </div>
 
             {/* Stats essentielles avec tendances */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Statistiques</h3>
+            <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
+              <h3 className="font-bold text-gray-900 mb-4 text-lg">Statistiques</h3>
               <div className="space-y-4">
                 {/* Tournois */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600">Tournois totaux</span>
-                    <span className="text-2xl font-bold text-gray-900">{stats.totalTournois}</span>
+                    <span className="text-sm font-semibold text-gray-900">Tournois totaux</span>
+                    <span className="text-3xl font-bold text-gray-900">{stats.totalTournois}</span>
                   </div>
                   {stats.nouveauxTournois > 0 ? (
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="flex items-center gap-1.5 text-sm">
+                      <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                         <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
                       </svg>
-                      <span className="font-semibold text-green-600">+{stats.nouveauxTournois}</span>
-                      <span className="text-gray-500">ce mois</span>
+                      <span className="font-bold text-green-600">+{stats.nouveauxTournois}</span>
+                      <span className="text-gray-700">ces 30 derniers jours</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                         <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
                       </svg>
-                      <span>Aucun nouveau</span>
+                      <span className="font-medium">Aucun nouveau</span>
                     </div>
                   )}
-                  <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="mt-3 h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-green-500 to-emerald-600 rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min((stats.tournoiEnCours / stats.totalTournois) * 100, 100)}%` }}
+                      className="h-full bg-gradient-to-r from-green-600 to-emerald-600 rounded-full transition-all duration-500"
+                      style={{ width: `${stats.totalTournois > 0 ? Math.min((stats.tournoiEnCours / stats.totalTournois) * 100, 100) : 0}%` }}
+                      aria-label={`${stats.tournoiEnCours} tournois en cours sur ${stats.totalTournois}`}
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">{stats.tournoiEnCours} en cours</p>
+                  <p className="text-sm text-gray-700 mt-1 font-medium">{stats.tournoiEnCours} en cours</p>
                 </div>
 
                 {/* Joueurs */}
-                <div className="pt-4 border-t">
+                <div className="pt-4 border-t-2">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600">Joueurs actifs</span>
-                    <span className="text-2xl font-bold text-gray-900">{stats.totalJoueurs}</span>
+                    <span className="text-sm font-semibold text-gray-900">Joueurs actifs</span>
+                    <span className="text-3xl font-bold text-gray-900">{stats.totalJoueurs}</span>
                   </div>
                   {stats.nouveauxJoueurs > 0 ? (
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="flex items-center gap-1.5 text-sm">
+                      <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                         <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
                       </svg>
-                      <span className="font-semibold text-green-600">+{stats.nouveauxJoueurs}</span>
-                      <span className="text-gray-500">ce mois</span>
+                      <span className="font-bold text-green-600">+{stats.nouveauxJoueurs}</span>
+                      <span className="text-gray-700">ces 30 derniers jours</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                         <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
                       </svg>
-                      <span>Aucun nouveau</span>
+                      <span className="font-medium">Aucun nouveau</span>
                     </div>
                   )}
                 </div>
 
                 {/* Matchs */}
-                <div className="pt-4 border-t">
+                <div className="pt-4 border-t-2">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600">Matchs joués</span>
-                    <span className="text-2xl font-bold text-gray-900">{stats.totalMatchs}</span>
+                    <span className="text-sm font-semibold text-gray-900">Matchs joués</span>
+                    <span className="text-3xl font-bold text-gray-900">{stats.totalMatchs}</span>
                   </div>
                   {stats.nouveauxMatchs > 0 ? (
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="flex items-center gap-1.5 text-sm">
+                      <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                         <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
                       </svg>
-                      <span className="font-semibold text-green-600">+{stats.nouveauxMatchs}</span>
-                      <span className="text-gray-500">ce mois</span>
+                      <span className="font-bold text-green-600">+{stats.nouveauxMatchs}</span>
+                      <span className="text-gray-700">ces 30 derniers jours</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                         <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
                       </svg>
-                      <span>Aucun nouveau</span>
+                      <span className="font-medium">Aucun nouveau</span>
                     </div>
                   )}
-                  {stats.totalMatchs > 0 && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      Moyenne: {(stats.totalMatchs / Math.max(stats.totalTournois, 1)).toFixed(1)} matchs/tournoi
+                  {stats.totalMatchs > 0 && stats.totalTournois > 0 && (
+                    <p className="text-sm text-gray-700 mt-2 font-medium">
+                      Moyenne: {(stats.totalMatchs / stats.totalTournois).toFixed(1)} matchs/tournoi
                     </p>
                   )}
                 </div>
