@@ -1,5 +1,5 @@
 // app/dashboard/page.tsx
-// Dashboard professionnel optimisé pour organisateurs de tournois
+// Dashboard principal avec design clean et professionnel
 
 'use client'
 
@@ -10,8 +10,10 @@ import { loadStripe } from '@stripe/stripe-js'
 
 // Import des composants
 import DashboardHeader from './components/DashboardHeader'
-import ActionCenter from './components/ActionCenter'
-import ActiveTournaments from './components/ActiveTournaments'
+import StatsCards from './components/StatsCards'
+import QuickActions from './components/QuickActions'
+import TournamentList from './components/TournamentList'
+import RecentMatches from './components/RecentMatches'
 import { useDashboardData } from './hooks/useDashboardData'
 
 // Initialisation Stripe
@@ -19,7 +21,18 @@ const stripePromise = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_S
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
   : null
 
+// Icônes pour les actions en attente
 const Icons = {
+  edit: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+  ),
+  lightning: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
+  ),
   x: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -40,21 +53,6 @@ const Icons = {
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
     </svg>
-  ),
-  plus: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-    </svg>
-  ),
-  users: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  ),
-  book: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-    </svg>
   )
 }
 
@@ -66,7 +64,7 @@ export default function Dashboard() {
   const [userPlan, setUserPlan] = useState('free')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [processingPayment, setProcessingPayment] = useState(false)
-  const [actionItems, setActionItems] = useState<any[]>([])
+  const [pendingActions, setPendingActions] = useState<any[]>([])
 
   useEffect(() => {
     if (organization?.settings?.plan) {
@@ -74,54 +72,26 @@ export default function Dashboard() {
     }
   }, [organization])
 
-  // Générer les actions requises
+  // Calculer les actions en attente
   useEffect(() => {
     if (!tournois.length) return
 
     const actions: any[] = []
 
-    // Tournois à démarrer
-    tournois.filter(t => t.status === 'preparation').forEach(tournoi => {
+    // Tournois en préparation à démarrer
+    const tournoiToStart = tournois.filter(t => t.status === 'preparation')
+    tournoiToStart.forEach(tournoi => {
       actions.push({
-        id: `start-${tournoi.id}`,
-        type: 'tournament_ready',
-        priority: 'high',
-        title: 'Tournoi prêt à démarrer',
+        type: 'start_tournament',
+        icon: Icons.lightning,
+        title: 'Tournoi à démarrer',
         description: tournoi.name,
-        actionLabel: 'Démarrer',
-        actionUrl: `/tournoi/${tournoi.id}`,
-        meta: `${tournoi.nb_joueurs || 0} joueurs inscrits`
+        action: () => router.push(`/tournoi/${tournoi.id}`)
       })
     })
 
-    // Tournois en cours avec matchs restants
-    tournois.filter(t => t.status === 'en_cours').forEach(tournoi => {
-      const restants = (tournoi.nb_matchs_total || 0) - (tournoi.nb_matchs_joues || 0)
-      if (restants > 0) {
-        actions.push({
-          id: `manage-${tournoi.id}`,
-          type: 'match_pending',
-          priority: 'medium',
-          title: 'Matchs en attente',
-          description: tournoi.name,
-          actionLabel: 'Gérer',
-          actionUrl: `/tournoi/${tournoi.id}`,
-          meta: `${restants} match${restants > 1 ? 's' : ''} restant${restants > 1 ? 's' : ''}`
-        })
-      }
-    })
-
-    setActionItems(actions)
-  }, [tournois])
-
-  // Générer les actions rapides pour les notifications header
-  const pendingActionsForHeader = actionItems.map(action => ({
-    type: action.type,
-    icon: Icons.plus,
-    title: action.title,
-    description: action.description,
-    action: () => router.push(action.actionUrl)
-  }))
+    setPendingActions(actions)
+  }, [tournois, router])
 
   const handleLogout = async () => {
     await signOut()
@@ -178,8 +148,8 @@ export default function Dashboard() {
       <DashboardHeader
         user={user}
         organization={organization}
-        pendingActionsCount={actionItems.length}
-        pendingActions={pendingActionsForHeader}
+        pendingActionsCount={pendingActions.length}
+        pendingActions={pendingActions}
         userPlan={userPlan}
         onLogout={handleLogout}
         onOpenUpgrade={() => setShowUpgradeModal(true)}
@@ -187,93 +157,99 @@ export default function Dashboard() {
 
       {/* Contenu principal */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Action Center - priorité #1 */}
-        <div className="mb-8">
-          <ActionCenter actions={actionItems} loading={loading} />
-        </div>
-
-        {/* Layout 2 colonnes */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Tournois actifs - 2/3 */}
-          <div className="lg:col-span-2">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Tournois actifs</h2>
-              <p className="text-gray-600">Gérez vos tournois en cours et en préparation</p>
-            </div>
-            <ActiveTournaments tournois={tournois} loading={loading} />
+        {/* Hero section moderne */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-green-600 via-emerald-600 to-green-700 rounded-2xl p-8 mb-8 shadow-xl">
+          {/* Motifs décoratifs */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
           </div>
 
-          {/* Sidebar - 1/3 */}
-          <div className="space-y-6">
-            {/* Actions rapides */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Actions rapides</h3>
-              <div className="space-y-2">
-                <button
-                  onClick={() => router.push('/tournoi/nouveau')}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
-                >
-                  {Icons.plus}
-                  <span className="font-medium text-gray-900">Nouveau tournoi</span>
-                </button>
-                <button
-                  onClick={() => router.push('/joueurs')}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
-                >
-                  {Icons.users}
-                  <span className="font-medium text-gray-900">Gérer les joueurs</span>
-                </button>
-                <button
-                  onClick={() => router.push('/quiz')}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
-                >
-                  {Icons.book}
-                  <span className="font-medium text-gray-900">Quiz pétanque</span>
-                </button>
+          <div className="relative">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div className="flex-1">
+                <p className="text-green-100 text-sm font-medium mb-2">{organization?.name || 'Mon Club'}</p>
+                <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                  Bonjour {user?.full_name?.split(' ')[0] || 'Champion'}
+                </h1>
+                <p className="text-green-50 text-lg">
+                  {stats.tournoiEnCours > 0
+                    ? `Vous avez ${stats.tournoiEnCours} tournoi${stats.tournoiEnCours > 1 ? 's' : ''} en cours`
+                    : 'Prêt à organiser un nouveau tournoi ?'
+                  }
+                </p>
               </div>
+
+              <button
+                onClick={() => router.push('/tournoi/nouveau')}
+                className="px-6 py-3 bg-white text-green-600 rounded-xl font-semibold hover:bg-green-50 transition-all hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Nouveau tournoi
+              </button>
             </div>
 
-            {/* Stats essentielles */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Statistiques</h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-gray-600">Tournois totaux</span>
-                    <span className="text-2xl font-bold text-gray-900">{stats.totalTournois}</span>
-                  </div>
-                  {stats.nouveauxTournois > 0 && (
-                    <p className="text-xs text-green-600">+{stats.nouveauxTournois} ce mois</p>
-                  )}
-                </div>
-                <div className="pt-4 border-t">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-gray-600">Joueurs actifs</span>
-                    <span className="text-2xl font-bold text-gray-900">{stats.totalJoueurs}</span>
-                  </div>
-                  {stats.nouveauxJoueurs > 0 && (
-                    <p className="text-xs text-green-600">+{stats.nouveauxJoueurs} ce mois</p>
-                  )}
-                </div>
-                <div className="pt-4 border-t">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-gray-600">Matchs joués</span>
-                    <span className="text-2xl font-bold text-gray-900">{stats.totalMatchs}</span>
-                  </div>
-                  {stats.nouveauxMatchs > 0 && (
-                    <p className="text-xs text-green-600">+{stats.nouveauxMatchs} ce mois</p>
-                  )}
-                </div>
+            {/* Mini stats dans la hero */}
+            <div className="grid grid-cols-3 gap-4 mt-8">
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                <p className="text-green-100 text-sm mb-1">Cette semaine</p>
+                <p className="text-2xl font-bold text-white">{stats.nouveauxMatchs}</p>
+                <p className="text-green-50 text-xs mt-1">matchs joués</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                <p className="text-green-100 text-sm mb-1">Nouveaux</p>
+                <p className="text-2xl font-bold text-white">+{stats.nouveauxJoueurs}</p>
+                <p className="text-green-50 text-xs mt-1">joueurs</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                <p className="text-green-100 text-sm mb-1">Total</p>
+                <p className="text-2xl font-bold text-white">{stats.totalTournois}</p>
+                <p className="text-green-50 text-xs mt-1">tournois</p>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Cartes de statistiques */}
+        <div className="mb-8">
+          <StatsCards stats={stats} loading={loading} />
+        </div>
+
+        {/* Actions rapides */}
+        <div className="mb-8">
+          <QuickActions
+            onNewTournament={() => router.push('/tournoi/nouveau')}
+            onManagePlayers={() => router.push('/joueurs')}
+            onViewStats={() => {/* TODO: Modal stats détaillées */}}
+            onQuiz={() => router.push('/quiz')}
+          />
+        </div>
+
+        {/* Grille principale : Liste tournois + Sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Liste des tournois (2/3) */}
+          <div className="lg:col-span-2">
+            <TournamentList
+              tournois={tournois}
+              loading={loading}
+              onCreateNew={() => router.push('/tournoi/nouveau')}
+            />
+          </div>
+
+          {/* Sidebar : Matchs récents (1/3) */}
+          <div>
+            <RecentMatches matches={recentMatches} loading={loading} />
           </div>
         </div>
       </main>
 
-      {/* Modal Upgrade Premium - identique */}
+      {/* Modal Upgrade Premium */}
       {showUpgradeModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full overflow-hidden">
+            {/* Header modal */}
             <div className="bg-green-600 p-6 text-white relative">
               <button
                 onClick={() => setShowUpgradeModal(false)}
@@ -296,6 +272,7 @@ export default function Dashboard() {
               {userPlan === 'free' ? (
                 <>
                   <div className="grid md:grid-cols-2 gap-4 mb-6">
+                    {/* Plan Gratuit */}
                     <div className="border-2 border-gray-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-lg font-bold text-gray-900">Gratuit</h3>
@@ -322,6 +299,7 @@ export default function Dashboard() {
                       </ul>
                     </div>
 
+                    {/* Plan Premium */}
                     <div className="border-2 border-green-500 rounded-lg p-4 bg-green-50">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-lg font-bold text-gray-900">Premium</h3>
@@ -376,11 +354,32 @@ export default function Dashboard() {
                     <span className="text-green-600">{Icons.crown}</span>
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    Merci pour votre soutien
+                    Merci pour votre soutien !
                   </h3>
                   <p className="text-gray-600 mb-4 text-sm">
-                    Vous profitez de l'application sans publicité
+                    Vous profitez de l'application sans publicité et avec toutes les fonctionnalités.
                   </p>
+                  <div className="bg-green-50 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-900 mb-2 text-sm">Vos avantages Premium :</h4>
+                    <div className="grid grid-cols-2 gap-3 text-left text-sm">
+                      <div className="flex items-start">
+                        <span className="text-green-500 mr-2">{Icons.check}</span>
+                        <span className="text-gray-700">Sans publicité</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="text-green-500 mr-2">{Icons.check}</span>
+                        <span className="text-gray-700">Support prioritaire</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="text-green-500 mr-2">{Icons.check}</span>
+                        <span className="text-gray-700">Mises à jour gratuites</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="text-green-500 mr-2">{Icons.check}</span>
+                        <span className="text-gray-700">Accès à vie</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
