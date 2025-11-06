@@ -196,8 +196,8 @@ export default function Dashboard() {
   
   // États pour les données
   const [userPlan, setUserPlan] = useState('free')
-  const [tournois, setTournois] = useState<any[]>([])
-  const [filteredTournois, setFilteredTournois] = useState<any[]>([])
+  const [tournois, setTournois] = useState<Record<string, unknown>[]>([])
+  const [filteredTournois, setFilteredTournois] = useState<Record<string, unknown>[]>([])
   const [stats, setStats] = useState({
     totalTournois: 0,
     tournoiEnCours: 0,
@@ -209,8 +209,8 @@ export default function Dashboard() {
       matchs: 0
     }
   })
-  const [pendingActions, setPendingActions] = useState<any[]>([])
-  const [upcomingMatches, setUpcomingMatches] = useState<any[]>([])
+  const [pendingActions, setPendingActions] = useState<Record<string, unknown>[]>([])
+  const [upcomingMatches, setUpcomingMatches] = useState<Record<string, unknown>[]>([])
   const [performance, setPerformance] = useState({
     winRate: 0,
     activityLevel: 'Faible',
@@ -226,8 +226,8 @@ export default function Dashboard() {
       pointsMoyens: { value: 0, trend: 0 },
       efficacite: { value: 0, trend: 0 }
     },
-    recentActivity: [] as any[],
-    topPerformers: [] as any[]
+    recentActivity: [] as Record<string, unknown>[],
+    topPerformers: [] as Record<string, unknown>[]
   })
 
   useEffect(() => {
@@ -1435,7 +1435,7 @@ export default function Dashboard() {
                    Merci pour votre soutien !
                  </h3>
                  <p className="text-gray-600 mb-6">
-                   Vous profitez de l'application sans publicité et avec toutes les fonctionnalités.
+                   Vous profitez de l&apos;application sans publicité et avec toutes les fonctionnalités.
                  </p>
                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6">
                    <h4 className="font-bold text-gray-900 mb-3">Vos avantages Premium :</h4>

@@ -138,7 +138,7 @@ export default function LoginPage() {
   }, [activeTab])
 
   // Traduction des erreurs Supabase
-  const getErrorMessage = (error: any) => {
+  const getErrorMessage = (error: unknown) => {
     const message = error?.message || ''
     if (message.includes('Invalid login')) return 'Email ou mot de passe incorrect'
     if (message.includes('User already registered')) return 'Cet email est déjà utilisé'
@@ -730,7 +730,7 @@ export default function LoginPage() {
                       className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer mt-1"
                     />
                     <span className="ml-2 text-sm text-gray-600">
-                      J'accepte les <a href="#" className="text-green-600 hover:text-green-700">conditions d'utilisation</a> et la <a href="#" className="text-green-600 hover:text-green-700">politique de confidentialité</a>
+                      J&apos;accepte les <a href="#" className="text-green-600 hover:text-green-700">conditions d&apos;utilisation</a> et la <a href="#" className="text-green-600 hover:text-green-700">politique de confidentialité</a>
                     </span>
                   </label>
                 </div>
