@@ -120,11 +120,11 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Contenu centré sur desktop */}
-      <div className="max-w-7xl mx-auto">
+      {/* Layout mobile avec tabs */}
+      <div className="lg:hidden">
         {/* Stats rapides - Horizontal scroll */}
         <div className="px-4 py-4">
-          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory lg:justify-center">
+          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
             <StatCard icon={Icons.target} label="Aujourd'hui" value={`${todayMatches} matchs`} color="from-green-500 to-emerald-600" />
             <StatCard icon={Icons.users} label="Joueurs" value={stats.totalJoueurs} color="from-green-400 to-green-500" />
             <StatCard icon={Icons.chart} label="En cours" value={activeTournaments.length} color="from-emerald-500 to-teal-600" />
@@ -134,7 +134,7 @@ export default function Dashboard() {
 
         {/* Tabs simples */}
         <div className="px-4 mb-4">
-          <div className="flex gap-2 max-w-2xl mx-auto">
+          <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('active')}
               className={`flex-1 py-3 px-4 rounded-xl font-medium transition ${
@@ -160,47 +160,110 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Contenu principal */}
-        <main className="px-4 max-w-2xl mx-auto">
-        {activeTab === 'active' ? (
-          <div className="space-y-3">
-            {activeTournaments.length > 0 ? (
-              activeTournaments.map(tournoi => (
-                <TournamentCard
-                  key={tournoi.id}
-                  tournament={tournoi}
-                  onClick={() => router.push(`/tournoi/${tournoi.id}`)}
+        {/* Contenu principal mobile */}
+        <main className="px-4">
+          {activeTab === 'active' ? (
+            <div className="space-y-3">
+              {activeTournaments.length > 0 ? (
+                activeTournaments.map(tournoi => (
+                  <TournamentCard
+                    key={tournoi.id}
+                    tournament={tournoi}
+                    onClick={() => router.push(`/tournoi/${tournoi.id}`)}
+                  />
+                ))
+              ) : (
+                <EmptyState onCreateNew={() => router.push('/tournoi/nouveau')} />
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <ActionButton
+                icon={Icons.trophy}
+                label="Nouveau tournoi"
+                onClick={() => router.push('/tournoi/nouveau')}
+              />
+              <ActionButton
+                icon={Icons.user}
+                label="Gérer les joueurs"
+                onClick={() => router.push('/joueurs')}
+              />
+              <ActionButton
+                icon={Icons.stats}
+                label="Voir les statistiques"
+                onClick={() => router.push('/dashboard')}
+              />
+              <ActionButton
+                icon={Icons.book}
+                label="Quiz pétanque"
+                onClick={() => router.push('/quizz')}
+              />
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* Layout desktop avec colonnes */}
+      <div className="hidden lg:block max-w-7xl mx-auto px-6 py-6">
+        {/* Stats en grid */}
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          <StatCard icon={Icons.target} label="Aujourd'hui" value={`${todayMatches} matchs`} color="from-green-500 to-emerald-600" />
+          <StatCard icon={Icons.users} label="Joueurs" value={stats.totalJoueurs} color="from-green-400 to-green-500" />
+          <StatCard icon={Icons.chart} label="En cours" value={activeTournaments.length} color="from-emerald-500 to-teal-600" />
+          <StatCard icon={Icons.check} label="Terminés" value={finishedTournaments} color="from-amber-500 to-orange-600" />
+        </div>
+
+        {/* Layout 2 colonnes: tournois + actions */}
+        <div className="grid grid-cols-3 gap-6">
+          {/* Colonne principale: tournois */}
+          <div className="col-span-2">
+            <div className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Tournois actifs</h2>
+              <div className="space-y-3">
+                {activeTournaments.length > 0 ? (
+                  activeTournaments.map(tournoi => (
+                    <TournamentCard
+                      key={tournoi.id}
+                      tournament={tournoi}
+                      onClick={() => router.push(`/tournoi/${tournoi.id}`)}
+                    />
+                  ))
+                ) : (
+                  <EmptyState onCreateNew={() => router.push('/tournoi/nouveau')} />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar: actions rapides */}
+          <div className="space-y-4">
+            <div className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Actions rapides</h3>
+              <div className="space-y-3">
+                <ActionButton
+                  icon={Icons.trophy}
+                  label="Nouveau tournoi"
+                  onClick={() => router.push('/tournoi/nouveau')}
                 />
-              ))
-            ) : (
-              <EmptyState onCreateNew={() => router.push('/tournoi/nouveau')} />
-            )}
+                <ActionButton
+                  icon={Icons.user}
+                  label="Gérer les joueurs"
+                  onClick={() => router.push('/joueurs')}
+                />
+                <ActionButton
+                  icon={Icons.stats}
+                  label="Voir les statistiques"
+                  onClick={() => router.push('/dashboard')}
+                />
+                <ActionButton
+                  icon={Icons.book}
+                  label="Quiz pétanque"
+                  onClick={() => router.push('/quizz')}
+                />
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-3">
-            <ActionButton
-              icon={Icons.trophy}
-              label="Nouveau tournoi"
-              onClick={() => router.push('/tournoi/nouveau')}
-            />
-            <ActionButton
-              icon={Icons.user}
-              label="Gérer les joueurs"
-              onClick={() => router.push('/joueurs')}
-            />
-            <ActionButton
-              icon={Icons.stats}
-              label="Voir les statistiques"
-              onClick={() => router.push('/dashboard')}
-            />
-            <ActionButton
-              icon={Icons.book}
-              label="Quiz pétanque"
-              onClick={() => router.push('/quizz')}
-            />
-          </div>
-        )}
-      </main>
+        </div>
       </div>
 
       {/* Bottom Navigation Mobile - cachée sur desktop */}
