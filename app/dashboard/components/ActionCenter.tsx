@@ -6,7 +6,7 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
 
-export interface ActionItem {
+interface ActionItem {
   id: string
   type: 'match_pending' | 'tournament_ready' | 'tournament_delayed'
   priority: 'high' | 'medium' | 'low'
@@ -112,19 +112,19 @@ export default function ActionCenter({ actions, loading }: ActionCenterProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg border-2 border-gray-300 overflow-hidden shadow-sm">
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b-2 border-gray-300 bg-gray-50">
+      <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">À faire maintenant</h2>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-red-600 text-white shadow-sm" aria-label={`${actions.length} actions à faire`}>
+          <h2 className="text-lg font-semibold text-gray-900">Actions requises</h2>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
             {actions.length}
           </span>
         </div>
       </div>
 
       {/* Liste des actions */}
-      <div className="divide-y-2 divide-gray-200">
+      <div className="divide-y divide-gray-100">
         {actions.map((action) => {
           const config = priorityConfig[action.priority]
           const icon = typeIcons[action.type]
@@ -132,39 +132,38 @@ export default function ActionCenter({ actions, loading }: ActionCenterProps) {
           return (
             <div
               key={action.id}
-              className={`p-5 hover:bg-gray-50 transition-colors`}
+              className={`p-4 hover:bg-gray-50 transition-colors`}
             >
               <div className="flex items-start gap-4">
                 {/* Indicateur de priorité */}
                 <div className="flex-shrink-0 mt-1">
-                  <div className={`w-3 h-3 rounded-full ${config.dot} animate-pulse`} aria-hidden="true"></div>
+                  <div className={`w-2 h-2 rounded-full ${config.dot} animate-pulse`}></div>
                 </div>
 
                 {/* Icône */}
-                <div className={`flex-shrink-0 p-2 rounded-lg ${config.bg} ${config.text}`} aria-hidden="true">
+                <div className={`flex-shrink-0 p-2 rounded-lg ${config.bg} ${config.text}`}>
                   {icon}
                 </div>
 
                 {/* Contenu */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
-                    <div className="flex-1">
-                      <h3 className="text-base font-bold text-gray-900 mb-1">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-1">
                         {action.title}
                       </h3>
-                      <p className="text-base text-gray-900 mb-2 font-medium">
+                      <p className="text-sm text-gray-600 mb-2">
                         {action.description}
                       </p>
                       {action.meta && (
-                        <p className="text-sm text-gray-700 font-medium">{action.meta}</p>
+                        <p className="text-xs text-gray-500">{action.meta}</p>
                       )}
                     </div>
 
                     {/* Action button */}
                     <button
                       onClick={() => router.push(action.actionUrl)}
-                      className="flex-shrink-0 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-gray-900 text-white text-base font-bold rounded-lg hover:bg-gray-800 transition-colors min-h-[48px] shadow-sm"
-                      aria-label={`${action.actionLabel} - ${action.title}`}
+                      className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
                     >
                       {action.actionLabel}
                       {Icons.arrowRight}

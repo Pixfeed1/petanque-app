@@ -1,73 +1,59 @@
 // app/dashboard/page.tsx
-// Dashboard moderne 2025 - Mobile-first, épuré
+// Dashboard professionnel optimisé pour organisateurs de tournois
 
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
+import { loadStripe } from '@stripe/stripe-js'
+
+// Import des composants
+import DashboardHeader from './components/DashboardHeader'
+import ActionCenter from './components/ActionCenter'
+import ActiveTournaments from './components/ActiveTournaments'
 import { useDashboardData } from './hooks/useDashboardData'
 
+// Initialisation Stripe
+const stripePromise = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  : null
+
 const Icons = {
-  trophy: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-    </svg>
-  ),
-  target: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  users: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  ),
-  chart: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+  x: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
   ),
   check: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+    </svg>
+  ),
+  crown: (
+    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+      <path d="M10 2l2.5 5 5.5 1-4 4 1 5.5L10 14l-5 3.5 1-5.5-4-4 5.5-1L10 2z" />
+    </svg>
+  ),
+  loader: (
+    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
     </svg>
   ),
   plus: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
     </svg>
   ),
-  user: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
-  ),
-  stats: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+  users: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
     </svg>
   ),
   book: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-    </svg>
-  ),
-  home: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-    </svg>
-  ),
-  settings: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  ),
-  arrow: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
     </svg>
   )
 }
@@ -75,407 +61,549 @@ const Icons = {
 export default function Dashboard() {
   const router = useRouter()
   const { user, organization, loading: authLoading, signOut } = useAuth()
-  const { loading, stats, tournois, refetch } = useDashboardData(organization?.id ? Number(organization.id) : undefined)
+  const { loading, stats, tournois, recentMatches, refetch } = useDashboardData(organization?.id ? Number(organization.id) : undefined)
 
-  const [activeTab, setActiveTab] = useState('active')
+  const [userPlan, setUserPlan] = useState('free')
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [processingPayment, setProcessingPayment] = useState(false)
+  const [actionItems, setActionItems] = useState<any[]>([])
 
-  // Calculer stats manquantes
-  const activeTournaments = useMemo(() =>
-    tournois.filter(t => t.status !== 'termine'),
-    [tournois]
-  )
+  // États pour recherche et filtres
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'preparation' | 'en_cours' | 'termine'>('all')
 
-  const finishedTournaments = useMemo(() =>
-    tournois.filter(t => t.status === 'termine').length,
-    [tournois]
-  )
+  useEffect(() => {
+    if (organization?.settings?.plan) {
+      setUserPlan(organization.settings.plan)
+    }
+  }, [organization])
 
-  const todayMatches = stats.nouveauxMatchs || 0
+  // Raccourcis clavier
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ignorer si focus dans un input
+      if ((e.target as HTMLElement).tagName === 'INPUT') return
+
+      switch(e.key.toLowerCase()) {
+        case 'n':
+          router.push('/tournoi/nouveau')
+          break
+        case 'j':
+          router.push('/joueurs')
+          break
+        case '/':
+          e.preventDefault()
+          document.getElementById('search-input')?.focus()
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [router])
+
+  // Générer les actions requises - INTELLIGENT
+  useEffect(() => {
+    if (!tournois.length) return
+
+    const actions: any[] = []
+    const now = new Date()
+
+    tournois.forEach(tournoi => {
+      // 1. Tournois avec nombre de joueurs impair (impossible de faire des équipes)
+      if (tournoi.status === 'preparation' && tournoi.nb_joueurs && tournoi.nb_joueurs % 2 !== 0) {
+        actions.push({
+          id: `odd-players-${tournoi.id}`,
+          type: 'tournament_delayed',
+          priority: 'high',
+          title: 'Nombre de joueurs impair',
+          description: tournoi.name,
+          actionLabel: 'Corriger',
+          actionUrl: `/tournoi/${tournoi.id}`,
+          meta: `${tournoi.nb_joueurs} joueurs (impossible de créer des équipes)`
+        })
+      }
+
+      // 2. Tournois prêts à démarrer (avec joueurs pairs)
+      if (tournoi.status === 'preparation' && tournoi.nb_joueurs && tournoi.nb_joueurs % 2 === 0 && tournoi.nb_joueurs >= 4) {
+        actions.push({
+          id: `start-${tournoi.id}`,
+          type: 'tournament_ready',
+          priority: 'high',
+          title: 'Tournoi prêt à démarrer',
+          description: tournoi.name,
+          actionLabel: 'Démarrer',
+          actionUrl: `/tournoi/${tournoi.id}`,
+          meta: `${tournoi.nb_joueurs} joueurs inscrits`
+        })
+      }
+
+      // 3. Tournois en préparation avec trop peu de joueurs
+      if (tournoi.status === 'preparation' && (!tournoi.nb_joueurs || tournoi.nb_joueurs < 4)) {
+        actions.push({
+          id: `low-players-${tournoi.id}`,
+          type: 'tournament_delayed',
+          priority: 'medium',
+          title: 'Pas assez de joueurs',
+          description: tournoi.name,
+          actionLabel: 'Ajouter',
+          actionUrl: `/tournoi/${tournoi.id}`,
+          meta: `${tournoi.nb_joueurs || 0} joueurs (minimum 4 requis)`
+        })
+      }
+
+      // 4. Tournois en cours avec matchs restants
+      if (tournoi.status === 'en_cours') {
+        const restants = (tournoi.nb_matchs_total || 0) - (tournoi.nb_matchs_joues || 0)
+        if (restants > 0) {
+          actions.push({
+            id: `manage-${tournoi.id}`,
+            type: 'match_pending',
+            priority: 'medium',
+            title: 'Matchs en attente',
+            description: tournoi.name,
+            actionLabel: 'Gérer',
+            actionUrl: `/tournoi/${tournoi.id}`,
+            meta: `${restants} match${restants > 1 ? 's' : ''} restant${restants > 1 ? 's' : ''}`
+          })
+        }
+      }
+
+      // 5. Tournois terminés depuis >24h (à clôturer)
+      if (tournoi.status === 'termine') {
+        const createdAt = new Date(tournoi.created_at)
+        const hoursSinceEnd = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60)
+        if (hoursSinceEnd > 24) {
+          actions.push({
+            id: `close-${tournoi.id}`,
+            type: 'tournament_delayed',
+            priority: 'low',
+            title: 'Tournoi à clôturer',
+            description: tournoi.name,
+            actionLabel: 'Voir résultats',
+            actionUrl: `/tournoi/${tournoi.id}/podium`,
+            meta: `Terminé il y a ${Math.floor(hoursSinceEnd)}h`
+          })
+        }
+      }
+    })
+
+    // Trier par priorité : high > medium > low
+    const priorityOrder = { high: 0, medium: 1, low: 2 }
+    actions.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
+
+    setActionItems(actions)
+  }, [tournois])
+
+  // Générer les actions rapides pour les notifications header
+  const pendingActionsForHeader = actionItems.map(action => ({
+    type: action.type,
+    icon: Icons.plus,
+    title: action.title,
+    description: action.description,
+    action: () => router.push(action.actionUrl)
+  }))
+
+  // Filtrer les tournois selon recherche et statut
+  const filteredTournois = tournois.filter(tournoi => {
+    // Filtre de recherche
+    const matchesSearch = searchQuery === '' ||
+      tournoi.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tournoi.format.toLowerCase().includes(searchQuery.toLowerCase())
+
+    // Filtre de statut
+    const matchesStatus = statusFilter === 'all' || tournoi.status === statusFilter
+
+    return matchesSearch && matchesStatus
+  })
+
+  const handleLogout = async () => {
+    await signOut()
+  }
+
+  const handleUpgrade = async () => {
+    setProcessingPayment(true)
+
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: user?.id,
+          email: user?.email
+        })
+      })
+
+      const { sessionId } = await response.json()
+
+      const stripe = await stripePromise
+      if (stripe) {
+        const { error } = await stripe.redirectToCheckout({ sessionId })
+        if (error) {
+          console.error('Erreur Stripe:', error)
+        }
+      }
+    } catch (error) {
+      console.error('Erreur upgrade:', error)
+      alert('Service de paiement temporairement indisponible')
+    } finally {
+      setProcessingPayment(false)
+    }
+  }
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center">
-        <div className="animate-pulse text-green-600" aria-label="Chargement">
-          <div className="w-16 h-16 border-4 border-green-200 border-t-green-600 rounded-full animate-spin" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-lg shadow-lg mb-4">
+            {Icons.loader}
+          </div>
+          <p className="text-sm text-gray-600">Chargement...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-amber-50 pb-20 lg:pb-0">
-      {/* Header simple */}
-      <header className="bg-white/80 backdrop-blur sticky top-0 z-40 px-4 py-4 shadow-sm">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-sm text-gray-700">Bonjour {user?.full_name?.split(' ')[0] || 'Organisateur'}</p>
-              <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="text-green-600">
-                {Icons.trophy}
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <DashboardHeader
+        user={user}
+        organization={organization}
+        pendingActionsCount={actionItems.length}
+        pendingActions={pendingActionsForHeader}
+        userPlan={userPlan}
+        onLogout={handleLogout}
+        onOpenUpgrade={() => setShowUpgradeModal(true)}
+      />
+
+      {/* Contenu principal */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Action Center - priorité #1 */}
+        <div className="mb-8">
+          <ActionCenter actions={actionItems} loading={loading} />
+        </div>
+
+        {/* Layout 2 colonnes */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Tournois actifs - 2/3 */}
+          <div className="lg:col-span-2">
+            {/* Header avec recherche et filtres */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Tournois actifs</h2>
+                  <p className="text-gray-600 text-sm mt-1">
+                    {filteredTournois.length} tournoi{filteredTournois.length > 1 ? 's' : ''} trouvé{filteredTournois.length > 1 ? 's' : ''}
+                  </p>
+                </div>
+                <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-lg">
+                  Raccourcis: <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border">N</kbd> nouveau, <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border">J</kbd> joueurs, <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border">/</kbd> recherche
+                </div>
               </div>
-              <span className="text-sm font-semibold text-gray-900">{stats.totalTournois}</span>
-            </div>
-          </div>
 
-          {/* Live bar */}
-          {activeTournaments.length > 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-green-700">
-                {activeTournaments.length} tournoi{activeTournaments.length > 1 ? 's' : ''} en cours
-              </span>
-              {todayMatches > 0 && (
-                <span className="text-xs text-green-600">• {todayMatches} matchs aujourd'hui</span>
-              )}
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Layout mobile avec tabs */}
-      <div className="lg:hidden">
-        {/* Stats rapides - Horizontal scroll */}
-        <div className="px-4 py-4">
-          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
-            <StatCard icon={Icons.target} label="Aujourd'hui" value={`${todayMatches} matchs`} color="from-green-500 to-emerald-600" />
-            <StatCard icon={Icons.users} label="Joueurs" value={stats.totalJoueurs} color="from-green-400 to-green-500" />
-            <StatCard icon={Icons.chart} label="En cours" value={activeTournaments.length} color="from-emerald-500 to-teal-600" />
-            <StatCard icon={Icons.check} label="Terminés" value={finishedTournaments} color="from-amber-500 to-orange-600" />
-          </div>
-        </div>
-
-        {/* Tabs simples */}
-        <div className="px-4 mb-4">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setActiveTab('active')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium transition ${
-                activeTab === 'active'
-                  ? 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg'
-                  : 'bg-white text-gray-700'
-              }`}
-              aria-label={`Tournois actifs (${activeTournaments.length})`}
-            >
-              Actifs ({activeTournaments.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('actions')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium transition ${
-                activeTab === 'actions'
-                  ? 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg'
-                  : 'bg-white text-gray-700'
-              }`}
-              aria-label="Actions rapides"
-            >
-              Actions rapides
-            </button>
-          </div>
-        </div>
-
-        {/* Contenu principal mobile */}
-        <main className="px-4">
-          {activeTab === 'active' ? (
-            <div className="space-y-3">
-              {activeTournaments.length > 0 ? (
-                activeTournaments.map(tournoi => (
-                  <TournamentCard
-                    key={tournoi.id}
-                    tournament={tournoi}
-                    onClick={() => router.push(`/tournoi/${tournoi.id}`)}
+              {/* Barre de recherche */}
+              <div className="flex gap-3 mb-4">
+                <div className="relative flex-1">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Rechercher un tournoi par nom ou format..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
-                ))
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {Icons.x}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Filtres de statut */}
+              <div className="flex gap-2">
+                {(['all', 'preparation', 'en_cours', 'termine'] as const).map(status => {
+                  const labels = {
+                    all: 'Tous',
+                    preparation: 'En préparation',
+                    en_cours: 'En cours',
+                    termine: 'Terminés'
+                  }
+                  const counts = {
+                    all: tournois.length,
+                    preparation: tournois.filter(t => t.status === 'preparation').length,
+                    en_cours: tournois.filter(t => t.status === 'en_cours').length,
+                    termine: tournois.filter(t => t.status === 'termine').length
+                  }
+
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(status)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        statusFilter === status
+                          ? 'bg-green-600 text-white'
+                          : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      {labels[status]} <span className="text-xs opacity-75">({counts[status]})</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            <ActiveTournaments tournois={filteredTournois} loading={loading} />
+          </div>
+
+          {/* Sidebar - 1/3 */}
+          <div className="space-y-6">
+            {/* Actions rapides */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Actions rapides</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => router.push('/tournoi/nouveau')}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
+                >
+                  {Icons.plus}
+                  <span className="font-medium text-gray-900">Nouveau tournoi</span>
+                </button>
+                <button
+                  onClick={() => router.push('/joueurs')}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
+                >
+                  {Icons.users}
+                  <span className="font-medium text-gray-900">Gérer les joueurs</span>
+                </button>
+                <button
+                  onClick={() => router.push('/quiz')}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
+                >
+                  {Icons.book}
+                  <span className="font-medium text-gray-900">Quiz pétanque</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Stats essentielles avec tendances */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Statistiques</h3>
+              <div className="space-y-4">
+                {/* Tournois */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600">Tournois totaux</span>
+                    <span className="text-2xl font-bold text-gray-900">{stats.totalTournois}</span>
+                  </div>
+                  {stats.nouveauxTournois > 0 ? (
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-semibold text-green-600">+{stats.nouveauxTournois}</span>
+                      <span className="text-gray-500">ce mois</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <span>Aucun nouveau</span>
+                    </div>
+                  )}
+                  <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-green-500 to-emerald-600 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min((stats.tournoiEnCours / stats.totalTournois) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{stats.tournoiEnCours} en cours</p>
+                </div>
+
+                {/* Joueurs */}
+                <div className="pt-4 border-t">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600">Joueurs actifs</span>
+                    <span className="text-2xl font-bold text-gray-900">{stats.totalJoueurs}</span>
+                  </div>
+                  {stats.nouveauxJoueurs > 0 ? (
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-semibold text-green-600">+{stats.nouveauxJoueurs}</span>
+                      <span className="text-gray-500">ce mois</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <span>Aucun nouveau</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Matchs */}
+                <div className="pt-4 border-t">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600">Matchs joués</span>
+                    <span className="text-2xl font-bold text-gray-900">{stats.totalMatchs}</span>
+                  </div>
+                  {stats.nouveauxMatchs > 0 ? (
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-semibold text-green-600">+{stats.nouveauxMatchs}</span>
+                      <span className="text-gray-500">ce mois</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <span>Aucun nouveau</span>
+                    </div>
+                  )}
+                  {stats.totalMatchs > 0 && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Moyenne: {(stats.totalMatchs / Math.max(stats.totalTournois, 1)).toFixed(1)} matchs/tournoi
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Modal Upgrade Premium - identique */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full overflow-hidden">
+            <div className="bg-green-600 p-6 text-white relative">
+              <button
+                onClick={() => setShowUpgradeModal(false)}
+                className="absolute top-4 right-4 p-1 hover:bg-white/20 rounded transition-colors"
+              >
+                {Icons.x}
+              </button>
+              <h2 className="text-2xl font-bold mb-1">
+                {userPlan === 'premium' ? 'Vous êtes Premium' : 'Passez à Premium'}
+              </h2>
+              <p className="text-green-100 text-sm">
+                {userPlan === 'premium'
+                  ? 'Profitez de toutes les fonctionnalités sans publicité'
+                  : 'Supprimez les publicités et soutenez le développement'
+                }
+              </p>
+            </div>
+
+            <div className="p-6">
+              {userPlan === 'free' ? (
+                <>
+                  <div className="grid md:grid-cols-2 gap-4 mb-6">
+                    <div className="border-2 border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-bold text-gray-900">Gratuit</h3>
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">
+                          Actuel
+                        </span>
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900 mb-3">0€</div>
+                      <ul className="space-y-2 text-sm">
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">{Icons.check}</span>
+                          <span className="text-gray-700">Tournois illimités</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">{Icons.check}</span>
+                          <span className="text-gray-700">Toutes les fonctionnalités</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-5 h-5 text-orange-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          <span className="text-gray-700">Avec publicités</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div className="border-2 border-green-500 rounded-lg p-4 bg-green-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-bold text-gray-900">Premium</h3>
+                        <span className="text-yellow-500">{Icons.crown}</span>
+                      </div>
+                      <div className="text-2xl font-bold text-green-600 mb-1">4,99€</div>
+                      <p className="text-xs text-gray-600 mb-3">Paiement unique, à vie</p>
+                      <ul className="space-y-2 text-sm">
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">{Icons.check}</span>
+                          <span className="text-gray-700 font-medium">Tournois illimités</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">{Icons.check}</span>
+                          <span className="text-gray-700 font-medium">Toutes les fonctionnalités</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">{Icons.check}</span>
+                          <span className="text-gray-700 font-bold">Sans publicité</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">{Icons.check}</span>
+                          <span className="text-gray-700 font-bold">Support prioritaire</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="text-center">
+                    <button
+                      onClick={handleUpgrade}
+                      disabled={processingPayment}
+                      className="px-6 py-3 bg-green-600 text-white text-base rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {processingPayment ? (
+                        <span className="flex items-center justify-center">
+                          {Icons.loader}
+                          <span className="ml-2">Traitement...</span>
+                        </span>
+                      ) : (
+                        'Passer à Premium (4,99€)'
+                      )}
+                    </button>
+                    <p className="mt-3 text-xs text-gray-500">
+                      Paiement sécurisé via Stripe • Satisfaction garantie
+                    </p>
+                  </div>
+                </>
               ) : (
-                <EmptyState onCreateNew={() => router.push('/tournoi/nouveau')} />
+                <div className="text-center py-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-3">
+                    <span className="text-green-600">{Icons.crown}</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Merci pour votre soutien
+                  </h3>
+                  <p className="text-gray-600 mb-4 text-sm">
+                    Vous profitez de l'application sans publicité
+                  </p>
+                </div>
               )}
             </div>
-          ) : (
-            <div className="space-y-3">
-              <ActionButton
-                icon={Icons.trophy}
-                label="Nouveau tournoi"
-                onClick={() => router.push('/tournoi/nouveau')}
-              />
-              <ActionButton
-                icon={Icons.user}
-                label="Gérer les joueurs"
-                onClick={() => router.push('/joueurs')}
-              />
-              <ActionButton
-                icon={Icons.stats}
-                label="Voir les statistiques"
-                onClick={() => router.push('/dashboard')}
-              />
-              <ActionButton
-                icon={Icons.book}
-                label="Quiz pétanque"
-                onClick={() => router.push('/quizz')}
-              />
-            </div>
-          )}
-        </main>
-      </div>
-
-      {/* Layout desktop avec colonnes */}
-      <div className="hidden lg:block max-w-7xl mx-auto px-6 py-6">
-        {/* Stats en grid */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <StatCard icon={Icons.target} label="Aujourd'hui" value={`${todayMatches} matchs`} color="from-green-500 to-emerald-600" />
-          <StatCard icon={Icons.users} label="Joueurs" value={stats.totalJoueurs} color="from-green-400 to-green-500" />
-          <StatCard icon={Icons.chart} label="En cours" value={activeTournaments.length} color="from-emerald-500 to-teal-600" />
-          <StatCard icon={Icons.check} label="Terminés" value={finishedTournaments} color="from-amber-500 to-orange-600" />
-        </div>
-
-        {/* Layout 2 colonnes: tournois + actions */}
-        <div className="grid grid-cols-3 gap-6">
-          {/* Colonne principale: tournois */}
-          <div className="col-span-2">
-            <div className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Tournois actifs</h2>
-              <div className="space-y-3">
-                {activeTournaments.length > 0 ? (
-                  activeTournaments.map(tournoi => (
-                    <TournamentCard
-                      key={tournoi.id}
-                      tournament={tournoi}
-                      onClick={() => router.push(`/tournoi/${tournoi.id}`)}
-                    />
-                  ))
-                ) : (
-                  <EmptyState onCreateNew={() => router.push('/tournoi/nouveau')} />
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar: actions rapides */}
-          <div className="space-y-4">
-            <div className="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-lg">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Actions rapides</h3>
-              <div className="space-y-3">
-                <ActionButton
-                  icon={Icons.trophy}
-                  label="Nouveau tournoi"
-                  onClick={() => router.push('/tournoi/nouveau')}
-                />
-                <ActionButton
-                  icon={Icons.user}
-                  label="Gérer les joueurs"
-                  onClick={() => router.push('/joueurs')}
-                />
-                <ActionButton
-                  icon={Icons.stats}
-                  label="Voir les statistiques"
-                  onClick={() => router.push('/dashboard')}
-                />
-                <ActionButton
-                  icon={Icons.book}
-                  label="Quiz pétanque"
-                  onClick={() => router.push('/quizz')}
-                />
-              </div>
-            </div>
           </div>
         </div>
-      </div>
-
-      {/* Bottom Navigation Mobile - cachée sur desktop */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200" role="navigation" aria-label="Navigation principale">
-        <div className="flex justify-around py-2">
-          <NavButton
-            icon={Icons.home}
-            label="Accueil"
-            active
-            onClick={() => router.push('/dashboard')}
-          />
-          <NavButton
-            icon={Icons.plus}
-            label="Créer"
-            primary
-            onClick={() => router.push('/tournoi/nouveau')}
-          />
-          <NavButton
-            icon={Icons.users}
-            label="Joueurs"
-            onClick={() => router.push('/joueurs')}
-          />
-          <NavButton
-            icon={Icons.settings}
-            label="Paramètres"
-            onClick={() => router.push('/parametres')}
-          />
-        </div>
-      </nav>
-    </div>
-  )
-}
-
-// Composants simplifiés
-function StatCard({ icon, label, value, color }: any) {
-  return (
-    <div className={`flex-shrink-0 snap-start w-32 p-4 rounded-2xl bg-gradient-to-br ${color} text-white shadow-lg`}>
-      <div className="mb-2">{icon}</div>
-      <div className="text-xs opacity-90 font-medium">{label}</div>
-      <div className="text-xl font-bold">{value}</div>
-    </div>
-  )
-}
-
-function TournamentCard({ tournament, onClick }: any) {
-  const progress = tournament.nb_matchs_total > 0
-    ? Math.round((tournament.nb_matchs_joues / tournament.nb_matchs_total) * 100)
-    : 0
-
-  // Détections pour badges
-  const hasOddPlayers = tournament.status === 'preparation' && tournament.nb_joueurs && tournament.nb_joueurs % 2 !== 0
-  const isReady = tournament.status === 'preparation' && tournament.nb_joueurs && tournament.nb_joueurs >= 4 && tournament.nb_joueurs % 2 === 0
-  const notEnoughPlayers = tournament.status === 'preparation' && (!tournament.nb_joueurs || tournament.nb_joueurs < 4)
-
-  return (
-    <div
-      onClick={onClick}
-      className="bg-white rounded-2xl p-4 shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer animate-in fade-in slide-in-from-bottom-2 duration-300"
-      role="button"
-      tabIndex={0}
-      aria-label={`Voir le tournoi ${tournament.name}`}
-      onKeyDown={(e) => e.key === 'Enter' && onClick()}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex-1">
-          <h3 className="font-bold text-gray-900">{tournament.name}</h3>
-          <p className="text-sm text-gray-700">{tournament.format} • {tournament.nb_joueurs || 0} joueurs</p>
-        </div>
-        {tournament.status === 'en_cours' && (
-          <div className="text-2xl font-bold text-green-600">{progress}%</div>
-        )}
-      </div>
-
-      {/* Badges d'alerte */}
-      {tournament.status === 'preparation' && (
-        <div className="flex flex-wrap gap-2 mb-3">
-          {hasOddPlayers && (
-            <span className="inline-flex items-center gap-1 text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-semibold animate-pulse">
-              ⚠️ Nombre impair
-            </span>
-          )}
-          {isReady && (
-            <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
-              ✅ Prêt à démarrer
-            </span>
-          )}
-          {notEnoughPlayers && (
-            <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-semibold">
-              👥 Manque de joueurs
-            </span>
-          )}
-        </div>
       )}
-
-      {/* Progress bar pour tournois en cours */}
-      {tournament.status === 'en_cours' && (
-        <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-          <div
-            className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-            role="progressbar"
-            aria-valuenow={progress}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={`Progression: ${progress}%`}
-          />
-        </div>
-      )}
-
-      {/* Status */}
-      <div className="flex items-center justify-between text-sm">
-        <span className={`font-medium ${
-          tournament.status === 'en_cours' ? 'text-green-600' :
-          tournament.status === 'preparation' ? 'text-amber-600' :
-          'text-gray-600'
-        }`}>
-          {tournament.status === 'en_cours' && '🎯 En cours'}
-          {tournament.status === 'preparation' && '⏳ En préparation'}
-          {tournament.status === 'termine' && '✅ Terminé'}
-        </span>
-        {tournament.status === 'en_cours' && tournament.nb_matchs_total > 0 && (
-          <span className="text-gray-600">
-            {tournament.nb_matchs_joues || 0}/{tournament.nb_matchs_total} matchs
-          </span>
-        )}
-      </div>
     </div>
-  )
-}
-
-function EmptyState({ onCreateNew }: any) {
-  return (
-    <div className="text-center py-12">
-      <div className="w-16 h-16 mx-auto mb-4 text-gray-400">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-        </svg>
-      </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-2">Aucun tournoi actif</h3>
-      <p className="text-gray-700 mb-6">Créez votre premier tournoi de pétanque</p>
-      <button
-        onClick={onCreateNew}
-        className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full font-semibold shadow-lg active:scale-95 transition"
-        aria-label="Créer un nouveau tournoi"
-      >
-        Créer un tournoi
-      </button>
-    </div>
-  )
-}
-
-function ActionButton({ icon, label, onClick }: any) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full flex items-center gap-4 p-4 bg-white rounded-2xl shadow-md active:scale-95 transition"
-      aria-label={label}
-    >
-      <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl flex items-center justify-center text-green-600">
-        {icon}
-      </div>
-      <span className="font-semibold text-gray-900">{label}</span>
-      <div className="text-gray-400 ml-auto">
-        {Icons.arrow}
-      </div>
-    </button>
-  )
-}
-
-function NavButton({ icon, label, active, primary, onClick }: any) {
-  if (primary) {
-    return (
-      <button
-        onClick={onClick}
-        className="relative -mt-4"
-        aria-label={label}
-      >
-        <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white shadow-lg active:scale-95 transition">
-          {icon}
-        </div>
-      </button>
-    )
-  }
-
-  return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center gap-1 p-2"
-      aria-label={label}
-      aria-current={active ? 'page' : undefined}
-    >
-      <div className={`${active ? 'text-green-600' : 'text-gray-400'}`}>
-        {icon}
-      </div>
-      <span className={`text-xs ${active ? 'text-green-600 font-semibold' : 'text-gray-600'}`}>
-        {label}
-      </span>
-    </button>
   )
 }
