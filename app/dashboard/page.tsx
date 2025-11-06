@@ -68,48 +68,129 @@ export default function Dashboard() {
   const [processingPayment, setProcessingPayment] = useState(false)
   const [actionItems, setActionItems] = useState<any[]>([])
 
+  // États pour recherche et filtres
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'preparation' | 'en_cours' | 'termine'>('all')
+
   useEffect(() => {
     if (organization?.settings?.plan) {
       setUserPlan(organization.settings.plan)
     }
   }, [organization])
 
-  // Générer les actions requises
+  // Raccourcis clavier
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ignorer si focus dans un input
+      if ((e.target as HTMLElement).tagName === 'INPUT') return
+
+      switch(e.key.toLowerCase()) {
+        case 'n':
+          router.push('/tournoi/nouveau')
+          break
+        case 'j':
+          router.push('/joueurs')
+          break
+        case '/':
+          e.preventDefault()
+          document.getElementById('search-input')?.focus()
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [router])
+
+  // Générer les actions requises - INTELLIGENT
   useEffect(() => {
     if (!tournois.length) return
 
     const actions: any[] = []
+    const now = new Date()
 
-    // Tournois à démarrer
-    tournois.filter(t => t.status === 'preparation').forEach(tournoi => {
-      actions.push({
-        id: `start-${tournoi.id}`,
-        type: 'tournament_ready',
-        priority: 'high',
-        title: 'Tournoi prêt à démarrer',
-        description: tournoi.name,
-        actionLabel: 'Démarrer',
-        actionUrl: `/tournoi/${tournoi.id}`,
-        meta: `${tournoi.nb_joueurs || 0} joueurs inscrits`
-      })
-    })
-
-    // Tournois en cours avec matchs restants
-    tournois.filter(t => t.status === 'en_cours').forEach(tournoi => {
-      const restants = (tournoi.nb_matchs_total || 0) - (tournoi.nb_matchs_joues || 0)
-      if (restants > 0) {
+    tournois.forEach(tournoi => {
+      // 1. Tournois avec nombre de joueurs impair (impossible de faire des équipes)
+      if (tournoi.status === 'preparation' && tournoi.nb_joueurs && tournoi.nb_joueurs % 2 !== 0) {
         actions.push({
-          id: `manage-${tournoi.id}`,
-          type: 'match_pending',
-          priority: 'medium',
-          title: 'Matchs en attente',
+          id: `odd-players-${tournoi.id}`,
+          type: 'tournament_delayed',
+          priority: 'high',
+          title: 'Nombre de joueurs impair',
           description: tournoi.name,
-          actionLabel: 'Gérer',
+          actionLabel: 'Corriger',
           actionUrl: `/tournoi/${tournoi.id}`,
-          meta: `${restants} match${restants > 1 ? 's' : ''} restant${restants > 1 ? 's' : ''}`
+          meta: `${tournoi.nb_joueurs} joueurs (impossible de créer des équipes)`
         })
       }
+
+      // 2. Tournois prêts à démarrer (avec joueurs pairs)
+      if (tournoi.status === 'preparation' && tournoi.nb_joueurs && tournoi.nb_joueurs % 2 === 0 && tournoi.nb_joueurs >= 4) {
+        actions.push({
+          id: `start-${tournoi.id}`,
+          type: 'tournament_ready',
+          priority: 'high',
+          title: 'Tournoi prêt à démarrer',
+          description: tournoi.name,
+          actionLabel: 'Démarrer',
+          actionUrl: `/tournoi/${tournoi.id}`,
+          meta: `${tournoi.nb_joueurs} joueurs inscrits`
+        })
+      }
+
+      // 3. Tournois en préparation avec trop peu de joueurs
+      if (tournoi.status === 'preparation' && (!tournoi.nb_joueurs || tournoi.nb_joueurs < 4)) {
+        actions.push({
+          id: `low-players-${tournoi.id}`,
+          type: 'tournament_delayed',
+          priority: 'medium',
+          title: 'Pas assez de joueurs',
+          description: tournoi.name,
+          actionLabel: 'Ajouter',
+          actionUrl: `/tournoi/${tournoi.id}`,
+          meta: `${tournoi.nb_joueurs || 0} joueurs (minimum 4 requis)`
+        })
+      }
+
+      // 4. Tournois en cours avec matchs restants
+      if (tournoi.status === 'en_cours') {
+        const restants = (tournoi.nb_matchs_total || 0) - (tournoi.nb_matchs_joues || 0)
+        if (restants > 0) {
+          actions.push({
+            id: `manage-${tournoi.id}`,
+            type: 'match_pending',
+            priority: 'medium',
+            title: 'Matchs en attente',
+            description: tournoi.name,
+            actionLabel: 'Gérer',
+            actionUrl: `/tournoi/${tournoi.id}`,
+            meta: `${restants} match${restants > 1 ? 's' : ''} restant${restants > 1 ? 's' : ''}`
+          })
+        }
+      }
+
+      // 5. Tournois terminés depuis >24h (à clôturer)
+      if (tournoi.status === 'termine') {
+        const createdAt = new Date(tournoi.created_at)
+        const hoursSinceEnd = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60)
+        if (hoursSinceEnd > 24) {
+          actions.push({
+            id: `close-${tournoi.id}`,
+            type: 'tournament_delayed',
+            priority: 'low',
+            title: 'Tournoi à clôturer',
+            description: tournoi.name,
+            actionLabel: 'Voir résultats',
+            actionUrl: `/tournoi/${tournoi.id}/podium`,
+            meta: `Terminé il y a ${Math.floor(hoursSinceEnd)}h`
+          })
+        }
+      }
     })
+
+    // Trier par priorité : high > medium > low
+    const priorityOrder = { high: 0, medium: 1, low: 2 }
+    actions.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
 
     setActionItems(actions)
   }, [tournois])
@@ -122,6 +203,19 @@ export default function Dashboard() {
     description: action.description,
     action: () => router.push(action.actionUrl)
   }))
+
+  // Filtrer les tournois selon recherche et statut
+  const filteredTournois = tournois.filter(tournoi => {
+    // Filtre de recherche
+    const matchesSearch = searchQuery === '' ||
+      tournoi.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tournoi.format.toLowerCase().includes(searchQuery.toLowerCase())
+
+    // Filtre de statut
+    const matchesStatus = statusFilter === 'all' || tournoi.status === statusFilter
+
+    return matchesSearch && matchesStatus
+  })
 
   const handleLogout = async () => {
     await signOut()
@@ -196,11 +290,78 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Tournois actifs - 2/3 */}
           <div className="lg:col-span-2">
+            {/* Header avec recherche et filtres */}
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Tournois actifs</h2>
-              <p className="text-gray-600">Gérez vos tournois en cours et en préparation</p>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Tournois actifs</h2>
+                  <p className="text-gray-600 text-sm mt-1">
+                    {filteredTournois.length} tournoi{filteredTournois.length > 1 ? 's' : ''} trouvé{filteredTournois.length > 1 ? 's' : ''}
+                  </p>
+                </div>
+                <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-lg">
+                  Raccourcis: <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border">N</kbd> nouveau, <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border">J</kbd> joueurs, <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border">/</kbd> recherche
+                </div>
+              </div>
+
+              {/* Barre de recherche */}
+              <div className="flex gap-3 mb-4">
+                <div className="relative flex-1">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Rechercher un tournoi par nom ou format..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {Icons.x}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Filtres de statut */}
+              <div className="flex gap-2">
+                {(['all', 'preparation', 'en_cours', 'termine'] as const).map(status => {
+                  const labels = {
+                    all: 'Tous',
+                    preparation: 'En préparation',
+                    en_cours: 'En cours',
+                    termine: 'Terminés'
+                  }
+                  const counts = {
+                    all: tournois.length,
+                    preparation: tournois.filter(t => t.status === 'preparation').length,
+                    en_cours: tournois.filter(t => t.status === 'en_cours').length,
+                    termine: tournois.filter(t => t.status === 'termine').length
+                  }
+
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(status)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        statusFilter === status
+                          ? 'bg-green-600 text-white'
+                          : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      {labels[status]} <span className="text-xs opacity-75">({counts[status]})</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-            <ActiveTournaments tournois={tournois} loading={loading} />
+            <ActiveTournaments tournois={filteredTournois} loading={loading} />
           </div>
 
           {/* Sidebar - 1/3 */}
@@ -233,35 +394,91 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Stats essentielles */}
+            {/* Stats essentielles avec tendances */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Statistiques</h3>
               <div className="space-y-4">
+                {/* Tournois */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-gray-600">Tournois totaux</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600">Tournois totaux</span>
                     <span className="text-2xl font-bold text-gray-900">{stats.totalTournois}</span>
                   </div>
-                  {stats.nouveauxTournois > 0 && (
-                    <p className="text-xs text-green-600">+{stats.nouveauxTournois} ce mois</p>
+                  {stats.nouveauxTournois > 0 ? (
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-semibold text-green-600">+{stats.nouveauxTournois}</span>
+                      <span className="text-gray-500">ce mois</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <span>Aucun nouveau</span>
+                    </div>
                   )}
+                  <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-green-500 to-emerald-600 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min((stats.tournoiEnCours / stats.totalTournois) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{stats.tournoiEnCours} en cours</p>
                 </div>
+
+                {/* Joueurs */}
                 <div className="pt-4 border-t">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-gray-600">Joueurs actifs</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600">Joueurs actifs</span>
                     <span className="text-2xl font-bold text-gray-900">{stats.totalJoueurs}</span>
                   </div>
-                  {stats.nouveauxJoueurs > 0 && (
-                    <p className="text-xs text-green-600">+{stats.nouveauxJoueurs} ce mois</p>
+                  {stats.nouveauxJoueurs > 0 ? (
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-semibold text-green-600">+{stats.nouveauxJoueurs}</span>
+                      <span className="text-gray-500">ce mois</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <span>Aucun nouveau</span>
+                    </div>
                   )}
                 </div>
+
+                {/* Matchs */}
                 <div className="pt-4 border-t">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-gray-600">Matchs joués</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600">Matchs joués</span>
                     <span className="text-2xl font-bold text-gray-900">{stats.totalMatchs}</span>
                   </div>
-                  {stats.nouveauxMatchs > 0 && (
-                    <p className="text-xs text-green-600">+{stats.nouveauxMatchs} ce mois</p>
+                  {stats.nouveauxMatchs > 0 ? (
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-semibold text-green-600">+{stats.nouveauxMatchs}</span>
+                      <span className="text-gray-500">ce mois</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <span>Aucun nouveau</span>
+                    </div>
+                  )}
+                  {stats.totalMatchs > 0 && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Moyenne: {(stats.totalMatchs / Math.max(stats.totalTournois, 1)).toFixed(1)} matchs/tournoi
+                    </p>
                   )}
                 </div>
               </div>
