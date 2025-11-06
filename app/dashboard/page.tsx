@@ -10,7 +10,7 @@ import { loadStripe } from '@stripe/stripe-js'
 
 // Import des composants
 import DashboardHeader from './components/DashboardHeader'
-import ActionCenter from './components/ActionCenter'
+import ActionCenter, { ActionItem } from './components/ActionCenter'
 import ActiveTournaments from './components/ActiveTournaments'
 import { useDashboardData } from './hooks/useDashboardData'
 
@@ -106,7 +106,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!tournois.length) return
 
-    const actions: any[] = []
+    const actions: ActionItem[] = []
     const now = new Date()
 
     tournois.forEach(tournoi => {
@@ -189,7 +189,7 @@ export default function Dashboard() {
     })
 
     // Trier par priorité : high > medium > low
-    const priorityOrder = { high: 0, medium: 1, low: 2 }
+    const priorityOrder: Record<'high' | 'medium' | 'low', number> = { high: 0, medium: 1, low: 2 }
     actions.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
 
     setActionItems(actions)

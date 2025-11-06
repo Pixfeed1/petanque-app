@@ -6,7 +6,7 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
 
-interface ActionItem {
+export interface ActionItem {
   id: string
   type: 'match_pending' | 'tournament_ready' | 'tournament_delayed'
   priority: 'high' | 'medium' | 'low'
