@@ -1,5 +1,5 @@
 // app/dashboard/components/QuickActions.tsx
-// Boutons d'actions rapides
+// Boutons d'actions rapides avec design moderne
 
 'use client'
 
@@ -12,7 +12,6 @@ interface QuickActionsProps {
   onQuiz: () => void
 }
 
-// Icônes SVG
 const Icons = {
   plus: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -45,44 +44,81 @@ export default function QuickActions({
   const actions = [
     {
       label: 'Nouveau Tournoi',
+      description: 'Créer un tournoi',
       icon: Icons.plus,
       onClick: onNewTournament,
       primary: true,
-      color: 'bg-green-600 hover:bg-green-700 text-white'
+      gradient: 'from-green-500 to-emerald-600',
+      color: 'text-white',
+      hoverBg: 'hover:from-green-600 hover:to-emerald-700'
     },
     {
       label: 'Gérer Joueurs',
+      description: 'Liste des joueurs',
       icon: Icons.users,
       onClick: onManagePlayers,
       primary: false,
-      color: 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200'
+      gradient: 'from-white to-gray-50',
+      color: 'text-gray-900',
+      hoverBg: 'hover:to-gray-100'
     },
     {
       label: 'Quiz',
+      description: 'Tester vos connaissances',
       icon: Icons.book,
       onClick: onQuiz,
       primary: false,
-      color: 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200'
+      gradient: 'from-white to-gray-50',
+      color: 'text-gray-900',
+      hoverBg: 'hover:to-gray-100'
     },
     {
       label: 'Statistiques',
+      description: 'Voir les stats',
       icon: Icons.chart,
       onClick: onViewStats,
       primary: false,
-      color: 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200'
+      gradient: 'from-white to-gray-50',
+      color: 'text-gray-900',
+      hoverBg: 'hover:to-gray-100'
     }
   ]
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {actions.map((action, index) => (
         <button
           key={index}
           onClick={action.onClick}
-          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${action.color}`}
+          className={`group relative overflow-hidden rounded-xl p-5 transition-all duration-300 ${
+            action.primary
+              ? `bg-gradient-to-br ${action.gradient} shadow-lg shadow-green-600/20 hover:shadow-xl hover:shadow-green-600/30 hover:-translate-y-1`
+              : `bg-gradient-to-br ${action.gradient} border border-gray-200 ${action.hoverBg} hover:border-gray-300 hover:shadow-md hover:-translate-y-0.5`
+          }`}
         >
-          {action.icon}
-          <span className="text-sm">{action.label}</span>
+          {/* Effet brillance au hover */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 -translate-x-full group-hover:translate-x-full transition-all duration-1000"></div>
+
+          <div className="relative">
+            {/* Icône */}
+            <div className={`inline-flex p-2.5 rounded-lg mb-3 ${
+              action.primary
+                ? 'bg-white/20'
+                : 'bg-gray-100 group-hover:bg-gray-200'
+            } ${action.color} transition-colors`}>
+              {action.icon}
+            </div>
+
+            {/* Texte */}
+            <div className="text-left">
+              <p className={`font-semibold ${action.color} mb-1`}>
+                {action.label}
+              </p>
+              <p className={`text-xs ${action.primary ? 'text-green-50' : 'text-gray-500'}`}>
+                {action.description}
+              </p>
+            </div>
+          </div>
         </button>
       ))}
     </div>

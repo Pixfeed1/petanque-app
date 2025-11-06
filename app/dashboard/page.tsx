@@ -157,17 +157,59 @@ export default function Dashboard() {
 
       {/* Contenu principal */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Section de bienvenue */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Bonjour {user?.full_name?.split(' ')[0] || 'Champion'} ! 👋
-          </h1>
-          <p className="text-gray-600">
-            {stats.tournoiEnCours > 0
-              ? `Vous avez ${stats.tournoiEnCours} tournoi${stats.tournoiEnCours > 1 ? 's' : ''} en cours`
-              : 'Prêt à organiser un nouveau tournoi ?'
-            }
-          </p>
+        {/* Hero section moderne */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-green-600 via-emerald-600 to-green-700 rounded-2xl p-8 mb-8 shadow-xl">
+          {/* Motifs décoratifs */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+          </div>
+
+          <div className="relative">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div className="flex-1">
+                <p className="text-green-100 text-sm font-medium mb-2">{organization?.name || 'Mon Club'}</p>
+                <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                  Bonjour {user?.full_name?.split(' ')[0] || 'Champion'}
+                </h1>
+                <p className="text-green-50 text-lg">
+                  {stats.tournoiEnCours > 0
+                    ? `Vous avez ${stats.tournoiEnCours} tournoi${stats.tournoiEnCours > 1 ? 's' : ''} en cours`
+                    : 'Prêt à organiser un nouveau tournoi ?'
+                  }
+                </p>
+              </div>
+
+              <button
+                onClick={() => router.push('/tournoi/nouveau')}
+                className="px-6 py-3 bg-white text-green-600 rounded-xl font-semibold hover:bg-green-50 transition-all hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Nouveau tournoi
+              </button>
+            </div>
+
+            {/* Mini stats dans la hero */}
+            <div className="grid grid-cols-3 gap-4 mt-8">
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                <p className="text-green-100 text-sm mb-1">Cette semaine</p>
+                <p className="text-2xl font-bold text-white">{stats.growth.matchs}</p>
+                <p className="text-green-50 text-xs mt-1">matchs joués</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                <p className="text-green-100 text-sm mb-1">Nouveaux</p>
+                <p className="text-2xl font-bold text-white">+{stats.growth.joueurs}</p>
+                <p className="text-green-50 text-xs mt-1">joueurs</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                <p className="text-green-100 text-sm mb-1">Total</p>
+                <p className="text-2xl font-bold text-white">{stats.totalTournois}</p>
+                <p className="text-green-50 text-xs mt-1">tournois</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Cartes de statistiques */}
@@ -216,7 +258,7 @@ export default function Dashboard() {
                 {Icons.x}
               </button>
               <h2 className="text-2xl font-bold mb-1">
-                {userPlan === 'premium' ? 'Vous êtes Premium ! 🎉' : 'Passez à Premium'}
+                {userPlan === 'premium' ? 'Vous êtes Premium' : 'Passez à Premium'}
               </h2>
               <p className="text-green-100 text-sm">
                 {userPlan === 'premium'
@@ -249,7 +291,9 @@ export default function Dashboard() {
                           <span className="text-gray-700">Toutes les fonctionnalités</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-orange-500 mr-2">⚠️</span>
+                          <svg className="w-5 h-5 text-orange-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
                           <span className="text-gray-700">Avec publicités</span>
                         </li>
                       </ul>
