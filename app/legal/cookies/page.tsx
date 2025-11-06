@@ -295,7 +295,7 @@ export default function CookiesPage() {
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
               {Icons.info}
-              <span className="ml-3">Qu'est-ce qu'un cookie ?</span>
+              <span className="ml-3">Qu&apos;est-ce qu&apos;un cookie ?</span>
             </h2>
             <div className="prose prose-gray max-w-none">
               <p className="text-gray-700 mb-4">
@@ -304,7 +304,7 @@ export default function CookiesPage() {
                 à votre navigation et de vous offrir une expérience personnalisée.
               </p>
               <p className="text-gray-700">
-                Les cookies ne contiennent pas d'informations personnelles directement identifiantes 
+                Les cookies ne contiennent pas d&apos;informations personnelles directement identifiantes 
                 mais peuvent être associés à des données stockées sur nos serveurs.
               </p>
             </div>
@@ -414,7 +414,7 @@ export default function CookiesPage() {
                 <h3 className="font-bold text-gray-900 mb-3">Via notre centre de préférences</h3>
                 <p className="text-gray-700 mb-4">
                   Vous pouvez à tout moment modifier vos préférences en cliquant sur le bouton 
-                  "Gérer mes cookies" disponible sur toutes les pages de l'application.
+                  &ldquo;Gérer mes cookies&rdquo; disponible sur toutes les pages de l&apos;application.
                 </p>
                 <button 
                   onClick={() => setShowPreferences(true)}
@@ -460,7 +460,7 @@ export default function CookiesPage() {
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <p className="text-sm text-yellow-800">
                   <strong>Attention :</strong> Le blocage de certains cookies peut affecter votre expérience 
-                  sur l'application. Les cookies essentiels sont nécessaires au bon fonctionnement du service.
+                  sur l&apos;application. Les cookies essentiels sont nécessaires au bon fonctionnement du service.
                 </p>
               </div>
             </div>
@@ -494,11 +494,11 @@ export default function CookiesPage() {
                 </li>
                 <li className="flex items-start">
                   <span className="text-orange-500 mr-2 mt-1">{Icons.check}</span>
-                  <span>Mesurer l'efficacité des campagnes publicitaires</span>
+                  <span>Mesurer l&apos;efficacité des campagnes publicitaires</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-orange-500 mr-2 mt-1">{Icons.check}</span>
-                  <span>Maintenir l'application gratuite pour tous</span>
+                  <span>Maintenir l&apos;application gratuite pour tous</span>
                 </li>
               </ul>
               
@@ -506,7 +506,7 @@ export default function CookiesPage() {
                 <p className="font-semibold mb-2">Envie de vous débarrasser des publicités ?</p>
                 <p className="text-sm mb-3">
                   Passez à la version Premium pour seulement 4,99€ (paiement unique) 
-                  et profitez de l'application sans publicité ni cookies publicitaires.
+                  et profitez de l&apos;application sans publicité ni cookies publicitaires.
                 </p>
                 <button className="px-6 py-2 bg-white text-green-600 rounded-lg hover:bg-gray-100 transition font-medium">
                   Passer au Premium
@@ -526,7 +526,7 @@ export default function CookiesPage() {
             </h2>
             <p className="mb-6">
               Si vous avez des questions concernant notre utilisation des cookies ou 
-              si vous souhaitez exercer vos droits, n'hésitez pas à nous contacter.
+              si vous souhaitez exercer vos droits, n&apos;hésitez pas à nous contacter.
             </p>
             <a 
               href="mailto:support@petanquepro.fr" 

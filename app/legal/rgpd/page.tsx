@@ -207,7 +207,7 @@ export default function RGPDPage() {
             
             <div className="space-y-6">
               <div>
-                <h3 className="font-bold text-gray-900 mb-3">Données d'identification</h3>
+                <h3 className="font-bold text-gray-900 mb-3">Données d&apos;identification</h3>
                 <ul className="space-y-2">
                   <li className="flex items-start">
                     <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
@@ -269,7 +269,7 @@ export default function RGPDPage() {
                   </li>
                   <li className="flex items-start">
                     <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                    <span>Type d'appareil et navigateur</span>
+                    <span>Type d&apos;appareil et navigateur</span>
                   </li>
                   <li className="flex items-start">
                     <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
@@ -277,7 +277,7 @@ export default function RGPDPage() {
                   </li>
                   <li className="flex items-start">
                     <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                    <span>Préférences d'utilisation</span>
+                    <span>Préférences d&apos;utilisation</span>
                   </li>
                 </ul>
               </div>
@@ -299,12 +299,12 @@ export default function RGPDPage() {
               
               <div className="border-l-4 border-green-500 pl-4">
                 <h3 className="font-bold text-gray-900 mb-2">Amélioration du service</h3>
-                <p className="text-gray-700">Analyse statistique de l'utilisation, amélioration des fonctionnalités, correction des bugs.</p>
+                <p className="text-gray-700">Analyse statistique de l&apos;utilisation, amélioration des fonctionnalités, correction des bugs.</p>
               </div>
               
               <div className="border-l-4 border-purple-500 pl-4">
                 <h3 className="font-bold text-gray-900 mb-2">Communication</h3>
-                <p className="text-gray-700">Envoi d'emails transactionnels (confirmation d'achat, récupération de mot de passe).</p>
+                <p className="text-gray-700">Envoi d&apos;emails transactionnels (confirmation d&apos;achat, récupération de mot de passe).</p>
               </div>
               
               <div className="border-l-4 border-orange-500 pl-4">
@@ -330,7 +330,7 @@ export default function RGPDPage() {
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-24 font-semibold text-gray-900">Compte actif</div>
                 <div className="ml-4 text-gray-700">
-                  Vos données sont conservées pendant toute la durée d'utilisation de votre compte.
+                  Vos données sont conservées pendant toute la durée d&apos;utilisation de votre compte.
                 </div>
               </div>
               
@@ -374,7 +374,7 @@ export default function RGPDPage() {
                   </div>
                   <div className="border rounded-lg p-4">
                     <p className="font-semibold">Vercel (Hébergement application)</p>
-                    <p className="text-sm text-gray-600">Hébergement de l'application - CDN mondial</p>
+                    <p className="text-sm text-gray-600">Hébergement de l&apos;application - CDN mondial</p>
                   </div>
                   <div className="border rounded-lg p-4">
                     <p className="font-semibold">Stripe (Paiements)</p>
@@ -382,7 +382,7 @@ export default function RGPDPage() {
                   </div>
                   <div className="border rounded-lg p-4">
                     <p className="font-semibold">Google (Analytics & AdMob)</p>
-                    <p className="text-sm text-gray-600">Analyse d'utilisation et publicités - Transfert hors UE</p>
+                    <p className="text-sm text-gray-600">Analyse d&apos;utilisation et publicités - Transfert hors UE</p>
                   </div>
                 </div>
               </div>
@@ -412,7 +412,7 @@ export default function RGPDPage() {
               <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-center mb-2">
                   {Icons.user}
-                  <h3 className="ml-2 font-bold text-gray-900">Droit d'accès</h3>
+                  <h3 className="ml-2 font-bold text-gray-900">Droit d&apos;accès</h3>
                 </div>
                 <p className="text-sm text-gray-600">Obtenir une copie de vos données personnelles</p>
               </div>
@@ -428,9 +428,9 @@ export default function RGPDPage() {
               <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-center mb-2">
                   {Icons.trash}
-                  <h3 className="ml-2 font-bold text-gray-900">Droit à l'effacement</h3>
+                  <h3 className="ml-2 font-bold text-gray-900">Droit à l&apos;effacement</h3>
                 </div>
-                <p className="text-sm text-gray-600">Supprimer vos données ("droit à l'oubli")</p>
+                <p className="text-sm text-gray-600">Supprimer vos données (&ldquo;droit à l&apos;oubli&rdquo;)</p>
               </div>
               
               <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
@@ -452,7 +452,7 @@ export default function RGPDPage() {
               <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-center mb-2">
                   {Icons.shield}
-                  <h3 className="ml-2 font-bold text-gray-900">Droit d'opposition</h3>
+                  <h3 className="ml-2 font-bold text-gray-900">Droit d&apos;opposition</h3>
                 </div>
                 <p className="text-sm text-gray-600">Vous opposer au traitement de vos données</p>
               </div>
@@ -503,7 +503,7 @@ export default function RGPDPage() {
                     <span className="text-blue-500 mr-2 mt-1">{Icons.check}</span>
                     <div>
                       <p className="font-medium">Google Analytics</p>
-                      <p className="text-sm text-gray-600">Analyse de l'utilisation du service - Durée : 2 ans</p>
+                      <p className="text-sm text-gray-600">Analyse de l&apos;utilisation du service - Durée : 2 ans</p>
                     </div>
                   </li>
                 </ul>
@@ -525,7 +525,7 @@ export default function RGPDPage() {
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-700">
                   <strong>Gestion des cookies :</strong> Vous pouvez gérer vos préférences cookies à tout moment 
-                  dans les paramètres de l'application ou via les paramètres de votre navigateur.
+                  dans les paramètres de l&apos;application ou via les paramètres de votre navigateur.
                 </p>
               </div>
             </div>
@@ -624,7 +624,7 @@ export default function RGPDPage() {
                 <span className="text-xl font-bold text-white">Pétanque Pro</span>
               </div>
               <p className="text-sm">
-                L'application de référence pour organiser vos tournois de pétanque.
+                L&apos;application de référence pour organiser vos tournois de pétanque.
               </p>
             </div>
             
@@ -641,7 +641,7 @@ export default function RGPDPage() {
             <div>
               <h4 className="text-white font-semibold mb-4">Support</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition">Guide d'utilisation</a></li>
+                <li><a href="#" className="hover:text-white transition">Guide d&apos;utilisation</a></li>
                 <li><a href="#" className="hover:text-white transition">FAQ</a></li>
                 <li><a href="#" className="hover:text-white transition">Contact</a></li>
                 <li><a href="#" className="hover:text-white transition">Communauté</a></li>
@@ -651,7 +651,7 @@ export default function RGPDPage() {
             <div>
               <h4 className="text-white font-semibold mb-4">Légal</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition">Conditions d'utilisation</a></li>
+                <li><a href="#" className="hover:text-white transition">Conditions d&apos;utilisation</a></li>
                 <li><a href="#" className="hover:text-white transition">Confidentialité</a></li>
                 <li><a href="#" className="hover:text-white transition">Cookies</a></li>
                 <li><a href="#" className="hover:text-white transition font-bold">RGPD</a></li>
