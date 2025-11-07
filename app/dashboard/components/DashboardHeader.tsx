@@ -9,6 +9,15 @@ import { useRouter } from 'next/navigation'
 interface DashboardHeaderProps {
   user: any
   organization: any
+  pendingActionsCount: number
+  pendingActions: Array<{
+    type: string
+    icon: React.ReactElement
+    title: string
+    description: string
+    tournoi?: string
+    action: () => void
+  }>
   userPlan: string
   onLogout: () => void
   onOpenUpgrade: () => void
@@ -66,11 +75,14 @@ const Icons = {
 export default function DashboardHeader({
   user,
   organization,
+  pendingActionsCount,
+  pendingActions,
   userPlan,
   onLogout,
   onOpenUpgrade
 }: DashboardHeaderProps) {
   const router = useRouter()
+  const [showNotifications, setShowNotifications] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
 
   return (
@@ -88,6 +100,74 @@ export default function DashboardHeader({
 
           {/* Actions droite */}
           <div className="flex items-center space-x-2">
+            {/* Notifications */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                {Icons.bell}
+                {pendingActionsCount > 0 && (
+                  <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    {pendingActionsCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Dropdown notifications */}
+              {showNotifications && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowNotifications(false)}
+                  ></div>
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-20">
+                    <div className="p-4 bg-gray-50 border-b border-gray-200">
+                      <h3 className="font-semibold text-gray-900">
+                        {pendingActionsCount > 0
+                          ? `${pendingActionsCount} action${pendingActionsCount > 1 ? 's' : ''} en attente`
+                          : 'Aucune action en attente'
+                        }
+                      </h3>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {pendingActionsCount > 0 ? (
+                        pendingActions.map((action, index) => (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              action.action()
+                              setShowNotifications(false)
+                            }}
+                            className="w-full px-4 py-3 hover:bg-gray-50 transition-colors flex items-start space-x-3 border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="p-2 bg-green-50 rounded-lg text-green-600">
+                              {action.icon}
+                            </div>
+                            <div className="flex-1 text-left">
+                              <p className="font-medium text-gray-900 text-sm">{action.title}</p>
+                              <p className="text-xs text-gray-600">{action.description}</p>
+                              {action.tournoi && (
+                                <p className="text-xs text-gray-500 mt-1">{action.tournoi}</p>
+                              )}
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-8 text-center text-gray-500">
+                          <div className="text-3xl mb-2">✨</div>
+                          <p className="text-sm">Tout est à jour !</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Séparateur */}
+            <div className="h-6 w-px bg-gray-200"></div>
+
             {/* Menu profil */}
             <div className="relative">
               <button
