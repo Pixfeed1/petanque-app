@@ -255,7 +255,8 @@ export default function MatchScorePage() {
       }
 
       if (!match.started_at) {
-        updateData.started_at = startTime?.toISOString()
+        // Utiliser startTime ou now() comme fallback si startTime est null
+        updateData.started_at = startTime ? startTime.toISOString() : new Date().toISOString()
       }
 
       if (isFinished) {

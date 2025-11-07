@@ -958,10 +958,10 @@ export default function TournamentDetailPage() {
                         // Calculer le vrai leader basé sur les victoires et différence de points
                         const sortedTeams = [...teams].sort((a, b) => {
                           const aMatches = matches.filter(m =>
-                            (m.equipe_a?.id === a.id || m.equipe_b?.id === b.id) && m.status === 'termine'
+                            (m.equipe_a?.id === a.id || m.equipe_b?.id === a.id) && m.status === 'termine'
                           )
                           const bMatches = matches.filter(m =>
-                            (m.equipe_a?.id === b.id || m.equipe_b?.id === a.id) && m.status === 'termine'
+                            (m.equipe_a?.id === b.id || m.equipe_b?.id === b.id) && m.status === 'termine'
                           )
 
                           const aVictories = aMatches.filter(m =>

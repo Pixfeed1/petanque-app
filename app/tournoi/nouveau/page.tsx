@@ -686,18 +686,20 @@ export default function CreateTournamentPage() {
       
       // Tenter de recharger l'organisation
       if (typeof refreshOrganization === 'function') {
-        await refreshOrganization()
-        
-        // Attendre un peu pour que le state se mette à jour
-        setTimeout(() => {
-          if (!organization || !organization.id) {
-            alert('Impossible de charger l\'organisation. Veuillez vous reconnecter.')
-            router.push('/login')
-          }
-        }, 1000)
-        return
+        try {
+          await refreshOrganization()
+          // Si refresh réussit, l'organisation sera chargée au prochain render
+          // On informe l'utilisateur de réessayer
+          alert('Organisation rechargée. Veuillez cliquer à nouveau sur "Créer le tournoi".')
+          return
+        } catch (error) {
+          console.error('Erreur refresh organisation:', error)
+          alert('Impossible de charger l\'organisation. Veuillez vous reconnecter.')
+          router.push('/login')
+          return
+        }
       }
-      
+
       router.push('/dashboard')
       return
     }
