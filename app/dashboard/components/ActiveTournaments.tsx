@@ -66,17 +66,17 @@ export default function ActiveTournaments({ tournois, loading }: ActiveTournamen
 
   if (activeTournois.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="bg-white/80 backdrop-blur rounded-xl border-2 border-stone-200 p-12 text-center">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-amber-50 rounded-2xl mb-4">
+          <svg className="w-10 h-10 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Aucun tournoi actif</h3>
-        <p className="text-gray-600 mb-6">Créez un nouveau tournoi pour commencer</p>
+        <h3 className="text-xl font-bold text-stone-900 mb-2">Aucun tournoi</h3>
+        <p className="text-stone-600 mb-6">Créez votre premier tournoi pour commencer</p>
         <button
           onClick={() => router.push('/tournoi/nouveau')}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-bold hover:from-orange-700 hover:to-amber-700 transition-all shadow-lg"
         >
           Créer un tournoi
         </button>
@@ -102,45 +102,49 @@ export default function ActiveTournaments({ tournois, loading }: ActiveTournamen
         return (
           <div
             key={tournoi.id}
-            className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-all overflow-hidden"
+            className={`bg-white rounded-xl border-2 transition-all overflow-hidden ${
+              isEnCours
+                ? 'border-orange-400 shadow-lg shadow-orange-100'
+                : 'border-stone-200 hover:border-stone-300'
+            }`}
           >
             {/* Header */}
             <div className="p-6 pb-4">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-semibold text-gray-900">{tournoi.name}</h3>
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <h3 className="text-xl font-bold text-stone-900">{tournoi.name}</h3>
 
                     {/* Badge statut */}
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                    <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold ${
                       isEnCours
-                        ? 'bg-green-100 text-green-800'
+                        ? 'bg-orange-600 text-white'
                         : 'bg-amber-100 text-amber-800'
                     }`}>
-                      {isEnCours ? 'En cours' : 'Préparation'}
+                      {isEnCours ? '🎯 EN COURS' : 'Préparation'}
                     </span>
 
                     {/* Badges discrets pour alertes */}
                     {hasOddPlayers && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-red-100 text-red-700">
                         <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
                         Nombre impair
                       </span>
                     )}
                     {isReady && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-700">
                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                         Prêt
                       </span>
                     )}
                     {notEnoughPlayers && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-amber-100 text-amber-700">
                         <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
                         {tournoi.nb_joueurs || 0}/4 min
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-stone-600 font-medium">
                     {tournoi.format} • {tournoi.mode.replace('_', ' ')}
                   </p>
                 </div>
@@ -148,18 +152,18 @@ export default function ActiveTournaments({ tournois, loading }: ActiveTournamen
 
               {/* Stats rapides */}
               <div className="flex items-center gap-6 text-sm">
-                <div className="flex items-center gap-1.5 text-gray-700">
+                <div className="flex items-center gap-1.5 text-stone-700">
                   {Icons.users}
-                  <span className="font-medium">{tournoi.nb_joueurs || 0}</span>
-                  <span className="text-gray-500">joueurs</span>
+                  <span className="font-bold">{tournoi.nb_joueurs || 0}</span>
+                  <span className="text-stone-500">joueurs</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-gray-700">
+                <div className="flex items-center gap-1.5 text-stone-700">
                   {Icons.chart}
-                  <span className="font-medium">{tournoi.nb_matchs_joues || 0}/{tournoi.nb_matchs_total || 0}</span>
-                  <span className="text-gray-500">matchs</span>
+                  <span className="font-bold">{tournoi.nb_matchs_joues || 0}/{tournoi.nb_matchs_total || 0}</span>
+                  <span className="text-stone-500">matchs</span>
                 </div>
                 {isEnCours && matchsRestants > 0 && (
-                  <div className="text-amber-600 font-medium">
+                  <div className="text-orange-600 font-bold">
                     {matchsRestants} restant{matchsRestants > 1 ? 's' : ''}
                   </div>
                 )}
@@ -169,12 +173,12 @@ export default function ActiveTournaments({ tournois, loading }: ActiveTournamen
               {(tournoi.nb_matchs_total || 0) > 0 && (
                 <div className="mt-4">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-medium text-gray-600">Progression</span>
-                    <span className="text-xs font-semibold text-gray-900">{Math.round(progress)}%</span>
+                    <span className="text-xs font-medium text-stone-600">Progression</span>
+                    <span className="text-xs font-bold text-orange-600">{Math.round(progress)}%</span>
                   </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-2.5 bg-stone-100 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-500 rounded-full"
+                      className="h-full bg-gradient-to-r from-orange-500 to-amber-500 transition-all duration-500 rounded-full"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -183,17 +187,17 @@ export default function ActiveTournaments({ tournois, loading }: ActiveTournamen
             </div>
 
             {/* Actions */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center gap-2">
+            <div className="px-6 py-4 bg-stone-50 border-t-2 border-stone-100 flex items-center gap-2">
               <button
                 onClick={() => router.push(`/tournoi/${tournoi.id}`)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-stone-700 hover:text-stone-900 hover:bg-white rounded-lg transition-colors"
               >
                 {Icons.eye}
                 Voir
               </button>
               <button
                 onClick={() => router.push(`/tournoi/${tournoi.id}/bracket`)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-stone-700 hover:text-stone-900 hover:bg-white rounded-lg transition-colors"
               >
                 {Icons.chart}
                 Bracket
@@ -201,7 +205,7 @@ export default function ActiveTournaments({ tournois, loading }: ActiveTournamen
               {!isEnCours ? (
                 <button
                   onClick={() => router.push(`/tournoi/${tournoi.id}`)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors ml-auto"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 rounded-lg transition-all ml-auto shadow-md"
                 >
                   {Icons.play}
                   Démarrer
@@ -209,7 +213,7 @@ export default function ActiveTournaments({ tournois, loading }: ActiveTournamen
               ) : (
                 <button
                   onClick={() => router.push(`/tournoi/${tournoi.id}`)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-colors ml-auto"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-stone-800 hover:bg-stone-900 rounded-lg transition-colors ml-auto"
                 >
                   {Icons.edit}
                   Gérer

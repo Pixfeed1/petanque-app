@@ -1,5 +1,5 @@
 // app/dashboard/page.tsx
-// Dashboard professionnel optimisé pour organisateurs de tournois
+// Dashboard club de pétanque - Style moderne et convivial
 
 'use client'
 
@@ -45,14 +45,19 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
     </svg>
   ),
+  trophy: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+    </svg>
+  ),
   users: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
     </svg>
   ),
-  book: (
+  chart: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
     </svg>
   )
 }
@@ -76,18 +81,14 @@ export default function Dashboard() {
     }
   }, [organization])
 
-  // Raccourcis clavier
+  // Raccourcis clavier (pas affichés)
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // Ignorer si focus dans un input
       if ((e.target as HTMLElement).tagName === 'INPUT') return
 
       switch(e.key.toLowerCase()) {
         case 'n':
           router.push('/tournoi/nouveau')
-          break
-        case 'j':
-          router.push('/joueurs')
           break
         case '/':
           e.preventDefault()
@@ -102,12 +103,10 @@ export default function Dashboard() {
 
   // Filtrer les tournois selon recherche et statut
   const filteredTournois = tournois.filter(tournoi => {
-    // Filtre de recherche
     const matchesSearch = searchQuery === '' ||
       tournoi.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tournoi.format.toLowerCase().includes(searchQuery.toLowerCase())
 
-    // Filtre de statut
     const matchesStatus = statusFilter === 'all' || tournoi.status === statusFilter
 
     return matchesSearch && matchesStatus
@@ -151,19 +150,19 @@ export default function Dashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-orange-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-lg shadow-lg mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-xl shadow-lg mb-4">
             {Icons.loader}
           </div>
-          <p className="text-sm text-gray-600">Chargement...</p>
+          <p className="text-sm text-stone-600">Chargement...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-orange-50">
       {/* Header */}
       <DashboardHeader
         user={user}
@@ -175,200 +174,117 @@ export default function Dashboard() {
 
       {/* Contenu principal */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Layout 2 colonnes */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Tournois actifs - 2/3 */}
-          <div className="lg:col-span-2">
-            {/* Header avec recherche et filtres */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Tournois actifs</h2>
-                  <p className="text-gray-600 text-sm mt-1">
-                    {filteredTournois.length} tournoi{filteredTournois.length > 1 ? 's' : ''} trouvé{filteredTournois.length > 1 ? 's' : ''}
-                  </p>
-                </div>
-                <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-lg">
-                  Raccourcis: <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border">N</kbd> nouveau, <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border">J</kbd> joueurs, <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border">/</kbd> recherche
-                </div>
-              </div>
-
-              {/* Barre de recherche */}
-              <div className="flex gap-3 mb-4">
-                <div className="relative flex-1">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <input
-                    id="search-input"
-                    type="text"
-                    placeholder="Rechercher un tournoi par nom ou format..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {Icons.x}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Filtres de statut */}
-              <div className="flex gap-2">
-                {(['all', 'preparation', 'en_cours', 'termine'] as const).map(status => {
-                  const labels = {
-                    all: 'Tous',
-                    preparation: 'En préparation',
-                    en_cours: 'En cours',
-                    termine: 'Terminés'
-                  }
-                  const counts = {
-                    all: tournois.length,
-                    preparation: tournois.filter(t => t.status === 'preparation').length,
-                    en_cours: tournois.filter(t => t.status === 'en_cours').length,
-                    termine: tournois.filter(t => t.status === 'termine').length
-                  }
-
-                  return (
-                    <button
-                      key={status}
-                      onClick={() => setStatusFilter(status)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        statusFilter === status
-                          ? 'bg-green-600 text-white'
-                          : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      {labels[status]} <span className="text-xs opacity-75">({counts[status]})</span>
-                    </button>
-                  )
-                })}
-              </div>
+        {/* Header section avec CTA */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-stone-900 mb-1">Mes Tournois</h1>
+              <p className="text-stone-600">
+                {filteredTournois.length} tournoi{filteredTournois.length > 1 ? 's' : ''}
+              </p>
             </div>
+
+            {/* Gros bouton CTA */}
+            <button
+              onClick={() => router.push('/tournoi/nouveau')}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold rounded-xl hover:from-orange-700 hover:to-amber-700 shadow-lg shadow-orange-200 transition-all"
+            >
+              {Icons.plus}
+              Nouveau tournoi
+            </button>
+          </div>
+
+          {/* Barre de recherche */}
+          <div className="mb-4">
+            <div className="relative">
+              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                id="search-input"
+                type="text"
+                placeholder="Rechercher un tournoi..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-white border-2 border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                >
+                  {Icons.x}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Filtres de statut */}
+          <div className="flex gap-2 flex-wrap">
+            {(['all', 'preparation', 'en_cours', 'termine'] as const).map(status => {
+              const labels = {
+                all: 'Tous',
+                preparation: 'En préparation',
+                en_cours: 'En cours',
+                termine: 'Terminés'
+              }
+              const counts = {
+                all: tournois.length,
+                preparation: tournois.filter(t => t.status === 'preparation').length,
+                en_cours: tournois.filter(t => t.status === 'en_cours').length,
+                termine: tournois.filter(t => t.status === 'termine').length
+              }
+
+              return (
+                <button
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    statusFilter === status
+                      ? 'bg-orange-600 text-white shadow-md'
+                      : 'bg-white text-stone-700 hover:bg-stone-50'
+                  }`}
+                >
+                  {labels[status]} <span className="opacity-75">({counts[status]})</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Layout 2 colonnes */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Tournois actifs - 3/4 */}
+          <div className="lg:col-span-3">
             <ActiveTournaments tournois={filteredTournois} loading={loading} />
           </div>
 
-          {/* Sidebar - 1/3 */}
-          <div className="space-y-6">
-            {/* Actions rapides */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Actions rapides</h3>
-              <div className="space-y-2">
-                <button
-                  onClick={() => router.push('/tournoi/nouveau')}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
-                >
-                  {Icons.plus}
-                  <span className="font-medium text-gray-900">Nouveau tournoi</span>
-                </button>
-                <button
-                  onClick={() => router.push('/joueurs')}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
-                >
-                  {Icons.users}
-                  <span className="font-medium text-gray-900">Gérer les joueurs</span>
-                </button>
-                <button
-                  onClick={() => router.push('/quiz')}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
-                >
-                  {Icons.book}
-                  <span className="font-medium text-gray-900">Quiz pétanque</span>
-                </button>
-              </div>
-            </div>
+          {/* Sidebar stats - 1/4 */}
+          <div>
+            <div className="bg-white/80 backdrop-blur rounded-xl border-2 border-stone-200 p-6 sticky top-24">
+              <h3 className="font-bold text-stone-900 mb-6 text-lg flex items-center gap-2">
+                {Icons.trophy}
+                Tableau de bord
+              </h3>
 
-            {/* Stats essentielles avec tendances */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Statistiques</h3>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* Tournois */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600">Tournois totaux</span>
-                    <span className="text-2xl font-bold text-gray-900">{stats.totalTournois}</span>
-                  </div>
-                  {stats.nouveauxTournois > 0 ? (
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
-                      </svg>
-                      <span className="font-semibold text-green-600">+{stats.nouveauxTournois}</span>
-                      <span className="text-gray-500">ce mois</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
-                      </svg>
-                      <span>Aucun nouveau</span>
-                    </div>
-                  )}
-                  <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-green-500 to-emerald-600 rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min((stats.tournoiEnCours / stats.totalTournois) * 100, 100)}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">{stats.tournoiEnCours} en cours</p>
+                  <div className="text-4xl font-bold text-orange-600 mb-1">{stats.totalTournois}</div>
+                  <div className="text-sm text-stone-600 font-medium">Tournois</div>
+                  <div className="text-xs text-stone-500 mt-1">{stats.tournoiEnCours} en cours</div>
                 </div>
 
                 {/* Joueurs */}
-                <div className="pt-4 border-t">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600">Joueurs actifs</span>
-                    <span className="text-2xl font-bold text-gray-900">{stats.totalJoueurs}</span>
-                  </div>
-                  {stats.nouveauxJoueurs > 0 ? (
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
-                      </svg>
-                      <span className="font-semibold text-green-600">+{stats.nouveauxJoueurs}</span>
-                      <span className="text-gray-500">ce mois</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
-                      </svg>
-                      <span>Aucun nouveau</span>
-                    </div>
-                  )}
+                <div className="pt-6 border-t-2 border-stone-100">
+                  <div className="text-4xl font-bold text-amber-600 mb-1">{stats.totalJoueurs}</div>
+                  <div className="text-sm text-stone-600 font-medium">Joueurs</div>
                 </div>
 
                 {/* Matchs */}
-                <div className="pt-4 border-t">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600">Matchs joués</span>
-                    <span className="text-2xl font-bold text-gray-900">{stats.totalMatchs}</span>
-                  </div>
-                  {stats.nouveauxMatchs > 0 ? (
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
-                      </svg>
-                      <span className="font-semibold text-green-600">+{stats.nouveauxMatchs}</span>
-                      <span className="text-gray-500">ce mois</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
-                      </svg>
-                      <span>Aucun nouveau</span>
-                    </div>
-                  )}
-                  {stats.totalMatchs > 0 && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      Moyenne: {(stats.totalMatchs / Math.max(stats.totalTournois, 1)).toFixed(1)} matchs/tournoi
-                    </p>
-                  )}
+                <div className="pt-6 border-t-2 border-stone-100">
+                  <div className="text-4xl font-bold text-stone-700 mb-1">{stats.totalMatchs}</div>
+                  <div className="text-sm text-stone-600 font-medium">Matchs joués</div>
                 </div>
               </div>
             </div>
@@ -376,11 +292,11 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Modal Upgrade Premium - identique */}
+      {/* Modal Upgrade Premium */}
       {showUpgradeModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full overflow-hidden">
-            <div className="bg-green-600 p-6 text-white relative">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden">
+            <div className="bg-gradient-to-r from-orange-600 to-amber-600 p-6 text-white relative">
               <button
                 onClick={() => setShowUpgradeModal(false)}
                 className="absolute top-4 right-4 p-1 hover:bg-white/20 rounded transition-colors"
@@ -390,7 +306,7 @@ export default function Dashboard() {
               <h2 className="text-2xl font-bold mb-1">
                 {userPlan === 'premium' ? 'Vous êtes Premium' : 'Passez à Premium'}
               </h2>
-              <p className="text-green-100 text-sm">
+              <p className="text-orange-100 text-sm">
                 {userPlan === 'premium'
                   ? 'Profitez de toutes les fonctionnalités sans publicité'
                   : 'Supprimez les publicités et soutenez le développement'
@@ -402,55 +318,55 @@ export default function Dashboard() {
               {userPlan === 'free' ? (
                 <>
                   <div className="grid md:grid-cols-2 gap-4 mb-6">
-                    <div className="border-2 border-gray-200 rounded-lg p-4">
+                    <div className="border-2 border-stone-200 rounded-xl p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-lg font-bold text-gray-900">Gratuit</h3>
-                        <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">
+                        <h3 className="text-lg font-bold text-stone-900">Gratuit</h3>
+                        <span className="px-2 py-1 bg-stone-100 text-stone-600 rounded text-xs font-medium">
                           Actuel
                         </span>
                       </div>
-                      <div className="text-2xl font-bold text-gray-900 mb-3">0€</div>
+                      <div className="text-2xl font-bold text-stone-900 mb-3">0€</div>
                       <ul className="space-y-2 text-sm">
                         <li className="flex items-start">
-                          <span className="text-green-500 mr-2">{Icons.check}</span>
-                          <span className="text-gray-700">Tournois illimités</span>
+                          <span className="text-orange-500 mr-2">{Icons.check}</span>
+                          <span className="text-stone-700">Tournois illimités</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-green-500 mr-2">{Icons.check}</span>
-                          <span className="text-gray-700">Toutes les fonctionnalités</span>
+                          <span className="text-orange-500 mr-2">{Icons.check}</span>
+                          <span className="text-stone-700">Toutes les fonctionnalités</span>
                         </li>
                         <li className="flex items-start">
-                          <svg className="w-5 h-5 text-orange-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 text-amber-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                           </svg>
-                          <span className="text-gray-700">Avec publicités</span>
+                          <span className="text-stone-700">Avec publicités</span>
                         </li>
                       </ul>
                     </div>
 
-                    <div className="border-2 border-green-500 rounded-lg p-4 bg-green-50">
+                    <div className="border-2 border-orange-500 rounded-xl p-4 bg-orange-50">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-lg font-bold text-gray-900">Premium</h3>
-                        <span className="text-yellow-500">{Icons.crown}</span>
+                        <h3 className="text-lg font-bold text-stone-900">Premium</h3>
+                        <span className="text-amber-500">{Icons.crown}</span>
                       </div>
-                      <div className="text-2xl font-bold text-green-600 mb-1">4,99€</div>
-                      <p className="text-xs text-gray-600 mb-3">Paiement unique, à vie</p>
+                      <div className="text-2xl font-bold text-orange-600 mb-1">4,99€</div>
+                      <p className="text-xs text-stone-600 mb-3">Paiement unique, à vie</p>
                       <ul className="space-y-2 text-sm">
                         <li className="flex items-start">
-                          <span className="text-green-500 mr-2">{Icons.check}</span>
-                          <span className="text-gray-700 font-medium">Tournois illimités</span>
+                          <span className="text-orange-500 mr-2">{Icons.check}</span>
+                          <span className="text-stone-700 font-medium">Tournois illimités</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-green-500 mr-2">{Icons.check}</span>
-                          <span className="text-gray-700 font-medium">Toutes les fonctionnalités</span>
+                          <span className="text-orange-500 mr-2">{Icons.check}</span>
+                          <span className="text-stone-700 font-medium">Toutes les fonctionnalités</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-green-500 mr-2">{Icons.check}</span>
-                          <span className="text-gray-700 font-bold">Sans publicité</span>
+                          <span className="text-orange-500 mr-2">{Icons.check}</span>
+                          <span className="text-stone-700 font-bold">Sans publicité</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="text-green-500 mr-2">{Icons.check}</span>
-                          <span className="text-gray-700 font-bold">Support prioritaire</span>
+                          <span className="text-orange-500 mr-2">{Icons.check}</span>
+                          <span className="text-stone-700 font-bold">Support prioritaire</span>
                         </li>
                       </ul>
                     </div>
@@ -460,7 +376,7 @@ export default function Dashboard() {
                     <button
                       onClick={handleUpgrade}
                       disabled={processingPayment}
-                      className="px-6 py-3 bg-green-600 text-white text-base rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 text-white text-base rounded-xl hover:from-orange-700 hover:to-amber-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                     >
                       {processingPayment ? (
                         <span className="flex items-center justify-center">
@@ -471,20 +387,20 @@ export default function Dashboard() {
                         'Passer à Premium (4,99€)'
                       )}
                     </button>
-                    <p className="mt-3 text-xs text-gray-500">
+                    <p className="mt-3 text-xs text-stone-500">
                       Paiement sécurisé via Stripe • Satisfaction garantie
                     </p>
                   </div>
                 </>
               ) : (
                 <div className="text-center py-6">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-3">
-                    <span className="text-green-600">{Icons.crown}</span>
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-3">
+                    <span className="text-orange-600">{Icons.crown}</span>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  <h3 className="text-xl font-bold text-stone-900 mb-2">
                     Merci pour votre soutien
                   </h3>
-                  <p className="text-gray-600 mb-4 text-sm">
+                  <p className="text-stone-600 mb-4 text-sm">
                     Vous profitez de l'application sans publicité
                   </p>
                 </div>
