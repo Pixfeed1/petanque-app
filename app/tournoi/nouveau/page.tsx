@@ -1219,9 +1219,12 @@ export default function CreateTournamentPage() {
                       onChange={(e) => setFormData({...formData, pouleSize: parseInt(e.target.value)})}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500"
                     >
+                      <option value={3}>3 équipes par poule</option>
                       <option value={4}>4 équipes par poule</option>
                       <option value={5}>5 équipes par poule</option>
                       <option value={6}>6 équipes par poule</option>
+                      <option value={7}>7 équipes par poule</option>
+                      <option value={8}>8 équipes par poule</option>
                     </select>
                     <p className="text-xs text-gray-500 mt-1">Chaque équipe jouera {formData.pouleSize - 1} matchs en poule</p>
                   </div>

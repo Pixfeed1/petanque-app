@@ -864,14 +864,24 @@ export default function TournamentDetailPage() {
                                 <div className="text-center flex-1">
                                   <p className="font-medium text-gray-900">{match.equipe_a?.name}</p>
                                   {match.status !== 'a_jouer' && (
-                                    <p className="text-2xl font-bold text-gray-900 mt-1">{match.score_a}</p>
+                                    <div className="flex items-center justify-center gap-1 mt-1">
+                                      <p className="text-2xl font-bold text-gray-900">{match.score_a}</p>
+                                      {match.status === 'termine' && match.score_a === (tournament?.settings?.maxPoints || 13) && match.score_b === 0 && (
+                                        <span className="text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                                 <div className="px-4 text-gray-400">VS</div>
                                 <div className="text-center flex-1">
                                   <p className="font-medium text-gray-900">{match.equipe_b?.name}</p>
                                   {match.status !== 'a_jouer' && (
-                                    <p className="text-2xl font-bold text-gray-900 mt-1">{match.score_b}</p>
+                                    <div className="flex items-center justify-center gap-1 mt-1">
+                                      <p className="text-2xl font-bold text-gray-900">{match.score_b}</p>
+                                      {match.status === 'termine' && match.score_b === (tournament?.settings?.maxPoints || 13) && match.score_a === 0 && (
+                                        <span className="text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -1041,7 +1051,12 @@ export default function TournamentDetailPage() {
                                   }`}>
                                     <span className="font-medium">{match.equipe_a?.name}</span>
                                     {match.status !== 'a_jouer' && (
-                                      <span className="text-xl font-bold">{match.score_a}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xl font-bold">{match.score_a}</span>
+                                        {match.status === 'termine' && match.score_a === (tournament?.settings?.maxPoints || 13) && match.score_b === 0 && (
+                                          <span className="text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                        )}
+                                      </div>
                                     )}
                                   </div>
                                   <div className={`flex justify-between items-center p-2 rounded-lg ${
@@ -1049,7 +1064,12 @@ export default function TournamentDetailPage() {
                                   }`}>
                                     <span className="font-medium">{match.equipe_b?.name}</span>
                                     {match.status !== 'a_jouer' && (
-                                      <span className="text-xl font-bold">{match.score_b}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xl font-bold">{match.score_b}</span>
+                                        {match.status === 'termine' && match.score_b === (tournament?.settings?.maxPoints || 13) && match.score_a === 0 && (
+                                          <span className="text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                        )}
+                                      </div>
                                     )}
                                   </div>
                                 </div>
