@@ -1139,10 +1139,10 @@ export default function TournamentDetailPage() {
                                 <th className="text-left py-2">Pos</th>
                                 <th className="text-left py-2">Équipe</th>
                                 <th className="text-center py-2">J</th>
-                                <th className="text-center py-2">V</th>
+                                <th className="text-center py-2 text-green-600 font-bold">V</th>
                                 <th className="text-center py-2">D</th>
                                 <th className="text-center py-2">+/-</th>
-                                <th className="text-center py-2">Pts</th>
+                                <th className="text-center py-2">PM</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1158,10 +1158,10 @@ export default function TournamentDetailPage() {
                                   </td>
                                   <td className="py-3 font-medium">{team.name}</td>
                                   <td className="py-3 text-center">{team.played || 0}</td>
-                                  <td className="py-3 text-center">{team.victories || 0}</td>
+                                  <td className="py-3 text-center font-bold text-green-600">{team.victories || 0}</td>
                                   <td className="py-3 text-center">{team.defeats || 0}</td>
                                   <td className="py-3 text-center">{team.difference > 0 ? '+' : ''}{team.difference || 0}</td>
-                                  <td className="py-3 text-center font-bold">{(team.victories || 0) * 3}</td>
+                                  <td className="py-3 text-center text-gray-600">{team.pointsFor || 0}</td>
                                 </tr>
                               ))}
                             </tbody>

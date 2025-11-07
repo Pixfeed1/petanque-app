@@ -72,7 +72,7 @@ CREATE TABLE tournois (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
-  format VARCHAR(50) NOT NULL, -- 'doublette', 'triplette'
+  format VARCHAR(50) NOT NULL, -- 'tete_a_tete', 'doublette', 'triplette'
   mode VARCHAR(50) NOT NULL, -- 'choisi', 'melee_fixe', 'melee_tournante'
   status VARCHAR(50) DEFAULT 'preparation', -- 'preparation', 'en_cours', 'termine'
   settings JSONB DEFAULT '{}'::jsonb,

@@ -275,6 +275,14 @@ export default function CreateTournamentPage() {
 
   const formats = [
     {
+      value: 'tete_a_tete',
+      title: 'Tête à tête',
+      description: '1 joueur (individuel)',
+      minPlayers: 2,
+      icon: '🎯',
+      gradient: 'from-blue-400 to-blue-600'
+    },
+    {
       value: 'doublette',
       title: 'Doublette',
       description: '2 joueurs par équipe',
@@ -336,6 +344,7 @@ export default function CreateTournamentPage() {
   }
 
   const getMinPlayers = () => {
+    if (formData.format === 'tete_a_tete') return 2
     return formData.format === 'doublette' ? 4 : 6
   }
 
@@ -365,7 +374,7 @@ export default function CreateTournamentPage() {
         }
         
         if (formData.mode === 'melee_fixe' || formData.mode === 'melee_tournante') {
-          const playersPerTeam = formData.format === 'doublette' ? 2 : 3
+          const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
           const canFormCompleteTeams = totalPlayers % playersPerTeam === 0
           
           if (!canFormCompleteTeams) {
@@ -409,9 +418,9 @@ export default function CreateTournamentPage() {
       }
       
       if (formData.mode === 'melee_fixe' || formData.mode === 'melee_tournante') {
-        const playersPerTeam = formData.format === 'doublette' ? 2 : 3
+        const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
         const canFormCompleteTeams = totalPlayers % playersPerTeam === 0
-        
+
         if (!canFormCompleteTeams) {
           setValidationError(`Pour une ${formData.format} en mêlée, il faut un nombre de joueurs multiple de ${playersPerTeam}. Vous avez ${totalPlayers} joueurs.`)
           return
@@ -459,7 +468,7 @@ export default function CreateTournamentPage() {
 
   // Fonction corrigée pour créer les équipes avec mixité
   const createTeamsWithMixity = async (tournoi: any, allPlayerIds: string[], updatedPlayersList: any[]) => {
-    const playersPerTeam = formData.format === 'doublette' ? 2 : 3
+    const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
     const nbEquipes = Math.floor(allPlayerIds.length / playersPerTeam)
     
     if (formData.mode === 'choisi') {
@@ -470,9 +479,18 @@ export default function CreateTournamentPage() {
       // Les joueurs seront assignés manuellement par l'organisateur dans l'interface
     } 
     else if (formData.mode === 'melee_fixe') {
+      // Pour tête-à-tête, chaque joueur est sa propre équipe
+      if (formData.format === 'tete_a_tete') {
+        const shuffledPlayers = [...allPlayerIds].sort(() => Math.random() - 0.5)
+        for (let i = 0; i < shuffledPlayers.length; i++) {
+          await createTeamWithPlayers(tournoi.id, i + 1, [shuffledPlayers[i]])
+        }
+        return
+      }
+
       // Utiliser la liste mise à jour pour avoir les infos de genre
       const playersByGender: { H: string[], F: string[] } = { H: [], F: [] }
-      
+
       for (const playerId of allPlayerIds) {
         const player = updatedPlayersList.find(p => p.id === playerId)
         if (player) {
@@ -482,13 +500,13 @@ export default function CreateTournamentPage() {
           playersByGender.H.push(playerId)
         }
       }
-      
+
       // Mélanger et créer les équipes
       playersByGender.H.sort(() => Math.random() - 0.5)
       playersByGender.F.sort(() => Math.random() - 0.5)
-      
+
       let teamNumber = 1
-      
+
       // Créer équipes mixtes
       if (formData.format === 'doublette') {
         while (playersByGender.H.length > 0 && playersByGender.F.length > 0) {
@@ -811,7 +829,7 @@ export default function CreateTournamentPage() {
   const getEstimatedTeams = () => {
     const total = getTotalPlayers()
     if (total === 0) return 0
-    const playersPerTeam = formData.format === 'doublette' ? 2 : 3
+    const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
     return Math.floor(total / playersPerTeam)
   }
 
