@@ -79,8 +79,42 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status } = body
 
+    // Validation des champs requis
     if (!tournoi_id) {
       return apiError('tournoi_id est requis', 400)
+    }
+
+    if (!equipe_a_id || !equipe_b_id) {
+      return apiError('equipe_a_id et equipe_b_id sont requis', 400)
+    }
+
+    // Vérifier que les deux équipes sont différentes
+    if (equipe_a_id === equipe_b_id) {
+      return apiError('Les deux équipes doivent être différentes', 400)
+    }
+
+    // Vérifier que les équipes existent et appartiennent au bon tournoi
+    const equipeACheck = await queryOne(
+      'SELECT id, tournoi_id FROM equipes WHERE id = $1',
+      [equipe_a_id]
+    )
+    const equipeBCheck = await queryOne(
+      'SELECT id, tournoi_id FROM equipes WHERE id = $1',
+      [equipe_b_id]
+    )
+
+    if (!equipeACheck) {
+      return apiError(`Équipe A (${equipe_a_id}) n'existe pas`, 404)
+    }
+    if (!equipeBCheck) {
+      return apiError(`Équipe B (${equipe_b_id}) n'existe pas`, 404)
+    }
+
+    if (equipeACheck.tournoi_id !== tournoi_id) {
+      return apiError(`Équipe A n'appartient pas au tournoi ${tournoi_id}`, 400)
+    }
+    if (equipeBCheck.tournoi_id !== tournoi_id) {
+      return apiError(`Équipe B n'appartient pas au tournoi ${tournoi_id}`, 400)
     }
 
     const result = await query(

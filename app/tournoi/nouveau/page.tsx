@@ -478,6 +478,7 @@ export default function CreateTournamentPage() {
         await createTeamWithPlayers(tournoi.id, i + 1, [])
       }
       // Les joueurs seront assignés manuellement par l'organisateur dans l'interface
+      return 0
     } 
     else if (formData.mode === 'melee_fixe') {
       // Pour tête-à-tête, chaque joueur est sa propre équipe
@@ -486,7 +487,7 @@ export default function CreateTournamentPage() {
         for (let i = 0; i < shuffledPlayers.length; i++) {
           await createTeamWithPlayers(tournoi.id, i + 1, [shuffledPlayers[i]])
         }
-        return
+        return 0
       }
 
       // Si mixité NON obligatoire : formation libre sans contrainte de genre
@@ -499,7 +500,7 @@ export default function CreateTournamentPage() {
           await createTeamWithPlayers(tournoi.id, teamNumber++, teamPlayers)
         }
 
-        return
+        return 0
       }
 
       // Si mixité OBLIGATOIRE : utiliser l'algorithme de mixité H/F
@@ -556,7 +557,10 @@ export default function CreateTournamentPage() {
       // Avertir si des joueurs restent
       if (remainingPlayers.length > 0) {
         console.warn(`${remainingPlayers.length} joueur(s) non assigné(s) car nombre incompatible avec le format`)
+        // Retourner le nombre de joueurs non assignés pour alerter l'utilisateur
+        return remainingPlayers.length
       }
+      return 0
     }
     else if (formData.mode === 'melee_tournante') {
       // Pour mêlée tournante, créer les équipes du premier tour
@@ -581,7 +585,9 @@ export default function CreateTournamentPage() {
           }
         })
       })
+      return 0
     }
+    return 0
   }
 
   // Fonction pour créer les matchs de poules
@@ -805,8 +811,13 @@ export default function CreateTournamentPage() {
       }
 
       // 3. Créer les équipes avec la liste mise à jour des joueurs
-      await createTeamsWithMixity(tournoi, allPlayerIds, allAvailablePlayersUpdated)
-      
+      const unassignedPlayers = await createTeamsWithMixity(tournoi, allPlayerIds, allAvailablePlayersUpdated)
+
+      // Alerter si des joueurs n'ont pas pu être assignés
+      if (unassignedPlayers > 0) {
+        alert(`⚠️ Attention : ${unassignedPlayers} joueur(s) n'ont pas pu être assignés à une équipe complète en raison de la mixité obligatoire. Veuillez ajuster votre liste de joueurs ou désactiver la mixité obligatoire.`)
+      }
+
       // 4. Créer les matchs de poules
       await createPoolMatches(tournoi)
       
