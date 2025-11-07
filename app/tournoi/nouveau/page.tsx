@@ -377,7 +377,9 @@ export default function CreateTournamentPage() {
         for (const player of formData.newPlayers) {
           if (player.name.trim()) {
             if (player.email && player.email.trim() && !isValidEmail(player.email)) {
-              // Email invalide mais non bloquant
+              canGo = false
+              setValidationError(`Email invalide pour ${player.name}: ${player.email}`)
+              break
             }
           }
         }
@@ -461,13 +463,11 @@ export default function CreateTournamentPage() {
     const nbEquipes = Math.floor(allPlayerIds.length / playersPerTeam)
     
     if (formData.mode === 'choisi') {
-      // Pour le mode choisi, on crée les équipes ET on assigne les joueurs temporairement
-      const shuffledPlayers = [...allPlayerIds].sort(() => Math.random() - 0.5)
-      
+      // Pour le mode choisi, on crée des équipes VIDES que les joueurs rempliront eux-mêmes
       for (let i = 0; i < nbEquipes; i++) {
-        const teamPlayers = shuffledPlayers.slice(i * playersPerTeam, (i + 1) * playersPerTeam)
-        await createTeamWithPlayers(tournoi.id, i + 1, teamPlayers)
+        await createTeamWithPlayers(tournoi.id, i + 1, [])
       }
+      // Les joueurs seront assignés manuellement par l'organisateur dans l'interface
     } 
     else if (formData.mode === 'melee_fixe') {
       // Utiliser la liste mise à jour pour avoir les infos de genre
@@ -511,11 +511,18 @@ export default function CreateTournamentPage() {
         }
       }
       
-      // Créer équipes restantes
+      // Créer équipes restantes en préservant la mixité autant que possible
       const remainingPlayers = [...playersByGender.H, ...playersByGender.F]
+      remainingPlayers.sort(() => Math.random() - 0.5) // Mélanger pour alterner H/F
+
       while (remainingPlayers.length >= playersPerTeam) {
         const teamPlayers = remainingPlayers.splice(0, playersPerTeam)
         await createTeamWithPlayers(tournoi.id, teamNumber++, teamPlayers)
+      }
+
+      // Avertir si des joueurs restent
+      if (remainingPlayers.length > 0) {
+        console.warn(`${remainingPlayers.length} joueur(s) non assigné(s) car nombre incompatible avec le format`)
       }
     }
     else if (formData.mode === 'melee_tournante') {
@@ -553,15 +560,13 @@ export default function CreateTournamentPage() {
       })
 
       if (!response.ok) {
-        console.error('Erreur récupération équipes')
-        return
+        throw new Error('Erreur récupération équipes')
       }
 
       const equipes = await response.json()
 
       if (!equipes || equipes.length === 0) {
-        console.error('Aucune équipe trouvée')
-        return
+        throw new Error('Aucune équipe trouvée')
       }
 
       // Diviser en poules
@@ -569,6 +574,8 @@ export default function CreateTournamentPage() {
       const nbPoules = Math.ceil(equipes.length / equipesParPoule)
 
       let globalMatchNum = 0
+      let matchesCreated = 0
+      const matchesToCreate: any[] = []
 
       for (let pouleNum = 0; pouleNum < nbPoules; pouleNum++) {
         const pouleStart = pouleNum * equipesParPoule
@@ -581,30 +588,47 @@ export default function CreateTournamentPage() {
             const terrainNum = (globalMatchNum % formData.terrains) + 1
             const tour = Math.floor(globalMatchNum / formData.terrains) + 1
 
-            try {
-              await fetch('/api/matches', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                  tournoi_id: tournoi.id,
-                  equipe_a_id: equipesPoule[i].id,
-                  equipe_b_id: equipesPoule[j].id,
-                  terrain: terrainNum,
-                  tour: tour,
-                  status: 'a_jouer'
-                })
-              })
-            } catch (error) {
-              console.error(`Erreur création match:`, error)
-            }
+            matchesToCreate.push({
+              tournoi_id: tournoi.id,
+              equipe_a_id: equipesPoule[i].id,
+              equipe_b_id: equipesPoule[j].id,
+              terrain: terrainNum,
+              tour: tour,
+              type: 'poule',
+              poule: pouleNum + 1,
+              status: 'a_jouer'
+            })
 
             globalMatchNum++
           }
         }
       }
+
+      // Créer tous les matchs et vérifier le succès
+      for (const matchData of matchesToCreate) {
+        const matchResponse = await fetch('/api/matches', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(matchData)
+        })
+
+        if (matchResponse.ok) {
+          matchesCreated++
+        } else {
+          console.error('Erreur création match:', await matchResponse.text())
+        }
+      }
+
+      // Vérifier que tous les matchs ont été créés
+      if (matchesCreated !== matchesToCreate.length) {
+        throw new Error(`Seulement ${matchesCreated}/${matchesToCreate.length} matchs créés`)
+      }
+
+      console.log(`✅ ${matchesCreated} matchs créés avec succès`)
     } catch (error) {
       console.error('Erreur création matchs de poule:', error)
+      throw error // Re-throw pour que handleSubmit puisse gérer l'erreur
     }
   }
 
@@ -752,17 +776,17 @@ export default function CreateTournamentPage() {
       // 4. Créer les matchs de poules
       await createPoolMatches(tournoi)
       
-      // 5. Mettre à jour le statut du tournoi
+      // 5. Mettre à jour le statut du tournoi (reste en "preparation" jusqu'à lancement manuel)
       await fetch(`/api/tournois/${tournoi.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          status: 'en_cours',
+          status: 'preparation',
           settings: {
             ...tournoi.settings,
             poules_created: true,
-            start_time: new Date().toISOString()
+            created_time: new Date().toISOString()
           }
         })
       })
@@ -775,7 +799,9 @@ export default function CreateTournamentPage() {
       router.push(`/tournoi/${tournoi.id}`)
       
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Une erreur est survenue lors de la création du tournoi')
+      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue lors de la création du tournoi'
+      alert(`${errorMessage}\n\nNote: Des données partielles peuvent avoir été créées. Veuillez contacter un administrateur si nécessaire.`)
+      console.error('Erreur détaillée:', error)
     } finally {
       setSavingTournament(false)
       setLoading(false)

@@ -145,7 +145,11 @@ export default function MatchScorePage() {
         }
         // Si le match est déjà terminé
         if (data.status === 'termine') {
-          setWinner(data.score_a > data.score_b ? 'A' : 'B')
+          if (data.score_a === data.score_b) {
+            console.error('Match terminé avec égalité - erreur de données')
+          } else {
+            setWinner(data.score_a > data.score_b ? 'A' : 'B')
+          }
         }
       }
     } catch (error) {
@@ -170,18 +174,26 @@ export default function MatchScorePage() {
 
     const newManches = [...manches, { scoreA: mancheScoreA, scoreB: mancheScoreB }]
     setManches(newManches)
-    
+
     const totalA = scoreA + mancheScoreA
     const totalB = scoreB + mancheScoreB
-    
+
     setScoreA(totalA)
     setScoreB(totalB)
-    
+
     // Vérifier si quelqu'un a gagné (13 points)
     if (totalA >= 13 || totalB >= 13) {
-      setWinner(totalA >= 13 ? 'A' : 'B')
-      // Terminer directement le match SANS validation
-      await finishMatch(totalA, totalB, newManches)
+      // Demander confirmation avant de terminer
+      const winnerName = totalA >= 13 ? match.equipe_a?.name : match.equipe_b?.name
+      if (confirm(`Terminer le match et déclarer ${winnerName} vainqueur ?`)) {
+        setWinner(totalA >= 13 ? 'A' : 'B')
+        await finishMatch(totalA, totalB, newManches)
+      } else {
+        // Annuler - retirer la dernière manche
+        setManches(manches)
+        setScoreA(scoreA)
+        setScoreB(scoreB)
+      }
     } else {
       // Sauvegarder la progression
       await saveProgress(totalA, totalB, newManches, false)
@@ -195,6 +207,13 @@ export default function MatchScorePage() {
   const finishMatch = async (finalScoreA: number, finalScoreB: number, allManches: any[]) => {
     setSaving(true)
     try {
+      // Gestion des égalités - ne devrait pas arriver en pétanque normale
+      if (finalScoreA === finalScoreB) {
+        alert('Erreur: Le match ne peut pas se terminer sur une égalité. Veuillez jouer une manche supplémentaire.')
+        setSaving(false)
+        return
+      }
+
       const response = await fetch(`/api/matches/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -204,19 +223,18 @@ export default function MatchScorePage() {
           score_b: finalScoreB,
           manches_json: allManches,
           status: 'termine',
-          ended_at: new Date().toISOString(),
-          validated_at: new Date().toISOString()
+          ended_at: new Date().toISOString()
+          // validated_at sera défini par l'organisateur plus tard
         })
       })
 
       if (response.ok) {
-        // Rediriger après 2 secondes
-        setTimeout(() => {
-          router.push(`/tournoi/${match.tournoi.id}`)
-        }, 2000)
+        // Redirection immédiate
+        router.push(`/tournoi/${match.tournoi.id}`)
       }
     } catch (error) {
       console.error('Erreur sauvegarde finale:', error)
+      alert('Erreur lors de la sauvegarde du match')
     } finally {
       setSaving(false)
     }

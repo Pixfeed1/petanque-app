@@ -18,10 +18,10 @@ export async function GET(request: NextRequest) {
       return apiError('tournoi_id est requis', 400)
     }
 
-    const matches = await queryMany(
+    const matchesRaw = await queryMany(
       `SELECT m.*,
-              ea.name as equipe_a_name,
-              eb.name as equipe_b_name
+              ea.id as equipe_a_id_check, ea.name as equipe_a_name, ea.joueur_ids as equipe_a_joueur_ids,
+              eb.id as equipe_b_id_check, eb.name as equipe_b_name, eb.joueur_ids as equipe_b_joueur_ids
        FROM matches m
        LEFT JOIN equipes ea ON m.equipe_a_id = ea.id
        LEFT JOIN equipes eb ON m.equipe_b_id = eb.id
@@ -29,6 +29,39 @@ export async function GET(request: NextRequest) {
        ORDER BY m.tour, m.terrain`,
       [tournoiId]
     )
+
+    // Transform to nested format expected by frontend
+    const matches = matchesRaw.map((match: any) => ({
+      id: match.id,
+      tournoi_id: match.tournoi_id,
+      equipe_a_id: match.equipe_a_id,
+      equipe_b_id: match.equipe_b_id,
+      equipe_a: match.equipe_a_id ? {
+        id: match.equipe_a_id,
+        name: match.equipe_a_name,
+        joueur_ids: match.equipe_a_joueur_ids
+      } : null,
+      equipe_b: match.equipe_b_id ? {
+        id: match.equipe_b_id,
+        name: match.equipe_b_name,
+        joueur_ids: match.equipe_b_joueur_ids
+      } : null,
+      score_a: match.score_a,
+      score_b: match.score_b,
+      status: match.status,
+      tour: match.tour,
+      terrain: match.terrain,
+      type: match.type,
+      poule: match.poule,
+      round: match.round,
+      manches_json: match.manches_json,
+      started_at: match.started_at,
+      ended_at: match.ended_at,
+      validated_at: match.validated_at,
+      played_at: match.played_at,
+      created_at: match.created_at,
+      updated_at: match.updated_at
+    }))
 
     return apiSuccess(matches)
   } catch (error) {
@@ -44,17 +77,17 @@ export async function POST(request: NextRequest) {
     if (authResult instanceof Response) return authResult
 
     const body = await request.json()
-    const { tournoi_id, tour, terrain, equipe_a_id, equipe_b_id } = body
+    const { tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status } = body
 
     if (!tournoi_id) {
       return apiError('tournoi_id est requis', 400)
     }
 
     const result = await query(
-      `INSERT INTO matches (tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, status, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, 'a_jouer', NOW(), NOW())
+      `INSERT INTO matches (tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
        RETURNING *`,
-      [tournoi_id, tour || 1, terrain, equipe_a_id, equipe_b_id]
+      [tournoi_id, tour || 1, terrain, equipe_a_id, equipe_b_id, type || 'poule', poule, status || 'a_jouer']
     )
 
     return apiSuccess(result.rows[0], 201)

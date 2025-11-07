@@ -14,6 +14,9 @@ export async function GET(request: NextRequest) {
     const { user } = authResult
     const { searchParams } = new URL(request.url)
     const orgId = searchParams.get('org_id')
+    const limit = parseInt(searchParams.get('limit') || '100')
+    const offset = parseInt(searchParams.get('offset') || '0')
+    const search = searchParams.get('search') || ''
 
     if (!orgId) {
       return apiError('org_id est requis', 400)
@@ -24,10 +27,19 @@ export async function GET(request: NextRequest) {
       return apiError('Accès refusé', 403)
     }
 
-    const joueurs = await queryMany(
-      'SELECT * FROM joueurs WHERE org_id = $1 ORDER BY name',
-      [orgId]
-    )
+    // Build query with optional search
+    let query_text = 'SELECT * FROM joueurs WHERE org_id = $1'
+    const params: any[] = [orgId]
+
+    if (search) {
+      query_text += ' AND (name ILIKE $2 OR email ILIKE $2)'
+      params.push(`%${search}%`)
+    }
+
+    query_text += ' ORDER BY name LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2)
+    params.push(limit, offset)
+
+    const joueurs = await queryMany(query_text, params)
 
     return apiSuccess(joueurs)
   } catch (error) {

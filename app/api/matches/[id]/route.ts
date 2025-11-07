@@ -16,11 +16,11 @@ export async function GET(
 
     const { id } = await params
 
-    const match = await queryOne(
+    const matchRaw = await queryOne(
       `SELECT m.*,
-              ea.name as equipe_a_name,
-              eb.name as equipe_b_name,
-              t.name as tournoi_name
+              ea.id as equipe_a_id_check, ea.name as equipe_a_name, ea.joueur_ids as equipe_a_joueur_ids,
+              eb.id as equipe_b_id_check, eb.name as equipe_b_name, eb.joueur_ids as equipe_b_joueur_ids,
+              t.id as tournoi_id_check, t.name as tournoi_name
        FROM matches m
        LEFT JOIN equipes ea ON m.equipe_a_id = ea.id
        LEFT JOIN equipes eb ON m.equipe_b_id = eb.id
@@ -29,8 +29,45 @@ export async function GET(
       [id]
     )
 
-    if (!match) {
+    if (!matchRaw) {
       return apiError('Match introuvable', 404)
+    }
+
+    // Transform to nested format
+    const match = {
+      id: matchRaw.id,
+      tournoi_id: matchRaw.tournoi_id,
+      tournoi: matchRaw.tournoi_id ? {
+        id: matchRaw.tournoi_id,
+        name: matchRaw.tournoi_name
+      } : null,
+      equipe_a_id: matchRaw.equipe_a_id,
+      equipe_b_id: matchRaw.equipe_b_id,
+      equipe_a: matchRaw.equipe_a_id ? {
+        id: matchRaw.equipe_a_id,
+        name: matchRaw.equipe_a_name,
+        joueur_ids: matchRaw.equipe_a_joueur_ids
+      } : null,
+      equipe_b: matchRaw.equipe_b_id ? {
+        id: matchRaw.equipe_b_id,
+        name: matchRaw.equipe_b_name,
+        joueur_ids: matchRaw.equipe_b_joueur_ids
+      } : null,
+      score_a: matchRaw.score_a,
+      score_b: matchRaw.score_b,
+      status: matchRaw.status,
+      tour: matchRaw.tour,
+      terrain: matchRaw.terrain,
+      type: matchRaw.type,
+      poule: matchRaw.poule,
+      round: matchRaw.round,
+      manches_json: matchRaw.manches_json,
+      started_at: matchRaw.started_at,
+      ended_at: matchRaw.ended_at,
+      validated_at: matchRaw.validated_at,
+      played_at: matchRaw.played_at,
+      created_at: matchRaw.created_at,
+      updated_at: matchRaw.updated_at
     }
 
     return apiSuccess(match)
@@ -75,6 +112,11 @@ export async function PUT(
       values.push(body.score_b)
     }
 
+    if (body.manches_json !== undefined) {
+      updates.push(`manches_json = $${paramIndex++}`)
+      values.push(JSON.stringify(body.manches_json))
+    }
+
     if (body.status !== undefined) {
       updates.push(`status = $${paramIndex++}`)
       values.push(body.status)
@@ -83,6 +125,21 @@ export async function PUT(
       if (body.status === 'termine') {
         updates.push(`played_at = NOW()`)
       }
+    }
+
+    if (body.started_at !== undefined) {
+      updates.push(`started_at = $${paramIndex++}`)
+      values.push(body.started_at)
+    }
+
+    if (body.ended_at !== undefined) {
+      updates.push(`ended_at = $${paramIndex++}`)
+      values.push(body.ended_at)
+    }
+
+    if (body.validated_at !== undefined) {
+      updates.push(`validated_at = $${paramIndex++}`)
+      values.push(body.validated_at)
     }
 
     if (body.winner_id !== undefined) {

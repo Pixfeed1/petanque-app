@@ -242,11 +242,8 @@ export default function TournamentDetailPage() {
         if (!matchesResponse.ok) throw new Error('Erreur chargement matchs')
         const matchesData = await matchesResponse.json()
 
-        // IMPORTANT : Forcer la mise à jour de l'état
-        setMatches([])  // Vider d'abord
-        setTimeout(() => {
-          setMatches(matchesData || [])  // Puis remplir
-        }, 0)
+        // Mise à jour de l'état des matchs
+        setMatches(matchesData || [])
 
         // Si mêlée tournante, charger le classement individuel
         if (tournamentData.mode === 'melee_tournante') {
@@ -254,9 +251,11 @@ export default function TournamentDetailPage() {
         }
 
         // Vérifier si l'utilisateur est organisateur
-        // Pour simplifier, on considère que si l'utilisateur a accès au tournoi via son org, il peut organiser
-        if (user && organization) {
+        // Vérifier que le tournoi appartient bien à l'organisation de l'utilisateur
+        if (user && organization && tournamentData.org_id === organization.id) {
           setIsOrganizer(true)
+        } else {
+          setIsOrganizer(false)
         }
       }
     } catch (error) {
@@ -267,7 +266,7 @@ export default function TournamentDetailPage() {
   }
 
   const loadIndividualRankings = async () => {
-    if (!organization) return
+    if (!organization || !params.id) return
 
     try {
       // Charger tous les joueurs de l'organisation
@@ -278,21 +277,67 @@ export default function TournamentDetailPage() {
       if (!joueursResponse.ok) return
       const joueurs = await joueursResponse.json()
 
-      // Pour chaque joueur, calculer ses statistiques dans ce tournoi
-      // (Cette logique devrait idéalement être dans l'API backend)
-      // Pour le moment, on fait un calcul simple côté client
-      const playerStatsPromises = joueurs.map(async (joueur: any) => {
-        // Compter les victoires/défaites du joueur dans les équipes de ce tournoi
+      // Charger toutes les équipes et matchs du tournoi
+      const equipesResponse = await fetch(`/api/equipes?tournoi_id=${params.id}`, {
+        credentials: 'include'
+      })
+      const matchesResponse = await fetch(`/api/matches?tournoi_id=${params.id}`, {
+        credentials: 'include'
+      })
+
+      if (!equipesResponse.ok || !matchesResponse.ok) return
+
+      const equipesData = await equipesResponse.json()
+      const matchesData = await matchesResponse.json()
+
+      // Calculer les stats de chaque joueur
+      const playerStats = joueurs.map((joueur: any) => {
+        let victories = 0
+        let defeats = 0
+        let pointsFor = 0
+        let pointsAgainst = 0
+
+        // Trouver toutes les équipes où ce joueur a joué
+        const playerTeams = equipesData.filter((eq: any) =>
+          eq.joueur_ids && eq.joueur_ids.includes(joueur.id)
+        )
+
+        // Pour chaque équipe, compter les matchs terminés
+        playerTeams.forEach((team: any) => {
+          const teamMatches = matchesData.filter((m: any) =>
+            m.status === 'termine' && (m.equipe_a_id === team.id || m.equipe_b_id === team.id)
+          )
+
+          teamMatches.forEach((match: any) => {
+            if (match.equipe_a_id === team.id) {
+              pointsFor += match.score_a || 0
+              pointsAgainst += match.score_b || 0
+              if (match.score_a > match.score_b) victories++
+              else defeats++
+            } else {
+              pointsFor += match.score_b || 0
+              pointsAgainst += match.score_a || 0
+              if (match.score_b > match.score_a) victories++
+              else defeats++
+            }
+          })
+        })
+
         return {
           ...joueur,
-          victories: 0,
-          defeats: 0,
-          difference: 0,
-          points: 0
+          victories,
+          defeats,
+          difference: pointsFor - pointsAgainst,
+          points: pointsFor
         }
       })
 
-      const playerStats = await Promise.all(playerStatsPromises)
+      // Trier par nombre de victoires, puis différence
+      playerStats.sort((a: any, b: any) => {
+        if (b.victories !== a.victories) return b.victories - a.victories
+        return b.difference - a.difference
+      })
+
       setIndividualRankings(playerStats)
     } catch (error) {
       console.error('Erreur chargement classement individuel:', error)
@@ -386,13 +431,89 @@ export default function TournamentDetailPage() {
       const shuffled = [...players].sort(() => Math.random() - 0.5)
 
       // Respecter la mixité H/F
-      const hommes = shuffled.filter((p: any) => p.gender === 'H')
-      const femmes = shuffled.filter((p: any) => p.gender === 'F')
+      const hommes = shuffled.filter((p: any) => p.stats?.gender === 'H' || p.gender === 'H')
+      const femmes = shuffled.filter((p: any) => p.stats?.gender === 'F' || p.gender === 'F')
 
       // Créer les nouvelles équipes
       const teamSize = tournament.format === 'doublette' ? 2 : 3
+      const nbEquipes = Math.floor(players.length / teamSize)
 
-      // ... logique de formation des équipes avec mixité
+      // Supprimer les anciennes équipes
+      const oldTeams = teams
+      for (const team of oldTeams) {
+        await fetch(`/api/equipes/${team.id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        })
+      }
+
+      // Former les nouvelles équipes avec mixité
+      let teamNumber = 1
+      const newTeams = []
+
+      if (tournament.format === 'doublette') {
+        // Pour doublette: 1H + 1F autant que possible
+        while (hommes.length > 0 && femmes.length > 0 && teamNumber <= nbEquipes) {
+          const teamPlayers = [hommes.shift()!.id, femmes.shift()!.id]
+          newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
+          teamNumber++
+        }
+
+        // Équipes restantes sans mixité
+        const remaining = [...hommes, ...femmes].sort(() => Math.random() - 0.5)
+        while (remaining.length >= teamSize && teamNumber <= nbEquipes) {
+          const teamPlayers = remaining.splice(0, teamSize).map(p => p.id)
+          newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
+          teamNumber++
+        }
+      } else {
+        // Pour triplette: 2H + 1F ou 1H + 2F
+        while (teamNumber <= nbEquipes) {
+          let teamPlayers: string[] = []
+
+          if (hommes.length >= 2 && femmes.length >= 1) {
+            teamPlayers = [hommes.shift()!.id, hommes.shift()!.id, femmes.shift()!.id]
+          } else if (hommes.length >= 1 && femmes.length >= 2) {
+            teamPlayers = [hommes.shift()!.id, femmes.shift()!.id, femmes.shift()!.id]
+          } else {
+            // Pas assez pour mixité, prendre ce qu'on a
+            const remaining = [...hommes, ...femmes]
+            if (remaining.length >= teamSize) {
+              teamPlayers = remaining.splice(0, teamSize).map(p => p.id)
+            } else {
+              break
+            }
+          }
+
+          if (teamPlayers.length === teamSize) {
+            newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
+            teamNumber++
+          }
+        }
+      }
+
+      // Créer les équipes en base
+      for (const team of newTeams) {
+        await fetch('/api/equipes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            tournoi_id: tournament.id,
+            name: team.name,
+            joueur_ids: team.joueur_ids,
+            stats: {
+              victoires: 0,
+              defaites: 0,
+              points_pour: 0,
+              points_contre: 0
+            }
+          })
+        })
+      }
+
+      // Recharger les données
+      await loadTournamentData()
     } catch (error) {
       console.error('Erreur création équipes:', error)
     }
@@ -756,7 +877,46 @@ export default function TournamentDetailPage() {
                       {Icons.trophy}
                     </div>
                     <p className="text-xl font-bold text-gray-900">
-                      {teams[0]?.name || 'À déterminer'}
+                      {(() => {
+                        // Calculer le vrai leader basé sur les victoires et différence de points
+                        const sortedTeams = [...teams].sort((a, b) => {
+                          const aMatches = matches.filter(m =>
+                            (m.equipe_a?.id === a.id || m.equipe_b?.id === b.id) && m.status === 'termine'
+                          )
+                          const bMatches = matches.filter(m =>
+                            (m.equipe_a?.id === b.id || m.equipe_b?.id === a.id) && m.status === 'termine'
+                          )
+
+                          const aVictories = aMatches.filter(m =>
+                            (m.equipe_a?.id === a.id && m.score_a > m.score_b) ||
+                            (m.equipe_b?.id === a.id && m.score_b > m.score_a)
+                          ).length
+
+                          const bVictories = bMatches.filter(m =>
+                            (m.equipe_a?.id === b.id && m.score_a > m.score_b) ||
+                            (m.equipe_b?.id === b.id && m.score_b > m.score_a)
+                          ).length
+
+                          if (bVictories !== aVictories) return bVictories - aVictories
+
+                          // Si égalité de victoires, comparer la différence de points
+                          const aDiff = aMatches.reduce((acc, m) => {
+                            if (m.equipe_a?.id === a.id) return acc + (m.score_a - m.score_b)
+                            if (m.equipe_b?.id === a.id) return acc + (m.score_b - m.score_a)
+                            return acc
+                          }, 0)
+
+                          const bDiff = bMatches.reduce((acc, m) => {
+                            if (m.equipe_a?.id === b.id) return acc + (m.score_a - m.score_b)
+                            if (m.equipe_b?.id === b.id) return acc + (m.score_b - m.score_a)
+                            return acc
+                          }, 0)
+
+                          return bDiff - aDiff
+                        })
+
+                        return sortedTeams[0]?.name || 'À déterminer'
+                      })()}
                     </p>
                   </div>
                 </div>

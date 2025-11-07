@@ -19,7 +19,25 @@ export async function GET(request: NextRequest) {
     }
 
     const equipes = await queryMany(
-      'SELECT * FROM equipes WHERE tournoi_id = $1 ORDER BY name',
+      `SELECT e.*,
+              COALESCE(
+                json_agg(
+                  json_build_object(
+                    'id', j.id,
+                    'name', j.name,
+                    'email', j.email,
+                    'phone', j.phone,
+                    'stats', j.stats
+                  ) ORDER BY j.name
+                ) FILTER (WHERE j.id IS NOT NULL),
+                '[]'::json
+              ) as joueurs
+       FROM equipes e
+       LEFT JOIN LATERAL unnest(e.joueur_ids) WITH ORDINALITY AS jid(id, ord) ON true
+       LEFT JOIN joueurs j ON j.id = jid.id::uuid
+       WHERE e.tournoi_id = $1
+       GROUP BY e.id
+       ORDER BY e.name`,
       [tournoiId]
     )
 
@@ -45,13 +63,13 @@ export async function POST(request: NextRequest) {
 
     const result = await query(
       `INSERT INTO equipes (tournoi_id, name, joueur_ids, stats, created_at)
-       VALUES ($1, $2, $3, $4, NOW())
+       VALUES ($1, $2, $3::uuid[], $4::jsonb, NOW())
        RETURNING *`,
       [
         tournoi_id,
         name,
-        JSON.stringify(joueur_ids || []),
-        JSON.stringify(stats || {})
+        joueur_ids || [],
+        stats || {}
       ]
     )
 
