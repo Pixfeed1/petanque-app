@@ -85,8 +85,8 @@ export async function PUT(
     }
 
     if (body.settings !== undefined) {
-      updates.push(`settings = $${paramIndex++}`)
-      values.push(JSON.stringify(body.settings))
+      updates.push(`settings = $${paramIndex++}::jsonb`)
+      values.push(body.settings)
     }
 
     if (updates.length === 0) {

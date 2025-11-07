@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 
@@ -182,6 +182,73 @@ export default function TournamentDetailPage() {
   // État pour la mêlée tournante
   const [currentRotation, setCurrentRotation] = useState(1)
   const [individualRankings, setIndividualRankings] = useState<any[]>([])
+
+  // Calcul optimisé du classement avec useMemo
+  const teamsWithStats = useMemo(() => {
+    return teams.map(team => {
+      const teamMatches = matches.filter(m =>
+        (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id) && m.status === 'termine'
+      )
+
+      const victories = teamMatches.filter(m =>
+        (m.equipe_a?.id === team.id && m.score_a > m.score_b) ||
+        (m.equipe_b?.id === team.id && m.score_b > m.score_a)
+      ).length
+
+      const defeats = teamMatches.filter(m =>
+        (m.equipe_a?.id === team.id && m.score_a < m.score_b) ||
+        (m.equipe_b?.id === team.id && m.score_b < m.score_a)
+      ).length
+
+      const pointsFor = teamMatches.reduce((acc, m) => {
+        if (m.equipe_a?.id === team.id) return acc + (m.score_a || 0)
+        if (m.equipe_b?.id === team.id) return acc + (m.score_b || 0)
+        return acc
+      }, 0)
+
+      const pointsAgainst = teamMatches.reduce((acc, m) => {
+        if (m.equipe_a?.id === team.id) return acc + (m.score_b || 0)
+        if (m.equipe_b?.id === team.id) return acc + (m.score_a || 0)
+        return acc
+      }, 0)
+
+      return {
+        ...team,
+        played: teamMatches.length,
+        victories,
+        defeats,
+        pointsFor,
+        pointsAgainst,
+        difference: pointsFor - pointsAgainst
+      }
+    })
+  }, [teams, matches])
+
+  // Classement par poule optimisé
+  const teamsByPoule = useMemo(() => {
+    const poules: { [key: string]: any[] } = {}
+
+    teamsWithStats.forEach(team => {
+      // Trouver la poule de cette équipe
+      const pouleMatch = matches.find(m =>
+        (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id) && m.poule
+      )
+      const poule = pouleMatch?.poule || 'A'
+
+      if (!poules[poule]) poules[poule] = []
+      poules[poule].push(team)
+    })
+
+    // Trier chaque poule
+    Object.keys(poules).forEach(poule => {
+      poules[poule].sort((a, b) => {
+        if (b.victories !== a.victories) return b.victories - a.victories
+        return b.difference - a.difference
+      })
+    })
+
+    return poules
+  }, [teamsWithStats, matches])
 
   useEffect(() => {
     setMounted(true)
@@ -944,7 +1011,7 @@ export default function TournamentDetailPage() {
                 ) : (
                   <>
                     {/* Grouper les matchs par tour */}
-                    {Array.from(new Set(matches.map(m => m.tour))).map(tour => (
+                    {Array.from(new Set(matches.filter(m => m.tour !== null && m.tour !== undefined).map(m => m.tour))).sort((a, b) => a - b).map(tour => (
                       <div key={tour} className="bg-white rounded-2xl shadow-lg p-6">
                         <h3 className="text-lg font-bold text-gray-900 mb-4">
                           Tour {tour}
@@ -1060,7 +1127,7 @@ export default function TournamentDetailPage() {
                   // Classement par équipe pour les autres modes
                   <div className="space-y-4">
                     {/* Classement par poule */}
-                    {['A', 'B', 'C', 'D'].slice(0, Math.ceil(teams.length / (tournament.settings.pouleSize || 4))).map(poule => (
+                    {Object.keys(teamsByPoule).sort().map(poule => (
                       <div key={poule} className="bg-white rounded-2xl shadow-lg overflow-hidden">
                         <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 text-white">
                           <h3 className="text-xl font-bold">Poule {poule}</h3>
@@ -1079,63 +1146,24 @@ export default function TournamentDetailPage() {
                               </tr>
                             </thead>
                             <tbody>
-                              {teams
-                                .filter(t => {
-                                  // Filtrer les équipes de cette poule
-                                  const teamMatches = matches.filter(m => 
-                                    (m.equipe_a?.id === t.id || m.equipe_b?.id === t.id) && 
-                                    m.poule === poule
-                                  )
-                                  return teamMatches.length > 0
-                                })
-                                .map((team, index) => {
-                                  // Calculer les stats
-                                  const teamMatches = matches.filter(m => 
-                                    (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id) &&
-                                    m.status === 'termine'
-                                  )
-                                  
-                                  const victories = teamMatches.filter(m => 
-                                    (m.equipe_a?.id === team.id && m.score_a > m.score_b) ||
-                                    (m.equipe_b?.id === team.id && m.score_b > m.score_a)
-                                  ).length
-                                  
-                                  const defeats = teamMatches.filter(m => 
-                                    (m.equipe_a?.id === team.id && m.score_a < m.score_b) ||
-                                    (m.equipe_b?.id === team.id && m.score_b < m.score_a)
-                                  ).length
-
-                                  const pointsFor = teamMatches.reduce((acc, m) => {
-                                    if (m.equipe_a?.id === team.id) return acc + m.score_a
-                                    if (m.equipe_b?.id === team.id) return acc + m.score_b
-                                    return acc
-                                  }, 0)
-
-                                  const pointsAgainst = teamMatches.reduce((acc, m) => {
-                                    if (m.equipe_a?.id === team.id) return acc + m.score_b
-                                    if (m.equipe_b?.id === team.id) return acc + m.score_a
-                                    return acc
-                                  }, 0)
-                                  
-                                  return (
-                                    <tr key={team.id} className={`border-b hover:bg-gray-50 ${
-                                      index < 2 ? 'bg-green-50' : ''
-                                    }`}>
-                                      <td className="py-3">
-                                        {index === 0 && '🥇'}
-                                        {index === 1 && '🥈'}
-                                        {index === 2 && '🥉'}
-                                        {index > 2 && index + 1}
-                                      </td>
-                                      <td className="py-3 font-medium">{team.name}</td>
-                                      <td className="py-3 text-center">{teamMatches.length}</td>
-                                      <td className="py-3 text-center">{victories}</td>
-                                      <td className="py-3 text-center">{defeats}</td>
-                                      <td className="py-3 text-center">{pointsFor - pointsAgainst > 0 ? '+' : ''}{pointsFor - pointsAgainst}</td>
-                                      <td className="py-3 text-center font-bold">{victories * 3}</td>
-                                    </tr>
-                                  )
-                                })}
+                              {teamsByPoule[poule]?.map((team: any, index: number) => (
+                                <tr key={team.id} className={`border-b hover:bg-gray-50 ${
+                                  index < 2 ? 'bg-green-50' : ''
+                                }`}>
+                                  <td className="py-3">
+                                    {index === 0 && '🥇'}
+                                    {index === 1 && '🥈'}
+                                    {index === 2 && '🥉'}
+                                    {index > 2 && index + 1}
+                                  </td>
+                                  <td className="py-3 font-medium">{team.name}</td>
+                                  <td className="py-3 text-center">{team.played || 0}</td>
+                                  <td className="py-3 text-center">{team.victories || 0}</td>
+                                  <td className="py-3 text-center">{team.defeats || 0}</td>
+                                  <td className="py-3 text-center">{team.difference > 0 ? '+' : ''}{team.difference || 0}</td>
+                                  <td className="py-3 text-center font-bold">{(team.victories || 0) * 3}</td>
+                                </tr>
+                              ))}
                             </tbody>
                           </table>
                         </div>

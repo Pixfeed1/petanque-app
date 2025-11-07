@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
     // Récupérer l'orgId depuis les query params
     const { searchParams } = new URL(request.url)
     const orgId = searchParams.get('org_id')
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const offset = parseInt(searchParams.get('offset') || '0')
 
     if (!orgId) {
       return apiError('org_id est requis', 400)
@@ -27,12 +29,13 @@ export async function GET(request: NextRequest) {
       return apiError('Accès refusé à cette organisation', 403)
     }
 
-    // Récupérer les tournois
+    // Récupérer les tournois avec pagination
     const tournois = await queryMany(
       `SELECT * FROM tournois
        WHERE org_id = $1
-       ORDER BY created_at DESC`,
-      [orgId]
+       ORDER BY created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [orgId, limit, offset]
     )
 
     return apiSuccess(tournois)
@@ -67,9 +70,9 @@ export async function POST(request: NextRequest) {
     // Créer le tournoi
     const result = await query(
       `INSERT INTO tournois (org_id, name, format, mode, status, settings, created_by, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, 'preparation', $5, $6, NOW(), NOW())
+       VALUES ($1, $2, $3, $4, 'preparation', $5::jsonb, $6, NOW(), NOW())
        RETURNING *`,
-      [org_id, name, format, mode, JSON.stringify(settings || {}), user.id]
+      [org_id, name, format, mode, settings || {}, user.id]
     )
 
     const tournoi = result.rows[0]

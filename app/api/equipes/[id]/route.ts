@@ -72,13 +72,13 @@ export async function PUT(
     }
 
     if (body.joueur_ids !== undefined) {
-      updates.push(`joueur_ids = $${paramIndex++}`)
-      values.push(JSON.stringify(body.joueur_ids))
+      updates.push(`joueur_ids = $${paramIndex++}::uuid[]`)
+      values.push(body.joueur_ids)
     }
 
     if (body.stats !== undefined) {
-      updates.push(`stats = $${paramIndex++}`)
-      values.push(JSON.stringify(body.stats))
+      updates.push(`stats = $${paramIndex++}::jsonb`)
+      values.push(body.stats)
     }
 
     if (updates.length === 0) {

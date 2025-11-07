@@ -146,27 +146,57 @@ export default function PodiumPage() {
          team: finaliste,
          score: Math.min(finaleData.score_a, finaleData.score_b)
        })
+     } else {
+       // Fallback: Utiliser le classement général des poules
+       const equipesResponse = await fetch(`/api/equipes?tournoi_id=${params.id}`, { credentials: 'include' })
+       if (equipesResponse.ok) {
+         const equipesData = await equipesResponse.json()
+         const classement = equipesData.map((team: any) => {
+           const teamMatches = allMatches.filter((m: any) =>
+             m.status === 'termine' && m.type === 'poule' &&
+             (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id)
+           )
+           let victories = 0, pointsFor = 0, pointsAgainst = 0
+           teamMatches.forEach((m: any) => {
+             if (m.equipe_a?.id === team.id) {
+               if (m.score_a > m.score_b) victories++
+               pointsFor += m.score_a || 0
+               pointsAgainst += m.score_b || 0
+             } else if (m.equipe_b?.id === team.id) {
+               if (m.score_b > m.score_a) victories++
+               pointsFor += m.score_b || 0
+               pointsAgainst += m.score_a || 0
+             }
+           })
+           return { team, victories, difference: pointsFor - pointsAgainst, pointsFor }
+         }).sort((a: any, b: any) => {
+           if (b.victories !== a.victories) return b.victories - a.victories
+           return b.difference - a.difference
+         })
+         if (classement[0]) podiumData.push({ position: 1, team: classement[0].team, score: classement[0].pointsFor })
+         if (classement[1]) podiumData.push({ position: 2, team: classement[1].team, score: classement[1].pointsFor })
+         if (classement[2]) podiumData.push({ position: 3, team: classement[2].team, score: classement[2].pointsFor })
+       }
      }
 
-     // 3ème place
+     // 3ème place (écrase le fallback si petite finale existe)
      if (petiteFinaleData && petiteFinaleData.status === 'termine') {
        const troisieme = petiteFinaleData.score_a > petiteFinaleData.score_b
          ? petiteFinaleData.equipe_a
          : petiteFinaleData.equipe_b
-
-       podiumData.push({
-         position: 3,
-         team: troisieme,
-         score: Math.max(petiteFinaleData.score_a, petiteFinaleData.score_b)
-       })
+       const idx = podiumData.findIndex(p => p.position === 3)
+       const newThird = { position: 3, team: troisieme, score: Math.max(petiteFinaleData.score_a, petiteFinaleData.score_b) }
+       if (idx >= 0) podiumData[idx] = newThird
+       else podiumData.push(newThird)
      }
 
      // Charger les stats complètes pour chaque équipe du podium
      for (const item of podiumData) {
+       if (!item.team?.id) continue // Sécurité
        // Filtrer les matchs terminés pour cette équipe
        const matchesData = allMatches.filter((match: any) =>
          match.status === 'termine' &&
-         (match.equipe_a_id === item.team.id || match.equipe_b_id === item.team.id)
+         (match.equipe_a?.id === item.team.id || match.equipe_b?.id === item.team.id)
        )
 
        if (matchesData.length > 0) {
