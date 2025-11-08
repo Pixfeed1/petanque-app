@@ -3,11 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Icônes SVG élégantes
 const Icons = {
@@ -100,16 +95,19 @@ export default function Parametres() {
   const handleExportTournois = async () => {
     setExportingData(true)
     try {
-      // Récupérer tous les tournois
-      const { data: tournois } = await supabase
-        .from('tournois')
-        .select('*, equipes(*, equipes_joueurs(*, joueur:joueurs(*))), matches(*)')
-        .eq('org_id', organization?.id)
+      // Récupérer tous les tournois via l'API
+      const response = await fetch('/api/tournois', {
+        credentials: 'include'
+      })
+
+      if (!response.ok) throw new Error('Erreur de récupération des tournois')
+
+      const tournois = await response.json()
 
       // Créer un blob JSON
       const dataStr = JSON.stringify(tournois, null, 2)
       const dataBlob = new Blob([dataStr], { type: 'application/json' })
-      
+
       // Télécharger
       const url = URL.createObjectURL(dataBlob)
       const link = document.createElement('a')
@@ -128,6 +126,15 @@ export default function Parametres() {
   const handleExportRGPD = async () => {
     setExportingData(true)
     try {
+      // Récupérer toutes les données via les APIs
+      const [tournoiResponse, joueurResponse] = await Promise.all([
+        fetch('/api/tournois', { credentials: 'include' }),
+        fetch('/api/joueurs', { credentials: 'include' })
+      ])
+
+      const tournois = tournoiResponse.ok ? await tournoiResponse.json() : []
+      const joueurs = joueurResponse.ok ? await joueurResponse.json() : []
+
       // Récupérer toutes les données de l'utilisateur
       const allData = {
         user: {
@@ -136,14 +143,14 @@ export default function Parametres() {
           created_at: user?.created_at
         },
         organization: organization,
-        tournois: await supabase.from('tournois').select('*').eq('org_id', organization?.id),
-        joueurs: await supabase.from('joueurs').select('*').eq('org_id', organization?.id)
+        tournois,
+        joueurs
       }
 
       // Créer un blob JSON
       const dataStr = JSON.stringify(allData, null, 2)
       const dataBlob = new Blob([dataStr], { type: 'application/json' })
-      
+
       // Télécharger
       const url = URL.createObjectURL(dataBlob)
       const link = document.createElement('a')
@@ -164,23 +171,16 @@ export default function Parametres() {
 
     setLoading(true)
     try {
-      // Si Premium, sauvegarder l'achat
-      if (isPremium) {
-        await supabase
-          .from('premium_purchases')
-          .upsert({
-            email: user?.email,
-            purchased_at: new Date().toISOString()
-          })
-      }
+      // Note: La suppression de compte nécessite une API dédiée
+      // Pour l'instant, nous informons l'utilisateur de contacter le support
+      alert(
+        `Pour supprimer votre compte, veuillez contacter le support à support@petanquepro.fr\n\n` +
+        `Email du compte: ${user?.email}\n` +
+        `${isPremium ? 'Statut Premium: Oui (sera conservé avec votre email)' : 'Statut Premium: Non'}`
+      )
 
-      // Supprimer l'utilisateur
-      const { error } = await supabase.auth.admin.deleteUser(user?.id)
-      if (error) throw error
-
-      // Déconnexion et redirection
-      await supabase.auth.signOut()
-      router.push('/')
+      setShowDeleteModal(false)
+      setDeleteConfirmation('')
     } catch (error) {
       console.error('Erreur suppression:', error)
       alert('Erreur lors de la suppression du compte')

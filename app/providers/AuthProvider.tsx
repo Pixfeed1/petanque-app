@@ -1,15 +1,9 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
 import { useRouter, usePathname } from 'next/navigation'
 
-// Initialisation Supabase directement ici
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-// Types pour TypeScript
+// Types TypeScript
 interface Organization {
   id: string
   name: string
@@ -20,14 +14,23 @@ interface Organization {
   updated_by?: string
 }
 
+interface User {
+  id: string
+  email: string
+  full_name: string | null
+  email_verified: boolean
+  created_at: string
+  last_login_at: string | null
+  metadata: any
+}
+
 interface AuthContextType {
-  user: any
+  user: User | null
   organization: Organization | null
   loading: boolean
   signOut: () => Promise<void>
   updateUserPlan: (plan: 'free' | 'premium') => Promise<boolean>
   refreshOrganization: () => Promise<void>
-  supabase: typeof supabase
   isAuthenticated: boolean
   isPremium: boolean
 }
@@ -39,7 +42,6 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   updateUserPlan: async () => false,
   refreshOrganization: async () => {},
-  supabase,
   isAuthenticated: false,
   isPremium: false
 })
@@ -49,51 +51,41 @@ export const useAuth = () => useContext(AuthContext)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [organization, setOrganization] = useState<Organization | null>(null)
 
   useEffect(() => {
-    // Vérifier la session au montage
     checkUser()
-
-    // Écouter les changements d'auth
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log('🔄 Auth state changed:', _event, session?.user?.id)
-      setUser(session?.user ?? null)
-      
-      // Si connecté, charger l'organisation
-      if (session?.user) {
-        await loadUserOrganization(session.user)
-      } else {
-        setOrganization(null)
-      }
-      
-      setLoading(false)
-    })
-
-    return () => {
-      listener?.subscription.unsubscribe()
-    }
   }, [])
 
   useEffect(() => {
-    // Gestion des redirections APRÈS le chargement
     if (!loading) {
-      // Routes publiques accessibles sans auth
-      const publicRoutes = ['/login', '/signup', '/quiz', '/']
-      const isPublicRoute = publicRoutes.includes(pathname)
-      
+      // Liste des routes publiques (accessibles sans authentification)
+      const publicRoutes = [
+        '/',
+        '/login',
+        '/signup',
+        '/quiz',
+        '/quizz',
+        '/modes',
+        '/features',
+        '/guide',
+        '/faq',
+        '/contact',
+      ]
+
+      // Vérifier si la route est publique (exact match ou wildcard pour /legal/*)
+      const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith('/legal/')
+
       if (user) {
-        // Utilisateur connecté
-        // Rediriger SEULEMENT depuis login/signup vers dashboard
+        // Si l'utilisateur est connecté et tente d'accéder à login/signup, rediriger vers dashboard
         if (pathname === '/login' || pathname === '/signup') {
           router.push('/dashboard')
         }
       } else {
-        // Utilisateur non connecté
+        // Si l'utilisateur n'est pas connecté et tente d'accéder à une route protégée
         if (!isPublicRoute) {
-          // Rediriger vers login si route protégée
           router.push('/login')
         }
       }
@@ -102,155 +94,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkUser = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      console.log('🔍 Session check:', session?.user?.id)
-      setUser(session?.user ?? null)
-      
-      if (session?.user) {
-        await loadUserOrganization(session.user)
+      const response = await fetch('/api/auth/me', {
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Session récupérée:', data.user.email)
+        setUser(data.user)
+        setOrganization(data.organization)
+      } else {
+        console.log('ℹ️ Aucune session active')
+        setUser(null)
+        setOrganization(null)
       }
     } catch (error) {
-      console.error('❌ Auth error:', error)
+      console.error('❌ Erreur vérification session:', error)
+      setUser(null)
+      setOrganization(null)
     } finally {
       setLoading(false)
     }
   }
 
-  const loadUserOrganization = async (user: any) => {
+  const refreshOrganization = async () => {
+    if (!user) return
+
     try {
-      console.log('🏢 Chargement organisation pour user:', user.id)
-      
-      // 1. D'abord vérifier si l'utilisateur a un rôle dans une organisation
-      const { data: userRole, error: roleError } = await supabase
-        .from('user_roles')
-        .select(`
-          *,
-          organisations (*)
-        `)
-        .eq('user_id', user.id)
-        .single()
+      const response = await fetch('/api/auth/me', {
+        credentials: 'include'
+      })
 
-      if (userRole?.organisations) {
-        console.log('✅ Organisation trouvée via user_roles:', userRole.organisations)
-        setOrganization(userRole.organisations)
-        return userRole.organisations
-      }
-
-      // 2. Si pas de rôle, chercher une organisation créée par l'utilisateur
-      const { data: orgData, error: orgError } = await supabase
-        .from('organisations')
-        .select('*')
-        .eq('created_by', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (orgData) {
-        console.log('✅ Organisation trouvée (created_by):', orgData)
-        setOrganization(orgData)
-        
-        // Créer le rôle owner manquant
-        await supabase
-          .from('user_roles')
-          .insert({
-            user_id: user.id,
-            org_id: orgData.id,
-            role: 'owner',
-            granted_at: new Date().toISOString()
-          })
-        
-        return orgData
-      }
-
-      // 3. Si aucune organisation, en créer une automatiquement
-      console.log('⚠️ Aucune organisation trouvée, création automatique...')
-      
-      // Créer l'organisation
-      const { data: newOrg, error: createOrgError } = await supabase
-        .from('organisations')
-        .insert({
-          name: `Club de ${user.email?.split('@')[0] || 'Pétanque'}`,
-          settings: { 
-            plan: 'free',
-            db_version: '1.0',
-            created_from: 'auto_provision'
-          },
-          created_by: user.id,
-          updated_by: user.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single()
-
-      if (createOrgError) {
-        console.error('❌ Erreur création organisation:', createOrgError)
-        
-        // En dernier recours, essayer de récupérer n'importe quelle organisation
-        const { data: anyOrg } = await supabase
-          .from('organisations')
-          .select('*')
-          .limit(1)
-          .single()
-        
-        if (anyOrg) {
-          console.log('⚠️ Organisation de secours trouvée:', anyOrg)
-          setOrganization(anyOrg)
-        }
-        return
-      }
-
-      if (newOrg) {
-        console.log('✅ Nouvelle organisation créée:', newOrg)
-        
-        // Assigner l'utilisateur comme owner
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: user.id,
-            org_id: newOrg.id,
-            role: 'owner',
-            granted_at: new Date().toISOString(),
-            granted_by: user.id
-          })
-
-        if (roleError) {
-          console.error('⚠️ Erreur création rôle (non bloquant):', roleError)
-        }
-
-        setOrganization(newOrg)
-        console.log('🎉 Organisation configurée avec succès:', newOrg.name)
-        return newOrg
+      if (response.ok) {
+        const data = await response.json()
+        setOrganization(data.organization)
+        console.log('🔄 Organisation rafraîchie')
       }
     } catch (error) {
-      console.error('❌ Erreur dans loadUserOrganization:', error)
-      
-      // En cas d'erreur critique, créer une organisation temporaire en mémoire
-      const tempOrg: Organization = {
-        id: 'temp-' + Date.now(),
-        name: 'Organisation Temporaire',
-        settings: { plan: 'free', temporary: true },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-      
-      console.log('🔧 Organisation temporaire créée:', tempOrg)
-      setOrganization(tempOrg)
-    }
-  }
-
-  const refreshOrganization = async () => {
-    if (user) {
-      console.log('🔄 Rafraîchissement de l\'organisation...')
-      await loadUserOrganization(user)
+      console.error('❌ Erreur refresh organisation:', error)
     }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    setOrganization(null)
-    router.push('/login')
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      })
+
+      setUser(null)
+      setOrganization(null)
+      router.push('/login')
+      console.log('👋 Déconnexion réussie')
+    } catch (error) {
+      console.error('❌ Erreur déconnexion:', error)
+    }
   }
 
   const updateUserPlan = async (plan: 'free' | 'premium'): Promise<boolean> => {
@@ -260,30 +158,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      // Mettre à jour le plan dans l'organisation
-      const { data, error } = await supabase
-        .from('organisations')
-        .update({
+      const response = await fetch(`/api/organisations/${organization.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
           settings: {
             ...organization.settings,
             plan: plan
-          },
-          updated_at: new Date().toISOString(),
-          updated_by: user?.id
+          }
         })
-        .eq('id', organization.id)
-        .select()
-        .single()
+      })
 
-      if (!error && data) {
+      if (response.ok) {
+        const data = await response.json()
         setOrganization(data)
         console.log('✅ Plan mis à jour:', plan)
         return true
       }
-      
-      if (error) {
-        console.error('❌ Erreur mise à jour plan:', error)
-      }
+
+      console.error('❌ Erreur mise à jour plan')
       return false
     } catch (error) {
       console.error('❌ Erreur mise à jour plan:', error)
@@ -298,7 +194,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     updateUserPlan,
     refreshOrganization,
-    supabase, // Exposer supabase pour éviter les imports multiples
     isAuthenticated: !!user,
     isPremium: organization?.settings?.plan === 'premium'
   }

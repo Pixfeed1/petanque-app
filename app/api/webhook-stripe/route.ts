@@ -2,30 +2,35 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
 import { headers } from 'next/headers'
+import { query } from '@/lib/db'
 
-// Initialiser Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
- apiVersion: '2024-06-20'
-})
-
-// Initialiser Supabase Admin
-const supabaseAdmin = createClient(
- process.env.NEXT_PUBLIC_SUPABASE_URL!,
- process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Initialiser Stripe uniquement si la clé est disponible
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-07-30.basil'
+    })
+  : null
 
 // Webhook secret depuis Stripe Dashboard
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || ''
 
 export async function POST(request: NextRequest) {
  try {
+   // Vérifier que Stripe est initialisé
+   if (!stripe) {
+     return NextResponse.json(
+       { error: 'Stripe non configuré' },
+       { status: 500 }
+     )
+   }
+
    // Récupérer le body brut pour la vérification de signature
    const body = await request.text()
-   
+
    // Récupérer la signature Stripe depuis les headers
-   const signature = headers().get('stripe-signature')
+   const headersList = await headers()
+   const signature = headersList.get('stripe-signature')
 
    if (!signature) {
      console.error('Webhook: Signature manquante')
@@ -37,7 +42,7 @@ export async function POST(request: NextRequest) {
 
    // Vérifier la signature du webhook
    let event: Stripe.Event
-   
+
    try {
      event = stripe.webhooks.constructEvent(
        body,
@@ -94,58 +99,46 @@ export async function POST(request: NextRequest) {
 
        try {
          // 1. Mettre à jour le profil utilisateur en PREMIUM
-         const { error: profileError } = await supabaseAdmin
-           .from('user_profiles')
-           .upsert({
-             user_id: userId,
-             email: userEmail,
-             subscription_status: 'premium',
-             subscription_plan: product,
-             premium_since: new Date().toISOString(),
-             stripe_customer_id: session.customer as string,
-             stripe_payment_intent: session.payment_intent as string,
-             stripe_session_id: session.id,
-             updated_at: new Date().toISOString()
-           })
-
-         if (profileError) {
-           console.error('Erreur mise à jour profil:', profileError)
-           throw profileError
-         }
+         await query(
+           `UPDATE users
+            SET metadata = jsonb_set(
+              jsonb_set(
+                jsonb_set(
+                  jsonb_set(
+                    COALESCE(metadata, '{}'::jsonb),
+                    '{subscription,status}',
+                    '"premium"'::jsonb
+                  ),
+                  '{subscription,plan}',
+                  $1::jsonb
+                ),
+                '{subscription,premium_since}',
+                $2::jsonb
+              ),
+              '{subscription,stripe_customer_id}',
+              $3::jsonb
+            )
+            WHERE id = $4`,
+           [
+             JSON.stringify(product),
+             JSON.stringify(new Date().toISOString()),
+             JSON.stringify(session.customer as string),
+             userId
+           ]
+         )
 
          // 2. Mettre à jour l'enregistrement de paiement
-         const { error: paymentError } = await supabaseAdmin
-           .from('payment_attempts')
-           .update({
-             status: 'completed',
-             completed_at: new Date().toISOString(),
-             stripe_payment_intent: session.payment_intent as string
-           })
-           .eq('stripe_session_id', session.id)
+         await query(
+           `UPDATE payment_attempts
+            SET status = $1,
+                completed_at = CURRENT_TIMESTAMP,
+                stripe_payment_intent = $2
+            WHERE stripe_session_id = $3`,
+           ['completed', session.payment_intent as string, session.id]
+         )
 
-         if (paymentError) {
-           console.error('Erreur mise à jour paiement:', paymentError)
-         }
-
-         // 3. Créer un enregistrement dans l'historique des transactions
-         const { error: historyError } = await supabaseAdmin
-           .from('payment_history')
-           .insert({
-             user_id: userId,
-             stripe_session_id: session.id,
-             stripe_payment_intent: session.payment_intent as string,
-             amount: session.amount_total, // En centimes
-             currency: session.currency,
-             status: 'success',
-             product_type: product,
-             invoice_url: session.invoice as string,
-             receipt_url: session.url,
-             created_at: new Date().toISOString()
-           })
-
-         if (historyError) {
-           console.error('Erreur création historique:', historyError)
-         }
+         // 3. Note: payment_history table n'existe pas dans notre schéma
+         // Si nécessaire, ajouter cette table plus tard
 
          // 4. Optionnel : Envoyer un email de confirmation
          // await sendConfirmationEmail(userEmail, userId)
@@ -168,62 +161,55 @@ export async function POST(request: NextRequest) {
 
        if (userId) {
          // Mettre à jour le statut du paiement
-         await supabaseAdmin
-           .from('payment_attempts')
-           .update({
-             status: 'failed',
-             completed_at: new Date().toISOString()
-           })
-           .eq('stripe_session_id', session.id)
+         await query(
+           `UPDATE payment_attempts
+            SET status = $1,
+                completed_at = CURRENT_TIMESTAMP
+            WHERE stripe_session_id = $2`,
+           ['failed', session.id]
+         )
 
          console.log(`❌ Paiement échoué pour l'utilisateur ${userId}`)
        }
-       
+
        break
      }
 
      // 💰 REMBOURSEMENT
      case 'charge.refunded': {
        const charge = event.data.object as Stripe.Charge
-       
+
        // Récupérer l'utilisateur via le payment_intent
-       const { data: profile } = await supabaseAdmin
-         .from('user_profiles')
-         .select('user_id')
-         .eq('stripe_payment_intent', charge.payment_intent as string)
-         .single()
+       const userResult = await query(
+         `SELECT id FROM users
+          WHERE metadata->'subscription'->>'stripe_payment_intent' = $1`,
+         [charge.payment_intent as string]
+       )
 
-       if (profile) {
+       if (userResult.rows.length > 0) {
+         const userId = userResult.rows[0].id
+
          // Révoquer le statut Premium
-         const { error } = await supabaseAdmin
-           .from('user_profiles')
-           .update({
-             subscription_status: 'free',
-             subscription_plan: null,
-             premium_since: null,
-             refunded_at: new Date().toISOString(),
-             updated_at: new Date().toISOString()
-           })
-           .eq('user_id', profile.user_id)
+         await query(
+           `UPDATE users
+            SET metadata = jsonb_set(
+              jsonb_set(
+                COALESCE(metadata, '{}'::jsonb),
+                '{subscription,status}',
+                '"free"'::jsonb
+              ),
+              '{subscription,refunded_at}',
+              $1::jsonb
+            )
+            WHERE id = $2`,
+           [JSON.stringify(new Date().toISOString()), userId]
+         )
 
-         if (!error) {
-           console.log(`💰 Remboursement traité - Utilisateur ${profile.user_id} repassé en gratuit`)
-         }
+         console.log(`💰 Remboursement traité - Utilisateur ${userId} repassé en gratuit`)
 
-         // Enregistrer le remboursement
-         await supabaseAdmin
-           .from('payment_history')
-           .insert({
-             user_id: profile.user_id,
-             stripe_payment_intent: charge.payment_intent as string,
-             amount: -charge.amount_refunded, // Négatif pour remboursement
-             currency: charge.currency,
-             status: 'refunded',
-             product_type: 'refund',
-             created_at: new Date().toISOString()
-           })
+         // Note: payment_history table n'existe pas dans notre schéma
        }
-       
+
        break
      }
 
@@ -238,17 +224,20 @@ export async function POST(request: NextRequest) {
      // 👤 CLIENT CRÉÉ
      case 'customer.created': {
        const customer = event.data.object as Stripe.Customer
-       const userId = customer.metadata?.supabase_user_id
+       const userId = customer.metadata?.user_id
 
        if (userId) {
          // Mettre à jour le stripe_customer_id
-         await supabaseAdmin
-           .from('user_profiles')
-           .update({
-             stripe_customer_id: customer.id,
-             updated_at: new Date().toISOString()
-           })
-           .eq('user_id', userId)
+         await query(
+           `UPDATE users
+            SET metadata = jsonb_set(
+              COALESCE(metadata, '{}'::jsonb),
+              '{subscription,stripe_customer_id}',
+              $1::jsonb
+            )
+            WHERE id = $2`,
+           [JSON.stringify(customer.id), userId]
+         )
 
          console.log(`👤 Customer Stripe créé pour l'utilisateur ${userId}`)
        }

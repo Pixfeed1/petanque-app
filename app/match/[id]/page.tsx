@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 
@@ -102,6 +101,9 @@ export default function MatchScorePage() {
   const [startTime, setStartTime] = useState<Date | null>(null)
   const [elapsedTime, setElapsedTime] = useState(0)
 
+  // Récupérer maxPoints depuis les settings du tournoi (défaut: 13)
+  const maxPoints = match?.tournoi?.settings?.maxPoints || 13
+
   useEffect(() => {
     setMounted(true)
     loadMatch()
@@ -126,16 +128,12 @@ export default function MatchScorePage() {
 
   const loadMatch = async () => {
     try {
-      const { data } = await supabase
-        .from('matches')
-        .select(`
-          *,
-          equipe_a:equipes!equipe_a_id(*),
-          equipe_b:equipes!equipe_b_id(*),
-          tournoi:tournois!tournoi_id(*)
-        `)
-        .eq('id', params.id)
-        .single()
+      const response = await fetch(`/api/matches/${params.id}`, {
+        credentials: 'include'
+      })
+
+      if (!response.ok) throw new Error('Erreur chargement match')
+      const data = await response.json()
 
       if (data) {
         setMatch(data)
@@ -150,7 +148,11 @@ export default function MatchScorePage() {
         }
         // Si le match est déjà terminé
         if (data.status === 'termine') {
-          setWinner(data.score_a > data.score_b ? 'A' : 'B')
+          if (data.score_a === data.score_b) {
+            console.error('Match terminé avec égalité - erreur de données')
+          } else {
+            setWinner(data.score_a > data.score_b ? 'A' : 'B')
+          }
         }
       }
     } catch (error) {
@@ -162,10 +164,10 @@ export default function MatchScorePage() {
 
   const updateScore = (team: 'A' | 'B', delta: number) => {
     if (team === 'A') {
-      const newScore = Math.max(0, Math.min(13, mancheScoreA + delta))
+      const newScore = Math.max(0, Math.min(maxPoints, mancheScoreA + delta))
       setMancheScoreA(newScore)
     } else {
-      const newScore = Math.max(0, Math.min(13, mancheScoreB + delta))
+      const newScore = Math.max(0, Math.min(maxPoints, mancheScoreB + delta))
       setMancheScoreB(newScore)
     }
   }
@@ -175,22 +177,30 @@ export default function MatchScorePage() {
 
     const newManches = [...manches, { scoreA: mancheScoreA, scoreB: mancheScoreB }]
     setManches(newManches)
-    
+
     const totalA = scoreA + mancheScoreA
     const totalB = scoreB + mancheScoreB
-    
+
     setScoreA(totalA)
     setScoreB(totalB)
-    
-    // Vérifier si quelqu'un a gagné (13 points)
-    if (totalA >= 13 || totalB >= 13) {
-      setWinner(totalA >= 13 ? 'A' : 'B')
-      // Terminer directement le match SANS validation
-      await finishMatch(totalA, totalB, newManches)
+
+    // Vérifier si quelqu'un a gagné (maxPoints)
+    if (totalA >= maxPoints || totalB >= maxPoints) {
+      // Demander confirmation avant de terminer
+      const winnerName = totalA >= maxPoints ? match.equipe_a?.name : match.equipe_b?.name
+      if (confirm(`Terminer le match et déclarer ${winnerName} vainqueur ?`)) {
+        setWinner(totalA >= maxPoints ? 'A' : 'B')
+        await finishMatch(totalA, totalB, newManches)
+      } else {
+        // Annuler - retirer la dernière mène
+        setManches(manches)
+        setScoreA(scoreA)
+        setScoreB(scoreB)
+      }
     } else {
       // Sauvegarder la progression
       await saveProgress(totalA, totalB, newManches, false)
-      // Prochaine manche
+      // Prochaine mène
       setCurrentManche(currentManche + 1)
       setMancheScoreA(0)
       setMancheScoreB(0)
@@ -200,26 +210,34 @@ export default function MatchScorePage() {
   const finishMatch = async (finalScoreA: number, finalScoreB: number, allManches: any[]) => {
     setSaving(true)
     try {
-      const { error } = await supabase
-        .from('matches')
-        .update({
+      // Gestion des égalités - ne devrait pas arriver en pétanque normale
+      if (finalScoreA === finalScoreB) {
+        alert('Erreur: Le match ne peut pas se terminer sur une égalité. Veuillez jouer une mène supplémentaire.')
+        setSaving(false)
+        return
+      }
+
+      const response = await fetch(`/api/matches/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
           score_a: finalScoreA,
           score_b: finalScoreB,
           manches_json: allManches,
           status: 'termine',
-          ended_at: new Date().toISOString(),
-          validated_at: new Date().toISOString()
+          ended_at: new Date().toISOString()
+          // validated_at sera défini par l'organisateur plus tard
         })
-        .eq('id', params.id)
+      })
 
-      if (!error) {
-        // Rediriger après 2 secondes
-        setTimeout(() => {
-          router.push(`/tournoi/${match.tournoi.id}`)
-        }, 2000)
+      if (response.ok) {
+        // Redirection immédiate
+        router.push(`/tournoi/${match.tournoi.id}`)
       }
     } catch (error) {
       console.error('Erreur sauvegarde finale:', error)
+      alert('Erreur lors de la sauvegarde du match')
     } finally {
       setSaving(false)
     }
@@ -237,7 +255,8 @@ export default function MatchScorePage() {
       }
 
       if (!match.started_at) {
-        updateData.started_at = startTime?.toISOString()
+        // Utiliser startTime ou now() comme fallback si startTime est null
+        updateData.started_at = startTime ? startTime.toISOString() : new Date().toISOString()
       }
 
       if (isFinished) {
@@ -245,13 +264,15 @@ export default function MatchScorePage() {
         updateData.validated_at = new Date().toISOString()
       }
 
-      const { error } = await supabase
-        .from('matches')
-        .update(updateData)
-        .eq('id', params.id)
+      const response = await fetch(`/api/matches/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(updateData)
+      })
 
-      if (error) {
-        console.error('Erreur sauvegarde:', error)
+      if (!response.ok) {
+        console.error('Erreur sauvegarde')
       }
     } catch (error) {
       console.error('Erreur sauvegarde:', error)
@@ -353,10 +374,10 @@ export default function MatchScorePage() {
                 <span className="font-mono font-bold text-lg">{formatTime(elapsedTime)}</span>
               </div>
 
-              {/* Manche actuelle */}
+              {/* Mène actuelle */}
               {!winner && (
                 <div className="px-4 py-2 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl">
-                  <span className="text-sm text-gray-600">Manche</span>
+                  <span className="text-sm text-gray-600">Mène</span>
                   <span className="ml-2 font-bold text-lg text-green-700">{currentManche}</span>
                 </div>
               )}
@@ -464,7 +485,7 @@ export default function MatchScorePage() {
             {!winner && (
               <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 mt-8">
                 <h3 className="text-center text-xl font-bold text-gray-700 mb-6">
-                  Points de la manche {currentManche}
+                  Points de la mène {currentManche}
                 </h3>
                 
                 <div className="grid grid-cols-5 gap-4 items-center">
@@ -487,7 +508,7 @@ export default function MatchScorePage() {
                         <button
                           onClick={() => updateScore('A', 1)}
                           className="p-4 bg-white hover:bg-green-50 rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
-                          disabled={mancheScoreA === 13}
+                          disabled={mancheScoreA === maxPoints}
                         >
                           <span className="text-green-500 group-hover:scale-110 transition-transform block">
                             {Icons.plus}
@@ -519,7 +540,7 @@ export default function MatchScorePage() {
                         <button
                           onClick={() => updateScore('B', 1)}
                           className="p-4 bg-white hover:bg-green-50 rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
-                          disabled={mancheScoreB === 13}
+                          disabled={mancheScoreB === maxPoints}
                         >
                           <span className="text-green-500 group-hover:scale-110 transition-transform block">
                             {Icons.plus}
@@ -530,7 +551,7 @@ export default function MatchScorePage() {
                   </div>
                 </div>
 
-                {/* Bouton valider la manche */}
+                {/* Bouton valider la mène */}
                 <div className="mt-8 text-center">
                   <button
                     onClick={finishManche}
@@ -545,7 +566,7 @@ export default function MatchScorePage() {
                     ) : (
                       <>
                         {Icons.check}
-                        <span className="ml-2">Valider la manche {currentManche}</span>
+                        <span className="ml-2">Valider la mène {currentManche}</span>
                       </>
                     )}
                   </button>
@@ -577,25 +598,25 @@ export default function MatchScorePage() {
               </div>
             )}
 
-            {/* Historique des manches */}
+            {/* Historique des mènes */}
             {manches.length > 0 && (
               <div className="mt-8">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold text-gray-700">Détail des manches</h3>
+                  <h3 className="text-lg font-bold text-gray-700">Détail des mènes</h3>
                   {!winner && manches.length > 0 && (
                     <button
                       onClick={undoLastManche}
                       className="flex items-center px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
                     >
                       {Icons.undo}
-                      <span className="ml-2">Annuler dernière manche</span>
+                      <span className="ml-2">Annuler dernière mène</span>
                     </button>
                   )}
                 </div>
                 <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                   {manches.map((manche, index) => (
                     <div key={index} className="bg-white rounded-xl p-3 shadow-md hover:shadow-lg transition-all">
-                      <p className="text-xs text-gray-500 mb-1 text-center">Manche {index + 1}</p>
+                      <p className="text-xs text-gray-500 mb-1 text-center">Mène {index + 1}</p>
                       <div className="flex justify-around items-center text-lg font-bold">
                         <span className={manche.scoreA > manche.scoreB ? 'text-blue-600' : 'text-gray-600'}>
                           {manche.scoreA}

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 
@@ -139,9 +138,9 @@ const BracketMatch = ({
        <div className="p-4">
          {/* Équipe A */}
          <div className={`flex items-center justify-between p-3 rounded-lg mb-2 transition-all ${
-           winner === 'A' 
-             ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500' 
-             : match.status === 'termine' && winner !== 'A'
+           winner === 'A'
+             ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500'
+             : match.status === 'termine'
              ? 'opacity-50'
              : 'bg-gray-50'
          }`}>
@@ -165,9 +164,9 @@ const BracketMatch = ({
 
          {/* Équipe B */}
          <div className={`flex items-center justify-between p-3 rounded-lg transition-all ${
-           winner === 'B' 
-             ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500' 
-             : match.status === 'termine' && winner !== 'B'
+           winner === 'B'
+             ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500'
+             : match.status === 'termine'
              ? 'opacity-50'
              : 'bg-gray-50'
          }`}>
@@ -245,48 +244,39 @@ export default function BracketPage() {
  const loadBracketData = async () => {
    try {
      // Charger le tournoi
-     const { data: tournamentData } = await supabase
-       .from('tournois')
-       .select('*')
-       .eq('id', params.id)
-       .single()
+     const tournamentResponse = await fetch(`/api/tournois/${params.id}`, {
+       credentials: 'include'
+     })
 
+     if (!tournamentResponse.ok) throw new Error('Erreur chargement tournoi')
+     const tournamentData = await tournamentResponse.json()
      setTournament(tournamentData)
 
      // Charger les matchs de phases finales
-     const { data: matchesData } = await supabase
-       .from('matches')
-       .select(`
-         *,
-         equipe_a:equipes!equipe_a_id(
-           *,
-           equipes_joueurs(
-             joueur:joueurs(*)
-           )
-         ),
-         equipe_b:equipes!equipe_b_id(
-           *,
-           equipes_joueurs(
-             joueur:joueurs(*)
-           )
-         )
-       `)
-       .eq('tournoi_id', params.id)
-       .in('type', ['huitieme', 'quart', 'demi', 'finale', 'petite_finale'])
-       .order('type')
+     const matchesResponse = await fetch(`/api/matches?tournoi_id=${params.id}`, {
+       credentials: 'include'
+     })
+
+     if (!matchesResponse.ok) throw new Error('Erreur chargement matchs')
+     const allMatches = await matchesResponse.json()
+
+     // Filtrer pour garder seulement les phases finales
+     const matchesData = allMatches.filter((m: Match) =>
+       ['huitieme', 'quart', 'demi', 'finale', 'petite_finale'].includes(m.type)
+     )
 
      if (matchesData) {
        setMatches(matchesData)
-       
+
        // Organiser les matchs par type
        const organized = {
-         huitiemes: matchesData.filter(m => m.type === 'huitieme'),
-         quarts: matchesData.filter(m => m.type === 'quart'),
-         demis: matchesData.filter(m => m.type === 'demi'),
-         finale: matchesData.find(m => m.type === 'finale'),
-         petiteFinale: matchesData.find(m => m.type === 'petite_finale')
+         huitiemes: matchesData.filter((m: Match) => m.type === 'huitieme'),
+         quarts: matchesData.filter((m: Match) => m.type === 'quart'),
+         demis: matchesData.filter((m: Match) => m.type === 'demi'),
+         finale: matchesData.find((m: Match) => m.type === 'finale'),
+         petiteFinale: matchesData.find((m: Match) => m.type === 'petite_finale')
        }
-       
+
        setBracketData(organized)
      }
    } catch (error) {

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import confetti from 'canvas-confetti'
 
@@ -106,67 +105,34 @@ export default function PodiumPage() {
  const loadPodiumData = async () => {
    try {
      // Charger le tournoi
-     const { data: tournamentData } = await supabase
-       .from('tournois')
-       .select('*')
-       .eq('id', params.id)
-       .single()
-
+     const tournamentResponse = await fetch(`/api/tournois/${params.id}`, {
+       credentials: 'include'
+     })
+     if (!tournamentResponse.ok) throw new Error('Erreur chargement tournoi')
+     const tournamentData = await tournamentResponse.json()
      setTournament(tournamentData)
 
-     // Charger la finale et la petite finale
-     const { data: finaleData } = await supabase
-       .from('matches')
-       .select(`
-         *,
-         equipe_a:equipes!equipe_a_id(
-           *,
-           equipes_joueurs(
-             joueur:joueurs(*)
-           )
-         ),
-         equipe_b:equipes!equipe_b_id(
-           *,
-           equipes_joueurs(
-             joueur:joueurs(*)
-           )
-         )
-       `)
-       .eq('tournoi_id', params.id)
-       .eq('type', 'finale')
-       .single()
+     // Charger tous les matchs du tournoi
+     const matchesResponse = await fetch(`/api/matches?tournoi_id=${params.id}`, {
+       credentials: 'include'
+     })
+     if (!matchesResponse.ok) throw new Error('Erreur chargement matchs')
+     const allMatches = await matchesResponse.json()
 
-     const { data: petiteFinaleData } = await supabase
-       .from('matches')
-       .select(`
-         *,
-         equipe_a:equipes!equipe_a_id(
-           *,
-           equipes_joueurs(
-             joueur:joueurs(*)
-           )
-         ),
-         equipe_b:equipes!equipe_b_id(
-           *,
-           equipes_joueurs(
-             joueur:joueurs(*)
-           )
-         )
-       `)
-       .eq('tournoi_id', params.id)
-       .eq('type', 'petite_finale')
-       .single()
+     // Trouver la finale et la petite finale
+     const finaleData = allMatches.find((m: any) => m.type === 'finale')
+     const petiteFinaleData = allMatches.find((m: any) => m.type === 'petite_finale')
 
      // Construire le podium
      const podiumData: PodiumTeam[] = []
 
      // Champion (1er)
      if (finaleData && finaleData.status === 'termine') {
-       const champion = finaleData.score_a > finaleData.score_b 
-         ? finaleData.equipe_a 
+       const champion = finaleData.score_a > finaleData.score_b
+         ? finaleData.equipe_a
          : finaleData.equipe_b
-       const finaliste = finaleData.score_a > finaleData.score_b 
-         ? finaleData.equipe_b 
+       const finaliste = finaleData.score_a > finaleData.score_b
+         ? finaleData.equipe_b
          : finaleData.equipe_a
 
        podiumData.push({
@@ -180,31 +146,60 @@ export default function PodiumPage() {
          team: finaliste,
          score: Math.min(finaleData.score_a, finaleData.score_b)
        })
+     } else {
+       // Fallback: Utiliser le classement général des poules
+       const equipesResponse = await fetch(`/api/equipes?tournoi_id=${params.id}`, { credentials: 'include' })
+       if (equipesResponse.ok) {
+         const equipesData = await equipesResponse.json()
+         const classement = equipesData.map((team: any) => {
+           const teamMatches = allMatches.filter((m: any) =>
+             m.status === 'termine' && m.type === 'poule' &&
+             (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id)
+           )
+           let victories = 0, pointsFor = 0, pointsAgainst = 0
+           teamMatches.forEach((m: any) => {
+             if (m.equipe_a?.id === team.id) {
+               if (m.score_a > m.score_b) victories++
+               pointsFor += m.score_a || 0
+               pointsAgainst += m.score_b || 0
+             } else if (m.equipe_b?.id === team.id) {
+               if (m.score_b > m.score_a) victories++
+               pointsFor += m.score_b || 0
+               pointsAgainst += m.score_a || 0
+             }
+           })
+           return { team, victories, difference: pointsFor - pointsAgainst, pointsFor }
+         }).sort((a: any, b: any) => {
+           if (b.victories !== a.victories) return b.victories - a.victories
+           return b.difference - a.difference
+         })
+         if (classement[0]) podiumData.push({ position: 1, team: classement[0].team, score: classement[0].pointsFor })
+         if (classement[1]) podiumData.push({ position: 2, team: classement[1].team, score: classement[1].pointsFor })
+         if (classement[2]) podiumData.push({ position: 3, team: classement[2].team, score: classement[2].pointsFor })
+       }
      }
 
-     // 3ème place
+     // 3ème place (écrase le fallback si petite finale existe)
      if (petiteFinaleData && petiteFinaleData.status === 'termine') {
-       const troisieme = petiteFinaleData.score_a > petiteFinaleData.score_b 
-         ? petiteFinaleData.equipe_a 
+       const troisieme = petiteFinaleData.score_a > petiteFinaleData.score_b
+         ? petiteFinaleData.equipe_a
          : petiteFinaleData.equipe_b
-
-       podiumData.push({
-         position: 3,
-         team: troisieme,
-         score: Math.max(petiteFinaleData.score_a, petiteFinaleData.score_b)
-       })
+       const idx = podiumData.findIndex(p => p.position === 3)
+       const newThird = { position: 3, team: troisieme, score: Math.max(petiteFinaleData.score_a, petiteFinaleData.score_b) }
+       if (idx >= 0) podiumData[idx] = newThird
+       else podiumData.push(newThird)
      }
 
      // Charger les stats complètes pour chaque équipe du podium
      for (const item of podiumData) {
-       const { data: matchesData } = await supabase
-         .from('matches')
-         .select('*')
-         .eq('tournoi_id', params.id)
-         .or(`equipe_a_id.eq.${item.team.id},equipe_b_id.eq.${item.team.id}`)
-         .eq('status', 'termine')
+       if (!item.team?.id) continue // Sécurité
+       // Filtrer les matchs terminés pour cette équipe
+       const matchesData = allMatches.filter((match: any) =>
+         match.status === 'termine' &&
+         (match.equipe_a?.id === item.team.id || match.equipe_b?.id === item.team.id)
+       )
 
-       if (matchesData) {
+       if (matchesData.length > 0) {
          const stats = {
            victories: 0,
            defeats: 0,
@@ -212,7 +207,7 @@ export default function PodiumPage() {
            pointsAgainst: 0
          }
 
-         matchesData.forEach(match => {
+         matchesData.forEach((match: any) => {
            if (match.equipe_a_id === item.team.id) {
              if (match.score_a > match.score_b) stats.victories++
              else stats.defeats++
@@ -664,9 +659,9 @@ export default function PodiumPage() {
                <h4 className="text-xl font-bold text-gray-900 mb-2">{podium[1]?.team.name}</h4>
                
                <div className="space-y-2 mb-4">
-                 {podium[1]?.team.equipes_joueurs?.map((ej: any, i: number) => (
+                 {podium[1]?.team.players?.map((player: any, i: number) => (
                    <p key={i} className="text-sm text-gray-700">
-                     {ej.joueur?.name}
+                     {player?.name}
                    </p>
                  ))}
                </div>
@@ -718,9 +713,9 @@ export default function PodiumPage() {
                <h4 className="text-2xl font-bold text-gray-900 mb-3">{podium[0]?.team.name}</h4>
                
                <div className="space-y-2 mb-4">
-                 {podium[0]?.team.equipes_joueurs?.map((ej: any, i: number) => (
+                 {podium[0]?.team.players?.map((player: any, i: number) => (
                    <p key={i} className="text-sm font-medium text-gray-800">
-                     ⭐ {ej.joueur?.name}
+                     ⭐ {player?.name}
                    </p>
                  ))}
                </div>
@@ -771,9 +766,9 @@ export default function PodiumPage() {
                {podium[2] && (
                  <>
                    <div className="space-y-2 mb-4">
-                     {podium[2]?.team.equipes_joueurs?.map((ej: any, i: number) => (
+                     {podium[2]?.team.players?.map((player: any, i: number) => (
                        <p key={i} className="text-sm text-gray-700">
-                         {ej.joueur?.name}
+                         {player?.name}
                        </p>
                      ))}
                    </div>
