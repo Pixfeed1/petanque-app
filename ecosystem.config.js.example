@@ -1,0 +1,44 @@
+// ===================================
+// CONFIGURATION PM2 POUR PRODUCTION
+// ===================================
+// Copier ce fichier en ecosystem.config.js et remplir les vraies valeurs
+
+module.exports = {
+  apps: [{
+    name: 'petanque',
+    script: 'server.js',
+    instances: 1,
+    exec_mode: 'fork',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3000,
+
+      // PostgreSQL
+      POSTGRES_HOST: 'localhost',
+      POSTGRES_PORT: '5432',
+      POSTGRES_DATABASE: 'DATABASE_NAME',
+      POSTGRES_USER: 'USER',
+      POSTGRES_PASSWORD: 'PASSWORD',
+
+      // ⚠️ GÉNÉREZ UN SECRET ALÉATOIRE AVEC LA COMMANDE CI-DESSOUS
+      JWT_SECRET: 'GENEREZ_UN_SECRET_ALEATOIRE_DE_32_CARACTERES_MINIMUM',
+
+      // URL de l'application
+      NEXT_PUBLIC_APP_URL: 'https://votre-domaine.com',
+
+      // Stripe (optionnel)
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_live_...',
+      STRIPE_SECRET_KEY: 'sk_live_...',
+      STRIPE_WEBHOOK_SECRET: 'whsec_...'
+    }
+  }]
+}
+
+// Pour générer un JWT_SECRET aléatoire :
+// node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+// Pour lancer l'app avec PM2 :
+// ./node_modules/.bin/pm2 start ecosystem.config.js
+// ./node_modules/.bin/pm2 list
+// ./node_modules/.bin/pm2 logs petanque
+// ./node_modules/.bin/pm2 save

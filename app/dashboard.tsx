@@ -1,42 +1,44 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/app/providers/AuthProvider'
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null)
+  const { user, organization, signOut } = useAuth()
   const [tournois, setTournois] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    checkUser()
-    loadTournois()
-  }, [])
-
-  const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    if (user && organization) {
+      loadTournois()
+    } else if (!user) {
       router.push('/login')
-    } else {
-      setUser(user)
+    }
+  }, [user, organization])
+
+  const loadTournois = async () => {
+    if (!organization) return
+
+    try {
+      const response = await fetch(`/api/tournois?org_id=${organization.id}`, {
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setTournois(data)
+      }
+    } catch (error) {
+      console.error('Erreur chargement tournois:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const loadTournois = async () => {
-    const { data, error } = await supabase
-      .from('tournois')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (data) setTournois(data)
-    setLoading(false)
-  }
-
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
+    await signOut()
   }
 
   if (loading) return <div>Chargement...</div>

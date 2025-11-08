@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 
@@ -166,7 +165,7 @@ interface Match {
 export default function TournamentDetailPage() {
   const router = useRouter()
   const params = useParams()
-  const { user, organization, supabase, loading: authLoading } = useAuth()
+  const { user, organization, loading: authLoading } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [tournament, setTournament] = useState<Tournament | null>(null)
@@ -184,6 +183,73 @@ export default function TournamentDetailPage() {
   const [currentRotation, setCurrentRotation] = useState(1)
   const [individualRankings, setIndividualRankings] = useState<any[]>([])
 
+  // Calcul optimisé du classement avec useMemo
+  const teamsWithStats = useMemo(() => {
+    return teams.map(team => {
+      const teamMatches = matches.filter(m =>
+        (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id) && m.status === 'termine'
+      )
+
+      const victories = teamMatches.filter(m =>
+        (m.equipe_a?.id === team.id && m.score_a > m.score_b) ||
+        (m.equipe_b?.id === team.id && m.score_b > m.score_a)
+      ).length
+
+      const defeats = teamMatches.filter(m =>
+        (m.equipe_a?.id === team.id && m.score_a < m.score_b) ||
+        (m.equipe_b?.id === team.id && m.score_b < m.score_a)
+      ).length
+
+      const pointsFor = teamMatches.reduce((acc, m) => {
+        if (m.equipe_a?.id === team.id) return acc + (m.score_a || 0)
+        if (m.equipe_b?.id === team.id) return acc + (m.score_b || 0)
+        return acc
+      }, 0)
+
+      const pointsAgainst = teamMatches.reduce((acc, m) => {
+        if (m.equipe_a?.id === team.id) return acc + (m.score_b || 0)
+        if (m.equipe_b?.id === team.id) return acc + (m.score_a || 0)
+        return acc
+      }, 0)
+
+      return {
+        ...team,
+        played: teamMatches.length,
+        victories,
+        defeats,
+        pointsFor,
+        pointsAgainst,
+        difference: pointsFor - pointsAgainst
+      }
+    })
+  }, [teams, matches])
+
+  // Classement par poule optimisé
+  const teamsByPoule = useMemo(() => {
+    const poules: { [key: string]: any[] } = {}
+
+    teamsWithStats.forEach(team => {
+      // Trouver la poule de cette équipe
+      const pouleMatch = matches.find(m =>
+        (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id) && m.poule
+      )
+      const poule = pouleMatch?.poule || 'A'
+
+      if (!poules[poule]) poules[poule] = []
+      poules[poule].push(team)
+    })
+
+    // Trier chaque poule
+    Object.keys(poules).forEach(poule => {
+      poules[poule].sort((a, b) => {
+        if (b.victories !== a.victories) return b.victories - a.victories
+        return b.difference - a.difference
+      })
+    })
+
+    return poules
+  }, [teamsWithStats, matches])
+
   useEffect(() => {
     setMounted(true)
     if (user && params.id) {
@@ -194,50 +260,57 @@ export default function TournamentDetailPage() {
   const loadTournamentData = async () => {
     try {
       // Charger le tournoi
-      const { data: tournamentData, error: tournamentError } = await supabase
-        .from('tournois')
-        .select('*')
-        .eq('id', params.id)
-        .single()
+      const tournamentResponse = await fetch(`/api/tournois/${params.id}`, {
+        credentials: 'include'
+      })
 
-      if (tournamentError) throw tournamentError
+      if (!tournamentResponse.ok) throw new Error('Erreur chargement tournoi')
+      const tournamentData = await tournamentResponse.json()
 
       if (tournamentData) {
         setTournament(tournamentData)
 
-        // Charger les équipes avec les joueurs - SANS CACHE
-        const { data: teamsData, error: teamsError } = await supabase
-          .from('equipes')
-          .select(`
-            *,
-            equipes_joueurs(
-              joueur:joueurs(*),
-              role
-            )
-          `)
-          .eq('tournoi_id', params.id)
+        // Charger les équipes - enrichies avec les joueurs via l'API
+        const teamsResponse = await fetch(`/api/equipes?tournoi_id=${params.id}`, {
+          credentials: 'include'
+        })
 
-        if (teamsError) throw teamsError
-        setTeams(teamsData || [])
+        if (!teamsResponse.ok) throw new Error('Erreur chargement équipes')
+        const teamsData = await teamsResponse.json()
 
-        // Charger les matchs - FORCER LE RECHARGEMENT
-        const { data: matchesData, error: matchesError } = await supabase
-          .from('matches')
-          .select(`
-            *,
-            equipe_a:equipes!equipe_a_id(*),
-            equipe_b:equipes!equipe_b_id(*)
-          `)
-          .eq('tournoi_id', params.id)
-          .order('tour', { ascending: true })
+        // Enrichir chaque équipe avec les détails des joueurs
+        const enrichedTeams = await Promise.all(
+          teamsData.map(async (team: any) => {
+            if (team.joueur_ids && Array.isArray(team.joueur_ids) && team.joueur_ids.length > 0) {
+              const joueursResponse = await fetch(`/api/equipes/${team.id}`, {
+                credentials: 'include'
+              })
+              if (joueursResponse.ok) {
+                const enrichedTeam = await joueursResponse.json()
+                // Adapter la structure pour correspondre à l'ancienne structure Supabase
+                if (enrichedTeam.joueurs) {
+                  team.equipes_joueurs = enrichedTeam.joueurs.map((joueur: any) => ({
+                    joueur: joueur,
+                    role: 'joueur'
+                  }))
+                }
+              }
+            }
+            return team
+          })
+        )
+        setTeams(enrichedTeams)
 
-        if (matchesError) throw matchesError
-        
-        // IMPORTANT : Forcer la mise à jour de l'état
-        setMatches([])  // Vider d'abord
-        setTimeout(() => {
-          setMatches(matchesData || [])  // Puis remplir
-        }, 0)
+        // Charger les matchs
+        const matchesResponse = await fetch(`/api/matches?tournoi_id=${params.id}`, {
+          credentials: 'include'
+        })
+
+        if (!matchesResponse.ok) throw new Error('Erreur chargement matchs')
+        const matchesData = await matchesResponse.json()
+
+        // Mise à jour de l'état des matchs
+        setMatches(matchesData || [])
 
         // Si mêlée tournante, charger le classement individuel
         if (tournamentData.mode === 'melee_tournante') {
@@ -245,17 +318,11 @@ export default function TournamentDetailPage() {
         }
 
         // Vérifier si l'utilisateur est organisateur
-        if (user) {
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', user.id)
-            .eq('org_id', organization?.id)
-            .single()
-
-          if (roleData && ['owner', 'organisateur', 'arbitre'].includes(roleData.role)) {
-            setIsOrganizer(true)
-          }
+        // Vérifier que le tournoi appartient bien à l'organisation de l'utilisateur
+        if (user && organization && tournamentData.org_id === organization.id) {
+          setIsOrganizer(true)
+        } else {
+          setIsOrganizer(false)
         }
       }
     } catch (error) {
@@ -266,22 +333,82 @@ export default function TournamentDetailPage() {
   }
 
   const loadIndividualRankings = async () => {
-    // Charger le classement individuel pour la mêlée tournante
-    const { data: playerStats } = await supabase
-      .from('joueurs')
-      .select(`
-        *,
-        equipes_joueurs!inner(
-          equipe:equipes!inner(
-            matches_a:matches!equipe_a_id(*),
-            matches_b:matches!equipe_b_id(*)
-          )
-        )
-      `)
-      .eq('equipes_joueurs.equipe.tournoi_id', params.id)
+    if (!organization || !params.id) return
 
-    // Calculer les stats individuelles
-    setIndividualRankings(playerStats || [])
+    try {
+      // Charger tous les joueurs de l'organisation
+      const joueursResponse = await fetch(`/api/joueurs?org_id=${organization.id}`, {
+        credentials: 'include'
+      })
+
+      if (!joueursResponse.ok) return
+      const joueurs = await joueursResponse.json()
+
+      // Charger toutes les équipes et matchs du tournoi
+      const equipesResponse = await fetch(`/api/equipes?tournoi_id=${params.id}`, {
+        credentials: 'include'
+      })
+      const matchesResponse = await fetch(`/api/matches?tournoi_id=${params.id}`, {
+        credentials: 'include'
+      })
+
+      if (!equipesResponse.ok || !matchesResponse.ok) return
+
+      const equipesData = await equipesResponse.json()
+      const matchesData = await matchesResponse.json()
+
+      // Calculer les stats de chaque joueur
+      const playerStats = joueurs.map((joueur: any) => {
+        let victories = 0
+        let defeats = 0
+        let pointsFor = 0
+        let pointsAgainst = 0
+
+        // Trouver toutes les équipes où ce joueur a joué
+        const playerTeams = equipesData.filter((eq: any) =>
+          eq.joueur_ids && eq.joueur_ids.includes(joueur.id)
+        )
+
+        // Pour chaque équipe, compter les matchs terminés
+        playerTeams.forEach((team: any) => {
+          const teamMatches = matchesData.filter((m: any) =>
+            m.status === 'termine' && (m.equipe_a_id === team.id || m.equipe_b_id === team.id)
+          )
+
+          teamMatches.forEach((match: any) => {
+            if (match.equipe_a_id === team.id) {
+              pointsFor += match.score_a || 0
+              pointsAgainst += match.score_b || 0
+              if (match.score_a > match.score_b) victories++
+              else defeats++
+            } else {
+              pointsFor += match.score_b || 0
+              pointsAgainst += match.score_a || 0
+              if (match.score_b > match.score_a) victories++
+              else defeats++
+            }
+          })
+        })
+
+        return {
+          ...joueur,
+          victories,
+          defeats,
+          difference: pointsFor - pointsAgainst,
+          points: pointsFor
+        }
+      })
+
+      // Trier par nombre de victoires, puis différence
+      playerStats.sort((a: any, b: any) => {
+        if (b.victories !== a.victories) return b.victories - a.victories
+        return b.difference - a.difference
+      })
+
+      setIndividualRankings(playerStats)
+    } catch (error) {
+      console.error('Erreur chargement classement individuel:', error)
+    }
   }
 
   const generatePoules = async () => {
@@ -289,7 +416,7 @@ export default function TournamentDetailPage() {
 
     const pouleSize = tournament.settings.pouleSize || 4
     const nbPoules = Math.ceil(teams.length / pouleSize)
-    
+
     // Créer les poules
     const poules: { [key: string]: Team[] } = {}
     for (let i = 0; i < nbPoules; i++) {
@@ -298,31 +425,33 @@ export default function TournamentDetailPage() {
     }
 
     // Générer les matchs de poule (round-robin)
-    const newMatches = []
-    for (const [pouleName, pouleTeams] of Object.entries(poules)) {
-      for (let i = 0; i < pouleTeams.length; i++) {
-        for (let j = i + 1; j < pouleTeams.length; j++) {
-          newMatches.push({
-            tournoi_id: tournament.id,
-            equipe_a_id: pouleTeams[i].id,
-            equipe_b_id: pouleTeams[j].id,
-            tour: 1,
-            terrain: null,
-            type: 'poule',
-            poule: pouleName,
-            status: 'a_jouer'
-          })
+    try {
+      for (const [pouleName, pouleTeams] of Object.entries(poules)) {
+        for (let i = 0; i < pouleTeams.length; i++) {
+          for (let j = i + 1; j < pouleTeams.length; j++) {
+            await fetch('/api/matches', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                tournoi_id: tournament.id,
+                equipe_a_id: pouleTeams[i].id,
+                equipe_b_id: pouleTeams[j].id,
+                tour: 1,
+                terrain: null,
+                type: 'poule',
+                poule: pouleName,
+                status: 'a_jouer'
+              })
+            })
+          }
         }
       }
-    }
 
-    // Sauvegarder les matchs
-    const { error } = await supabase
-      .from('matches')
-      .insert(newMatches)
-
-    if (!error) {
+      // Recharger les données
       await loadTournamentData()
+    } catch (error) {
+      console.error('Erreur génération poules:', error)
     }
   }
 
@@ -347,25 +476,114 @@ export default function TournamentDetailPage() {
   }
 
   const createNewTeamsWithAlgorithm = async () => {
-    // Algorithme pour créer de nouvelles équipes en évitant les répétitions
-    const { data: players } = await supabase
-      .from('joueurs')
-      .select('*')
-      .in('id', tournament?.settings.players || [])
+    if (!organization || !tournament?.settings.players) return
 
-    if (!players) return
+    try {
+      // Charger tous les joueurs de l'organisation
+      const joueursResponse = await fetch(`/api/joueurs?org_id=${organization.id}`, {
+        credentials: 'include'
+      })
 
-    // Mélanger les joueurs
-    const shuffled = [...players].sort(() => Math.random() - 0.5)
-    
-    // Respecter la mixité H/F
-    const hommes = shuffled.filter(p => p.gender === 'H')
-    const femmes = shuffled.filter(p => p.gender === 'F')
-    
-    // Créer les nouvelles équipes
-    const teamSize = tournament?.format === 'doublette' ? 2 : 3
-    
-    // ... logique de formation des équipes avec mixité
+      if (!joueursResponse.ok) return
+      const allPlayers = await joueursResponse.json()
+
+      // Filtrer pour obtenir seulement les joueurs du tournoi
+      const players = allPlayers.filter((p: any) =>
+        tournament.settings.players.includes(p.id)
+      )
+
+      if (players.length === 0) return
+
+      // Mélanger les joueurs
+      const shuffled = [...players].sort(() => Math.random() - 0.5)
+
+      // Respecter la mixité H/F
+      const hommes = shuffled.filter((p: any) => p.stats?.gender === 'H' || p.gender === 'H')
+      const femmes = shuffled.filter((p: any) => p.stats?.gender === 'F' || p.gender === 'F')
+
+      // Créer les nouvelles équipes
+      const teamSize = tournament.format === 'doublette' ? 2 : 3
+      const nbEquipes = Math.floor(players.length / teamSize)
+
+      // Supprimer les anciennes équipes
+      const oldTeams = teams
+      for (const team of oldTeams) {
+        await fetch(`/api/equipes/${team.id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        })
+      }
+
+      // Former les nouvelles équipes avec mixité
+      let teamNumber = 1
+      const newTeams = []
+
+      if (tournament.format === 'doublette') {
+        // Pour doublette: 1H + 1F autant que possible
+        while (hommes.length > 0 && femmes.length > 0 && teamNumber <= nbEquipes) {
+          const teamPlayers = [hommes.shift()!.id, femmes.shift()!.id]
+          newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
+          teamNumber++
+        }
+
+        // Équipes restantes sans mixité
+        const remaining = [...hommes, ...femmes].sort(() => Math.random() - 0.5)
+        while (remaining.length >= teamSize && teamNumber <= nbEquipes) {
+          const teamPlayers = remaining.splice(0, teamSize).map(p => p.id)
+          newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
+          teamNumber++
+        }
+      } else {
+        // Pour triplette: 2H + 1F ou 1H + 2F
+        while (teamNumber <= nbEquipes) {
+          let teamPlayers: string[] = []
+
+          if (hommes.length >= 2 && femmes.length >= 1) {
+            teamPlayers = [hommes.shift()!.id, hommes.shift()!.id, femmes.shift()!.id]
+          } else if (hommes.length >= 1 && femmes.length >= 2) {
+            teamPlayers = [hommes.shift()!.id, femmes.shift()!.id, femmes.shift()!.id]
+          } else {
+            // Pas assez pour mixité, prendre ce qu'on a
+            const remaining = [...hommes, ...femmes]
+            if (remaining.length >= teamSize) {
+              teamPlayers = remaining.splice(0, teamSize).map(p => p.id)
+            } else {
+              break
+            }
+          }
+
+          if (teamPlayers.length === teamSize) {
+            newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
+            teamNumber++
+          }
+        }
+      }
+
+      // Créer les équipes en base
+      for (const team of newTeams) {
+        await fetch('/api/equipes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            tournoi_id: tournament.id,
+            name: team.name,
+            joueur_ids: team.joueur_ids,
+            stats: {
+              victoires: 0,
+              defaites: 0,
+              points_pour: 0,
+              points_contre: 0
+            }
+          })
+        })
+      }
+
+      // Recharger les données
+      await loadTournamentData()
+    } catch (error) {
+      console.error('Erreur création équipes:', error)
+    }
   }
 
   const startTournament = async () => {
@@ -378,12 +596,14 @@ export default function TournamentDetailPage() {
       }
 
       // Mettre à jour le statut
-      const { error } = await supabase
-        .from('tournois')
-        .update({ status: 'en_cours' })
-        .eq('id', tournament.id)
+      const response = await fetch(`/api/tournois/${tournament.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: 'en_cours' })
+      })
 
-      if (!error) {
+      if (response.ok) {
         setTournament({ ...tournament, status: 'en_cours' })
         setShowStartModal(false)
       }
@@ -393,13 +613,19 @@ export default function TournamentDetailPage() {
   }
 
   const assignTerrain = async (matchId: string, terrain: number) => {
-    const { error } = await supabase
-      .from('matches')
-      .update({ terrain })
-      .eq('id', matchId)
+    try {
+      const response = await fetch(`/api/matches/${matchId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ terrain })
+      })
 
-    if (!error) {
-      await loadTournamentData()
+      if (response.ok) {
+        await loadTournamentData()
+      }
+    } catch (error) {
+      console.error('Erreur assignation terrain:', error)
     }
   }
 
@@ -638,14 +864,24 @@ export default function TournamentDetailPage() {
                                 <div className="text-center flex-1">
                                   <p className="font-medium text-gray-900">{match.equipe_a?.name}</p>
                                   {match.status !== 'a_jouer' && (
-                                    <p className="text-2xl font-bold text-gray-900 mt-1">{match.score_a}</p>
+                                    <div className="flex items-center justify-center gap-1 mt-1">
+                                      <p className="text-2xl font-bold text-gray-900">{match.score_a}</p>
+                                      {match.status === 'termine' && match.score_a === (tournament?.settings?.maxPoints || 13) && match.score_b === 0 && (
+                                        <span className="text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                                 <div className="px-4 text-gray-400">VS</div>
                                 <div className="text-center flex-1">
                                   <p className="font-medium text-gray-900">{match.equipe_b?.name}</p>
                                   {match.status !== 'a_jouer' && (
-                                    <p className="text-2xl font-bold text-gray-900 mt-1">{match.score_b}</p>
+                                    <div className="flex items-center justify-center gap-1 mt-1">
+                                      <p className="text-2xl font-bold text-gray-900">{match.score_b}</p>
+                                      {match.status === 'termine' && match.score_b === (tournament?.settings?.maxPoints || 13) && match.score_a === 0 && (
+                                        <span className="text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -718,7 +954,46 @@ export default function TournamentDetailPage() {
                       {Icons.trophy}
                     </div>
                     <p className="text-xl font-bold text-gray-900">
-                      {teams[0]?.name || 'À déterminer'}
+                      {(() => {
+                        // Calculer le vrai leader basé sur les victoires et différence de points
+                        const sortedTeams = [...teams].sort((a, b) => {
+                          const aMatches = matches.filter(m =>
+                            (m.equipe_a?.id === a.id || m.equipe_b?.id === a.id) && m.status === 'termine'
+                          )
+                          const bMatches = matches.filter(m =>
+                            (m.equipe_a?.id === b.id || m.equipe_b?.id === b.id) && m.status === 'termine'
+                          )
+
+                          const aVictories = aMatches.filter(m =>
+                            (m.equipe_a?.id === a.id && m.score_a > m.score_b) ||
+                            (m.equipe_b?.id === a.id && m.score_b > m.score_a)
+                          ).length
+
+                          const bVictories = bMatches.filter(m =>
+                            (m.equipe_a?.id === b.id && m.score_a > m.score_b) ||
+                            (m.equipe_b?.id === b.id && m.score_b > m.score_a)
+                          ).length
+
+                          if (bVictories !== aVictories) return bVictories - aVictories
+
+                          // Si égalité de victoires, comparer la différence de points
+                          const aDiff = aMatches.reduce((acc, m) => {
+                            if (m.equipe_a?.id === a.id) return acc + (m.score_a - m.score_b)
+                            if (m.equipe_b?.id === a.id) return acc + (m.score_b - m.score_a)
+                            return acc
+                          }, 0)
+
+                          const bDiff = bMatches.reduce((acc, m) => {
+                            if (m.equipe_a?.id === b.id) return acc + (m.score_a - m.score_b)
+                            if (m.equipe_b?.id === b.id) return acc + (m.score_b - m.score_a)
+                            return acc
+                          }, 0)
+
+                          return bDiff - aDiff
+                        })
+
+                        return sortedTeams[0]?.name || 'À déterminer'
+                      })()}
                     </p>
                   </div>
                 </div>
@@ -746,7 +1021,7 @@ export default function TournamentDetailPage() {
                 ) : (
                   <>
                     {/* Grouper les matchs par tour */}
-                    {Array.from(new Set(matches.map(m => m.tour))).map(tour => (
+                    {Array.from(new Set(matches.filter(m => m.tour !== null && m.tour !== undefined).map(m => m.tour))).sort((a, b) => a - b).map(tour => (
                       <div key={tour} className="bg-white rounded-2xl shadow-lg p-6">
                         <h3 className="text-lg font-bold text-gray-900 mb-4">
                           Tour {tour}
@@ -776,7 +1051,12 @@ export default function TournamentDetailPage() {
                                   }`}>
                                     <span className="font-medium">{match.equipe_a?.name}</span>
                                     {match.status !== 'a_jouer' && (
-                                      <span className="text-xl font-bold">{match.score_a}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xl font-bold">{match.score_a}</span>
+                                        {match.status === 'termine' && match.score_a === (tournament?.settings?.maxPoints || 13) && match.score_b === 0 && (
+                                          <span className="text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                        )}
+                                      </div>
                                     )}
                                   </div>
                                   <div className={`flex justify-between items-center p-2 rounded-lg ${
@@ -784,7 +1064,12 @@ export default function TournamentDetailPage() {
                                   }`}>
                                     <span className="font-medium">{match.equipe_b?.name}</span>
                                     {match.status !== 'a_jouer' && (
-                                      <span className="text-xl font-bold">{match.score_b}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xl font-bold">{match.score_b}</span>
+                                        {match.status === 'termine' && match.score_b === (tournament?.settings?.maxPoints || 13) && match.score_a === 0 && (
+                                          <span className="text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                        )}
+                                      </div>
                                     )}
                                   </div>
                                 </div>
@@ -862,7 +1147,7 @@ export default function TournamentDetailPage() {
                   // Classement par équipe pour les autres modes
                   <div className="space-y-4">
                     {/* Classement par poule */}
-                    {['A', 'B', 'C', 'D'].slice(0, Math.ceil(teams.length / (tournament.settings.pouleSize || 4))).map(poule => (
+                    {Object.keys(teamsByPoule).sort().map(poule => (
                       <div key={poule} className="bg-white rounded-2xl shadow-lg overflow-hidden">
                         <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 text-white">
                           <h3 className="text-xl font-bold">Poule {poule}</h3>
@@ -874,70 +1159,31 @@ export default function TournamentDetailPage() {
                                 <th className="text-left py-2">Pos</th>
                                 <th className="text-left py-2">Équipe</th>
                                 <th className="text-center py-2">J</th>
-                                <th className="text-center py-2">V</th>
+                                <th className="text-center py-2 text-green-600 font-bold">V</th>
                                 <th className="text-center py-2">D</th>
                                 <th className="text-center py-2">+/-</th>
-                                <th className="text-center py-2">Pts</th>
+                                <th className="text-center py-2">PM</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {teams
-                                .filter(t => {
-                                  // Filtrer les équipes de cette poule
-                                  const teamMatches = matches.filter(m => 
-                                    (m.equipe_a?.id === t.id || m.equipe_b?.id === t.id) && 
-                                    m.poule === poule
-                                  )
-                                  return teamMatches.length > 0
-                                })
-                                .map((team, index) => {
-                                  // Calculer les stats
-                                  const teamMatches = matches.filter(m => 
-                                    (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id) &&
-                                    m.status === 'termine'
-                                  )
-                                  
-                                  const victories = teamMatches.filter(m => 
-                                    (m.equipe_a?.id === team.id && m.score_a > m.score_b) ||
-                                    (m.equipe_b?.id === team.id && m.score_b > m.score_a)
-                                  ).length
-                                  
-                                  const defeats = teamMatches.filter(m => 
-                                    (m.equipe_a?.id === team.id && m.score_a < m.score_b) ||
-                                    (m.equipe_b?.id === team.id && m.score_b < m.score_a)
-                                  ).length
-
-                                  const pointsFor = teamMatches.reduce((acc, m) => {
-                                    if (m.equipe_a?.id === team.id) return acc + m.score_a
-                                    if (m.equipe_b?.id === team.id) return acc + m.score_b
-                                    return acc
-                                  }, 0)
-
-                                  const pointsAgainst = teamMatches.reduce((acc, m) => {
-                                    if (m.equipe_a?.id === team.id) return acc + m.score_b
-                                    if (m.equipe_b?.id === team.id) return acc + m.score_a
-                                    return acc
-                                  }, 0)
-                                  
-                                  return (
-                                    <tr key={team.id} className={`border-b hover:bg-gray-50 ${
-                                      index < 2 ? 'bg-green-50' : ''
-                                    }`}>
-                                      <td className="py-3">
-                                        {index === 0 && '🥇'}
-                                        {index === 1 && '🥈'}
-                                        {index === 2 && '🥉'}
-                                        {index > 2 && index + 1}
-                                      </td>
-                                      <td className="py-3 font-medium">{team.name}</td>
-                                      <td className="py-3 text-center">{teamMatches.length}</td>
-                                      <td className="py-3 text-center">{victories}</td>
-                                      <td className="py-3 text-center">{defeats}</td>
-                                      <td className="py-3 text-center">{pointsFor - pointsAgainst > 0 ? '+' : ''}{pointsFor - pointsAgainst}</td>
-                                      <td className="py-3 text-center font-bold">{victories * 3}</td>
-                                    </tr>
-                                  )
-                                })}
+                              {teamsByPoule[poule]?.map((team: any, index: number) => (
+                                <tr key={team.id} className={`border-b hover:bg-gray-50 ${
+                                  index < 2 ? 'bg-green-50' : ''
+                                }`}>
+                                  <td className="py-3">
+                                    {index === 0 && '🥇'}
+                                    {index === 1 && '🥈'}
+                                    {index === 2 && '🥉'}
+                                    {index > 2 && index + 1}
+                                  </td>
+                                  <td className="py-3 font-medium">{team.name}</td>
+                                  <td className="py-3 text-center">{team.played || 0}</td>
+                                  <td className="py-3 text-center font-bold text-green-600">{team.victories || 0}</td>
+                                  <td className="py-3 text-center">{team.defeats || 0}</td>
+                                  <td className="py-3 text-center">{team.difference > 0 ? '+' : ''}{team.difference || 0}</td>
+                                  <td className="py-3 text-center text-gray-600">{team.pointsFor || 0}</td>
+                                </tr>
+                              ))}
                             </tbody>
                           </table>
                         </div>

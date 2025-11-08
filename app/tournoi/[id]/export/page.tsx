@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -87,6 +86,12 @@ const Icons = {
    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
    </svg>
+ ),
+ settings: (
+   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+   </svg>
  )
 }
 
@@ -162,32 +167,48 @@ export default function ExportTournamentPage() {
  const loadTournamentData = async () => {
    try {
      // Charger le tournoi
-     const { data: tournamentData } = await supabase
-       .from('tournois')
-       .select('*')
-       .eq('id', params.id)
-       .single()
+     const tournamentResponse = await fetch(`/api/tournois/${params.id}`, {
+       credentials: 'include'
+     })
+     if (!tournamentResponse.ok) throw new Error('Erreur chargement tournoi')
+     const tournamentData = await tournamentResponse.json()
 
      if (tournamentData) {
        setTournament(tournamentData)
 
-       // Charger les équipes avec joueurs
-       const { data: teamsData } = await supabase
-         .from('equipes')
-         .select(`
-           *,
-           equipes_joueurs(
-             joueur:joueurs(*),
-             role
-           )
-         `)
-         .eq('tournoi_id', params.id)
+       // Charger les équipes
+       const teamsResponse = await fetch(`/api/equipes?tournoi_id=${params.id}`, {
+         credentials: 'include'
+       })
+       if (!teamsResponse.ok) throw new Error('Erreur chargement équipes')
+       let teamsData = await teamsResponse.json()
+
+       // Enrichir chaque équipe avec les joueurs
+       teamsData = await Promise.all(
+         teamsData.map(async (team: any) => {
+           if (team.joueur_ids && team.joueur_ids.length > 0) {
+             const enrichedResponse = await fetch(`/api/equipes/${team.id}`, {
+               credentials: 'include'
+             })
+             if (enrichedResponse.ok) {
+               const enrichedTeam = await enrichedResponse.json()
+               if (enrichedTeam.joueurs) {
+                 team.equipes_joueurs = enrichedTeam.joueurs.map((j: any) => ({
+                   joueur: j,
+                   role: 'joueur'
+                 }))
+               }
+             }
+           }
+           return team
+         })
+       )
 
        setTeams(teamsData || [])
 
        // Extraire tous les joueurs uniques
        const allPlayers = new Set<Player>()
-       teamsData?.forEach(team => {
+       teamsData?.forEach((team: any) => {
          team.equipes_joueurs?.forEach((ej: any) => {
            if (ej.joueur) {
              allPlayers.add(ej.joueur)
@@ -196,29 +217,15 @@ export default function ExportTournamentPage() {
        })
        setPlayers(Array.from(allPlayers))
 
-       // Charger les matchs avec mènes
-       const { data: matchesData } = await supabase
-         .from('matches')
-         .select(`
-           *,
-           equipe_a:equipes!equipe_a_id(
-             *,
-             equipes_joueurs(
-               joueur:joueurs(*)
-             )
-           ),
-           equipe_b:equipes!equipe_b_id(
-             *,
-             equipes_joueurs(
-               joueur:joueurs(*)
-             )
-           )
-         `)
-         .eq('tournoi_id', params.id)
-         .order('tour', { ascending: true })
+       // Charger les matchs
+       const matchesResponse = await fetch(`/api/matches?tournoi_id=${params.id}`, {
+         credentials: 'include'
+       })
+       if (!matchesResponse.ok) throw new Error('Erreur chargement matchs')
+       const matchesData = await matchesResponse.json()
 
        // Transformer manches_json en menes pour cohérence
-       const matchesWithMenes = matchesData?.map(match => ({
+       const matchesWithMenes = matchesData?.map((match: any) => ({
          ...match,
          menes: match.manches_json || []
        })) || []
@@ -291,8 +298,7 @@ export default function ExportTournamentPage() {
 
    matches.filter(m => m.status === 'termine').forEach(match => {
      // Joueurs équipe A
-     match.equipe_a?.equipes_joueurs?.forEach((ej: any) => {
-       const player = ej.joueur
+     match.equipe_a?.players?.forEach((player: any) => {
        if (!player) return
 
        const stats = playerStats.get(player.id) || {
@@ -317,8 +323,7 @@ export default function ExportTournamentPage() {
      })
 
      // Joueurs équipe B
-     match.equipe_b?.equipes_joueurs?.forEach((ej: any) => {
-       const player = ej.joueur
+     match.equipe_b?.players?.forEach((player: any) => {
        if (!player) return
 
        const stats = playerStats.get(player.id) || {

@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next"
-import { Inter } from "next/font/google"
+// import { Inter } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "./providers/AuthProvider"
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-})
+// Utiliser une police système au lieu de Google Fonts
+// const inter = Inter({
+//   subsets: ["latin"],
+//   variable: "--font-inter",
+// })
 
 export const metadata: Metadata = {
   title: "Pétanque Pro - Gestion de Tournois",
@@ -40,13 +41,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="fr" className={inter.variable}>
+    <html lang="fr">
       <head>
-        {/* Font Inter depuis Google Fonts pour une meilleure typo */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Utilisation de polices système */}
       </head>
-      <body className="antialiased bg-gray-50 text-gray-900">
+      <body className="antialiased bg-gray-50 text-gray-900 font-sans">
         <AuthProvider>
           {children}
         </AuthProvider>

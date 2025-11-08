@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
 // Icônes simples en SVG
@@ -108,9 +107,13 @@ export default function LoginPage() {
   }, [])
 
   const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      router.push('/dashboard')
+    try {
+      const response = await fetch('/api/auth/me', { credentials: 'include' })
+      if (response.ok) {
+        router.push('/dashboard')
+      }
+    } catch (error) {
+      // Pas connecté, c'est normal
     }
   }
 
@@ -150,18 +153,22 @@ export default function LoginPage() {
 
   const handleLogin = async () => {
     if (!email || !password) return
-    
+
     setLoading(true)
     setError('')
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password, rememberMe })
       })
 
-      if (error) {
-        setError(getErrorMessage(error))
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Email ou mot de passe incorrect')
       } else {
         setSuccessAnimation(true)
         await new Promise(resolve => setTimeout(resolve, 800))
@@ -177,159 +184,57 @@ export default function LoginPage() {
 
   const handleSignup = async () => {
     setError('')
-    
+
     if (!name || !email || !password || !confirmPassword || !organizationName) {
       setError('Veuillez remplir tous les champs')
       return
     }
-    
+
     if (password !== confirmPassword) {
       setError('Les mots de passe ne correspondent pas')
       return
     }
-    
+
     if (password.length < 6) {
       setError('Le mot de passe doit contenir au moins 6 caractères')
       return
     }
-    
+
     if (!acceptTerms) {
       setError('Veuillez accepter les conditions d\'utilisation')
       return
     }
-    
+
     setLoading(true)
 
     try {
-      // 1. Créer le compte utilisateur avec metadata
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: name,
-            organization_name: organizationName
-          }
-        }
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email,
+          password,
+          fullName: name,
+          organizationName
+        })
       })
 
-      if (authError) {
-        console.error('Erreur auth:', authError)
-        setError(getErrorMessage(authError))
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Une erreur est survenue lors de l\'inscription')
         setLoading(false)
         return
       }
 
-      if (!authData.user) {
-        setError('Erreur lors de la création du compte')
-        setLoading(false)
-        return
-      }
+      console.log('✅ Compte créé avec succès')
+      setSuccess('Compte créé avec succès !')
 
-      console.log('✅ Utilisateur créé:', authData.user.id)
-
-      // 2. Se connecter immédiatement après inscription pour avoir les droits
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
-
-      if (signInError) {
-        console.error('Erreur connexion après inscription:', signInError)
-        // Continuer quand même, le trigger devrait gérer la création
-      }
-
-      // 3. Attendre un peu pour que le trigger ait le temps de s'exécuter
+      // Rediriger vers le dashboard après une courte pause
       await new Promise(resolve => setTimeout(resolve, 1000))
+      router.push('/dashboard')
 
-      // 4. Créer l'organisation avec l'utilisateur maintenant connecté
-      try {
-        // D'abord vérifier si le trigger n'a pas déjà créé l'org
-        const { data: existingRoles } = await supabase
-          .from('user_roles')
-          .select('*, organisations(*)')
-          .eq('user_id', authData.user.id)
-          .single()
-
-        if (!existingRoles) {
-          console.log('📝 Création manuelle de l\'organisation...')
-          
-          // Créer l'organisation manuellement
-          const { data: orgData, error: orgError } = await supabase
-            .from('organisations')
-            .insert({
-              name: organizationName,
-              settings: { 
-                created_via: 'signup',
-                db_version: '1.0'
-              },
-              created_by: authData.user.id
-            })
-            .select()
-            .single()
-
-          if (orgError) {
-            console.error('Erreur création organisation:', orgError)
-            // Si erreur de permission, essayer avec RPC
-            if (orgError.code === '42501') {
-              console.log('🔄 Tentative avec RPC...')
-              const { data: rpcResult, error: rpcError } = await supabase.rpc('create_org_for_new_user', {
-                p_user_id: authData.user.id,
-                p_org_name: organizationName
-              })
-              
-              if (rpcError) {
-                console.error('Erreur RPC:', rpcError)
-              } else {
-                console.log('✅ Organisation créée via RPC')
-              }
-            }
-          } else if (orgData) {
-            console.log('✅ Organisation créée:', orgData.id)
-            
-            // Créer le rôle owner
-            const { error: roleError } = await supabase
-              .from('user_roles')
-              .insert({
-                user_id: authData.user.id,
-                org_id: orgData.id,
-                role: 'owner',
-                granted_by: authData.user.id
-              })
-
-            if (roleError) {
-              console.error('Erreur création rôle:', roleError)
-            } else {
-              console.log('✅ Rôle owner créé')
-            }
-
-            // Mettre à jour les metadata de l'utilisateur avec l'org courante
-            await supabase.auth.updateUser({
-              data: {
-                current_org_id: orgData.id
-              }
-            })
-          }
-        } else {
-          console.log('✅ Organisation déjà créée par le trigger')
-        }
-      } catch (orgCreationError) {
-        console.error('Erreur lors de la création de l\'organisation:', orgCreationError)
-        // Ne pas bloquer l'inscription si l'org ne peut pas être créée
-      }
-
-      setSuccess('Compte créé avec succès ! Vérifiez votre email pour confirmer votre compte.')
-      
-      // Attendre un peu avant de rediriger
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Si connecté, rediriger vers dashboard
-      if (signInData?.user) {
-        router.push('/dashboard')
-      } else {
-        setActiveTab('login')
-      }
-      
     } catch (err) {
       console.error('Erreur globale:', err)
       setError('Une erreur est survenue lors de l\'inscription')
@@ -343,53 +248,20 @@ export default function LoginPage() {
       setError('Veuillez entrer votre adresse email')
       return
     }
-    
+
     if (!isEmailValid) {
       setError('Veuillez entrer une adresse email valide')
       return
     }
-    
-    setLoading(true)
-    setError('')
 
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      })
-
-      if (error) {
-        setError(getErrorMessage(error))
-      } else {
-        setSuccess('Un email de réinitialisation a été envoyé à ' + email)
-      }
-    } catch (err) {
-      setError('Une erreur est survenue. Veuillez réessayer.')
-    } finally {
-      setLoading(false)
-    }
+    // TODO: Implémenter l'API de reset password
+    setError('Fonctionnalité de réinitialisation temporairement indisponible. Contactez l\'administrateur.')
   }
 
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
-    try {
-      setLoading(true) // Ajouter un état de chargement
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`, // Change ici !
-          scopes: provider === 'google' ? 'email profile' : 'email public_profile'
-        }
-      })
-  
-      if (error) {
-        setError(getErrorMessage(error))
-        setLoading(false)
-      }
-      // Pas de setLoading(false) ici car on va être redirigé
-    } catch (err) {
-      setError('Une erreur est survenue avec la connexion ' + provider)
-      setLoading(false)
-    }
+    // Rediriger vers l'endpoint OAuth
+    const authUrl = `/api/auth/oauth/${provider}/login`
+    window.location.href = authUrl
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

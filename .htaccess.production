@@ -1,0 +1,24 @@
+# ===================================
+# CONFIGURATION APACHE POUR PRODUCTION
+# ===================================
+# Copier ce fichier en .htaccess à la racine du domaine
+# (ex: ~/petanquepro.fr/.htaccess)
+
+# Désactiver l'index par défaut d'Apache
+DirectoryIndex disabled
+
+# Activer le module de réécriture
+RewriteEngine On
+RewriteBase /
+
+# Rediriger index.php vers la racine pour éviter les conflits
+RewriteRule ^index\.php$ / [R=301,L]
+
+# Proxy vers l'application Node.js sur le port 3000
+RewriteRule ^$ http://127.0.0.1:3000/ [P,L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L]
+
+# Note : Assurez-vous que les modules mod_proxy et mod_proxy_http
+# sont activés dans Apache

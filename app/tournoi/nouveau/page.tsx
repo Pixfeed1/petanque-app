@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
-import { supabase } from '@/lib/supabase'
 
 // Icônes premium améliorées
 const Icons = {
@@ -169,6 +168,7 @@ export default function CreateTournamentPage() {
     meleeRotation: 'par_tour',
     qualifiedPerPoule: 2,
     consolante: true,
+    mixiteObligatoire: false,
     
     // Étape 3 - Joueurs
     selectedPlayers: [] as string[],
@@ -219,20 +219,17 @@ export default function CreateTournamentPage() {
 
   const loadPlayers = async () => {
     if (!organization) return
-    
+
     setLoadingPlayers(true)
     try {
-      const { data: playersData, error } = await supabase
-        .from('joueurs')
-        .select('*')
-        .eq('org_id', organization.id)
-        .order('name')
+      const response = await fetch(`/api/joueurs?org_id=${organization.id}`, {
+        credentials: 'include'
+      })
 
-      if (error) throw error
-      
-      if (playersData) {
-        setAvailablePlayers(playersData)
-      }
+      if (!response.ok) throw new Error('Erreur chargement joueurs')
+
+      const playersData = await response.json()
+      setAvailablePlayers(playersData)
     } catch (error) {
       console.error('Erreur chargement joueurs:', error)
     } finally {
@@ -278,6 +275,14 @@ export default function CreateTournamentPage() {
   ]
 
   const formats = [
+    {
+      value: 'tete_a_tete',
+      title: 'Tête à tête',
+      description: '1 joueur (individuel)',
+      minPlayers: 2,
+      icon: '🎯',
+      gradient: 'from-blue-400 to-blue-600'
+    },
     {
       value: 'doublette',
       title: 'Doublette',
@@ -340,6 +345,7 @@ export default function CreateTournamentPage() {
   }
 
   const getMinPlayers = () => {
+    if (formData.format === 'tete_a_tete') return 2
     return formData.format === 'doublette' ? 4 : 6
   }
 
@@ -369,7 +375,7 @@ export default function CreateTournamentPage() {
         }
         
         if (formData.mode === 'melee_fixe' || formData.mode === 'melee_tournante') {
-          const playersPerTeam = formData.format === 'doublette' ? 2 : 3
+          const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
           const canFormCompleteTeams = totalPlayers % playersPerTeam === 0
           
           if (!canFormCompleteTeams) {
@@ -381,7 +387,9 @@ export default function CreateTournamentPage() {
         for (const player of formData.newPlayers) {
           if (player.name.trim()) {
             if (player.email && player.email.trim() && !isValidEmail(player.email)) {
-              // Email invalide mais non bloquant
+              canGo = false
+              setValidationError(`Email invalide pour ${player.name}: ${player.email}`)
+              break
             }
           }
         }
@@ -411,9 +419,9 @@ export default function CreateTournamentPage() {
       }
       
       if (formData.mode === 'melee_fixe' || formData.mode === 'melee_tournante') {
-        const playersPerTeam = formData.format === 'doublette' ? 2 : 3
+        const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
         const canFormCompleteTeams = totalPlayers % playersPerTeam === 0
-        
+
         if (!canFormCompleteTeams) {
           setValidationError(`Pour une ${formData.format} en mêlée, il faut un nombre de joueurs multiple de ${playersPerTeam}. Vous avez ${totalPlayers} joueurs.`)
           return
@@ -428,58 +436,77 @@ export default function CreateTournamentPage() {
 
   // Helper pour créer une équipe avec ses joueurs
   const createTeamWithPlayers = async (tournoiId: string, teamNumber: number, playerIds: string[]) => {
-    const { data: equipe, error: equipeError } = await supabase
-      .from('equipes')
-      .insert({
-        tournoi_id: tournoiId,
-        name: `Équipe ${teamNumber}`
+    try {
+      const response = await fetch('/api/equipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          tournoi_id: tournoiId,
+          name: `Équipe ${teamNumber}`,
+          joueur_ids: playerIds,
+          stats: {
+            victoires: 0,
+            defaites: 0,
+            points_pour: 0,
+            points_contre: 0
+          }
+        })
       })
-      .select()
-      .single()
-    
-    if (equipeError) {
-      console.error('Erreur création équipe:', equipeError)
-      return
-    }
-    
-    if (equipe) {
-      for (let j = 0; j < playerIds.length; j++) {
-        const role = j === 0 ? 'capitaine' : 'joueur'
-        
-        const { error: assignError } = await supabase
-          .from('equipes_joueurs')
-          .insert({
-            equipe_id: equipe.id,
-            joueur_id: playerIds[j],
-            role: role,
-            ordre: j + 1
-          })
-        
-        if (assignError) {
-          console.error(`Erreur assignation joueur:`, assignError)
-        }
+
+      if (!response.ok) {
+        console.error('Erreur création équipe')
+        return null
       }
+
+      const equipe = await response.json()
+      return equipe
+    } catch (error) {
+      console.error('Erreur création équipe:', error)
+      return null
     }
   }
 
   // Fonction corrigée pour créer les équipes avec mixité
   const createTeamsWithMixity = async (tournoi: any, allPlayerIds: string[], updatedPlayersList: any[]) => {
-    const playersPerTeam = formData.format === 'doublette' ? 2 : 3
+    const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
     const nbEquipes = Math.floor(allPlayerIds.length / playersPerTeam)
     
     if (formData.mode === 'choisi') {
-      // Pour le mode choisi, on crée les équipes ET on assigne les joueurs temporairement
-      const shuffledPlayers = [...allPlayerIds].sort(() => Math.random() - 0.5)
-      
+      // Pour le mode choisi, on crée des équipes VIDES que les joueurs rempliront eux-mêmes
       for (let i = 0; i < nbEquipes; i++) {
-        const teamPlayers = shuffledPlayers.slice(i * playersPerTeam, (i + 1) * playersPerTeam)
-        await createTeamWithPlayers(tournoi.id, i + 1, teamPlayers)
+        await createTeamWithPlayers(tournoi.id, i + 1, [])
       }
+      // Les joueurs seront assignés manuellement par l'organisateur dans l'interface
+      return 0
     } 
     else if (formData.mode === 'melee_fixe') {
+      // Pour tête-à-tête, chaque joueur est sa propre équipe
+      if (formData.format === 'tete_a_tete') {
+        const shuffledPlayers = [...allPlayerIds].sort(() => Math.random() - 0.5)
+        for (let i = 0; i < shuffledPlayers.length; i++) {
+          await createTeamWithPlayers(tournoi.id, i + 1, [shuffledPlayers[i]])
+        }
+        return 0
+      }
+
+      // Si mixité NON obligatoire : formation libre sans contrainte de genre
+      if (!formData.mixiteObligatoire) {
+        const shuffledPlayers = [...allPlayerIds].sort(() => Math.random() - 0.5)
+        let teamNumber = 1
+
+        for (let i = 0; i < nbEquipes; i++) {
+          const teamPlayers = shuffledPlayers.slice(i * playersPerTeam, (i + 1) * playersPerTeam)
+          await createTeamWithPlayers(tournoi.id, teamNumber++, teamPlayers)
+        }
+
+        return 0
+      }
+
+      // Si mixité OBLIGATOIRE : utiliser l'algorithme de mixité H/F
       // Utiliser la liste mise à jour pour avoir les infos de genre
       const playersByGender: { H: string[], F: string[] } = { H: [], F: [] }
-      
+
       for (const playerId of allPlayerIds) {
         const player = updatedPlayersList.find(p => p.id === playerId)
         if (player) {
@@ -489,13 +516,13 @@ export default function CreateTournamentPage() {
           playersByGender.H.push(playerId)
         }
       }
-      
+
       // Mélanger et créer les équipes
       playersByGender.H.sort(() => Math.random() - 0.5)
       playersByGender.F.sort(() => Math.random() - 0.5)
-      
+
       let teamNumber = 1
-      
+
       // Créer équipes mixtes
       if (formData.format === 'doublette') {
         while (playersByGender.H.length > 0 && playersByGender.F.length > 0) {
@@ -518,12 +545,22 @@ export default function CreateTournamentPage() {
         }
       }
       
-      // Créer équipes restantes
+      // Créer équipes restantes en préservant la mixité autant que possible
       const remainingPlayers = [...playersByGender.H, ...playersByGender.F]
+      remainingPlayers.sort(() => Math.random() - 0.5) // Mélanger pour alterner H/F
+
       while (remainingPlayers.length >= playersPerTeam) {
         const teamPlayers = remainingPlayers.splice(0, playersPerTeam)
         await createTeamWithPlayers(tournoi.id, teamNumber++, teamPlayers)
       }
+
+      // Avertir si des joueurs restent
+      if (remainingPlayers.length > 0) {
+        console.warn(`${remainingPlayers.length} joueur(s) non assigné(s) car nombre incompatible avec le format`)
+        // Retourner le nombre de joueurs non assignés pour alerter l'utilisateur
+        return remainingPlayers.length
+      }
+      return 0
     }
     else if (formData.mode === 'melee_tournante') {
       // Pour mêlée tournante, créer les équipes du premier tour
@@ -535,9 +572,11 @@ export default function CreateTournamentPage() {
       }
       
       // Sauvegarder la configuration pour les rotations futures
-      await supabase
-        .from('tournois')
-        .update({
+      await fetch(`/api/tournois/${tournoi.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
           settings: {
             ...tournoi.settings,
             melee_tournante_players: allPlayerIds,
@@ -545,63 +584,90 @@ export default function CreateTournamentPage() {
             current_round: 1
           }
         })
-        .eq('id', tournoi.id)
+      })
+      return 0
     }
+    return 0
   }
 
   // Fonction pour créer les matchs de poules
   const createPoolMatches = async (tournoi: any) => {
     // Récupérer toutes les équipes créées
-    const { data: equipes, error: equipesError } = await supabase
-      .from('equipes')
-      .select('*')
-      .eq('tournoi_id', tournoi.id)
-      .order('name')
-    
-    if (equipesError || !equipes || equipes.length === 0) {
-      console.error('Erreur récupération équipes:', equipesError)
-      return
-    }
+    try {
+      const response = await fetch(`/api/equipes?tournoi_id=${tournoi.id}`, {
+        credentials: 'include'
+      })
 
-    // Diviser en poules
-    const equipesParPoule = formData.pouleSize
-    const nbPoules = Math.ceil(equipes.length / equipesParPoule)
-    
-    let globalMatchNum = 0
-    
-    for (let pouleNum = 0; pouleNum < nbPoules; pouleNum++) {
-      const pouleStart = pouleNum * equipesParPoule
-      const pouleEnd = Math.min(pouleStart + equipesParPoule, equipes.length)
-      const equipesPoule = equipes.slice(pouleStart, pouleEnd)
-      
-      // Créer tous les matchs de cette poule (round-robin)
-      for (let i = 0; i < equipesPoule.length; i++) {
-        for (let j = i + 1; j < equipesPoule.length; j++) {
-          const terrainNum = (globalMatchNum % formData.terrains) + 1
-          const tour = Math.floor(globalMatchNum / formData.terrains) + 1
-          
-          const { error: matchError } = await supabase
-            .from('matches')
-            .insert({
+      if (!response.ok) {
+        throw new Error('Erreur récupération équipes')
+      }
+
+      const equipes = await response.json()
+
+      if (!equipes || equipes.length === 0) {
+        throw new Error('Aucune équipe trouvée')
+      }
+
+      // Diviser en poules
+      const equipesParPoule = formData.pouleSize
+      const nbPoules = Math.ceil(equipes.length / equipesParPoule)
+
+      let globalMatchNum = 0
+      let matchesCreated = 0
+      const matchesToCreate: any[] = []
+
+      for (let pouleNum = 0; pouleNum < nbPoules; pouleNum++) {
+        const pouleStart = pouleNum * equipesParPoule
+        const pouleEnd = Math.min(pouleStart + equipesParPoule, equipes.length)
+        const equipesPoule = equipes.slice(pouleStart, pouleEnd)
+
+        // Créer tous les matchs de cette poule (round-robin)
+        for (let i = 0; i < equipesPoule.length; i++) {
+          for (let j = i + 1; j < equipesPoule.length; j++) {
+            const terrainNum = (globalMatchNum % formData.terrains) + 1
+            const tour = Math.floor(globalMatchNum / formData.terrains) + 1
+
+            matchesToCreate.push({
               tournoi_id: tournoi.id,
               equipe_a_id: equipesPoule[i].id,
               equipe_b_id: equipesPoule[j].id,
               terrain: terrainNum,
               tour: tour,
-              status: 'a_jouer',
-              score_a: 0,
-              score_b: 0,
-              manches_json: []
+              type: 'poule',
+              poule: pouleNum + 1,
+              status: 'a_jouer'
             })
-            .select()
-            .single()
-          
-          if (matchError) {
-            console.error(`Erreur création match:`, matchError)
+
+            globalMatchNum++
           }
-          globalMatchNum++
         }
       }
+
+      // Créer tous les matchs et vérifier le succès
+      for (const matchData of matchesToCreate) {
+        const matchResponse = await fetch('/api/matches', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(matchData)
+        })
+
+        if (matchResponse.ok) {
+          matchesCreated++
+        } else {
+          console.error('Erreur création match:', await matchResponse.text())
+        }
+      }
+
+      // Vérifier que tous les matchs ont été créés
+      if (matchesCreated !== matchesToCreate.length) {
+        throw new Error(`Seulement ${matchesCreated}/${matchesToCreate.length} matchs créés`)
+      }
+
+      console.log(`✅ ${matchesCreated} matchs créés avec succès`)
+    } catch (error) {
+      console.error('Erreur création matchs de poule:', error)
+      throw error // Re-throw pour que handleSubmit puisse gérer l'erreur
     }
   }
 
@@ -620,18 +686,20 @@ export default function CreateTournamentPage() {
       
       // Tenter de recharger l'organisation
       if (typeof refreshOrganization === 'function') {
-        await refreshOrganization()
-        
-        // Attendre un peu pour que le state se mette à jour
-        setTimeout(() => {
-          if (!organization || !organization.id) {
-            alert('Impossible de charger l\'organisation. Veuillez vous reconnecter.')
-            router.push('/login')
-          }
-        }, 1000)
-        return
+        try {
+          await refreshOrganization()
+          // Si refresh réussit, l'organisation sera chargée au prochain render
+          // On informe l'utilisateur de réessayer
+          alert('Organisation rechargée. Veuillez cliquer à nouveau sur "Créer le tournoi".')
+          return
+        } catch (error) {
+          console.error('Erreur refresh organisation:', error)
+          alert('Impossible de charger l\'organisation. Veuillez vous reconnecter.')
+          router.push('/login')
+          return
+        }
       }
-      
+
       router.push('/dashboard')
       return
     }
@@ -656,28 +724,34 @@ export default function CreateTournamentPage() {
       
       for (const newPlayer of formData.newPlayers) {
         if (newPlayer.name.trim()) {
-          const emailToSave = newPlayer.email?.trim() && isValidEmail(newPlayer.email) 
-            ? newPlayer.email.trim() 
+          const emailToSave = newPlayer.email?.trim() && isValidEmail(newPlayer.email)
+            ? newPlayer.email.trim()
             : null
-          
-          const { data, error } = await supabase
-            .from('joueurs')
-            .insert({
-              org_id: organization.id,
-              name: newPlayer.name.trim(),
-              gender: newPlayer.gender || 'H',
-              email: emailToSave,
-              phone: newPlayer.phone?.trim() || null
+
+          try {
+            const response = await fetch('/api/joueurs', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                org_id: organization.id,
+                name: newPlayer.name.trim(),
+                email: emailToSave,
+                phone: newPlayer.phone?.trim() || null,
+                stats: { gender: newPlayer.gender || 'H' }
+              })
             })
-            .select()
-            .single()
-          
-          if (error) {
-            throw new Error(`Impossible de créer le joueur ${newPlayer.name}`)
-          } else if (data) {
+
+            if (!response.ok) {
+              throw new Error(`Impossible de créer le joueur ${newPlayer.name}`)
+            }
+
+            const data = await response.json()
             newPlayerIds.push(data.id)
             // IMPORTANT: Ajouter le nouveau joueur à la liste locale pour createTeamsWithMixity
             allAvailablePlayersUpdated.push(data)
+          } catch (error) {
+            throw new Error(`Impossible de créer le joueur ${newPlayer.name}`)
           }
         }
       }
@@ -712,6 +786,7 @@ export default function CreateTournamentPage() {
           consolante: formData.consolante,
           fairPlay: formData.fairPlay,
           recordMenes: formData.recordMenes,
+          mixiteObligatoire: formData.mixiteObligatoire,
           allowPhotos: formData.allowPhotos,
           sendNotifications: formData.sendNotifications,
           players: allPlayerIds,
@@ -719,38 +794,49 @@ export default function CreateTournamentPage() {
         }
       }
       
-      const { data: tournoi, error: tournoiError } = await supabase
-        .from('tournois')
-        .insert(tournoiData)
-        .select()
-        .single()
+      const tournoiResponse = await fetch('/api/tournois', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(tournoiData)
+      })
 
-      if (tournoiError) {
-        throw tournoiError
+      if (!tournoiResponse.ok) {
+        const error = await tournoiResponse.json()
+        throw new Error(error.error || 'Erreur lors de la création du tournoi')
       }
+
+      const tournoi = await tournoiResponse.json()
 
       if (!tournoi) {
         throw new Error('Erreur lors de la création du tournoi')
       }
 
       // 3. Créer les équipes avec la liste mise à jour des joueurs
-      await createTeamsWithMixity(tournoi, allPlayerIds, allAvailablePlayersUpdated)
-      
+      const unassignedPlayers = await createTeamsWithMixity(tournoi, allPlayerIds, allAvailablePlayersUpdated)
+
+      // Alerter si des joueurs n'ont pas pu être assignés
+      if (unassignedPlayers > 0) {
+        alert(`⚠️ Attention : ${unassignedPlayers} joueur(s) n'ont pas pu être assignés à une équipe complète en raison de la mixité obligatoire. Veuillez ajuster votre liste de joueurs ou désactiver la mixité obligatoire.`)
+      }
+
       // 4. Créer les matchs de poules
       await createPoolMatches(tournoi)
       
-      // 5. Mettre à jour le statut du tournoi
-      await supabase
-        .from('tournois')
-        .update({ 
-          status: 'en_cours',
+      // 5. Mettre à jour le statut du tournoi (reste en "preparation" jusqu'à lancement manuel)
+      await fetch(`/api/tournois/${tournoi.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          status: 'preparation',
           settings: {
             ...tournoi.settings,
             poules_created: true,
-            start_time: new Date().toISOString()
+            created_time: new Date().toISOString()
           }
         })
-        .eq('id', tournoi.id)
+      })
       
       // 6. Animation de succès
       setSuccessAnimation(true)
@@ -760,7 +846,9 @@ export default function CreateTournamentPage() {
       router.push(`/tournoi/${tournoi.id}`)
       
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Une erreur est survenue lors de la création du tournoi')
+      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue lors de la création du tournoi'
+      alert(`${errorMessage}\n\nNote: Des données partielles peuvent avoir été créées. Veuillez contacter un administrateur si nécessaire.`)
+      console.error('Erreur détaillée:', error)
     } finally {
       setSavingTournament(false)
       setLoading(false)
@@ -770,7 +858,7 @@ export default function CreateTournamentPage() {
   const getEstimatedTeams = () => {
     const total = getTotalPlayers()
     if (total === 0) return 0
-    const playersPerTeam = formData.format === 'doublette' ? 2 : 3
+    const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
     return Math.floor(total / playersPerTeam)
   }
 
@@ -1144,9 +1232,12 @@ export default function CreateTournamentPage() {
                       onChange={(e) => setFormData({...formData, pouleSize: parseInt(e.target.value)})}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500"
                     >
+                      <option value={3}>3 équipes par poule</option>
                       <option value={4}>4 équipes par poule</option>
                       <option value={5}>5 équipes par poule</option>
                       <option value={6}>6 équipes par poule</option>
+                      <option value={7}>7 équipes par poule</option>
+                      <option value={8}>8 équipes par poule</option>
                     </select>
                     <p className="text-xs text-gray-500 mt-1">Chaque équipe jouera {formData.pouleSize - 1} matchs en poule</p>
                   </div>
@@ -1248,10 +1339,27 @@ export default function CreateTournamentPage() {
                       <p className="text-xs text-gray-500">Évaluer l'esprit sportif</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={formData.fairPlay}
                         onChange={(e) => setFormData({...formData, fairPlay: e.target.checked})}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                    </label>
+                  </div>
+
+                  {/* Mixité obligatoire */}
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                    <div>
+                      <p className="font-medium text-gray-900">Mixité obligatoire</p>
+                      <p className="text-xs text-gray-500">Imposer la mixité H/F dans les équipes</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.mixiteObligatoire}
+                        onChange={(e) => setFormData({...formData, mixiteObligatoire: e.target.checked})}
                         className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>

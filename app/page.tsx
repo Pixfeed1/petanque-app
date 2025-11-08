@@ -1,14 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-import Footer from './components/Footer'
-
-// Initialisation Supabase
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+import Footer from './components/footer'
 
 // Icônes personnalisées professionnelles
 const Icons = {
@@ -124,21 +118,23 @@ export default function HomePage() {
   // Vérifier si l'utilisateur est connecté
   useEffect(() => {
     checkUser()
-    
-    // Écouter les changements d'authentification
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    return () => subscription.unsubscribe()
   }, [])
 
   const checkUser = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
+      const response = await fetch('/api/auth/me', {
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setUser(data.user)
+      } else {
+        setUser(null)
+      }
     } catch (error) {
       console.error('Erreur vérification utilisateur:', error)
+      setUser(null)
     } finally {
       setLoading(false)
     }
@@ -164,7 +160,10 @@ export default function HomePage() {
   // Fonction de déconnexion
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut()
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      })
       setUser(null)
       router.push('/')
     } catch (error) {
