@@ -119,6 +119,18 @@ export default function Dashboard() {
               >
                 Nouveau tournoi
               </button>
+              <button
+                onClick={() => router.push('/joueurs')}
+                className="px-3 py-1.5 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition"
+              >
+                Joueurs
+              </button>
+              <button
+                onClick={() => router.push('/parametres')}
+                className="px-3 py-1.5 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition"
+              >
+                Paramètres
+              </button>
             </nav>
           </div>
 
@@ -185,6 +197,9 @@ export default function Dashboard() {
               <div>
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-4xl font-semibold text-neutral-900">{stats.totalJoueurs}</span>
+                  {stats.nouveauxJoueurs > 0 && (
+                    <span className="text-sm font-medium text-emerald-600">+{stats.nouveauxJoueurs}</span>
+                  )}
                 </div>
                 <p className="text-sm text-neutral-600">Joueurs actifs</p>
               </div>
@@ -192,11 +207,83 @@ export default function Dashboard() {
               <div>
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-4xl font-semibold text-neutral-900">{stats.totalMatchs}</span>
+                  {stats.nouveauxMatchs > 0 && (
+                    <span className="text-sm font-medium text-emerald-600">+{stats.nouveauxMatchs}</span>
+                  )}
                 </div>
                 <p className="text-sm text-neutral-600">Matchs joués</p>
               </div>
             </div>
           </div>
+
+          {/* Tournois en cours */}
+          {stats.tournoiEnCours > 0 && (
+            <div className="mb-16">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <h2 className="text-2xl font-semibold text-neutral-900">
+                  {stats.tournoiEnCours} tournoi{stats.tournoiEnCours > 1 ? 's' : ''} en cours
+                </h2>
+              </div>
+              <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                <div className="divide-y divide-neutral-100">
+                  {tournois
+                    .filter(t => t.status === 'en_cours')
+                    .map((tournoi) => (
+                      <button
+                        key={tournoi.id}
+                        onClick={() => router.push(`/tournoi/${tournoi.id}`)}
+                        className="w-full flex items-center justify-between gap-4 px-6 py-4 hover:bg-neutral-50 transition text-left"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-medium text-neutral-900">{tournoi.name}</h3>
+                          <p className="text-xs text-neutral-500">{tournoi.format} · {tournoi.mode}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-neutral-500">
+                            {tournoi.nb_matchs_joues || 0}/{tournoi.nb_matchs_total || 0} matchs
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Activité récente */}
+          {recentMatches.length > 0 && (
+            <div className="mb-16">
+              <h2 className="text-2xl font-semibold text-neutral-900 mb-6">Activité récente</h2>
+              <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                <div className="divide-y divide-neutral-100">
+                  {recentMatches.slice(0, 5).map((match) => (
+                    <div
+                      key={match.id}
+                      className="flex items-center justify-between px-6 py-3"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-neutral-900">
+                          {match.equipe_a?.name || 'Équipe A'} vs {match.equipe_b?.name || 'Équipe B'}
+                        </p>
+                        <p className="text-xs text-neutral-500">
+                          Tour {match.tour} {match.terrain ? `· Terrain ${match.terrain}` : ''}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-neutral-900">
+                          {match.score_a} - {match.score_b}
+                        </p>
+                        <p className="text-xs text-neutral-500">
+                          {match.status === 'termine' ? 'Terminé' : 'En cours'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Tournois */}
           <div>
