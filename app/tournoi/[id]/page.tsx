@@ -139,6 +139,7 @@ interface Tournament {
     pouleSize?: number
     eliminationFormat?: 'simple' | 'double'
     meleeRotation?: 'par_tour' | 'par_match'
+    mixiteObligatoire?: boolean
     players: string[]
   }
 }
