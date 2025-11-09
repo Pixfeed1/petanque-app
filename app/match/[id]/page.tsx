@@ -104,6 +104,17 @@ export default function MatchScorePage() {
   // Récupérer maxPoints depuis les settings du tournoi (défaut: 13)
   const maxPoints = match?.tournoi?.settings?.maxPoints || 13
 
+  // Points maximum par mène selon le format
+  const getMaxPointsPerManche = () => {
+    const format = match?.tournoi?.format
+    if (format === 'tete_a_tete') return 3  // 3 boules par joueur
+    if (format === 'doublette') return 6     // 6 boules total (3x2)
+    if (format === 'triplette') return 4     // 12 boules mais max 4 points selon règles
+    return 13 // Fallback
+  }
+
+  const maxPointsPerManche = getMaxPointsPerManche()
+
   useEffect(() => {
     setMounted(true)
     loadMatch()
@@ -164,10 +175,10 @@ export default function MatchScorePage() {
 
   const updateScore = (team: 'A' | 'B', delta: number) => {
     if (team === 'A') {
-      const newScore = Math.max(0, Math.min(maxPoints, mancheScoreA + delta))
+      const newScore = Math.max(0, Math.min(maxPointsPerManche, mancheScoreA + delta))
       setMancheScoreA(newScore)
     } else {
-      const newScore = Math.max(0, Math.min(maxPoints, mancheScoreB + delta))
+      const newScore = Math.max(0, Math.min(maxPointsPerManche, mancheScoreB + delta))
       setMancheScoreB(newScore)
     }
   }
@@ -392,7 +403,7 @@ export default function MatchScorePage() {
           {/* Barre de score en haut */}
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
             <div className="text-center text-white">
-              <p className="text-sm opacity-90 mb-2">Score total • Premier à 13 points</p>
+              <p className="text-sm opacity-90 mb-2">Score total • Premier à {maxPoints} points</p>
               <div className="flex items-center justify-center space-x-8">
                 <span className="text-5xl font-bold">{scoreA}</span>
                 <span className="text-3xl opacity-70">-</span>
@@ -402,15 +413,15 @@ export default function MatchScorePage() {
               {/* Barres de progression */}
               <div className="flex space-x-2 mt-4">
                 <div className="flex-1 h-3 bg-white/20 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-white rounded-full transition-all duration-500"
-                    style={{ width: `${(scoreA / 13) * 100}%` }}
+                    style={{ width: `${(scoreA / maxPoints) * 100}%` }}
                   />
                 </div>
                 <div className="flex-1 h-3 bg-white/20 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-white rounded-full transition-all duration-500"
-                    style={{ width: `${(scoreB / 13) * 100}%` }}
+                    style={{ width: `${(scoreB / maxPoints) * 100}%` }}
                   />
                 </div>
               </div>
@@ -508,7 +519,7 @@ export default function MatchScorePage() {
                         <button
                           onClick={() => updateScore('A', 1)}
                           className="p-4 bg-white hover:bg-green-50 rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
-                          disabled={mancheScoreA === maxPoints}
+                          disabled={mancheScoreA === maxPointsPerManche}
                         >
                           <span className="text-green-500 group-hover:scale-110 transition-transform block">
                             {Icons.plus}
@@ -540,7 +551,7 @@ export default function MatchScorePage() {
                         <button
                           onClick={() => updateScore('B', 1)}
                           className="p-4 bg-white hover:bg-green-50 rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
-                          disabled={mancheScoreB === maxPoints}
+                          disabled={mancheScoreB === maxPointsPerManche}
                         >
                           <span className="text-green-500 group-hover:scale-110 transition-transform block">
                             {Icons.plus}
