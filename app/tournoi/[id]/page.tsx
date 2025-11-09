@@ -875,6 +875,31 @@ export default function TournamentDetailPage() {
 
   const assignTerrain = async (matchId: string, terrain: number) => {
     try {
+      // Vérifier les conflits de terrain
+      const matchToAssign = matches.find(m => m.id === matchId)
+      if (!matchToAssign) return
+
+      // Chercher des matchs en cours ou à jouer sur ce terrain
+      const conflicts = matches.filter(m =>
+        m.id !== matchId &&
+        m.terrain === terrain &&
+        (m.status === 'en_cours' || m.status === 'a_jouer')
+      )
+
+      if (conflicts.length > 0) {
+        const conflictNames = conflicts.map(m =>
+          `${m.equipe_a?.name} vs ${m.equipe_b?.name}`
+        ).join(', ')
+
+        const confirm = window.confirm(
+          `⚠️ CONFLIT DE TERRAIN !\n\n` +
+          `Le terrain ${terrain} est déjà assigné à :\n${conflictNames}\n\n` +
+          `Voulez-vous quand même assigner ce terrain ?`
+        )
+
+        if (!confirm) return
+      }
+
       const response = await fetch(`/api/matches/${matchId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

@@ -254,8 +254,37 @@ export default function LoginPage() {
       return
     }
 
-    // TODO: Implémenter l'API de reset password
-    setError('Fonctionnalité de réinitialisation temporairement indisponible. Contactez l\'administrateur.')
+    setLoading(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase() })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur lors de l\'envoi')
+      }
+
+      // Afficher le message de succès
+      alert(
+        '✅ Email envoyé !\n\n' +
+        data.message +
+        '\n\n' +
+        (data.resetUrl ? `En développement, utilisez ce lien :\n${data.resetUrl}` : '')
+      )
+
+      setShowForgotPassword(false)
+      setEmail('')
+    } catch (error: any) {
+      setError(error.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
