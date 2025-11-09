@@ -128,7 +128,7 @@ interface Tournament {
   id: string
   name: string
   mode: 'choisi' | 'melee_fixe' | 'melee_tournante'
-  format: 'doublette' | 'triplette'
+  format: 'tete_a_tete' | 'doublette' | 'triplette'
   status: 'preparation' | 'en_cours' | 'termine'
   settings: {
     date: string
@@ -154,13 +154,24 @@ interface Match {
   id: string
   equipe_a: Team
   equipe_b: Team
+  equipe_a_id?: string
+  equipe_b_id?: string
   terrain: number
   tour: number
-  status: 'a_jouer' | 'en_cours' | 'termine'
+  status: 'a_jouer' | 'en_cours' | 'termine' | 'en_attente_validation'
   score_a: number
   score_b: number
-  type?: 'poule' | 'elimination' | 'finale'
+  type?: 'poule' | 'elimination' | 'finale' | 'petite_finale'
   poule?: string
+  round?: number
+  manches_json?: any
+  started_at?: string
+  ended_at?: string
+  validated_at?: string
+  played_at?: string
+  proposed_by?: string
+  proposed_at?: string
+  tournoi?: Tournament
 }
 
 export default function TournamentDetailPage() {
@@ -540,8 +551,8 @@ export default function TournamentDetailPage() {
         }
       } else {
         // Si mixité OBLIGATOIRE : respecter H/F
-        const hommes = shuffled.filter((p: any) => p.stats?.gender === 'H' || p.gender === 'H')
-        const femmes = shuffled.filter((p: any) => p.stats?.gender === 'F' || p.gender === 'F')
+        const hommes = shuffled.filter((p: any) => p.gender === 'H')
+        const femmes = shuffled.filter((p: any) => p.gender === 'F')
 
         if (tournament.format === 'doublette') {
           // Pour doublette: 1H + 1F autant que possible
@@ -950,9 +961,9 @@ export default function TournamentDetailPage() {
                       {matches.filter(m => m.status === 'termine').length} / {matches.length}
                     </p>
                     <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all"
-                        style={{ width: `${(matches.filter(m => m.status === 'termine').length / matches.length) * 100}%` }}
+                        style={{ width: `${matches.length > 0 ? (matches.filter(m => m.status === 'termine').length / matches.length) * 100 : 0}%` }}
                       />
                     </div>
                   </div>

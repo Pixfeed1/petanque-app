@@ -248,7 +248,9 @@ export default function MatchScorePage() {
       if (response.ok) {
         alert('Score enregistré ! L\'équipe adverse doit maintenant confirmer le résultat.')
         // Redirection vers le tournoi
-        router.push(`/tournoi/${match.tournoi.id}`)
+        if (match?.tournoi?.id) {
+          router.push(`/tournoi/${match.tournoi.id}`)
+        }
       }
     } catch (error) {
       console.error('Erreur sauvegarde finale:', error)
@@ -359,8 +361,8 @@ export default function MatchScorePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center space-x-4">
-              <button 
-                onClick={() => router.push(`/tournoi/${match.tournoi.id}`)}
+              <button
+                onClick={() => match?.tournoi?.id && router.push(`/tournoi/${match.tournoi.id}`)}
                 className="group flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 rounded-xl transition-all"
               >
                 {Icons.arrowLeft}

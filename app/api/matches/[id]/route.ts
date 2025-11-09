@@ -142,6 +142,16 @@ export async function PUT(
       values.push(body.validated_at)
     }
 
+    if (body.proposed_by !== undefined) {
+      updates.push(`proposed_by = $${paramIndex++}`)
+      values.push(body.proposed_by)
+    }
+
+    if (body.proposed_at !== undefined) {
+      updates.push(`proposed_at = $${paramIndex++}`)
+      values.push(body.proposed_at)
+    }
+
     if (body.winner_id !== undefined) {
       updates.push(`winner_id = $${paramIndex++}`)
       values.push(body.winner_id)
