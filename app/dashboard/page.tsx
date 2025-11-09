@@ -16,10 +16,11 @@ const stripePromise = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_S
 // Icônes
 const Icons = {
   petanque: (
-    <svg className="w-8 h-8" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="32" cy="32" r="28" fill="url(#metalGradient)" stroke="currentColor" strokeWidth="2"/>
-      <circle cx="26" cy="24" r="3" fill="white" opacity="0.8"/>
-      <circle cx="36" cy="36" r="2" fill="currentColor" opacity="0.3"/>
+    <svg className="w-10 h-10" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="30" fill="url(#metalGradient)" stroke="#5a6978" strokeWidth="2"/>
+      <circle cx="26" cy="26" r="3" fill="#ffffff" opacity="0.8"/>
+      <circle cx="38" cy="38" r="2" fill="#2d3748" opacity="0.3"/>
+      <circle cx="40" cy="28" r="2" fill="#2d3748" opacity="0.3"/>
       <defs>
         <radialGradient id="metalGradient">
           <stop offset="0%" stopColor="#a8b2c3"/>
