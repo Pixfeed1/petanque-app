@@ -187,7 +187,10 @@ export default function PodiumPage() {
            }
 
            // 3. Différence de points (règle FIPJP)
-           return b.difference - a.difference
+           if (b.difference !== a.difference) return b.difference - a.difference
+
+           // 4. Nombre de points marqués (règle FIPJP complète)
+           return b.pointsFor - a.pointsFor
          })
          if (classement[0]) podiumData.push({ position: 1, team: classement[0].team, score: classement[0].pointsFor })
          if (classement[1]) podiumData.push({ position: 2, team: classement[1].team, score: classement[1].pointsFor })
@@ -224,12 +227,12 @@ export default function PodiumPage() {
          }
 
          matchesData.forEach((match: any) => {
-           if (match.equipe_a_id === item.team.id) {
+           if (match.equipe_a?.id === item.team.id) {
              if (match.score_a > match.score_b) stats.victories++
              else stats.defeats++
              stats.pointsFor += match.score_a
              stats.pointsAgainst += match.score_b
-           } else {
+           } else if (match.equipe_b?.id === item.team.id) {
              if (match.score_b > match.score_a) stats.victories++
              else stats.defeats++
              stats.pointsFor += match.score_b

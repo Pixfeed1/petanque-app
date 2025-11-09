@@ -13,6 +13,7 @@ export async function GET(
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
+    const { user } = authResult
 
     const { id } = await params
 
@@ -20,7 +21,7 @@ export async function GET(
       `SELECT m.*,
               ea.id as equipe_a_id_check, ea.name as equipe_a_name, ea.joueur_ids as equipe_a_joueur_ids,
               eb.id as equipe_b_id_check, eb.name as equipe_b_name, eb.joueur_ids as equipe_b_joueur_ids,
-              t.id as tournoi_id_check, t.name as tournoi_name
+              t.id as tournoi_id_check, t.name as tournoi_name, t.org_id as tournoi_org_id
        FROM matches m
        LEFT JOIN equipes ea ON m.equipe_a_id = ea.id
        LEFT JOIN equipes eb ON m.equipe_b_id = eb.id
@@ -31,6 +32,15 @@ export async function GET(
 
     if (!matchRaw) {
       return apiError('Match introuvable', 404)
+    }
+
+    // Vérifier que l'utilisateur a accès à l'organisation du tournoi
+    if (matchRaw.tournoi_org_id) {
+      const { checkOrgAccess } = await import('@/lib/middleware')
+      const hasAccess = await checkOrgAccess(user.id, matchRaw.tournoi_org_id)
+      if (!hasAccess) {
+        return apiError('Accès refusé à ce match', 403)
+      }
     }
 
     // Transform to nested format
@@ -85,12 +95,16 @@ export async function PUT(
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
+    const { user } = authResult
 
     const { id } = await params
     const body = await request.json()
 
     const existingMatch = await queryOne(
-      'SELECT * FROM matches WHERE id = $1',
+      `SELECT m.*, t.org_id as tournoi_org_id
+       FROM matches m
+       LEFT JOIN tournois t ON m.tournoi_id = t.id
+       WHERE m.id = $1`,
       [id]
     )
 
@@ -98,16 +112,38 @@ export async function PUT(
       return apiError('Match introuvable', 404)
     }
 
+    // Vérifier que l'utilisateur a accès à l'organisation du tournoi
+    if (existingMatch.tournoi_org_id) {
+      const { checkOrgAccess } = await import('@/lib/middleware')
+      const hasAccess = await checkOrgAccess(user.id, existingMatch.tournoi_org_id)
+      if (!hasAccess) {
+        return apiError('Accès refusé pour modifier ce match', 403)
+      }
+    }
+
     const updates: string[] = []
     const values: any[] = []
     let paramIndex = 1
 
+    // Validation des scores
     if (body.score_a !== undefined) {
+      if (!Number.isInteger(body.score_a) || body.score_a < 0) {
+        return apiError('Le score de l\'équipe A doit être un nombre entier positif ou zéro', 400)
+      }
+      if (body.score_a > 99) {
+        return apiError('Le score de l\'équipe A est trop élevé (maximum 99)', 400)
+      }
       updates.push(`score_a = $${paramIndex++}`)
       values.push(body.score_a)
     }
 
     if (body.score_b !== undefined) {
+      if (!Number.isInteger(body.score_b) || body.score_b < 0) {
+        return apiError('Le score de l\'équipe B doit être un nombre entier positif ou zéro', 400)
+      }
+      if (body.score_b > 99) {
+        return apiError('Le score de l\'équipe B est trop élevé (maximum 99)', 400)
+      }
       updates.push(`score_b = $${paramIndex++}`)
       values.push(body.score_b)
     }
@@ -142,14 +178,11 @@ export async function PUT(
       values.push(body.validated_at)
     }
 
-    if (body.proposed_by !== undefined) {
+    // Sécurité: Si le statut devient "en_attente_validation", forcer proposed_by à être l'utilisateur actuel
+    if (body.status === 'en_attente_validation') {
       updates.push(`proposed_by = $${paramIndex++}`)
-      values.push(body.proposed_by)
-    }
-
-    if (body.proposed_at !== undefined) {
-      updates.push(`proposed_at = $${paramIndex++}`)
-      values.push(body.proposed_at)
+      values.push(user.id)
+      updates.push(`proposed_at = NOW()`)
     }
 
     if (body.winner_id !== undefined) {

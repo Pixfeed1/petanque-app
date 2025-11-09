@@ -188,6 +188,7 @@ export default function TournamentDetailPage() {
   const [selectedPoule, setSelectedPoule] = useState<string>('A')
   const [isOrganizer, setIsOrganizer] = useState(false)
   const [showStartModal, setShowStartModal] = useState(false)
+  const [showTeamFormation, setShowTeamFormation] = useState(false)
   const [refreshingClassement, setRefreshingClassement] = useState(false)
 
   // État pour la mêlée tournante
@@ -270,7 +271,10 @@ export default function TournamentDetailPage() {
         }
 
         // 3. Différence de points (règle FIPJP)
-        return b.difference - a.difference
+        if (b.difference !== a.difference) return b.difference - a.difference
+
+        // 4. Nombre de points marqués (règle FIPJP complète)
+        return b.pointsFor - a.pointsFor
       })
     })
 

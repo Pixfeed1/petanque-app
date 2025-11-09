@@ -111,7 +111,7 @@ CREATE TABLE equipes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tournoi_id UUID NOT NULL REFERENCES tournois(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
-  joueur_ids JSONB DEFAULT '[]'::jsonb, -- Array d'UUIDs des joueurs
+  joueur_ids UUID[] DEFAULT ARRAY[]::uuid[], -- Array d'UUIDs des joueurs
   stats JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -138,6 +138,8 @@ CREATE TABLE matches (
   started_at TIMESTAMP, -- Quand le match a commencé
   ended_at TIMESTAMP, -- Quand le match s'est terminé
   validated_at TIMESTAMP, -- Quand le score a été validé
+  proposed_by UUID REFERENCES users(id) ON DELETE SET NULL, -- Utilisateur qui a proposé le score (pour double validation)
+  proposed_at TIMESTAMP, -- Date de proposition du score
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   played_at TIMESTAMP
@@ -149,6 +151,7 @@ CREATE INDEX idx_matches_type ON matches(type);
 CREATE INDEX idx_matches_poule ON matches(poule);
 CREATE INDEX idx_matches_equipe_a_id ON matches(equipe_a_id);
 CREATE INDEX idx_matches_equipe_b_id ON matches(equipe_b_id);
+CREATE INDEX idx_matches_proposed_by ON matches(proposed_by);
 
 -- ===================================
 -- TABLE PAYMENT_ATTEMPTS (Stripe)
