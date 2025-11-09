@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 DB_NAME="jurojinn_petanque_app"
-DB_USER="jurojinn"
+DB_USER="jurojinn_petanque_user"
 MIGRATION_TRACKER=".migrations_applied"
 
 # Créer le fichier de tracking si inexistant
