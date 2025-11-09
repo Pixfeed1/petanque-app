@@ -42,3 +42,8 @@ ecosystem.config.js
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Deployment
+.migrations_applied
+app.log
+nohup.out
