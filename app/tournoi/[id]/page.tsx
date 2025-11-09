@@ -497,10 +497,6 @@ export default function TournamentDetailPage() {
       // Mélanger les joueurs
       const shuffled = [...players].sort(() => Math.random() - 0.5)
 
-      // Respecter la mixité H/F
-      const hommes = shuffled.filter((p: any) => p.stats?.gender === 'H' || p.gender === 'H')
-      const femmes = shuffled.filter((p: any) => p.stats?.gender === 'F' || p.gender === 'F')
-
       // Créer les nouvelles équipes
       const teamSize = tournament.format === 'doublette' ? 2 : 3
       const nbEquipes = Math.floor(players.length / teamSize)
@@ -514,47 +510,59 @@ export default function TournamentDetailPage() {
         })
       }
 
-      // Former les nouvelles équipes avec mixité
       let teamNumber = 1
       const newTeams = []
 
-      if (tournament.format === 'doublette') {
-        // Pour doublette: 1H + 1F autant que possible
-        while (hommes.length > 0 && femmes.length > 0 && teamNumber <= nbEquipes) {
-          const teamPlayers = [hommes.shift()!.id, femmes.shift()!.id]
-          newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
-          teamNumber++
-        }
-
-        // Équipes restantes sans mixité
-        const remaining = [...hommes, ...femmes].sort(() => Math.random() - 0.5)
-        while (remaining.length >= teamSize && teamNumber <= nbEquipes) {
-          const teamPlayers = remaining.splice(0, teamSize).map(p => p.id)
+      // Si mixité NON obligatoire : formation libre
+      if (!tournament.settings.mixiteObligatoire) {
+        for (let i = 0; i < nbEquipes; i++) {
+          const teamPlayers = shuffled.slice(i * teamSize, (i + 1) * teamSize).map(p => p.id)
           newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
           teamNumber++
         }
       } else {
-        // Pour triplette: 2H + 1F ou 1H + 2F
-        while (teamNumber <= nbEquipes) {
-          let teamPlayers: string[] = []
+        // Si mixité OBLIGATOIRE : respecter H/F
+        const hommes = shuffled.filter((p: any) => p.stats?.gender === 'H' || p.gender === 'H')
+        const femmes = shuffled.filter((p: any) => p.stats?.gender === 'F' || p.gender === 'F')
 
-          if (hommes.length >= 2 && femmes.length >= 1) {
-            teamPlayers = [hommes.shift()!.id, hommes.shift()!.id, femmes.shift()!.id]
-          } else if (hommes.length >= 1 && femmes.length >= 2) {
-            teamPlayers = [hommes.shift()!.id, femmes.shift()!.id, femmes.shift()!.id]
-          } else {
-            // Pas assez pour mixité, prendre ce qu'on a
-            const remaining = [...hommes, ...femmes]
-            if (remaining.length >= teamSize) {
-              teamPlayers = remaining.splice(0, teamSize).map(p => p.id)
-            } else {
-              break
-            }
-          }
-
-          if (teamPlayers.length === teamSize) {
+        if (tournament.format === 'doublette') {
+          // Pour doublette: 1H + 1F autant que possible
+          while (hommes.length > 0 && femmes.length > 0 && teamNumber <= nbEquipes) {
+            const teamPlayers = [hommes.shift()!.id, femmes.shift()!.id]
             newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
             teamNumber++
+          }
+
+          // Équipes restantes sans mixité
+          const remaining = [...hommes, ...femmes].sort(() => Math.random() - 0.5)
+          while (remaining.length >= teamSize && teamNumber <= nbEquipes) {
+            const teamPlayers = remaining.splice(0, teamSize).map(p => p.id)
+            newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
+            teamNumber++
+          }
+        } else {
+          // Pour triplette: 2H + 1F ou 1H + 2F
+          while (teamNumber <= nbEquipes) {
+            let teamPlayers: string[] = []
+
+            if (hommes.length >= 2 && femmes.length >= 1) {
+              teamPlayers = [hommes.shift()!.id, hommes.shift()!.id, femmes.shift()!.id]
+            } else if (hommes.length >= 1 && femmes.length >= 2) {
+              teamPlayers = [hommes.shift()!.id, femmes.shift()!.id, femmes.shift()!.id]
+            } else {
+              // Pas assez pour mixité, prendre ce qu'on a
+              const remaining = [...hommes, ...femmes]
+              if (remaining.length >= teamSize) {
+                teamPlayers = remaining.splice(0, teamSize).map(p => p.id)
+              } else {
+                break
+              }
+            }
+
+            if (teamPlayers.length === teamSize) {
+              newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
+              teamNumber++
+            }
           }
         }
       }
