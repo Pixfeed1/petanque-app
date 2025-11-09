@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import crypto from 'crypto'
+import nodemailer from 'nodemailer'
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,36 +44,128 @@ export async function POST(request: NextRequest) {
     // Construire le lien de réinitialisation
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`
 
-    // NOTE: Pour l'instant, on log juste l'URL dans la console
-    // En production, vous devriez envoyer un email via un service comme SendGrid, Resend, etc.
-    console.log('='.repeat(80))
-    console.log('🔐 RÉINITIALISATION DE MOT DE PASSE')
-    console.log('='.repeat(80))
-    console.log(`Email: ${email}`)
-    console.log(`Token: ${resetToken}`)
-    console.log(`Lien: ${resetUrl}`)
-    console.log(`Expire: ${resetTokenExpires.toLocaleString('fr-FR')}`)
-    console.log('='.repeat(80))
-    console.log('')
-    console.log('⚠️  En production, cet email devrait être envoyé via un service SMTP')
-    console.log('   Exemples: SendGrid, Resend, Nodemailer, etc.')
-    console.log('')
-    console.log('='.repeat(80))
+    // Configuration du transporteur SMTP
+    // Variables d'environnement à définir :
+    // SMTP_HOST (défaut: localhost)
+    // SMTP_PORT (défaut: 25)
+    // SMTP_USER (optionnel)
+    // SMTP_PASS (optionnel)
+    // SMTP_FROM (défaut: noreply@petanquepro.fr)
 
-    // TODO: Implémenter l'envoi d'email
-    // Exemple avec Resend:
-    // await resend.emails.send({
-    //   from: 'noreply@petanquepro.fr',
-    //   to: email,
-    //   subject: 'Réinitialisation de votre mot de passe',
-    //   html: `
-    //     <h2>Réinitialisation de mot de passe</h2>
-    //     <p>Bonjour ${user.full_name},</p>
-    //     <p>Cliquez sur le lien ci-dessous pour réinitialiser votre mot de passe :</p>
-    //     <a href="${resetUrl}">${resetUrl}</a>
-    //     <p>Ce lien expirera dans 1 heure.</p>
-    //   `
-    // })
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'localhost',
+      port: parseInt(process.env.SMTP_PORT || '25'),
+      secure: false, // true pour port 465, false pour autres ports
+      auth: process.env.SMTP_USER ? {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      } : undefined,
+      // Options pour dev/test sans SSL
+      tls: {
+        rejectUnauthorized: false
+      }
+    })
+
+    // Template HTML de l'email
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(to right, #059669, #10b981); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+          .button { display: inline-block; background: #059669; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }
+          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+          .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎯 Pétanque Pro</h1>
+            <p>Réinitialisation de mot de passe</p>
+          </div>
+          <div class="content">
+            <p>Bonjour ${user.full_name || 'Utilisateur'},</p>
+
+            <p>Vous avez demandé à réinitialiser votre mot de passe pour votre compte Pétanque Pro.</p>
+
+            <p>Cliquez sur le bouton ci-dessous pour définir un nouveau mot de passe :</p>
+
+            <p style="text-align: center;">
+              <a href="${resetUrl}" class="button">Réinitialiser mon mot de passe</a>
+            </p>
+
+            <p>Ou copiez ce lien dans votre navigateur :</p>
+            <p style="word-break: break-all; background: white; padding: 10px; border-radius: 5px; font-size: 12px;">
+              ${resetUrl}
+            </p>
+
+            <div class="warning">
+              <strong>⏰ Important :</strong> Ce lien expirera dans <strong>1 heure</strong>.
+            </div>
+
+            <p style="color: #666; font-size: 14px; margin-top: 30px;">
+              Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.
+              Votre mot de passe actuel restera inchangé.
+            </p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Pétanque Pro - Gestion de tournois de pétanque</p>
+            <p>Cet email a été envoyé à ${email}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+
+    // Envoyer l'email
+    try {
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || 'noreply@petanquepro.fr',
+        to: email,
+        subject: '🔐 Réinitialisation de votre mot de passe - Pétanque Pro',
+        html: emailHtml,
+        // Version texte pour clients email sans HTML
+        text: `
+Réinitialisation de mot de passe - Pétanque Pro
+
+Bonjour ${user.full_name || 'Utilisateur'},
+
+Vous avez demandé à réinitialiser votre mot de passe.
+
+Cliquez sur ce lien pour définir un nouveau mot de passe :
+${resetUrl}
+
+⏰ Important : Ce lien expirera dans 1 heure.
+
+Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.
+
+---
+© ${new Date().getFullYear()} Pétanque Pro
+        `.trim()
+      })
+
+      console.log(`✅ Email de réinitialisation envoyé à: ${email}`)
+    } catch (emailError) {
+      console.error('❌ Erreur envoi email:', emailError)
+
+      // En dev: afficher le lien même si l'email échoue
+      if (process.env.NODE_ENV === 'development') {
+        console.log('='.repeat(80))
+        console.log('🔐 LIEN DE RÉINITIALISATION (email non envoyé)')
+        console.log('='.repeat(80))
+        console.log(`Email: ${email}`)
+        console.log(`Lien: ${resetUrl}`)
+        console.log('='.repeat(80))
+      } else {
+        // En production: ne pas exposer l'erreur
+        throw new Error('Impossible d\'envoyer l\'email')
+      }
+    }
 
     return NextResponse.json({
       message: 'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.',
