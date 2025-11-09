@@ -51,10 +51,10 @@ export async function POST(request: NextRequest) {
     })
 
     return response
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Erreur login:', error)
 
-    if (error.message === 'INVALID_CREDENTIALS') {
+    if (error instanceof Error && error.message === 'INVALID_CREDENTIALS') {
       return apiError('Email ou mot de passe incorrect', 401)
     }
 
