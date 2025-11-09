@@ -202,7 +202,7 @@ export default function HomePage() {
     {
       icon: Icons.target,
       title: 'Tirage intelligent',
-      description: 'Système Suisse avec gestion optimale des terrains',
+      description: 'Poules avec gestion optimale des terrains',
       color: 'from-orange-400 to-amber-600'
     },
     {

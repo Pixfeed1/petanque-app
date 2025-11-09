@@ -170,7 +170,23 @@ export default function PodiumPage() {
            })
            return { team, victories, difference: pointsFor - pointsAgainst, pointsFor }
          }).sort((a: any, b: any) => {
+           // 1. Nombre de victoires (règle FIPJP)
            if (b.victories !== a.victories) return b.victories - a.victories
+
+           // 2. Confrontation directe (règle FIPJP)
+           const directMatch = allMatches.find((m: any) =>
+             m.status === 'termine' && m.type === 'poule' &&
+             ((m.equipe_a?.id === a.team.id && m.equipe_b?.id === b.team.id) ||
+              (m.equipe_a?.id === b.team.id && m.equipe_b?.id === a.team.id))
+           )
+           if (directMatch) {
+             const aWon = (directMatch.equipe_a?.id === a.team.id && directMatch.score_a > directMatch.score_b) ||
+                          (directMatch.equipe_b?.id === a.team.id && directMatch.score_b > directMatch.score_a)
+             if (aWon) return -1 // a gagne
+             else return 1 // b gagne
+           }
+
+           // 3. Différence de points (règle FIPJP)
            return b.difference - a.difference
          })
          if (classement[0]) podiumData.push({ position: 1, team: classement[0].team, score: classement[0].pointsFor })

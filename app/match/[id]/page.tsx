@@ -104,12 +104,12 @@ export default function MatchScorePage() {
   // Récupérer maxPoints depuis les settings du tournoi (défaut: 13)
   const maxPoints = match?.tournoi?.settings?.maxPoints || 13
 
-  // Points maximum par mène selon le format
+  // Points maximum par mène selon le format (règles FIPJP officielles)
   const getMaxPointsPerManche = () => {
     const format = match?.tournoi?.format
-    if (format === 'tete_a_tete') return 3  // 3 boules par joueur
-    if (format === 'doublette') return 6     // 6 boules total (3x2)
-    if (format === 'triplette') return 4     // 12 boules mais max 4 points selon règles
+    if (format === 'tete_a_tete') return 3  // 3 boules par joueur (max 3 points)
+    if (format === 'doublette') return 6     // 6 boules total (3x2 = max 6 points)
+    if (format === 'triplette') return 6     // 12 boules total (2x3x2 = max 6 points comptés)
     return 13 // Fallback
   }
 

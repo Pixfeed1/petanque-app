@@ -284,8 +284,26 @@ export default function ExportTournamentPage() {
        points: victories * 3
      }
    }).sort((a, b) => {
+     // 1. Nombre de points (victoires x3) - règle FIPJP
      if (b.points !== a.points) return b.points - a.points
+
+     // 2. Confrontation directe (règle FIPJP)
+     const directMatch = matches.find(m =>
+       m.status === 'termine' &&
+       ((m.equipe_a?.id === a.id && m.equipe_b?.id === b.id) ||
+        (m.equipe_a?.id === b.id && m.equipe_b?.id === a.id))
+     )
+     if (directMatch) {
+       const aWon = (directMatch.equipe_a?.id === a.id && directMatch.score_a > directMatch.score_b) ||
+                    (directMatch.equipe_b?.id === a.id && directMatch.score_b > directMatch.score_a)
+       if (aWon) return -1 // a gagne
+       else return 1 // b gagne
+     }
+
+     // 3. Différence de points (règle FIPJP)
      if (b.difference !== a.difference) return b.difference - a.difference
+
+     // 4. Points marqués (règle FIPJP)
      return b.pointsFor - a.pointsFor
    })
 
@@ -356,6 +374,7 @@ export default function ExportTournamentPage() {
        winRate: stats.played > 0 ? (stats.victories / stats.played * 100).toFixed(1) : 0
      }))
      .sort((a, b) => {
+       // Classement individuel pour mêlée tournante (règle FIPJP)
        if (b.points !== a.points) return b.points - a.points
        if (b.difference !== a.difference) return b.difference - a.difference
        return b.pointsFor - a.pointsFor

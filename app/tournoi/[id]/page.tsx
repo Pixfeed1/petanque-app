@@ -242,7 +242,23 @@ export default function TournamentDetailPage() {
     // Trier chaque poule
     Object.keys(poules).forEach(poule => {
       poules[poule].sort((a, b) => {
+        // 1. Nombre de victoires (règle FIPJP)
         if (b.victories !== a.victories) return b.victories - a.victories
+
+        // 2. Confrontation directe (règle FIPJP)
+        const directMatch = matches.find((m: any) =>
+          m.status === 'termine' && m.poule === poule &&
+          ((m.equipe_a?.id === a.id && m.equipe_b?.id === b.id) ||
+           (m.equipe_a?.id === b.id && m.equipe_b?.id === a.id))
+        )
+        if (directMatch) {
+          const aWon = (directMatch.equipe_a?.id === a.id && directMatch.score_a > directMatch.score_b) ||
+                       (directMatch.equipe_b?.id === a.id && directMatch.score_b > directMatch.score_a)
+          if (aWon) return -1 // a gagne
+          else return 1 // b gagne
+        }
+
+        // 3. Différence de points (règle FIPJP)
         return b.difference - a.difference
       })
     })
@@ -399,10 +415,11 @@ export default function TournamentDetailPage() {
         }
       })
 
-      // Trier par nombre de victoires, puis différence
+      // Trier par nombre de victoires, puis différence, puis points totaux (règle FIPJP)
       playerStats.sort((a: any, b: any) => {
         if (b.victories !== a.victories) return b.victories - a.victories
-        return b.difference - a.difference
+        if (b.difference !== a.difference) return b.difference - a.difference
+        return b.points - a.points
       })
 
       setIndividualRankings(playerStats)
@@ -982,9 +999,23 @@ export default function TournamentDetailPage() {
                             (m.equipe_b?.id === b.id && m.score_b > m.score_a)
                           ).length
 
+                          // 1. Nombre de victoires (règle FIPJP)
                           if (bVictories !== aVictories) return bVictories - aVictories
 
-                          // Si égalité de victoires, comparer la différence de points
+                          // 2. Confrontation directe (règle FIPJP)
+                          const directMatch = matches.find(m =>
+                            m.status === 'termine' &&
+                            ((m.equipe_a?.id === a.id && m.equipe_b?.id === b.id) ||
+                             (m.equipe_a?.id === b.id && m.equipe_b?.id === a.id))
+                          )
+                          if (directMatch) {
+                            const aWon = (directMatch.equipe_a?.id === a.id && directMatch.score_a > directMatch.score_b) ||
+                                         (directMatch.equipe_b?.id === a.id && directMatch.score_b > directMatch.score_a)
+                            if (aWon) return -1
+                            else return 1
+                          }
+
+                          // 3. Différence de points (règle FIPJP)
                           const aDiff = aMatches.reduce((acc, m) => {
                             if (m.equipe_a?.id === a.id) return acc + (m.score_a - m.score_b)
                             if (m.equipe_b?.id === a.id) return acc + (m.score_b - m.score_a)

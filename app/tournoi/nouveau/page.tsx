@@ -1268,8 +1268,7 @@ export default function CreateTournamentPage() {
                       onChange={(e) => setFormData({...formData, eliminationFormat: e.target.value})}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500"
                     >
-                      <option value="simple">Élimination simple</option>
-                      <option value="double">Double élimination (avec repêchage)</option>
+                      <option value="simple">Élimination simple (règle FIPJP)</option>
                     </select>
                   </div>
 
@@ -1629,7 +1628,7 @@ export default function CreateTournamentPage() {
                       { label: 'Points pour gagner', value: formData.maxPoints, icon: Icons.trophy },
                       { label: 'Taille des poules', value: `${formData.pouleSize} équipes`, icon: Icons.grid },
                       { label: 'Qualifiés/poule', value: formData.qualifiedPerPoule === 1 ? '1er' : `${formData.qualifiedPerPoule} premiers`, icon: Icons.star },
-                      { label: 'Phases finales', value: formData.eliminationFormat === 'simple' ? 'Élimination simple' : 'Double élimination', icon: Icons.flag }
+                      { label: 'Phases finales', value: 'Élimination simple', icon: Icons.flag }
                     ].map((item, index) => (
                       <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100">
                         <div className="flex items-center">
