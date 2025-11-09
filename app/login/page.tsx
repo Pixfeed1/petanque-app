@@ -278,7 +278,7 @@ export default function LoginPage() {
         (data.resetUrl ? `En développement, utilisez ce lien :\n${data.resetUrl}` : '')
       )
 
-      setShowForgotPassword(false)
+      setActiveTab('login')
       setEmail('')
     } catch (error: any) {
       setError(error.message)
