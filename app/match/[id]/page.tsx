@@ -228,6 +228,8 @@ export default function MatchScorePage() {
         return
       }
 
+      // Double validation : le match passe en "en_attente_validation"
+      // L'autre équipe devra confirmer le score
       const response = await fetch(`/api/matches/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -236,14 +238,16 @@ export default function MatchScorePage() {
           score_a: finalScoreA,
           score_b: finalScoreB,
           manches_json: allManches,
-          status: 'termine',
-          ended_at: new Date().toISOString()
-          // validated_at sera défini par l'organisateur plus tard
+          status: 'en_attente_validation',
+          ended_at: new Date().toISOString(),
+          proposed_by: user?.id, // Qui a proposé le score
+          proposed_at: new Date().toISOString()
         })
       })
 
       if (response.ok) {
-        // Redirection immédiate
+        alert('Score enregistré ! L\'équipe adverse doit maintenant confirmer le résultat.')
+        // Redirection vers le tournoi
         router.push(`/tournoi/${match.tournoi.id}`)
       }
     } catch (error) {
