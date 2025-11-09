@@ -187,7 +187,6 @@ export default function TournamentDetailPage() {
   const [activeTab, setActiveTab] = useState<'vue' | 'matchs' | 'classement' | 'equipes'>('vue')
   const [selectedPoule, setSelectedPoule] = useState<string>('A')
   const [isOrganizer, setIsOrganizer] = useState(false)
-  const [showTeamFormation, setShowTeamFormation] = useState(false)
   const [showStartModal, setShowStartModal] = useState(false)
   const [refreshingClassement, setRefreshingClassement] = useState(false)
 
@@ -484,6 +483,234 @@ export default function TournamentDetailPage() {
     }
   }
 
+  // Générer les phases éliminatoires après les poules
+  const generateEliminationPhases = async () => {
+    if (!tournament) return
+
+    // Vérifier que tous les matchs de poule sont terminés
+    const pouleMatches = matches.filter(m => m.type === 'poule')
+    const allPouleMatchesFinished = pouleMatches.every(m => m.status === 'termine')
+
+    if (!allPouleMatchesFinished) {
+      alert('Tous les matchs de poule doivent être terminés avant de générer les phases finales.')
+      return
+    }
+
+    // Calculer le classement de chaque poule
+    const qualifiedPerPoule = tournament.settings.qualifiedPerPoule || 2
+    const pouleNames = [...new Set(pouleMatches.map(m => m.poule))].filter(Boolean)
+    const qualified: Team[] = []
+
+    for (const pouleName of pouleNames) {
+      // Équipes de cette poule
+      const pouleTeamIds = new Set<string>()
+      pouleMatches
+        .filter(m => m.poule === pouleName)
+        .forEach(m => {
+          if (m.equipe_a_id) pouleTeamIds.add(m.equipe_a_id)
+          if (m.equipe_b_id) pouleTeamIds.add(m.equipe_b_id)
+        })
+
+      const pouleTeams = teams.filter(t => pouleTeamIds.has(t.id))
+
+      // Calculer stats pour chaque équipe
+      const rankings = pouleTeams.map(team => {
+        const teamMatches = pouleMatches.filter(m =>
+          m.poule === pouleName &&
+          (m.equipe_a_id === team.id || m.equipe_b_id === team.id) &&
+          m.status === 'termine'
+        )
+
+        let victories = 0, pointsFor = 0, pointsAgainst = 0
+
+        teamMatches.forEach(m => {
+          if (m.equipe_a_id === team.id) {
+            if (m.score_a > m.score_b) victories++
+            pointsFor += m.score_a
+            pointsAgainst += m.score_b
+          } else {
+            if (m.score_b > m.score_a) victories++
+            pointsFor += m.score_b
+            pointsAgainst += m.score_a
+          }
+        })
+
+        return {
+          team,
+          victories,
+          difference: pointsFor - pointsAgainst,
+          pointsFor
+        }
+      }).sort((a, b) => {
+        // Classement FIPJP
+        if (b.victories !== a.victories) return b.victories - a.victories
+
+        // Confrontation directe
+        const directMatch = pouleMatches.find(m =>
+          m.status === 'termine' && m.poule === pouleName &&
+          ((m.equipe_a_id === a.team.id && m.equipe_b_id === b.team.id) ||
+           (m.equipe_a_id === b.team.id && m.equipe_b_id === a.team.id))
+        )
+        if (directMatch) {
+          const aWon = (directMatch.equipe_a_id === a.team.id && directMatch.score_a > directMatch.score_b) ||
+                       (directMatch.equipe_b_id === a.team.id && directMatch.score_b > directMatch.score_a)
+          if (aWon) return -1
+          else return 1
+        }
+
+        return b.difference - a.difference
+      })
+
+      // Prendre les N premiers qualifiés
+      qualified.push(...rankings.slice(0, qualifiedPerPoule).map(r => r.team))
+    }
+
+    if (qualified.length === 0) {
+      alert('Aucune équipe qualifiée trouvée.')
+      return
+    }
+
+    try {
+      // Déterminer le nombre de matchs selon les qualifiés
+      const nbQualified = qualified.length
+      let matchType = 'finale'
+      let nbMatches = 1
+
+      if (nbQualified === 2) {
+        matchType = 'finale'
+        nbMatches = 1
+      } else if (nbQualified === 4) {
+        matchType = 'demi'
+        nbMatches = 2
+      } else if (nbQualified === 8) {
+        matchType = 'quart'
+        nbMatches = 4
+      } else if (nbQualified === 16) {
+        matchType = 'huitieme'
+        nbMatches = 8
+      } else {
+        // Arrondir au prochain power of 2
+        const nextPower = Math.pow(2, Math.ceil(Math.log2(nbQualified)))
+        if (nextPower === 16) {
+          matchType = 'huitieme'
+          nbMatches = 8
+        } else if (nextPower === 8) {
+          matchType = 'quart'
+          nbMatches = 4
+        } else if (nextPower === 4) {
+          matchType = 'demi'
+          nbMatches = 2
+        } else {
+          matchType = 'finale'
+          nbMatches = 1
+        }
+      }
+
+      // Créer les matchs d'élimination
+      for (let i = 0; i < nbMatches && i * 2 + 1 < qualified.length; i++) {
+        await fetch('/api/matches', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            tournoi_id: tournament.id,
+            equipe_a_id: qualified[i * 2].id,
+            equipe_b_id: qualified[i * 2 + 1]?.id || null,
+            tour: 1,
+            terrain: null,
+            type: matchType,
+            status: 'a_jouer'
+          })
+        })
+      }
+
+      alert(`Phases éliminatoires générées : ${nbMatches} match(s) de ${matchType}`)
+      await loadTournamentData()
+    } catch (error) {
+      console.error('Erreur génération phases finales:', error)
+      alert('Erreur lors de la génération des phases finales')
+    }
+  }
+
+  // Générer la finale et la petite finale après les demi-finales
+  const generateFinales = async () => {
+    if (!tournament) return
+
+    const demiMatches = matches.filter(m => m.type === 'demi' && m.status === 'termine')
+
+    if (demiMatches.length < 2) {
+      alert('Les deux demi-finales doivent être terminées.')
+      return
+    }
+
+    // Vérifier si finales déjà créées
+    const finaleExists = matches.some(m => m.type === 'finale')
+    const petiteFinaleExists = matches.some(m => m.type === 'petite_finale')
+
+    if (finaleExists && petiteFinaleExists) {
+      alert('Les finales sont déjà créées.')
+      return
+    }
+
+    try {
+      // Récupérer gagnants et perdants des demis
+      const winners: string[] = []
+      const losers: string[] = []
+
+      demiMatches.forEach(match => {
+        if (match.score_a > match.score_b) {
+          winners.push(match.equipe_a_id || '')
+          losers.push(match.equipe_b_id || '')
+        } else {
+          winners.push(match.equipe_b_id || '')
+          losers.push(match.equipe_a_id || '')
+        }
+      })
+
+      // Créer la finale si pas encore faite
+      if (!finaleExists && winners.length === 2) {
+        await fetch('/api/matches', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            tournoi_id: tournament.id,
+            equipe_a_id: winners[0],
+            equipe_b_id: winners[1],
+            tour: 1,
+            terrain: null,
+            type: 'finale',
+            status: 'a_jouer'
+          })
+        })
+      }
+
+      // Créer la petite finale si pas encore faite
+      if (!petiteFinaleExists && losers.length === 2) {
+        await fetch('/api/matches', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            tournoi_id: tournament.id,
+            equipe_a_id: losers[0],
+            equipe_b_id: losers[1],
+            tour: 1,
+            terrain: null,
+            type: 'petite_finale',
+            status: 'a_jouer'
+          })
+        })
+      }
+
+      alert('Finale et petite finale générées avec succès !')
+      await loadTournamentData()
+    } catch (error) {
+      console.error('Erreur génération finales:', error)
+      alert('Erreur lors de la génération des finales')
+    }
+  }
+
   const reformTeamsForRotation = async () => {
     if (tournament?.mode !== 'melee_tournante') return
 
@@ -530,15 +757,12 @@ export default function TournamentDetailPage() {
       const teamSize = tournament.format === 'doublette' ? 2 : 3
       const nbEquipes = Math.floor(players.length / teamSize)
 
-      // Supprimer les anciennes équipes
-      const oldTeams = teams
-      for (const team of oldTeams) {
-        await fetch(`/api/equipes/${team.id}`, {
-          method: 'DELETE',
-          credentials: 'include'
-        })
-      }
+      // NOTE: On ne supprime PAS les anciennes équipes pour garder l'historique des matchs
+      // Les nouvelles équipes seront créées en parallèle
+      // Les anciennes équipes restent dans la BD avec leurs matchs terminés
 
+      // Utiliser un préfixe avec le nombre actuel de rotations pour noms uniques
+      const rotationNumber = Math.floor(teams.length / nbEquipes) + 1
       let teamNumber = 1
       const newTeams = []
 
@@ -546,7 +770,7 @@ export default function TournamentDetailPage() {
       if (!tournament.settings.mixiteObligatoire) {
         for (let i = 0; i < nbEquipes; i++) {
           const teamPlayers = shuffled.slice(i * teamSize, (i + 1) * teamSize).map(p => p.id)
-          newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
+          newTeams.push({ name: `R${rotationNumber}-Équipe ${teamNumber}`, joueur_ids: teamPlayers })
           teamNumber++
         }
       } else {
@@ -558,7 +782,7 @@ export default function TournamentDetailPage() {
           // Pour doublette: 1H + 1F autant que possible
           while (hommes.length > 0 && femmes.length > 0 && teamNumber <= nbEquipes) {
             const teamPlayers = [hommes.shift()!.id, femmes.shift()!.id]
-            newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
+            newTeams.push({ name: `R${rotationNumber}-Équipe ${teamNumber}`, joueur_ids: teamPlayers })
             teamNumber++
           }
 
@@ -566,7 +790,7 @@ export default function TournamentDetailPage() {
           const remaining = [...hommes, ...femmes].sort(() => Math.random() - 0.5)
           while (remaining.length >= teamSize && teamNumber <= nbEquipes) {
             const teamPlayers = remaining.splice(0, teamSize).map(p => p.id)
-            newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
+            newTeams.push({ name: `R${rotationNumber}-Équipe ${teamNumber}`, joueur_ids: teamPlayers })
             teamNumber++
           }
         } else {
@@ -589,7 +813,7 @@ export default function TournamentDetailPage() {
             }
 
             if (teamPlayers.length === teamSize) {
-              newTeams.push({ name: `Équipe ${teamNumber}`, joueur_ids: teamPlayers })
+              newTeams.push({ name: `R${rotationNumber}-Équipe ${teamNumber}`, joueur_ids: teamPlayers })
               teamNumber++
             }
           }
@@ -768,6 +992,30 @@ export default function TournamentDetailPage() {
                   <span>Rotation équipes</span>
                 </button>
               )}
+
+              {tournament.status === 'en_cours' && isOrganizer &&
+               matches.some(m => m.type === 'poule' && m.status === 'termine') &&
+               !matches.some(m => ['huitieme', 'quart', 'demi', 'finale'].includes(m.type || '')) && (
+                <button
+                  onClick={generateEliminationPhases}
+                  className="px-4 py-2 bg-gradient-to-r from-yellow-600 to-orange-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center space-x-2"
+                >
+                  {Icons.flag}
+                  <span>Générer phases finales</span>
+                </button>
+              )}
+
+              {tournament.status === 'en_cours' && isOrganizer &&
+               matches.filter(m => m.type === 'demi' && m.status === 'termine').length === 2 &&
+               !matches.some(m => m.type === 'finale') && (
+                <button
+                  onClick={generateFinales}
+                  className="px-4 py-2 bg-gradient-to-r from-amber-600 to-yellow-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center space-x-2"
+                >
+                  {Icons.trophy}
+                  <span>Générer finale + petite finale</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -887,10 +1135,13 @@ export default function TournamentDetailPage() {
                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                   match.status === 'termine' ? 'bg-gray-100 text-gray-700' :
                                   match.status === 'en_cours' ? 'bg-green-100 text-green-700' :
+                                  match.status === 'en_attente_validation' ? 'bg-orange-100 text-orange-700' :
                                   'bg-yellow-100 text-yellow-700'
                                 }`}>
                                   {match.status === 'termine' ? 'Terminé' :
-                                   match.status === 'en_cours' ? 'En cours' : 'À jouer'}
+                                   match.status === 'en_cours' ? 'En cours' :
+                                   match.status === 'en_attente_validation' ? '⏳ En attente validation' :
+                                   'À jouer'}
                                 </span>
                                 {match.terrain && (
                                   <span className="text-sm text-gray-500">Terrain {match.terrain}</span>
@@ -1086,10 +1337,13 @@ export default function TournamentDetailPage() {
                                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                     match.status === 'termine' ? 'bg-gray-100 text-gray-700' :
                                     match.status === 'en_cours' ? 'bg-green-100 text-green-700' :
+                                    match.status === 'en_attente_validation' ? 'bg-orange-100 text-orange-700' :
                                     'bg-yellow-100 text-yellow-700'
                                   }`}>
                                     {match.status === 'termine' ? 'Terminé' :
-                                     match.status === 'en_cours' ? 'En cours' : 'À jouer'}
+                                     match.status === 'en_cours' ? 'En cours' :
+                                     match.status === 'en_attente_validation' ? '⏳ En attente validation' :
+                                     'À jouer'}
                                   </span>
                                   {match.terrain && (
                                     <span className="text-sm text-gray-500">Terrain {match.terrain}</span>
