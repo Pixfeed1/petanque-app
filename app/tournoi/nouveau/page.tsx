@@ -396,14 +396,20 @@ export default function CreateTournamentPage() {
         }
         break
       
-      case 4: 
+      case 4:
+        // Étape 4 : Options avancées (toujours valide)
         canGo = true
         break
-      
-      default: 
+
+      case 5:
+        // Étape 5 : Validation finale (toujours valide)
+        canGo = true
+        break
+
+      default:
         canGo = false
     }
-    
+
     return canGo
   }
 
@@ -1902,7 +1908,7 @@ export default function CreateTournamentPage() {
             ← Retour
           </button>
 
-          {currentStep < 4 && (
+          {currentStep < 5 && (
             <button
               onClick={handleContinue}
               disabled={!canProceed()}
