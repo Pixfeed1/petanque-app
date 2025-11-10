@@ -243,10 +243,6 @@ export default function RGPDPage() {
                     <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
                     <span>Classements et performances</span>
                   </li>
-                  <li className="flex items-start">
-                    <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                    <span>Résultats du quiz</span>
-                  </li>
                 </ul>
               </div>
 
@@ -633,7 +629,6 @@ export default function RGPDPage() {
               <ul className="space-y-2 text-sm">
                 <li><a href="#" className="hover:text-white transition">Fonctionnalités</a></li>
                 <li><a href="#" className="hover:text-white transition">Modes de jeu</a></li>
-                <li><a href="#" className="hover:text-white transition">Quiz</a></li>
                 <li><a href="#" className="hover:text-white transition">API</a></li>
               </ul>
             </div>

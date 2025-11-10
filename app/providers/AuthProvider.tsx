@@ -66,8 +66,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         '/',
         '/login',
         '/signup',
-        '/quiz',
-        '/quizz',
         '/modes',
         '/features',
         '/guide',

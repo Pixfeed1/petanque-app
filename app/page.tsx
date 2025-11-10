@@ -212,12 +212,6 @@ export default function HomePage() {
       color: 'from-purple-400 to-indigo-600'
     },
     {
-      icon: Icons.book,
-      title: 'Quiz intégré',
-      description: '250 questions pour devenir incollable',
-      color: 'from-pink-400 to-rose-600'
-    },
-    {
       icon: Icons.mobile,
       title: 'Mobile first',
       description: 'Parfait sur smartphone, tablette et ordi',
@@ -709,10 +703,6 @@ export default function HomePage() {
                   <span className="text-gray-700">Export PDF et partage</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700">Quiz 250 questions</span>
-                </li>
-                <li className="flex items-start">
                   <span className="text-orange-500 mr-2 mt-1">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -756,10 +746,6 @@ export default function HomePage() {
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
                   <span className="text-gray-700 font-medium">Export PDF et partage</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700 font-medium">Quiz 250 questions</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.star}</span>
