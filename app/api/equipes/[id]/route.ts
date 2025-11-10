@@ -4,6 +4,7 @@
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
 import { queryOne, query, queryMany } from '@/lib/db'
+import { SQLValue } from '@/lib/types'
 
 // GET - Récupérer une équipe par ID avec les détails des joueurs
 export async function GET(
@@ -63,7 +64,7 @@ export async function PUT(
     }
 
     const updates: string[] = []
-    const values: any[] = []
+    const values: SQLValue[] = []
     let paramIndex = 1
 
     if (body.name !== undefined) {

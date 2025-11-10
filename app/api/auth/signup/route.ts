@@ -100,10 +100,10 @@ export async function POST(request: NextRequest) {
     })
 
     return response
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Erreur signup:', error)
 
-    if (error.message === 'EMAIL_ALREADY_EXISTS') {
+    if (error instanceof Error && error.message === 'EMAIL_ALREADY_EXISTS') {
       return apiError('Cet email est déjà utilisé', 409)
     }
 

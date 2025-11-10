@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
 import { query, queryOne } from '@/lib/db'
+import { SQLValue } from '@/lib/types'
 
 // GET /api/joueurs/[id] - Récupérer un joueur par ID
 export async function GET(
@@ -55,7 +56,7 @@ export async function PUT(
 
     // Construire la requête UPDATE dynamiquement
     const updates: string[] = []
-    const values: any[] = []
+    const values: SQLValue[] = []
     let paramIndex = 1
 
     if (name !== undefined) {

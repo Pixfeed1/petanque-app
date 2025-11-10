@@ -49,10 +49,11 @@ export async function POST(request: NextRequest) {
        signature,
        webhookSecret
      )
-   } catch (err: any) {
-     console.error('Webhook: Erreur signature:', err.message)
+   } catch (err: unknown) {
+     const message = err instanceof Error ? err.message : 'Unknown error'
+     console.error('Webhook: Erreur signature:', message)
      return NextResponse.json(
-       { error: `Webhook Error: ${err.message}` },
+       { error: `Webhook Error: ${message}` },
        { status: 400 }
      )
    }
@@ -256,13 +257,13 @@ export async function POST(request: NextRequest) {
      processed: new Date().toISOString()
    })
 
- } catch (error: any) {
+ } catch (error: unknown) {
    console.error('Erreur webhook:', error)
-   
+
    // Retourner 200 même en cas d'erreur pour éviter les retries
    return NextResponse.json({
      received: true,
-     error: error.message
+     error: error instanceof Error ? error.message : 'Unknown error'
    })
  }
 }

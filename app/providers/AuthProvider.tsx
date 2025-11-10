@@ -7,7 +7,7 @@ import { useRouter, usePathname } from 'next/navigation'
 interface Organization {
   id: string
   name: string
-  settings: any
+  settings: Record<string, unknown> | null
   created_at: string
   updated_at: string
   created_by?: string
@@ -21,7 +21,7 @@ interface User {
   email_verified: boolean
   created_at: string
   last_login_at: string | null
-  metadata: any
+  metadata: Record<string, unknown> | null
 }
 
 interface AuthContextType {

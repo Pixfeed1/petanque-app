@@ -4,6 +4,7 @@
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { queryMany, query } from '@/lib/db'
+import { SQLValue } from '@/lib/types'
 
 // GET - Récupérer les joueurs d'une organisation
 export async function GET(request: NextRequest) {
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     // Build query with optional search
     let query_text = 'SELECT * FROM joueurs WHERE org_id = $1'
-    const params: any[] = [orgId]
+    const params: SQLValue[] = [orgId]
 
     if (search) {
       query_text += ' AND (name ILIKE $2 OR email ILIKE $2)'

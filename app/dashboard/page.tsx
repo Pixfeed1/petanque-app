@@ -80,7 +80,7 @@ export default function Dashboard() {
   const [showProfileMenu, setShowProfileMenu] = useState(false)
 
   useEffect(() => {
-    if (organization?.settings?.plan) {
+    if (organization?.settings?.plan && typeof organization.settings.plan === 'string') {
       setUserPlan(organization.settings.plan)
     }
   }, [organization])
