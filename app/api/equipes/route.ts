@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
       [
         tournoi_id,
         name,
-        joueur_ids || [],
-        stats || {}
+        Array.isArray(joueur_ids) ? joueur_ids : [],
+        JSON.stringify(stats || {})
       ]
     )
 
