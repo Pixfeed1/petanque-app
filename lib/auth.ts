@@ -4,6 +4,7 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { query, queryOne } from './db'
+import { SQLValue } from './types'
 
 // Clé secrète JWT (à définir dans .env)
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production'
@@ -17,7 +18,7 @@ export interface User {
   email_verified: boolean
   created_at: Date
   last_login_at: Date | null
-  metadata: any
+  metadata: Record<string, unknown> | null
 }
 
 export interface JWTPayload {
@@ -204,11 +205,11 @@ export async function updateUser(
   updates: {
     full_name?: string
     email_verified?: boolean
-    metadata?: any
+    metadata?: Record<string, unknown>
   }
 ): Promise<User | null> {
   const fields: string[] = []
-  const values: any[] = []
+  const values: SQLValue[] = []
   let paramIndex = 1
 
   if (updates.full_name !== undefined) {

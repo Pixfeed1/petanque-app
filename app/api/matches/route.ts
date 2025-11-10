@@ -4,6 +4,7 @@
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
 import { queryMany, query, queryOne } from '@/lib/db'
+import { MatchRawDB, MatchWithEquipes } from '@/lib/types'
 
 // GET - Récupérer les matches d'un tournoi
 export async function GET(request: NextRequest) {
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
       return apiError('tournoi_id est requis', 400)
     }
 
-    const matchesRaw = await queryMany(
+    const matchesRaw = await queryMany<MatchRawDB>(
       `SELECT m.*,
               ea.id as equipe_a_id_check, ea.name as equipe_a_name, ea.joueur_ids as equipe_a_joueur_ids,
               eb.id as equipe_b_id_check, eb.name as equipe_b_name, eb.joueur_ids as equipe_b_joueur_ids
@@ -31,34 +32,37 @@ export async function GET(request: NextRequest) {
     )
 
     // Transform to nested format expected by frontend
-    const matches = matchesRaw.map((match: any) => ({
+    const matches: MatchWithEquipes[] = matchesRaw.map((match): MatchWithEquipes => ({
       id: match.id,
       tournoi_id: match.tournoi_id,
       equipe_a_id: match.equipe_a_id,
       equipe_b_id: match.equipe_b_id,
       equipe_a: match.equipe_a_id ? {
         id: match.equipe_a_id,
-        name: match.equipe_a_name,
-        joueur_ids: match.equipe_a_joueur_ids
+        name: match.equipe_a_name || '',
+        joueur_ids: match.equipe_a_joueur_ids || []
       } : null,
       equipe_b: match.equipe_b_id ? {
         id: match.equipe_b_id,
-        name: match.equipe_b_name,
-        joueur_ids: match.equipe_b_joueur_ids
+        name: match.equipe_b_name || '',
+        joueur_ids: match.equipe_b_joueur_ids || []
       } : null,
       score_a: match.score_a,
       score_b: match.score_b,
-      status: match.status,
+      status: match.status as MatchWithEquipes['status'],
       tour: match.tour,
       terrain: match.terrain,
-      type: match.type,
+      type: match.type as MatchWithEquipes['type'],
       poule: match.poule,
       round: match.round,
-      manches_json: match.manches_json,
+      manches_json: match.manches_json ? JSON.parse(match.manches_json) : null,
       started_at: match.started_at,
       ended_at: match.ended_at,
       validated_at: match.validated_at,
       played_at: match.played_at,
+      proposed_by: match.proposed_by,
+      proposed_at: match.proposed_at,
+      winner_id: match.winner_id,
       created_at: match.created_at,
       updated_at: match.updated_at
     }))

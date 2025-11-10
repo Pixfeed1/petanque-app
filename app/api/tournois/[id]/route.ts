@@ -4,6 +4,7 @@
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { queryOne, query } from '@/lib/db'
+import { SQLValue } from '@/lib/types'
 
 // GET - Récupérer un tournoi par ID
 export async function GET(
@@ -71,7 +72,7 @@ export async function PUT(
 
     // Construire la requête de mise à jour
     const updates: string[] = []
-    const values: any[] = []
+    const values: SQLValue[] = []
     let paramIndex = 1
 
     if (body.name !== undefined) {

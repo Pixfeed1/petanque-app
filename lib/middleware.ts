@@ -168,7 +168,7 @@ export function apiSuccess<T = any>(data: T, status: number = 200): NextResponse
  * @returns Erreur si un champ manque, null sinon
  */
 export function validateRequiredFields(
-  body: any,
+  body: Record<string, unknown>,
   requiredFields: string[]
 ): NextResponse | null {
   for (const field of requiredFields) {

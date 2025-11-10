@@ -1,7 +1,8 @@
 // lib/db.ts
 // Couche de connexion PostgreSQL centralisée
 
-import { Pool, QueryResult, QueryResultRow } from 'pg'
+import { Pool, QueryResult, QueryResultRow, PoolClient } from 'pg'
+import { SQLValue } from './types'
 
 // Configuration du pool de connexions PostgreSQL
 const pool = new Pool({
@@ -32,9 +33,9 @@ pool.on('connect', () => {
  * @param params - Paramètres de la requête
  * @returns Résultat de la requête
  */
-export async function query<T extends QueryResultRow = any>(
+export async function query<T extends QueryResultRow = QueryResultRow>(
   text: string,
-  params?: any[]
+  params?: SQLValue[]
 ): Promise<QueryResult<T>> {
   const start = Date.now()
   try {
@@ -67,7 +68,7 @@ export async function query<T extends QueryResultRow = any>(
  * @returns Résultat de la transaction
  */
 export async function transaction<T>(
-  callback: (client: any) => Promise<T>
+  callback: (client: PoolClient) => Promise<T>
 ): Promise<T> {
   const client = await pool.connect()
 
@@ -87,9 +88,9 @@ export async function transaction<T>(
 /**
  * Récupère une seule ligne
  */
-export async function queryOne<T extends QueryResultRow = any>(
+export async function queryOne<T extends QueryResultRow = QueryResultRow>(
   text: string,
-  params?: any[]
+  params?: SQLValue[]
 ): Promise<T | null> {
   const result = await query<T>(text, params)
   return result.rows[0] || null
@@ -98,9 +99,9 @@ export async function queryOne<T extends QueryResultRow = any>(
 /**
  * Récupère plusieurs lignes
  */
-export async function queryMany<T extends QueryResultRow = any>(
+export async function queryMany<T extends QueryResultRow = QueryResultRow>(
   text: string,
-  params?: any[]
+  params?: SQLValue[]
 ): Promise<T[]> {
   const result = await query<T>(text, params)
   return result.rows

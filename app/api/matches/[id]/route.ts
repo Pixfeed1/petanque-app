@@ -4,6 +4,7 @@
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
 import { queryOne, query } from '@/lib/db'
+import { MatchRawDB, MatchWithEquipes, SQLValue } from '@/lib/types'
 
 // GET - Récupérer un match par ID
 export async function GET(
@@ -17,7 +18,7 @@ export async function GET(
 
     const { id } = await params
 
-    const matchRaw = await queryOne(
+    const matchRaw = await queryOne<MatchRawDB>(
       `SELECT m.*,
               ea.id as equipe_a_id_check, ea.name as equipe_a_name, ea.joueur_ids as equipe_a_joueur_ids,
               eb.id as equipe_b_id_check, eb.name as equipe_b_name, eb.joueur_ids as equipe_b_joueur_ids,
@@ -44,38 +45,41 @@ export async function GET(
     }
 
     // Transform to nested format
-    const match = {
+    const match: MatchWithEquipes = {
       id: matchRaw.id,
       tournoi_id: matchRaw.tournoi_id,
       tournoi: matchRaw.tournoi_id ? {
         id: matchRaw.tournoi_id,
-        name: matchRaw.tournoi_name
+        name: matchRaw.tournoi_name || ''
       } : null,
       equipe_a_id: matchRaw.equipe_a_id,
       equipe_b_id: matchRaw.equipe_b_id,
       equipe_a: matchRaw.equipe_a_id ? {
         id: matchRaw.equipe_a_id,
-        name: matchRaw.equipe_a_name,
-        joueur_ids: matchRaw.equipe_a_joueur_ids
+        name: matchRaw.equipe_a_name || '',
+        joueur_ids: matchRaw.equipe_a_joueur_ids || []
       } : null,
       equipe_b: matchRaw.equipe_b_id ? {
         id: matchRaw.equipe_b_id,
-        name: matchRaw.equipe_b_name,
-        joueur_ids: matchRaw.equipe_b_joueur_ids
+        name: matchRaw.equipe_b_name || '',
+        joueur_ids: matchRaw.equipe_b_joueur_ids || []
       } : null,
       score_a: matchRaw.score_a,
       score_b: matchRaw.score_b,
-      status: matchRaw.status,
+      status: matchRaw.status as MatchWithEquipes['status'],
       tour: matchRaw.tour,
       terrain: matchRaw.terrain,
-      type: matchRaw.type,
+      type: matchRaw.type as MatchWithEquipes['type'],
       poule: matchRaw.poule,
       round: matchRaw.round,
-      manches_json: matchRaw.manches_json,
+      manches_json: matchRaw.manches_json ? JSON.parse(matchRaw.manches_json) : null,
       started_at: matchRaw.started_at,
       ended_at: matchRaw.ended_at,
       validated_at: matchRaw.validated_at,
       played_at: matchRaw.played_at,
+      proposed_by: matchRaw.proposed_by,
+      proposed_at: matchRaw.proposed_at,
+      winner_id: matchRaw.winner_id,
       created_at: matchRaw.created_at,
       updated_at: matchRaw.updated_at
     }
@@ -122,7 +126,7 @@ export async function PUT(
     }
 
     const updates: string[] = []
-    const values: any[] = []
+    const values: SQLValue[] = []
     let paramIndex = 1
 
     // Validation des scores
