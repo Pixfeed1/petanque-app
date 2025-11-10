@@ -261,7 +261,7 @@ export default function CreateTournamentPage() {
       description: 'Équipes tirées au sort qui restent ensemble',
       detail: 'Parfait pour la convivialité',
       icon: Icons.lightning,
-      gradient: 'from-purple-400 to-purple-600',
+      gradient: 'from-green-400 to-green-600',
       recommended: true
     },
     {
@@ -290,7 +290,7 @@ export default function CreateTournamentPage() {
       description: '2 joueurs par équipe',
       minPlayers: 4,
       icon: '👥',
-      gradient: 'from-orange-400 to-orange-600'
+      gradient: 'from-green-400 to-emerald-600'
     },
     {
       value: 'triplette',
@@ -298,7 +298,7 @@ export default function CreateTournamentPage() {
       description: '3 joueurs par équipe',
       minPlayers: 6,
       icon: '👥👤',
-      gradient: 'from-indigo-400 to-indigo-600'
+      gradient: 'from-green-400 to-emerald-600'
     }
   ]
 
@@ -901,8 +901,8 @@ export default function CreateTournamentPage() {
       {/* Particules animées */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-green-200 to-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-200 to-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-40 right-40 w-80 h-80 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+        <div className="absolute top-40 -left-40 w-80 h-80 bg-gradient-to-br from-green-200 to-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-40 right-40 w-80 h-80 bg-gradient-to-br from-green-200 to-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>
 
       {/* Header glassmorphism avec logo pétanque */}
@@ -983,7 +983,7 @@ export default function CreateTournamentPage() {
           {currentStep === 1 && (
             <div className="space-y-6 animate-fadeIn">
               <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-                <div className="p-8 bg-gradient-to-br from-blue-50 to-indigo-50">
+                <div className="p-8 bg-gradient-to-br from-green-50 to-emerald-50">
                   <h2 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
                     {Icons.sparkles}
                     <span className="ml-3">Informations générales</span>
@@ -1110,7 +1110,7 @@ export default function CreateTournamentPage() {
               {/* Mode de jeu */}
               <div className="bg-white rounded-3xl shadow-xl p-8">
                 <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                  <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl text-white mr-3">
+                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl text-white mr-3">
                     {Icons.gamepad}
                   </div>
                   Mode de jeu
@@ -1123,7 +1123,7 @@ export default function CreateTournamentPage() {
                       onClick={() => setFormData({...formData, mode: mode.value})}
                       className={`group relative p-6 rounded-2xl border-2 transition-all transform hover:scale-105 ${
                         formData.mode === mode.value
-                          ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 shadow-lg'
+                          ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg'
                           : 'border-gray-200 hover:border-gray-300 bg-white'
                       }`}
                     >
@@ -1142,7 +1142,7 @@ export default function CreateTournamentPage() {
                       <p className="text-xs text-gray-500">{mode.detail}</p>
                       
                       {formData.mode === mode.value && (
-                        <div className="absolute top-3 left-3 text-purple-500 animate-fadeIn">
+                        <div className="absolute top-3 left-3 text-green-500 animate-fadeIn">
                           {Icons.check}
                         </div>
                       )}
@@ -1188,7 +1188,7 @@ export default function CreateTournamentPage() {
               {/* Format */}
               <div className="bg-white rounded-3xl shadow-xl p-8">
                 <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                  <div className="p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl text-white mr-3">
+                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl text-white mr-3">
                     {Icons.users}
                   </div>
                   Format des équipes
@@ -1201,7 +1201,7 @@ export default function CreateTournamentPage() {
                       onClick={() => setFormData({...formData, format: format.value})}
                       className={`group relative p-8 rounded-2xl border-2 transition-all transform hover:scale-105 ${
                         formData.format === format.value
-                          ? 'border-orange-500 bg-gradient-to-br from-orange-50 to-red-50 shadow-lg'
+                          ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg'
                           : 'border-gray-200 hover:border-gray-300 bg-white'
                       }`}
                     >
@@ -1212,7 +1212,7 @@ export default function CreateTournamentPage() {
                       <p className="text-sm text-gray-500 mt-2">Min. {format.minPlayers} joueurs</p>
                       
                       {formData.format === format.value && (
-                        <div className="absolute top-4 right-4 text-orange-500 animate-fadeIn">
+                        <div className="absolute top-4 right-4 text-green-500 animate-fadeIn">
                           {Icons.check}
                         </div>
                       )}
@@ -1221,190 +1221,54 @@ export default function CreateTournamentPage() {
                 </div>
               </div>
 
-              {/* Configuration du tournoi PÉTANQUE */}
+              {/* Points pour gagner */}
               <div className="bg-white rounded-3xl shadow-xl p-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                  {Icons.settings}
-                  <span className="ml-2">Configuration du tournoi</span>
+                <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl text-white mr-3">
+                    {Icons.trophy}
+                  </div>
+                  Points pour gagner
                 </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Taille des poules */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Taille des poules
-                    </label>
-                    <select
-                      value={formData.pouleSize}
-                      onChange={(e) => setFormData({...formData, pouleSize: parseInt(e.target.value)})}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500"
-                    >
-                      <option value={3}>3 équipes par poule</option>
-                      <option value={4}>4 équipes par poule</option>
-                      <option value={5}>5 équipes par poule</option>
-                      <option value={6}>6 équipes par poule</option>
-                      <option value={7}>7 équipes par poule</option>
-                      <option value={8}>8 équipes par poule</option>
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">Chaque équipe jouera {formData.pouleSize - 1} matchs en poule</p>
+
+                <div className="max-w-md mx-auto">
+                  <div className="text-center mb-6">
+                    <span className="text-6xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                      {formData.maxPoints}
+                    </span>
+                    <p className="text-gray-600 mt-2">points</p>
                   </div>
 
-{/* Qualifiés par poule */}
-<div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Qualifiés par poule
-                    </label>
-                    <select
-                      value={formData.qualifiedPerPoule}
-                      onChange={(e) => setFormData({...formData, qualifiedPerPoule: parseInt(e.target.value)})}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500"
-                    >
-                      <option value={1}>Le 1er de chaque poule</option>
-                      <option value={2}>Les 2 premiers</option>
-                      {formData.pouleSize >= 6 && <option value={3}>Les 3 premiers</option>}
-                    </select>
+                  <input
+                    type="range"
+                    min="7"
+                    max="15"
+                    value={formData.maxPoints}
+                    onChange={(e) => setFormData({...formData, maxPoints: parseInt(e.target.value)})}
+                    className="w-full h-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full appearance-none cursor-pointer accent-green-600"
+                  />
+
+                  <div className="flex justify-between mt-3">
+                    {[7,9,11,13,15].map(n => (
+                      <button
+                        key={n}
+                        onClick={() => setFormData({...formData, maxPoints: n})}
+                        className={`px-4 py-2 rounded-xl transition-all ${
+                          formData.maxPoints === n
+                            ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold shadow-lg'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
                   </div>
 
-                  {/* Format élimination */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Format des phases finales
-                    </label>
-                    <select
-                      value={formData.eliminationFormat}
-                      onChange={(e) => setFormData({...formData, eliminationFormat: e.target.value})}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500"
-                    >
-                      <option value="simple">Élimination simple (règle FIPJP)</option>
-                    </select>
-                  </div>
-
-                  {/* Points pour gagner */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Points pour gagner: <span className="text-xl font-bold text-purple-600">{formData.maxPoints}</span>
-                    </label>
-                    <input
-                      type="range"
-                      min="7"
-                      max="15"
-                      value={formData.maxPoints}
-                      onChange={(e) => setFormData({...formData, maxPoints: parseInt(e.target.value)})}
-                      className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer"
-                    />
-                    <div className="flex justify-between mt-1">
-                      {[7,9,11,13,15].map(n => (
-                        <span key={n} className={`text-xs ${formData.maxPoints === n ? 'text-purple-600 font-bold' : 'text-gray-400'}`}>
-                          {n}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                  <p className="text-sm text-gray-500 text-center mt-6">
+                    {formData.maxPoints === 13 ? '🎯 Recommandé pour tournois officiels FIPJP' :
+                     formData.maxPoints < 11 ? '⚡ Parties rapides' :
+                     '🏆 Parties longues'}
+                  </p>
                 </div>
-
-                {/* Options supplémentaires */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t">
-                  {/* Petite finale */}
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                    <div>
-                      <p className="font-medium text-gray-900">Petite finale</p>
-                      <p className="text-xs text-gray-500">Match pour la 3ème place</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={formData.consolante}
-                        onChange={(e) => setFormData({...formData, consolante: e.target.checked})}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                    </label>
-                  </div>
-
-                  {/* Enregistrer les mènes */}
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                    <div>
-                      <p className="font-medium text-gray-900">Détail des mènes</p>
-                      <p className="text-xs text-gray-500">Enregistrer chaque mène jouée</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={formData.recordMenes}
-                        onChange={(e) => setFormData({...formData, recordMenes: e.target.checked})}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                    </label>
-                  </div>
-
-                  {/* Fair-play */}
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                    <div>
-                      <p className="font-medium text-gray-900">Notation fair-play</p>
-                      <p className="text-xs text-gray-500">Évaluer l'esprit sportif</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.fairPlay}
-                        onChange={(e) => setFormData({...formData, fairPlay: e.target.checked})}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                    </label>
-                  </div>
-
-                  {/* Mixité obligatoire */}
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                    <div>
-                      <p className="font-medium text-gray-900">Mixité obligatoire</p>
-                      <p className="text-xs text-gray-500">Imposer la mixité H/F dans les équipes</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.mixiteObligatoire}
-                        onChange={(e) => setFormData({...formData, mixiteObligatoire: e.target.checked})}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                    </label>
-                  </div>
-
-                  {/* Limite de temps */}
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                    <div>
-                      <p className="font-medium text-gray-900">Limite de temps</p>
-                      <p className="text-xs text-gray-500">Pour tournois rapides</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={formData.timeLimit}
-                        onChange={(e) => setFormData({...formData, timeLimit: e.target.checked})}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                    </label>
-                  </div>
-                </div>
-
-                {formData.timeLimit && (
-                  <div className="mt-4 p-4 bg-yellow-50 rounded-xl animate-fadeIn">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Durée maximum par match (minutes)
-                    </label>
-                    <input
-                      type="number"
-                      min="15"
-                      max="120"
-                      value={formData.timeLimitMinutes}
-                      onChange={(e) => setFormData({...formData, timeLimitMinutes: parseInt(e.target.value)})}
-                      className="w-32 px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-purple-500"
-                    />
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -1436,7 +1300,7 @@ export default function CreateTournamentPage() {
                       <span className={`px-4 py-2 rounded-xl font-medium ${
                         getTotalPlayers() >= getMinPlayers()
                           ? 'bg-green-100 text-green-700'
-                          : 'bg-orange-100 text-orange-700'
+                          : 'bg-green-100 text-green-700'
                       }`}>
                         Min. {getMinPlayers()} requis
                       </span>
@@ -1609,11 +1473,136 @@ export default function CreateTournamentPage() {
             </div>
           )}
 
-          {/* Étape 4: Validation */}
+          {/* Étape 4: Options avancées */}
           {currentStep === 4 && (
             <div className="space-y-6 animate-fadeIn">
+              <div className="bg-white rounded-3xl shadow-xl p-8">
+                <div className="p-8 bg-gradient-to-br from-green-50 to-emerald-50">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
+                    {Icons.settings}
+                    <span className="ml-3">Options avancées</span>
+                  </h2>
+                  <p className="text-gray-600">Personnalisez les paramètres de votre tournoi</p>
+                </div>
+
+                <div className="p-8 space-y-6">
+                  {/* Configuration technique */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Taille des poules */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Taille des poules
+                      </label>
+                      <select
+                        value={formData.pouleSize}
+                        onChange={(e) => setFormData({...formData, pouleSize: parseInt(e.target.value)})}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500"
+                      >
+                        <option value={3}>3 équipes par poule</option>
+                        <option value={4}>4 équipes par poule</option>
+                        <option value={5}>5 équipes par poule</option>
+                        <option value={6}>6 équipes par poule</option>
+                        <option value={7}>7 équipes par poule</option>
+                        <option value={8}>8 équipes par poule</option>
+                      </select>
+                    </div>
+
+                    {/* Qualifiés par poule */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Qualifiés par poule
+                      </label>
+                      <select
+                        value={formData.qualifiedPerPoule}
+                        onChange={(e) => setFormData({...formData, qualifiedPerPoule: parseInt(e.target.value)})}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500"
+                      >
+                        <option value={1}>Le 1er de chaque poule</option>
+                        <option value={2}>Les 2 premiers</option>
+                        {formData.pouleSize >= 6 && <option value={3}>Les 3 premiers</option>}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Options de jeu */}
+                  <div className="border-t pt-6 mt-6">
+                    <h3 className="font-bold text-gray-900 mb-4">Options de jeu</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div>
+                          <p className="font-medium text-gray-900">Mixité obligatoire</p>
+                          <p className="text-xs text-gray-500">Imposer H/F dans les équipes</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" checked={formData.mixiteObligatoire} onChange={(e) => setFormData({...formData, mixiteObligatoire: e.target.checked})} className="sr-only peer" />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div>
+                          <p className="font-medium text-gray-900">Petite finale</p>
+                          <p className="text-xs text-gray-500">Match pour la 3ème place</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" checked={formData.consolante} onChange={(e) => setFormData({...formData, consolante: e.target.checked})} className="sr-only peer" />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div>
+                          <p className="font-medium text-gray-900">Détail des mènes</p>
+                          <p className="text-xs text-gray-500">Enregistrer chaque mène</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" checked={formData.recordMenes} onChange={(e) => setFormData({...formData, recordMenes: e.target.checked})} className="sr-only peer" />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div>
+                          <p className="font-medium text-gray-900">Notation fair-play</p>
+                          <p className="text-xs text-gray-500">Évaluer l'esprit sportif</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" checked={formData.fairPlay} onChange={(e) => setFormData({...formData, fairPlay: e.target.checked})} className="sr-only peer" />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div>
+                          <p className="font-medium text-gray-900">Limite de temps</p>
+                          <p className="text-xs text-gray-500">Pour tournois rapides</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" checked={formData.timeLimit} onChange={(e) => setFormData({...formData, timeLimit: e.target.checked})} className="sr-only peer" />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {formData.timeLimit && (
+                      <div className="mt-4 p-4 bg-yellow-50 rounded-xl animate-fadeIn">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Durée maximum par match (minutes)
+                        </label>
+                        <input type="number" min="15" max="120" value={formData.timeLimitMinutes} onChange={(e) => setFormData({...formData, timeLimitMinutes: parseInt(e.target.value)})} className="w-32 px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-green-500" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Étape 5: Validation */}
+          {currentStep === 5 && (
+            <div className="space-y-6 animate-fadeIn">
               <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-                <div className="p-8 bg-gradient-to-br from-orange-50 to-red-50">
+                <div className="p-8 bg-gradient-to-br from-green-50 to-emerald-50">
                   <h2 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
                     {Icons.sparkles}
                     <span className="ml-3">Récapitulatif du tournoi</span>
@@ -1651,7 +1640,7 @@ export default function CreateTournamentPage() {
 
                   {/* Options spéciales pour mêlée tournante */}
                   {formData.mode === 'melee_tournante' && (
-                    <div className="mt-6 p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl">
+                    <div className="mt-6 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl">
                       <h4 className="font-bold text-gray-900 mb-2 flex items-center">
                         {Icons.shuffle}
                         <span className="ml-2">Configuration Mêlée Tournante</span>
@@ -1714,7 +1703,7 @@ export default function CreateTournamentPage() {
                   </div>
 
                   {/* Résumé des joueurs */}
-                  <div className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl">
+                  <div className="mt-8 p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl">
                     <h4 className="font-bold text-gray-900 mb-3 flex items-center">
                       {Icons.users}
                       <span className="ml-2">Participants ({getTotalPlayers()})</span>
@@ -1786,7 +1775,7 @@ export default function CreateTournamentPage() {
                   </div>
 
                   {/* Estimation du déroulement */}
-                  <div className="mt-6 p-6 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl">
+                  <div className="mt-6 p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl">
                     <h4 className="font-bold text-gray-900 mb-3 flex items-center">
                       {Icons.petanque}
                       <span className="ml-2">Estimation du tournoi</span>
