@@ -79,15 +79,6 @@ export default function DashboardPage() {
             <div className="font-bold text-green-800">Gérer les Joueurs</div>
             <div className="text-sm text-gray-600">Ajouter, modifier (H/F)</div>
           </button>
-
-          <button
-            onClick={() => router.push('/quiz')}
-            className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition"
-          >
-            <div className="text-3xl mb-2">📚</div>
-            <div className="font-bold text-green-800">Quiz Pétanque</div>
-            <div className="text-sm text-gray-600">250 questions</div>
-          </button>
         </div>
 
         {/* Liste des tournois */}
