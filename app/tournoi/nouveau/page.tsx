@@ -238,10 +238,11 @@ export default function CreateTournamentPage() {
   }
 
   const steps = [
-    { number: 1, title: 'Informations', icon: Icons.trophy, color: 'from-blue-500 to-indigo-600' },
-    { number: 2, title: 'Configuration', icon: Icons.gamepad, color: 'from-purple-500 to-pink-600' },
+    { number: 1, title: 'Informations', icon: Icons.trophy, color: 'from-green-500 to-emerald-600' },
+    { number: 2, title: 'Format', icon: Icons.gamepad, color: 'from-green-500 to-emerald-600' },
     { number: 3, title: 'Joueurs', icon: Icons.users, color: 'from-green-500 to-emerald-600' },
-    { number: 4, title: 'Validation', icon: Icons.check, color: 'from-orange-500 to-red-600' }
+    { number: 4, title: 'Options', icon: Icons.settings, color: 'from-green-500 to-emerald-600' },
+    { number: 5, title: 'Validation', icon: Icons.check, color: 'from-green-500 to-emerald-600' }
   ]
 
   const modes = [
