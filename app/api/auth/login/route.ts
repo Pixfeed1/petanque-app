@@ -40,12 +40,13 @@ export async function POST(request: NextRequest) {
     })
 
     // Définir le cookie avec le token
+    // sameSite: 'strict' pour protection CSRF maximale
     response.cookies.set({
       name: 'auth-token',
       value: session.token,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict', // Protection CSRF renforcée
       maxAge,
       path: '/'
     })

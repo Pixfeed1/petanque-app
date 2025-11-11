@@ -6,8 +6,25 @@ import jwt from 'jsonwebtoken'
 import { query, queryOne } from './db'
 import { SQLValue } from './types'
 
-// Clé secrète JWT (à définir dans .env)
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production'
+// Clé secrète JWT (OBLIGATOIRE dans .env)
+const JWT_SECRET = process.env.JWT_SECRET
+
+// Validation critique : JWT_SECRET doit être défini et sécurisé
+if (!JWT_SECRET) {
+  throw new Error(
+    '❌ ERREUR FATALE: JWT_SECRET n\'est pas défini.\n' +
+    'Définissez JWT_SECRET dans votre fichier .env\n' +
+    'Exemple: JWT_SECRET=$(openssl rand -base64 32)'
+  )
+}
+
+if (JWT_SECRET.length < 32) {
+  throw new Error(
+    '❌ ERREUR FATALE: JWT_SECRET doit contenir au moins 32 caractères.\n' +
+    'Utilisez une clé forte: openssl rand -base64 32'
+  )
+}
+
 const JWT_EXPIRES_IN = '7d' // Token valide 7 jours
 
 // Types TypeScript

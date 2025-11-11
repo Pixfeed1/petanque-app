@@ -153,10 +153,11 @@ export async function GET(request: NextRequest) {
     })
 
     // 8. Créer le cookie de session
+    // sameSite: 'strict' pour protection CSRF maximale
     const cookie = serialize('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict', // Protection CSRF renforcée
       maxAge: 60 * 60 * 24 * 7, // 7 jours
       path: '/'
     })
