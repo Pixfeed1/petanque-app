@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Footer from '../components/footer'
+import { Petanque, Check, Users, Dice, Refresh, Trophy, Chart, Clock, Sparkles, Arrow } from '@/components/Icons'
 
 // Types
 type ModeType = 'choisi' | 'melee-fixe' | 'melee-tournante'
@@ -25,70 +26,17 @@ interface ModeDetail {
 
 // Icônes professionnelles
 const Icons = {
-  logo: (
-    <svg className="w-10 h-10" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="32" cy="32" r="30" fill="url(#metalGradient)" stroke="#5a6978" strokeWidth="2"/>
-      <circle cx="26" cy="26" r="3" fill="#ffffff" opacity="0.8"/>
-      <circle cx="38" cy="38" r="2" fill="#2d3748" opacity="0.3"/>
-      <circle cx="40" cy="28" r="2" fill="#2d3748" opacity="0.3"/>
-      <defs>
-        <radialGradient id="metalGradient">
-          <stop offset="0%" stopColor="#a8b2c3"/>
-          <stop offset="100%" stopColor="#8e9aaf"/>
-        </radialGradient>
-      </defs>
-    </svg>
-  ),
-  check: (
-    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-    </svg>
-  ),
-  users: (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  ),
-  dice: (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM7 7h.01M7 12h.01M7 17h.01M12 7h.01M12 12h.01M12 17h.01M17 7h.01M17 12h.01M17 17h.01" />
-    </svg>
-  ),
-  refresh: (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-    </svg>
-  ),
-  trophy: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v6m0 0H8m4 0h4m-4-6V9m0 6h4.5M12 9h-4.5m0 0H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2h-2.5M12 9V3" />
-    </svg>
-  ),
-  chart: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-    </svg>
-  ),
-  clock: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  sparkles: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-    </svg>
-  ),
-  gender: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  ),
-  arrow: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-    </svg>
-  )
+  logo: <Petanque className="w-10 h-10" />,
+  check: <Check className="w-5 h-5" />,
+  users: <Users className="w-8 h-8" />,
+  dice: <Dice className="w-8 h-8" />,
+  refresh: <Refresh className="w-8 h-8" />,
+  trophy: <Trophy className="w-6 h-6" />,
+  chart: <Chart className="w-6 h-6" />,
+  clock: <Clock className="w-6 h-6" />,
+  sparkles: <Sparkles className="w-6 h-6" />,
+  gender: <Users className="w-6 h-6" />,
+  arrow: <Arrow className="w-5 h-5" />
 }
 
 export default function GameModesPage() {

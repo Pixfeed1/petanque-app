@@ -4,69 +4,20 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import confetti from 'canvas-confetti'
 import type { Match, Equipe, Joueur } from '@/lib/types'
+import { Trophy, Crown, Medal, Star, Sparkles, Petanque, Download, Loader } from '@/components/Icons'
 
 // Icônes premium
 const Icons = {
- trophy: (
-   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-   </svg>
- ),
- crown: (
-   <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
-     <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm2.86-2h8.28l.5-3.5l-2.14-1.5L12 13l-2.5-4l-2.14 1.5l.5 3.5zM19 19H5v2h14v-2z"/>
-   </svg>
- ),
- medal: (
-   <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-   </svg>
- ),
- star: (
-   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-   </svg>
- ),
- sparkles: (
-   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-   </svg>
- ),
- petanque: (
-   <svg className="w-10 h-10" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-     <circle cx="32" cy="32" r="28" fill="url(#metalGradient)" stroke="currentColor" strokeWidth="2"/>
-     <circle cx="26" cy="24" r="3" fill="white" opacity="0.8"/>
-     <circle cx="36" cy="36" r="2" fill="currentColor" opacity="0.3"/>
-     <defs>
-       <radialGradient id="metalGradient">
-         <stop offset="0%" stopColor="#a8b2c3"/>
-         <stop offset="100%" stopColor="#8e9aaf"/>
-       </radialGradient>
-     </defs>
-   </svg>
- ),
- share: (
-   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9 9.032a3 3 0 00-4.516-3.89L8.39 17.89m0 0a3 3 0 004.516 3.89L17.684 19.89m0 0A3 3 0 1020.684 17l-4.516 2.09z" />
-   </svg>
- ),
- download: (
-   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-   </svg>
- ),
- loader: (
-   <svg className="animate-spin h-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-   </svg>
- ),
- camera: (
-   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-   </svg>
- )
+ trophy: <Trophy className="w-8 h-8" />,
+ crown: <Crown className="w-12 h-12" />,
+ medal: <Medal className="w-10 h-10" />,
+ star: <Star className="w-6 h-6" />,
+ sparkles: <Sparkles className="w-8 h-8" />,
+ petanque: <Petanque className="w-10 h-10" />,
+ share: <Download className="w-6 h-6" />,
+ download: <Download className="w-6 h-6" />,
+ loader: <Loader className="h-8 w-8" />,
+ camera: <Download className="w-6 h-6" />
 }
 
 interface Team {

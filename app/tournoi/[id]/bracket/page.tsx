@@ -4,63 +4,19 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import type { Joueur } from '@/lib/types'
+import { Trophy, Medal, Petanque, Crown, Arrow, Loader, Flag, Users, PlayLarge } from '@/components/Icons'
 
 // Icônes premium
 const Icons = {
- trophy: (
-   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-   </svg>
- ),
- medal: (
-   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-   </svg>
- ),
- petanque: (
-   <svg className="w-8 h-8" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-     <circle cx="32" cy="32" r="28" fill="url(#metalGradient)" stroke="currentColor" strokeWidth="2"/>
-     <circle cx="26" cy="24" r="3" fill="white" opacity="0.8"/>
-     <circle cx="36" cy="36" r="2" fill="currentColor" opacity="0.3"/>
-     <defs>
-       <radialGradient id="metalGradient">
-         <stop offset="0%" stopColor="#a8b2c3"/>
-         <stop offset="100%" stopColor="#8e9aaf"/>
-       </radialGradient>
-     </defs>
-   </svg>
- ),
- crown: (
-   <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-     <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm2.86-2h8.28l.5-3.5l-2.14-1.5L12 13l-2.5-4l-2.14 1.5l.5 3.5zM19 19H5v2h14v-2z"/>
-   </svg>
- ),
- arrow: (
-   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-   </svg>
- ),
- loader: (
-   <svg className="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-   </svg>
- ),
- flag: (
-   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18M3 3l9 4.5L21 3v11l-9 4.5L3 14" />
-   </svg>
- ),
- users: (
-   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-   </svg>
- ),
- play: (
-   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-   </svg>
- )
+ trophy: <Trophy className="w-6 h-6" />,
+ medal: <Medal className="w-8 h-8" />,
+ petanque: <Petanque className="w-8 h-8" />,
+ crown: <Crown className="w-10 h-10" />,
+ arrow: <Arrow className="w-5 h-5" />,
+ loader: <Loader className="h-6 w-6" />,
+ flag: <Flag className="w-5 h-5" />,
+ users: <Users className="w-5 h-5" />,
+ play: <PlayLarge className="w-5 h-5" />
 }
 
 interface Team {
