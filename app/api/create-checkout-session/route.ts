@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
    // Utiliser le priceId fourni ou créer un prix temporaire (dev)
    let finalPriceId = priceId
 
-   if (!finalPriceId || finalPriceId === 'premium_lifetime') {
+   if (!finalPriceId || finalPriceId === 'premium_yearly') {
      // Créer le prix Premium (4,99€/an abonnement annuel) si pas de priceId
      // Note: En production, utiliser un Price ID fixe du Dashboard Stripe
      const price = await stripe.prices.create({
