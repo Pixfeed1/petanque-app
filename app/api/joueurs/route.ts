@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { queryMany, query } from '@/lib/db'
 import { SQLValue } from '@/lib/types'
+import { orgIdQuerySchema, validateRequest } from '@/lib/validations'
 
 // GET - Récupérer les joueurs d'une organisation
 export async function GET(request: NextRequest) {
@@ -14,14 +15,19 @@ export async function GET(request: NextRequest) {
 
     const { user } = authResult
     const { searchParams } = new URL(request.url)
-    const orgId = searchParams.get('org_id')
+
+    // Validation Zod des query params
+    const validation = validateRequest(orgIdQuerySchema, {
+      org_id: searchParams.get('org_id')
+    })
+    if (!validation.success) {
+      return apiError(validation.errors.join(', '), 400)
+    }
+
+    const { org_id: orgId } = validation.data
     const limit = parseInt(searchParams.get('limit') || '100')
     const offset = parseInt(searchParams.get('offset') || '0')
     const search = searchParams.get('search') || ''
-
-    if (!orgId) {
-      return apiError('org_id est requis', 400)
-    }
 
     const hasAccess = await checkOrgAccess(user.id, orgId)
     if (!hasAccess) {
@@ -58,11 +64,15 @@ export async function POST(request: NextRequest) {
     const { user } = authResult
     const body = await request.json()
 
-    const { org_id, name, email, phone, stats } = body
-
-    if (!org_id || !name) {
-      return apiError('Champs requis: org_id, name', 400)
+    // Validation Zod
+    const { createJoueurSchema } = await import('@/lib/validations')
+    const validation = validateRequest(createJoueurSchema, body)
+    if (!validation.success) {
+      return apiError(validation.errors.join(', '), 400)
     }
+
+    const { org_id, name, email, phone } = validation.data
+    const stats = (body as any).stats
 
     const hasAccess = await checkOrgAccess(user.id, org_id)
     if (!hasAccess) {

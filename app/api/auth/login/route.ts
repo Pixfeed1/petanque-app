@@ -3,29 +3,26 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { authenticateUser } from '@/lib/auth'
-import { apiError, apiSuccess, validateRequiredFields, parseJsonBody } from '@/lib/middleware'
-import cookie from 'cookie'
+import { apiError, apiSuccess, parseJsonBody } from '@/lib/middleware'
+import { loginSchema, validateRequest } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
   try {
     // Parse le body
-    const bodyResult = await parseJsonBody<{
-      email: string
-      password: string
-      rememberMe?: boolean
-    }>(request)
+    const bodyResult = await parseJsonBody(request)
 
     if ('error' in bodyResult) {
       return bodyResult.error
     }
 
-    const { email, password, rememberMe } = bodyResult.data
-
-    // Validation des champs requis
-    const validation = validateRequiredFields(bodyResult.data, ['email', 'password'])
-    if (validation) {
-      return validation
+    // Validation Zod
+    const validation = validateRequest(loginSchema, bodyResult.data)
+    if (!validation.success) {
+      return apiError(validation.errors.join(', '), 400)
     }
+
+    const { email, password } = validation.data
+    const rememberMe = (bodyResult.data as any).rememberMe
 
     // Authentification
     const session = await authenticateUser(email, password)

@@ -4,40 +4,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createUser, generateToken } from '@/lib/auth'
 import { query, transaction } from '@/lib/db'
-import { apiError, apiSuccess, validateRequiredFields, parseJsonBody } from '@/lib/middleware'
+import { apiError, apiSuccess, parseJsonBody } from '@/lib/middleware'
+import { signupSchema, validateRequest } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
   try {
     // Parse le body
-    const bodyResult = await parseJsonBody<{
-      email: string
-      password: string
-      fullName?: string
-      organizationName?: string
-    }>(request)
+    const bodyResult = await parseJsonBody(request)
 
     if ('error' in bodyResult) {
       return bodyResult.error
     }
 
-    const { email, password, fullName, organizationName } = bodyResult.data
-
-    // Validation des champs requis
-    const validation = validateRequiredFields(bodyResult.data, ['email', 'password'])
-    if (validation) {
-      return validation
+    // Validation Zod
+    const validation = validateRequest(signupSchema, bodyResult.data)
+    if (!validation.success) {
+      return apiError(validation.errors.join(', '), 400)
     }
 
-    // Validation du mot de passe
-    if (password.length < 6) {
-      return apiError('Le mot de passe doit contenir au moins 6 caractères', 400)
-    }
-
-    // Validation de l'email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return apiError('Adresse email invalide', 400)
-    }
+    const { email, password, fullName, organizationName } = validation.data
 
     // Transaction pour créer l'utilisateur ET son organisation
     const result = await transaction(async (client) => {

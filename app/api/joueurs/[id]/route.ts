@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
 import { query, queryOne } from '@/lib/db'
 import { SQLValue } from '@/lib/types'
+import { joueurIdSchema, updateJoueurSchema, validateRequest } from '@/lib/validations'
 
 // GET /api/joueurs/[id] - Récupérer un joueur par ID
 export async function GET(
@@ -13,6 +14,12 @@ export async function GET(
     if (authResult instanceof Response) return authResult
 
     const { id } = await params
+
+    // Validation Zod de l'ID
+    const validation = validateRequest(joueurIdSchema, { id })
+    if (!validation.success) {
+      return apiError(validation.errors.join(', '), 400)
+    }
 
     const joueur = await queryOne(
       'SELECT * FROM joueurs WHERE id = $1',
@@ -41,8 +48,22 @@ export async function PUT(
 
     const { id } = await params
 
+    // Validation Zod de l'ID
+    const idValidation = validateRequest(joueurIdSchema, { id })
+    if (!idValidation.success) {
+      return apiError(idValidation.errors.join(', '), 400)
+    }
+
     const body = await request.json()
-    const { name, gender, email, phone, stats } = body
+
+    // Validation Zod du body
+    const validation = validateRequest(updateJoueurSchema, body)
+    if (!validation.success) {
+      return apiError(validation.errors.join(', '), 400)
+    }
+
+    const { name, gender, email, phone } = validation.data
+    const stats = (body as any).stats
 
     // Vérifier que le joueur existe
     const joueur = await queryOne(
