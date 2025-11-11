@@ -5,8 +5,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authenticateUser } from '@/lib/auth'
 import { apiError, apiSuccess, parseJsonBody } from '@/lib/middleware'
 import { loginSchema, validateRequest } from '@/lib/validations'
+import { applyRateLimit, RATE_LIMITS, resetRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  // Rate limiting: 5 tentatives max par IP toutes les 15 minutes
+  const rateLimitResponse = applyRateLimit(request, 'login', RATE_LIMITS.login)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     // Parse le body
     const bodyResult = await parseJsonBody(request)
@@ -26,6 +31,9 @@ export async function POST(request: NextRequest) {
 
     // Authentification
     const session = await authenticateUser(email, password)
+
+    // Connexion réussie : réinitialiser le rate limit pour cet IP
+    resetRateLimit(request, 'login')
 
     // Durée du cookie (7 jours si rememberMe, sinon session)
     const maxAge = rememberMe ? 7 * 24 * 60 * 60 : undefined

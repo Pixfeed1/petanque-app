@@ -6,8 +6,13 @@ import { createUser, generateToken } from '@/lib/auth'
 import { query, transaction } from '@/lib/db'
 import { apiError, apiSuccess, parseJsonBody } from '@/lib/middleware'
 import { signupSchema, validateRequest } from '@/lib/validations'
+import { applyRateLimit, RATE_LIMITS, resetRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  // Rate limiting: 3 créations de compte max par IP toutes les 60 minutes
+  const rateLimitResponse = applyRateLimit(request, 'signup', RATE_LIMITS.signup)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     // Parse le body
     const bodyResult = await parseJsonBody(request)
@@ -64,6 +69,9 @@ export async function POST(request: NextRequest) {
         token
       }
     })
+
+    // Inscription réussie : réinitialiser le rate limit pour cet IP
+    resetRateLimit(request, 'signup')
 
     // Créer la réponse avec le cookie
     const response = apiSuccess({
