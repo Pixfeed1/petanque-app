@@ -135,17 +135,19 @@ Si `NEXT_PUBLIC_ADSENSE_CLIENT_ID` n'est pas défini, un placeholder s'affiche :
 
 ### Stratégies recommandées
 
-1. **Codes promo** : Offrir `-10%` pour inciter au passage Premium
-2. **A/B Testing** : Tester différents emplacements
+1. **Codes promo** : Offrir `-20%` sur le premier mois pour inciter à l'abonnement
+2. **A/B Testing** : Tester différents emplacements publicitaires
 3. **Analyse** : Suivre les revenus AdSense vs conversions Premium
+4. **Offre d'essai** : Envisager une période d'essai gratuite de 7 jours
 
 ### Objectifs
 
 | Métrique | Objectif |
 |----------|----------|
 | Taux de conversion free → premium | 5-10% |
-| RPM (Revenue per Mille) | €2-5 |
-| CTR moyen | 1-2% |
+| Taux de rétention annuel | 70-80% |
+| RPM AdSense (Revenue per Mille) | €2-5 |
+| CTR moyen AdSense | 1-2% |
 
 ## Support technique
 
@@ -183,14 +185,33 @@ AdSense met du temps à remplir les emplacements. Attendez quelques minutes et r
 
 ## Revenus estimés
 
-Basé sur les statistiques AdSense moyennes :
+Basé sur les statistiques moyennes :
+
+### Revenus publicitaires (AdSense)
 
 | Métrique | Valeur |
 |----------|--------|
 | Utilisateurs gratuits | 70% |
 | Pages vues / utilisateur / mois | 50 |
 | RPM moyen | €3 |
-| **Revenu mensuel pour 1000 utilisateurs actifs** | **€105** |
+| **Revenu mensuel AdSense (1000 utilisateurs actifs)** | **€105** |
+
+### Revenus abonnements Premium
+
+| Métrique | Valeur |
+|----------|--------|
+| Utilisateurs premium | 30% |
+| Prix abonnement annuel | €4.99 |
+| Taux de renouvellement | 80% |
+| **Revenu annuel Premium (1000 utilisateurs actifs)** | **€1,197** |
+| **Revenu mensuel Premium (1000 utilisateurs actifs)** | **€100** |
+
+### Total estimé
+
+Pour 1000 utilisateurs actifs :
+- Revenus publicitaires : **€105/mois**
+- Revenus premium : **€100/mois**
+- **Total : €205/mois** soit **€2,460/an**
 
 ## Prochaines étapes
 

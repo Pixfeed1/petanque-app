@@ -110,16 +110,20 @@ export async function POST(request: NextRequest) {
    let finalPriceId = priceId
 
    if (!finalPriceId || finalPriceId === 'premium_lifetime') {
-     // Créer le prix Premium (4,99€ achat unique) si pas de priceId
+     // Créer le prix Premium (4,99€/an abonnement annuel) si pas de priceId
      // Note: En production, utiliser un Price ID fixe du Dashboard Stripe
      const price = await stripe.prices.create({
        currency: 'eur',
        unit_amount: 499, // 4,99€ en centimes
+       recurring: {
+         interval: 'year', // Abonnement annuel
+         interval_count: 1
+       },
        product_data: {
          name: 'Tournoi Pétanque Premium',
-         description: 'Accès à vie sans publicité',
+         description: 'Abonnement annuel sans publicité',
          metadata: {
-           product_type: 'lifetime_access'
+           product_type: 'premium_yearly'
          }
        }
      })
@@ -133,7 +137,7 @@ export async function POST(request: NextRequest) {
    const session = await stripe.checkout.sessions.create({
      customer: customerId,
      payment_method_types: ['card'],
-     mode: 'payment', // Achat unique, pas subscription
+     mode: 'subscription', // Abonnement annuel
      line_items: [
        {
          price: finalPriceId,
@@ -144,20 +148,20 @@ export async function POST(request: NextRequest) {
      metadata: {
        user_id: userId,
        user_email: userEmail,
-       product: 'premium_lifetime'
+       product: 'premium_yearly'
      },
      // URLs de redirection après paiement
      success_url: `${baseUrl}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
      cancel_url: `${baseUrl}/checkout?payment=cancelled`,
-     
+
      // Options supplémentaires
      allow_promotion_codes: true, // Permettre les codes promo
      billing_address_collection: 'auto',
-     
+
      // Personnalisation
      custom_text: {
        submit: {
-         message: 'Paiement unique de 4,99€ - Accès à vie'
+         message: 'Abonnement annuel - 4,99€/an'
        }
      },
      
