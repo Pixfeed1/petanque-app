@@ -558,7 +558,7 @@ export default function CreateTournamentPage() {
               terrain: terrainNum,
               tour: tour,
               type: 'poule',
-              poule: pouleNum + 1,
+              poule: String.fromCharCode(65 + pouleNum),
               status: 'a_jouer'
             })
 

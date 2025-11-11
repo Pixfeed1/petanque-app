@@ -211,6 +211,7 @@ export default function MatchScorePage() {
         updated_at: string
         started_at?: string
         ended_at?: string
+        validated_at?: string
         winner_id?: string
       }> = {
         score_a: finalScoreA,

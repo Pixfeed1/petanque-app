@@ -16,7 +16,10 @@ export interface Joueur {
   name: string
   email?: string
   phone?: string
+  gender?: 'H' | 'F'
   stats?: Record<string, unknown>
+  created_at?: string
+  updated_at?: string
 }
 
 export interface Match {
@@ -24,6 +27,8 @@ export interface Match {
   tournoi_id: string
   equipe_a_id: string | null
   equipe_b_id: string | null
+  equipe_a?: Equipe | null
+  equipe_b?: Equipe | null
   score_a: number | null
   score_b: number | null
   status: MatchStatus
@@ -44,7 +49,7 @@ export interface Match {
   updated_at: string
 }
 
-export interface MatchWithEquipes extends Match {
+export interface MatchWithEquipes extends Omit<Match, 'equipe_a' | 'equipe_b'> {
   equipe_a: EquipeSimple | null
   equipe_b: EquipeSimple | null
   tournoi?: TournoiSimple | null
@@ -67,8 +72,8 @@ export interface TournoiSimple {
 }
 
 export interface Manche {
-  equipe_a: number
-  equipe_b: number
+  scoreA: number
+  scoreB: number
 }
 
 export type MatchStatus =
@@ -131,6 +136,7 @@ export interface Tournoi {
   terrains: number
   status: TournoiStatus
   max_points: number
+  settings?: Record<string, unknown>
   created_at: string
   updated_at: string
 }

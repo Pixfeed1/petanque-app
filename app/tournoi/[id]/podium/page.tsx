@@ -187,15 +187,15 @@ export default function PodiumPage() {
 
          matchesData.forEach((match: Match) => {
            if (match.equipe_a?.id === item.team.id) {
-             if (match.score_a > match.score_b) stats.victories++
+             if ((match.score_a ?? 0) > (match.score_b ?? 0)) stats.victories++
              else stats.defeats++
-             stats.pointsFor += match.score_a
-             stats.pointsAgainst += match.score_b
+             stats.pointsFor += match.score_a ?? 0
+             stats.pointsAgainst += match.score_b ?? 0
            } else if (match.equipe_b?.id === item.team.id) {
-             if (match.score_b > match.score_a) stats.victories++
+             if ((match.score_b ?? 0) > (match.score_a ?? 0)) stats.victories++
              else stats.defeats++
-             stats.pointsFor += match.score_b
-             stats.pointsAgainst += match.score_a
+             stats.pointsFor += match.score_b ?? 0
+             stats.pointsAgainst += match.score_a ?? 0
            }
          })
 

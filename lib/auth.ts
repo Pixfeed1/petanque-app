@@ -7,10 +7,10 @@ import { query, queryOne } from './db'
 import { SQLValue } from './types'
 
 // Clé secrète JWT (OBLIGATOIRE dans .env)
-const JWT_SECRET = process.env.JWT_SECRET
+const envSecret = process.env.JWT_SECRET
 
 // Validation critique : JWT_SECRET doit être défini et sécurisé
-if (!JWT_SECRET) {
+if (!envSecret) {
   throw new Error(
     '❌ ERREUR FATALE: JWT_SECRET n\'est pas défini.\n' +
     'Définissez JWT_SECRET dans votre fichier .env\n' +
@@ -18,12 +18,15 @@ if (!JWT_SECRET) {
   )
 }
 
-if (JWT_SECRET.length < 32) {
+if (envSecret.length < 32) {
   throw new Error(
     '❌ ERREUR FATALE: JWT_SECRET doit contenir au moins 32 caractères.\n' +
     'Utilisez une clé forte: openssl rand -base64 32'
   )
 }
+
+// Type assertion after validation - we know it's defined and non-empty
+const JWT_SECRET: string = envSecret
 
 const JWT_EXPIRES_IN = '7d' // Token valide 7 jours
 

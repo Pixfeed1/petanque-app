@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       `INSERT INTO joueurs (org_id, name, email, phone, stats, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
        RETURNING *`,
-      [org_id, name, email, phone, JSON.stringify(stats || {})]
+      [org_id, name, email ?? null, phone ?? null, JSON.stringify(stats || {})]
     )
 
     return apiSuccess(result.rows[0], 201)

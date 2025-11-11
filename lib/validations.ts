@@ -80,10 +80,10 @@ export const createTournoiSchema = z.object({
   date_fin: z.string().datetime('Date de fin invalide').optional().nullable(),
   lieu: z.string().max(200).optional().nullable(),
   mode: z.enum(['choisi', 'melee_tournante'], {
-    errorMap: () => ({ message: 'Mode invalide (choisi ou melee_tournante)' })
+    message: 'Mode invalide (choisi ou melee_tournante)'
   }),
   format: z.enum(['tete_a_tete', 'doublette', 'triplette'], {
-    errorMap: () => ({ message: 'Format invalide (tete_a_tete, doublette ou triplette)' })
+    message: 'Format invalide (tete_a_tete, doublette ou triplette)'
   }),
   terrains: z.number().int().min(1, 'Au moins 1 terrain requis').max(50),
   max_points: z.number().int().min(1, 'Au moins 1 point requis').max(50),
@@ -152,7 +152,7 @@ export const createCheckoutSessionSchema = z.object({
   userId: z.string().uuid('ID utilisateur invalide'),
   userEmail: z.string().email('Email invalide'),
   priceId: z.enum(['premium_yearly'], {
-    errorMap: () => ({ message: 'Plan invalide' })
+    message: 'Plan invalide'
   })
 })
 
@@ -190,7 +190,7 @@ export function validateRequest<T>(
     return { success: true, data: validated }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.errors.map(err => {
+      const errors = error.issues.map(err => {
         const path = err.path.join('.')
         return path ? `${path}: ${err.message}` : err.message
       })

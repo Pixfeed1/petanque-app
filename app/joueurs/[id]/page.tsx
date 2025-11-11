@@ -220,7 +220,7 @@ export default function PlayersManagementPage() {
       setEditingPlayer(player)
       setFormData({
         name: player.name,
-        gender: player.gender,
+        gender: player.gender ?? 'H',
         email: player.email || '',
         phone: player.phone || ''
       })

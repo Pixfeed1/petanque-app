@@ -66,6 +66,12 @@ interface Team {
   name: string
   joueur_ids?: string[]
   equipes_joueurs?: EquipeJoueur[]
+  victories?: number
+  defeats?: number
+  difference?: number
+  points?: number
+  pointsFor?: number
+  pointsAgainst?: number
 }
 
 interface PlayerWithStats extends Joueur {
@@ -188,7 +194,7 @@ export default function TournamentDetailPage() {
     Object.keys(poules).forEach(poule => {
       poules[poule].sort((a, b) => {
         // 1. Nombre de victoires (règle FIPJP)
-        if (b.victories !== a.victories) return b.victories - a.victories
+        if ((b.victories ?? 0) !== (a.victories ?? 0)) return (b.victories ?? 0) - (a.victories ?? 0)
 
         // 2. Confrontation directe (règle FIPJP)
         const directMatch = matches.find((m: Match) =>
@@ -204,10 +210,10 @@ export default function TournamentDetailPage() {
         }
 
         // 3. Différence de points (règle FIPJP)
-        if (b.difference !== a.difference) return b.difference - a.difference
+        if ((b.difference ?? 0) !== (a.difference ?? 0)) return (b.difference ?? 0) - (a.difference ?? 0)
 
         // 4. Nombre de points marqués (règle FIPJP complète)
-        return b.pointsFor - a.pointsFor
+        return (b.pointsFor ?? 0) - (a.pointsFor ?? 0)
       })
     })
 

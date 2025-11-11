@@ -55,7 +55,7 @@ export function getClientIP(request: NextRequest): string {
   }
 
   // Fallback: utiliser une IP fictive pour le développement local
-  return request.ip || '127.0.0.1'
+  return '127.0.0.1'
 }
 
 /**

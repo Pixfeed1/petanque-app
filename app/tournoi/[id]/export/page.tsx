@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
-import type { Match, Equipe, Joueur, EquipeJoueur } from '@/lib/types'
+import type { Equipe, Joueur, EquipeJoueur } from '@/lib/types'
 import { sanitizeForExcel, cleanControlCharacters } from '@/lib/sanitize'
 import { Download, Trophy, Users, Calendar, Loader, Flag, Chart, Petanque, Medal, Check, Grid, Settings } from '@/components/Icons'
 
@@ -62,13 +62,14 @@ interface Match {
  tour: number
  type?: 'poule' | 'elimination' | 'finale'
  poule?: string
+ manches_json?: Array<{ points: number, team: 'A' | 'B' }>
  menes?: Array<{ points: number, team: 'A' | 'B' }>
 }
 
 interface Player {
  id: string
  name: string
- gender: 'H' | 'F'
+ gender?: 'H' | 'F'
  email?: string
  phone?: string
 }
