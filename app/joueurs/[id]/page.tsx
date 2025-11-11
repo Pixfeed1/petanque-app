@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
+import type { Joueur } from '@/lib/types'
 
 // Icônes premium
 const Icons = {
@@ -131,21 +132,21 @@ export default function PlayersManagementPage() {
       })
 
       if (!response.ok) throw new Error('Erreur chargement joueurs')
-      let playersData: any[] = await response.json()
+      let playersData: Joueur[] = await response.json()
 
       // Trier par nom côté client
-      playersData = playersData.sort((a: any, b: any) => a.name.localeCompare(b.name))
+      playersData = playersData.sort((a: Joueur, b: Joueur) => a.name.localeCompare(b.name))
 
       if (playersData) {
         setPlayers(playersData)
-        
+
         // Calculer les stats
         setStats({
           total: playersData.length,
           hommes: playersData.filter(p => p.gender === 'H').length,
           femmes: playersData.filter(p => p.gender === 'F').length,
-          actifs: playersData.filter(p => 
-            p.equipes_joueurs?.some((ej: any) => 
+          actifs: playersData.filter(p =>
+            (p as any).equipes_joueurs?.some((ej: any) =>
               ej.equipe?.tournoi?.status === 'en_cours'
             )
           ).length
@@ -276,7 +277,7 @@ export default function PlayersManagementPage() {
     a.click()
   }
 
-  const openModal = (player?: any) => {
+  const openModal = (player?: Joueur) => {
     if (player) {
       setEditingPlayer(player)
       setFormData({
@@ -584,7 +585,7 @@ export default function PlayersManagementPage() {
 
                     <div className="flex items-center space-x-3">
                       {/* Tournois actifs */}
-                      {player.equipes_joueurs?.some((ej: any) => ej.equipe?.tournoi?.status === 'en_cours') && (
+                      {(player as any).equipes_joueurs?.some((ej: any) => ej.equipe?.tournoi?.status === 'en_cours') && (
                         <div className="flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
                           {Icons.trophy}
                           <span className="ml-1">Actif</span>

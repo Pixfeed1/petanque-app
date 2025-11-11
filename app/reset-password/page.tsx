@@ -60,8 +60,9 @@ function ResetPasswordForm() {
         router.push('/login')
       }, 2000)
 
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

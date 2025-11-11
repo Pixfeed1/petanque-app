@@ -141,8 +141,8 @@ export default function LoginPage() {
   }, [activeTab])
 
   // Traduction des erreurs Supabase
-  const getErrorMessage = (error: any) => {
-    const message = error?.message || ''
+  const getErrorMessage = (error: unknown) => {
+    const message = error instanceof Error ? error.message : ''
     if (message.includes('Invalid login')) return 'Email ou mot de passe incorrect'
     if (message.includes('User already registered')) return 'Cet email est déjà utilisé'
     if (message.includes('Password should be at least')) return 'Le mot de passe doit contenir au moins 6 caractères'
@@ -280,8 +280,9 @@ export default function LoginPage() {
 
       setActiveTab('login')
       setEmail('')
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
