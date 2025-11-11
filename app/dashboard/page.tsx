@@ -309,8 +309,8 @@ export default function Dashboard() {
                         className="w-full flex items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50 transition text-left"
                       >
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-gray-900">{tournoi.name}</h3>
-                          <p className="text-xs text-gray-500">{tournoi.format} · {tournoi.mode}</p>
+                          <h3 className="text-lg font-semibold text-gray-900">{tournoi.name}</h3>
+                          <p className="text-sm text-gray-500">{tournoi.format} · {tournoi.mode}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-gray-500">
@@ -393,8 +393,8 @@ export default function Dashboard() {
                       className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition text-left"
                     >
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-medium text-gray-900">{tournoi.name}</h3>
-                        <p className="text-xs text-gray-500">{tournoi.format}</p>
+                        <h3 className="text-lg font-semibold text-gray-900">{tournoi.name}</h3>
+                        <p className="text-sm text-gray-500">{tournoi.format}</p>
                       </div>
                     </button>
                   ))}
