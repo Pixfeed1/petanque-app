@@ -4,7 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
 import { loadStripe } from '@stripe/stripe-js'
 import { useDashboardData } from './hooks/useDashboardData'
@@ -30,6 +30,7 @@ const Icons = {
 
 export default function Dashboard() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, organization, loading: authLoading, signOut } = useAuth()
   const { loading, stats, tournois, recentMatches, refetch } = useDashboardData(organization?.id ? Number(organization.id) : undefined)
 
@@ -45,6 +46,16 @@ export default function Dashboard() {
       setUserPlan(organization.settings.plan)
     }
   }, [organization])
+
+  // Détecter le paramètre ?upgrade=true pour ouvrir automatiquement la modal de paiement
+  useEffect(() => {
+    const upgrade = searchParams.get('upgrade')
+    if (upgrade === 'true' && user && !authLoading) {
+      setShowUpgradeModal(true)
+      // Nettoyer l'URL après ouverture de la modal
+      router.replace('/dashboard', { scroll: false })
+    }
+  }, [searchParams, user, authLoading, router])
 
   // Raccourcis clavier
   useEffect(() => {
