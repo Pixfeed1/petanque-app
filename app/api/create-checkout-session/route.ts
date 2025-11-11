@@ -144,11 +144,19 @@ export async function POST(request: NextRequest) {
          quantity: 1
        }
      ],
-     // Métadonnées pour le webhook
+     // Métadonnées pour le webhook de session
      metadata: {
        user_id: userId,
        user_email: userEmail,
        product: 'premium_yearly'
+     },
+     // IMPORTANT: Métadonnées pour l'abonnement (pour les webhooks subscription.*)
+     subscription_data: {
+       metadata: {
+         user_id: userId,
+         user_email: userEmail,
+         product: 'premium_yearly'
+       }
      },
      // URLs de redirection après paiement
      success_url: `${baseUrl}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
