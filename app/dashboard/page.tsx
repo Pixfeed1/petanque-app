@@ -9,6 +9,7 @@ import { useAuth } from '../providers/AuthProvider'
 import { loadStripe } from '@stripe/stripe-js'
 import { useDashboardData } from './hooks/useDashboardData'
 import AdBanner from '@/components/AdBanner'
+import type { ActionItem } from '@/lib/types'
 
 const stripePromise = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
@@ -110,7 +111,7 @@ export default function Dashboard() {
   }, [router])
 
   // Actions intelligentes
-  const actionItems = tournois.reduce((actions: any[], tournoi) => {
+  const actionItems = tournois.reduce((actions: ActionItem[], tournoi) => {
     if (tournoi.status === 'preparation' && tournoi.nb_joueurs && tournoi.nb_joueurs % 2 !== 0) {
       actions.push({
         id: `odd-${tournoi.id}`,
@@ -118,6 +119,7 @@ export default function Dashboard() {
         title: 'Nombre impair',
         subtitle: tournoi.name,
         label: 'Corriger',
+        labelColor: 'red',
         url: `/tournoi/${tournoi.id}`
       })
     }

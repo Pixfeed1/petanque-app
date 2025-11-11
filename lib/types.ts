@@ -56,6 +56,11 @@ export interface EquipeSimple {
   joueur_ids: string[]
 }
 
+export interface EquipeJoueur {
+  joueur: Joueur
+  role: string
+}
+
 export interface TournoiSimple {
   id: string
   name: string
@@ -139,9 +144,164 @@ export type TournoiStatus =
 export interface User {
   id: string
   email: string
-  name?: string
+  full_name?: string | null
+  email_verified?: boolean
+  org_id?: string | null
+  metadata?: UserMetadata | null
   created_at?: string
   updated_at?: string
+  last_login_at?: string | null
+}
+
+export interface UserMetadata {
+  subscription?: {
+    status: 'free' | 'premium'
+    plan: 'free' | 'premium_yearly'
+    stripe_customer_id?: string
+    stripe_subscription_id?: string
+    premium_since?: string
+    current_period_end?: string
+  }
+  preferences?: {
+    theme?: 'light' | 'dark'
+    notifications?: boolean
+  }
+}
+
+// ============================================
+// ORGANISATIONS
+// ============================================
+
+export interface Organisation {
+  id: string
+  name: string
+  created_at: string
+  settings?: OrganisationSettings
+}
+
+export interface OrganisationSettings {
+  plan: 'free' | 'premium'
+  features?: {
+    max_tournois?: number
+    max_joueurs?: number
+    export_enabled?: boolean
+  }
+}
+
+// ============================================
+// DASHBOARD & STATS
+// ============================================
+
+export interface DashboardStats {
+  totalTournois: number
+  totalJoueurs: number
+  totalMatchs: number
+  tournoiEnCours: number
+  nouveauxTournois: number
+  nouveauxJoueurs: number
+  nouveauxMatchs: number
+}
+
+export interface ActionItem {
+  id: string
+  priority: 'high' | 'medium' | 'low'
+  title: string
+  subtitle: string
+  label: string
+  labelColor: string
+  url: string
+}
+
+export interface PlayerStats {
+  id: string
+  nom: string
+  prenom: string
+  victories: number
+  defeats: number
+  matchsJoues: number
+  points: number
+  pointsMarques: number
+  pointsEncaisses: number
+  difference: number
+  equipes: string[]
+}
+
+export interface EquipeWithStats extends Equipe {
+  victories: number
+  defeats: number
+  matchsJoues: number
+  points: number
+  pointsMarques: number
+  pointsEncaisses: number
+  difference: number
+}
+
+// ============================================
+// PAIEMENTS & STRIPE
+// ============================================
+
+export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'cancelled'
+
+export interface PaymentAttempt {
+  id: string
+  user_id: string
+  stripe_session_id: string
+  stripe_customer_id?: string | null
+  stripe_payment_intent?: string | null
+  stripe_subscription_id?: string | null
+  amount: number
+  currency: string
+  status: PaymentStatus
+  created_at: string
+  completed_at?: string | null
+}
+
+// ============================================
+// API RESPONSES
+// ============================================
+
+export interface ApiResponse<T = unknown> {
+  success: boolean
+  data?: T
+  error?: string
+  message?: string
+}
+
+export interface ApiError {
+  error: string
+  status: number
+  timestamp?: string
+  details?: unknown
+}
+
+// ============================================
+// HOOKS & STATE
+// ============================================
+
+export interface UseDashboardDataReturn {
+  loading: boolean
+  stats: DashboardStats
+  tournois: Tournoi[]
+  recentMatches: Match[]
+  refetch: () => Promise<void>
+}
+
+export interface UseAuthReturn {
+  user: User | null
+  organization: Organisation | null
+  loading: boolean
+  signOut: () => Promise<void>
+  refetch: () => Promise<void>
+}
+
+// ============================================
+// UTILITAIRES
+// ============================================
+
+export type Nullable<T> = T | null
+export type Optional<T> = T | undefined
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
 }
 
 // Types pour les paramètres SQL

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import AdBanner from '@/components/AdBanner'
+import type { Manche, EquipeJoueur, Joueur } from '@/lib/types'
 
 // Icônes premium pour la pétanque
 const Icons = {
@@ -156,7 +157,15 @@ interface Tournament {
 interface Team {
   id: string
   name: string
-  equipes_joueurs?: any[]
+  joueur_ids?: string[]
+  equipes_joueurs?: EquipeJoueur[]
+}
+
+interface PlayerWithStats extends Joueur {
+  victories: number
+  defeats: number
+  difference: number
+  points: number
 }
 
 interface Match {
@@ -173,7 +182,7 @@ interface Match {
   type?: 'poule' | 'elimination' | 'demi' | 'finale' | 'petite_finale'
   poule?: string
   round?: number
-  manches_json?: any
+  manches_json?: Manche[]
   started_at?: string
   ended_at?: string
   validated_at?: string
@@ -255,7 +264,7 @@ export default function TournamentDetailPage() {
 
   // Classement par poule optimisé
   const teamsByPoule = useMemo(() => {
-    const poules: { [key: string]: any[] } = {}
+    const poules: { [key: string]: Team[] } = {}
 
     teamsWithStats.forEach(team => {
       // Trouver la poule de cette équipe
@@ -275,7 +284,7 @@ export default function TournamentDetailPage() {
         if (b.victories !== a.victories) return b.victories - a.victories
 
         // 2. Confrontation directe (règle FIPJP)
-        const directMatch = matches.find((m: any) =>
+        const directMatch = matches.find((m: Match) =>
           m.status === 'termine' && m.poule === poule &&
           ((m.equipe_a?.id === a.id && m.equipe_b?.id === b.id) ||
            (m.equipe_a?.id === b.id && m.equipe_b?.id === a.id))
@@ -328,7 +337,7 @@ export default function TournamentDetailPage() {
 
         // Enrichir chaque équipe avec les détails des joueurs
         const enrichedTeams = await Promise.all(
-          teamsData.map(async (team: any) => {
+          teamsData.map(async (team: Team) => {
             if (team.joueur_ids && Array.isArray(team.joueur_ids) && team.joueur_ids.length > 0) {
               const joueursResponse = await fetch(`/api/equipes/${team.id}`, {
                 credentials: 'include'
@@ -337,7 +346,7 @@ export default function TournamentDetailPage() {
                 const enrichedTeam = await joueursResponse.json()
                 // Adapter la structure pour correspondre à l'ancienne structure Supabase
                 if (enrichedTeam.joueurs) {
-                  team.equipes_joueurs = enrichedTeam.joueurs.map((joueur: any) => ({
+                  team.equipes_joueurs = enrichedTeam.joueurs.map((joueur: Joueur) => ({
                     joueur: joueur,
                     role: 'joueur'
                   }))
@@ -406,24 +415,24 @@ export default function TournamentDetailPage() {
       const matchesData = await matchesResponse.json()
 
       // Calculer les stats de chaque joueur
-      const playerStats = joueurs.map((joueur: any) => {
+      const playerStats = joueurs.map((joueur: Joueur): PlayerWithStats => {
         let victories = 0
         let defeats = 0
         let pointsFor = 0
         let pointsAgainst = 0
 
         // Trouver toutes les équipes où ce joueur a joué
-        const playerTeams = equipesData.filter((eq: any) =>
+        const playerTeams = equipesData.filter((eq: Team) =>
           eq.joueur_ids && eq.joueur_ids.includes(joueur.id)
         )
 
         // Pour chaque équipe, compter les matchs terminés
-        playerTeams.forEach((team: any) => {
-          const teamMatches = matchesData.filter((m: any) =>
+        playerTeams.forEach((team: Team) => {
+          const teamMatches = matchesData.filter((m: Match) =>
             m.status === 'termine' && (m.equipe_a_id === team.id || m.equipe_b_id === team.id)
           )
 
-          teamMatches.forEach((match: any) => {
+          teamMatches.forEach((match: Match) => {
             if (match.equipe_a_id === team.id) {
               pointsFor += match.score_a || 0
               pointsAgainst += match.score_b || 0
@@ -448,7 +457,7 @@ export default function TournamentDetailPage() {
       })
 
       // Trier par nombre de victoires, puis différence, puis points totaux (règle FIPJP)
-      playerStats.sort((a: any, b: any) => {
+      playerStats.sort((a: PlayerWithStats, b: PlayerWithStats) => {
         if (b.victories !== a.victories) return b.victories - a.victories
         if (b.difference !== a.difference) return b.difference - a.difference
         return b.points - a.points
@@ -765,7 +774,7 @@ export default function TournamentDetailPage() {
       const allPlayers = await joueursResponse.json()
 
       // Filtrer pour obtenir seulement les joueurs du tournoi
-      const players = allPlayers.filter((p: any) =>
+      const players = allPlayers.filter((p: Joueur) =>
         tournament.settings.players.includes(p.id)
       )
 
@@ -796,8 +805,8 @@ export default function TournamentDetailPage() {
         }
       } else {
         // Si mixité OBLIGATOIRE : respecter H/F
-        const hommes = shuffled.filter((p: any) => p.gender === 'H')
-        const femmes = shuffled.filter((p: any) => p.gender === 'F')
+        const hommes = shuffled.filter((p: Joueur) => p.gender === 'H')
+        const femmes = shuffled.filter((p: Joueur) => p.gender === 'F')
 
         if (tournament.format === 'doublette') {
           // Pour doublette: 1H + 1F autant que possible

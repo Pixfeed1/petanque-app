@@ -205,18 +205,20 @@ export async function POST(request: NextRequest) {
      url: session.url
    })
 
- } catch (error: any) {
+ } catch (error: unknown) {
    console.error('Erreur création session Stripe:', error)
-   
+
    // Gestion des erreurs spécifiques Stripe
-   if (error.type === 'StripeCardError') {
+   const stripeError = error as { type?: string; message?: string }
+
+   if (stripeError.type === 'StripeCardError') {
      return NextResponse.json(
        { error: 'Erreur avec la carte bancaire' },
        { status: 400 }
      )
    }
-   
-   if (error.type === 'StripeInvalidRequestError') {
+
+   if (stripeError.type === 'StripeInvalidRequestError') {
      return NextResponse.json(
        { error: 'Configuration Stripe invalide' },
        { status: 400 }
@@ -225,9 +227,9 @@ export async function POST(request: NextRequest) {
 
    // Erreur générique
    return NextResponse.json(
-     { 
+     {
        error: 'Une erreur est survenue lors de la création du paiement',
-       details: error.message 
+       details: stripeError.message || 'Unknown error'
      },
      { status: 500 }
    )
@@ -321,7 +323,7 @@ export async function GET(request: NextRequest) {
      message: 'Paiement en attente ou échoué'
    })
 
- } catch (error: any) {
+ } catch (error: unknown) {
    console.error('Erreur vérification paiement:', error)
    return NextResponse.json(
      { error: 'Erreur lors de la vérification du paiement' },

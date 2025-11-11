@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
+import type { Manche } from '@/lib/types'
 
 // Icônes premium
 const Icons = {
@@ -218,7 +219,7 @@ export default function MatchScorePage() {
     }
   }
 
-  const finishMatch = async (finalScoreA: number, finalScoreB: number, allManches: any[]) => {
+  const finishMatch = async (finalScoreA: number, finalScoreB: number, allManches: Manche[]) => {
     setSaving(true)
     try {
       // Gestion des égalités - ne devrait pas arriver en pétanque normale
@@ -260,10 +261,19 @@ export default function MatchScorePage() {
     }
   }
 
-  const saveProgress = async (finalScoreA: number, finalScoreB: number, allManches: any[], isFinished: boolean) => {
+  const saveProgress = async (finalScoreA: number, finalScoreB: number, allManches: Manche[], isFinished: boolean) => {
     setSaving(true)
     try {
-      const updateData: any = {
+      const updateData: Partial<{
+        score_a: number
+        score_b: number
+        manches_json: Manche[]
+        status: string
+        updated_at: string
+        started_at?: string
+        ended_at?: string
+        winner_id?: string
+      }> = {
         score_a: finalScoreA,
         score_b: finalScoreB,
         manches_json: allManches,

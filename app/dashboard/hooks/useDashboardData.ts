@@ -2,6 +2,7 @@
 // Hook personnalisé pour gérer toutes les données du dashboard
 
 import { useState, useEffect } from 'react'
+import type { Joueur } from '@/lib/types'
 
 export interface DashboardStats {
   totalTournois: number
@@ -100,7 +101,7 @@ export function useDashboardData(organizationId: number | undefined) {
         const lastMonth = new Date()
         lastMonth.setMonth(lastMonth.getMonth() - 1)
         const recentPlayers = joueursData.filter(
-          (j: any) => new Date(j.created_at) > lastMonth
+          (j: Joueur) => j.created_at && new Date(j.created_at) > lastMonth
         ).length
 
         setStats(prev => ({
