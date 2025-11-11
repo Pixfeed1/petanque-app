@@ -217,18 +217,18 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
  * Gère un paiement réussi (renouvellement)
  */
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
-  if (!invoice.subscription) {
+  const subscriptionId = (invoice as any).subscription
+
+  if (!subscriptionId) {
     return // Pas un abonnement
   }
-
-  const subscriptionId = invoice.subscription as string
 
   console.log(`Paiement réussi pour l'abonnement ${subscriptionId}`)
 
   try {
     // Récupérer l'abonnement pour obtenir le user_id
     if (!stripe) return
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId as string)
 
     if (subscription.metadata.user_id) {
       // Enregistrer le paiement dans la base de données
@@ -242,7 +242,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
           subscription.metadata.user_id,
           invoice.id,
           invoice.customer as string,
-          invoice.amount_paid,
+          (invoice as any).amount_paid || 0,
           invoice.currency,
           'completed'
         ]
@@ -259,17 +259,17 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
  * Gère un échec de paiement
  */
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
-  if (!invoice.subscription) {
+  const subscriptionId = (invoice as any).subscription
+
+  if (!subscriptionId) {
     return // Pas un abonnement
   }
-
-  const subscriptionId = invoice.subscription as string
 
   console.log(`⚠️ Paiement échoué pour l'abonnement ${subscriptionId}`)
 
   try {
     if (!stripe) return
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId as string)
 
     if (subscription.metadata.user_id) {
       // Enregistrer l'échec de paiement
@@ -281,7 +281,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
           subscription.metadata.user_id,
           invoice.id,
           invoice.customer as string,
-          invoice.amount_due,
+          (invoice as any).amount_due || 0,
           invoice.currency,
           'failed'
         ]
