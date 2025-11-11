@@ -318,13 +318,18 @@ export default function LoginPage() {
       <div className="relative z-10 min-h-screen flex flex-col justify-center items-center px-4 py-12">
         {/* Logo et titre */}
         <div className={`text-center mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-          <div className="flex items-center justify-center mb-4">
-            <div className="relative">
-              {Icons.boule}
-              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+          <button
+            onClick={() => router.push('/')}
+            className="flex flex-col items-center justify-center mb-4 group cursor-pointer"
+          >
+            <div className="flex items-center justify-center mb-4">
+              <div className="relative group-hover:scale-110 transition-transform duration-200">
+                {Icons.boule}
+                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              </div>
             </div>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Pétanque Pro</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">Pétanque Pro</h1>
+          </button>
           <p className="text-gray-600">
             {activeTab === 'login' && 'Gérez vos tournois comme un champion'}
             {activeTab === 'signup' && 'Créez votre compte gratuitement'}
