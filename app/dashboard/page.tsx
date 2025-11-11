@@ -134,7 +134,8 @@ export default function Dashboard() {
     await signOut()
   }
 
-  if (authLoading || loading) {
+  // Afficher un loader plein écran SEULEMENT au premier chargement
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -161,6 +162,12 @@ export default function Dashboard() {
                 </h1>
                 <p className="text-xs text-gray-500">{organization?.name || 'Mon organisation'}</p>
               </div>
+              {loading && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-600 rounded-full text-xs">
+                  <div className="w-3 h-3 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                  <span>Actualisation...</span>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center space-x-2">
