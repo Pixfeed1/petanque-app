@@ -94,8 +94,24 @@ echo -e "${YELLOW}🔄 Redémarrage de l'application...${NC}"
 
 # Trouver et tuer les processus Node existants
 echo "  Arrêt des processus Node en cours..."
-pkill -f "next start" || true
-sleep 2
+pkill -9 -f "next start" || true
+pkill -9 node || true
+sleep 3
+
+# Vérifier que le port 3000 est libre
+echo "  Vérification que le port 3000 est libre..."
+for i in {1..10}; do
+    if ! lsof -i:3000 >/dev/null 2>&1 && ! netstat -tuln 2>/dev/null | grep -q ":3000 "; then
+        echo "  ✅ Port 3000 libéré"
+        break
+    fi
+    if [ $i -eq 10 ]; then
+        echo -e "  ${RED}⚠️  Port 3000 toujours occupé, tentative de nettoyage...${NC}"
+        fuser -k 3000/tcp 2>/dev/null || true
+        sleep 2
+    fi
+    sleep 1
+done
 
 # Relancer l'application
 echo "  Démarrage de l'application..."
