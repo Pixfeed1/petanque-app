@@ -61,7 +61,7 @@ export default function AdBanner({
   const [adLoaded, setAdLoaded] = useState(false)
   const [adBlocked, setAdBlocked] = useState(false)
   const adContainerRef = useRef<HTMLDivElement>(null)
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   // Ne pas afficher pour les utilisateurs Premium
   if (showOnlyForFree && userPlan === 'premium') {
