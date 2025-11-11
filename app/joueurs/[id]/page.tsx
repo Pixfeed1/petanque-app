@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import type { Joueur } from '@/lib/types'
+import { sanitizeRowForCSV } from '@/lib/sanitize'
 import { Users, Plus, Search, Edit, Trash, Check, X, Email, Trophy, Sparkles, Download, Upload, Filter, Star, Loader, Phone } from '@/components/Icons'
 
 // Icônes premium
@@ -194,14 +195,15 @@ export default function PlayersManagementPage() {
   }
 
   const handleExport = () => {
-    const dataToExport = selectedPlayers.length > 0 
+    const dataToExport = selectedPlayers.length > 0
       ? players.filter(p => selectedPlayers.includes(p.id))
       : filteredPlayers
 
     const csv = [
       ['Nom', 'Genre', 'Email', 'Téléphone'].join(','),
-      ...dataToExport.map(p => 
-        [p.name, p.gender, p.email || '', p.phone || ''].join(',')
+      ...dataToExport.map(p =>
+        // ✅ Sanitization pour prévenir CSV Formula Injection
+        sanitizeRowForCSV([p.name, p.gender, p.email || '', p.phone || '']).join(',')
       )
     ].join('\n')
 

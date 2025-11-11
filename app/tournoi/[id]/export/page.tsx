@@ -6,6 +6,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import type { Match, Equipe, Joueur, EquipeJoueur } from '@/lib/types'
+import { sanitizeForExcel, cleanControlCharacters } from '@/lib/sanitize'
 import { Download, Trophy, Users, Calendar, Loader, Flag, Chart, Petanque, Medal, Check, Grid, Settings } from '@/components/Icons'
 
 // Icônes premium
@@ -325,18 +326,19 @@ export default function ExportTournamentPage() {
      // En-tête avec logo pétanque
      pdf.setFillColor(74, 124, 89)
      pdf.rect(0, 0, 210, 40, 'F')
-     
+
      pdf.setTextColor(255, 255, 255)
      pdf.setFontSize(24)
      pdf.setFont('helvetica', 'bold')
-     pdf.text(tournament?.name || 'Tournoi', 105, 20, { align: 'center' })
-     
+     // ✅ Nettoyage des caractères de contrôle pour PDF
+     pdf.text(cleanControlCharacters(tournament?.name) || 'Tournoi', 105, 20, { align: 'center' })
+
      pdf.setFontSize(12)
      pdf.setFont('helvetica', 'normal')
      const modeText = tournament?.mode === 'choisi' ? 'Équipes choisies' :
                       tournament?.mode === 'melee_fixe' ? 'Mêlée fixe' : 'Mêlée tournante'
      pdf.text(`${modeText} - ${tournament?.format === 'doublette' ? 'Doublette' : 'Triplette'}`, 105, 30, { align: 'center' })
-     
+
      pdf.setTextColor(0, 0, 0)
      yPosition = 50
 
@@ -669,10 +671,10 @@ export default function ExportTournamentPage() {
        const playersData = [
          ['Nom', 'Genre', 'Email', 'Téléphone'],
          ...players.map(p => [
-           p.name,
+           sanitizeForExcel(p.name),  // ✅ Protection CSV Formula Injection
            p.gender === 'H' ? 'Homme' : 'Femme',
-           p.email || '',
-           p.phone || ''
+           sanitizeForExcel(p.email),  // ✅ Protection CSV Formula Injection
+           sanitizeForExcel(p.phone)   // ✅ Protection CSV Formula Injection
          ])
        ]
        const wsPlayers = XLSX.utils.aoa_to_sheet(playersData)
@@ -683,8 +685,8 @@ export default function ExportTournamentPage() {
          ['Équipe', 'Joueur', 'Genre', 'Rôle'],
          ...teams.flatMap(team =>
            team.players?.map((p: Joueur) => [
-             team.name,
-             p.name,
+             sanitizeForExcel(team.name),  // ✅ Protection CSV Formula Injection
+             sanitizeForExcel(p.name),     // ✅ Protection CSV Formula Injection
              p.gender === 'H' ? 'Homme' : 'Femme',
              (p as any).role === 'capitaine' ? 'Capitaine' : 'Joueur'
            ]) || []
@@ -701,11 +703,11 @@ export default function ExportTournamentPage() {
          ...matches.map(m => [
            m.tour,
            m.type === 'poule' ? 'Poule' : m.type === 'finale' ? 'Finale' : 'Élimination',
-           m.poule || '',
-           m.equipe_a?.name || '',
+           sanitizeForExcel(m.poule),          // ✅ Protection CSV Formula Injection
+           sanitizeForExcel(m.equipe_a?.name), // ✅ Protection CSV Formula Injection
            m.score_a || '',
            m.score_b || '',
-           m.equipe_b?.name || '',
+           sanitizeForExcel(m.equipe_b?.name), // ✅ Protection CSV Formula Injection
            m.terrain || '',
            m.status === 'termine' ? 'Terminé' : m.status === 'en_cours' ? 'En cours' : 'À jouer'
          ])
@@ -722,7 +724,7 @@ export default function ExportTournamentPage() {
            ['Position', 'Joueur', 'Genre', 'Joués', 'Victoires', 'Défaites', 'Points Pour', 'Points Contre', 'Différence', 'Taux Victoire', 'Points'],
            ...rankings.map((player, index) => [
              index + 1,
-             player.name,
+             sanitizeForExcel(player.name), // ✅ Protection CSV Formula Injection
              player.gender === 'H' ? 'Homme' : 'Femme',
              player.played || 0,
              player.victories || 0,
@@ -742,7 +744,7 @@ export default function ExportTournamentPage() {
            ['Position', 'Équipe', 'Joués', 'Victoires', 'Défaites', 'Points Pour', 'Points Contre', 'Différence', 'Points'],
            ...rankings.map((team, index) => [
              index + 1,
-             team.name,
+             sanitizeForExcel(team.name), // ✅ Protection CSV Formula Injection
              team.played || 0,
              team.victories || 0,
              team.defeats || 0,
