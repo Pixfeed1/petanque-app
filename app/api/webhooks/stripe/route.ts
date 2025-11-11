@@ -108,6 +108,11 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
   const isActive = subscription.status === 'active' || subscription.status === 'trialing'
   const plan = isActive ? 'premium' : 'free'
 
+  // current_period_end peut ne pas être présent sur tous les types d'abonnement
+  const currentPeriodEnd = (subscription as any).current_period_end
+    ? new Date((subscription as any).current_period_end * 1000).toISOString()
+    : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 an par défaut
+
   console.log(`Abonnement ${subscription.status} pour user ${userId} → ${plan}`)
 
   try {
@@ -136,7 +141,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         JSON.stringify(plan),
         JSON.stringify(plan === 'premium' ? 'premium_yearly' : 'free'),
         JSON.stringify(subscription.id),
-        JSON.stringify(new Date(subscription.current_period_end * 1000).toISOString()),
+        JSON.stringify(currentPeriodEnd),
         userId
       ]
     )
