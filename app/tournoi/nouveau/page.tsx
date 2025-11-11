@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
+import type { Tournoi, Joueur } from '@/lib/types'
 
 // Icônes premium améliorées
 const Icons = {
@@ -475,7 +476,7 @@ export default function CreateTournamentPage() {
   }
 
   // Fonction corrigée pour créer les équipes avec mixité
-  const createTeamsWithMixity = async (tournoi: any, allPlayerIds: string[], updatedPlayersList: any[]) => {
+  const createTeamsWithMixity = async (tournoi: Tournoi, allPlayerIds: string[], updatedPlayersList: Joueur[]) => {
     const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
     const nbEquipes = Math.floor(allPlayerIds.length / playersPerTeam)
     
@@ -598,7 +599,7 @@ export default function CreateTournamentPage() {
   }
 
   // Fonction pour créer les matchs de poules
-  const createPoolMatches = async (tournoi: any) => {
+  const createPoolMatches = async (tournoi: Tournoi) => {
     // Récupérer toutes les équipes créées
     try {
       const response = await fetch(`/api/equipes?tournoi_id=${tournoi.id}`, {
@@ -621,7 +622,16 @@ export default function CreateTournamentPage() {
 
       let globalMatchNum = 0
       let matchesCreated = 0
-      const matchesToCreate: any[] = []
+      const matchesToCreate: Array<{
+        tournoi_id: string
+        equipe_a_id: string
+        equipe_b_id: string
+        status: string
+        tour: number
+        terrain: number | null
+        type: string
+        poule: string | null
+      }> = []
 
       for (let pouleNum = 0; pouleNum < nbPoules; pouleNum++) {
         const pouleStart = pouleNum * equipesParPoule

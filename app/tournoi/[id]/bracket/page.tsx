@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
+import type { Joueur } from '@/lib/types'
 
 // Icônes premium
 const Icons = {
@@ -65,7 +66,7 @@ const Icons = {
 interface Team {
  id: string
  name: string
- players?: any[]
+ players?: Joueur[]
 }
 
 interface Match {

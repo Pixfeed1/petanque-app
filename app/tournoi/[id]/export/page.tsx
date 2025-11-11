@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
+import type { Match, Equipe, Joueur, EquipeJoueur } from '@/lib/types'
 
 // Icônes premium
 const Icons = {
@@ -115,7 +116,7 @@ interface Tournament {
 interface Team {
  id: string
  name: string
- players: any[]
+ players: Joueur[]
 }
 
 interface Match {
@@ -185,7 +186,7 @@ export default function ExportTournamentPage() {
 
        // Enrichir chaque équipe avec les joueurs
        teamsData = await Promise.all(
-         teamsData.map(async (team: any) => {
+         teamsData.map(async (team: Equipe) => {
            if (team.joueur_ids && team.joueur_ids.length > 0) {
              const enrichedResponse = await fetch(`/api/equipes/${team.id}`, {
                credentials: 'include'
@@ -193,7 +194,7 @@ export default function ExportTournamentPage() {
              if (enrichedResponse.ok) {
                const enrichedTeam = await enrichedResponse.json()
                if (enrichedTeam.joueurs) {
-                 team.equipes_joueurs = enrichedTeam.joueurs.map((j: any) => ({
+                 (team as any).equipes_joueurs = enrichedTeam.joueurs.map((j: Joueur) => ({
                    joueur: j,
                    role: 'joueur'
                  }))
@@ -208,8 +209,8 @@ export default function ExportTournamentPage() {
 
        // Extraire tous les joueurs uniques
        const allPlayers = new Set<Player>()
-       teamsData?.forEach((team: any) => {
-         team.equipes_joueurs?.forEach((ej: any) => {
+       teamsData?.forEach((team: Equipe) => {
+         (team as any).equipes_joueurs?.forEach((ej: EquipeJoueur) => {
            if (ej.joueur) {
              allPlayers.add(ej.joueur)
            }
@@ -225,7 +226,7 @@ export default function ExportTournamentPage() {
        const matchesData = await matchesResponse.json()
 
        // Transformer manches_json en menes pour cohérence
-       const matchesWithMenes = matchesData?.map((match: any) => ({
+       const matchesWithMenes = matchesData?.map((match: Match) => ({
          ...match,
          menes: match.manches_json || []
        })) || []
@@ -316,7 +317,7 @@ export default function ExportTournamentPage() {
 
    matches.filter(m => m.status === 'termine').forEach(match => {
      // Joueurs équipe A
-     match.equipe_a?.players?.forEach((player: any) => {
+     match.equipe_a?.players?.forEach((player: Joueur) => {
        if (!player) return
 
        const stats = playerStats.get(player.id) || {
@@ -341,7 +342,7 @@ export default function ExportTournamentPage() {
      })
 
      // Joueurs équipe B
-     match.equipe_b?.players?.forEach((player: any) => {
+     match.equipe_b?.players?.forEach((player: Joueur) => {
        if (!player) return
 
        const stats = playerStats.get(player.id) || {
@@ -469,10 +470,10 @@ export default function ExportTournamentPage() {
 
          pdf.setFontSize(10)
          pdf.setFont('helvetica', 'normal')
-         team.players?.forEach((player: any) => {
-           const role = player.role === 'capitaine' ? ' (C)' : ''
-           const gender = player.joueur?.gender === 'H' ? '♂' : '♀'
-           pdf.text(`   ${gender} ${player.joueur?.name}${role}`, 25, yPosition)
+         team.players?.forEach((player: Joueur) => {
+           const role = (player as any).role === 'capitaine' ? ' (C)' : ''
+           const gender = player.gender === 'H' ? '♂' : '♀'
+           pdf.text(`   ${gender} ${player.name}${role}`, 25, yPosition)
            yPosition += 5
          })
          yPosition += 3
@@ -749,12 +750,12 @@ export default function ExportTournamentPage() {
        // Export équipes
        const teamsData = [
          ['Équipe', 'Joueur', 'Genre', 'Rôle'],
-         ...teams.flatMap(team => 
-           team.players?.map((p: any) => [
+         ...teams.flatMap(team =>
+           team.players?.map((p: Joueur) => [
              team.name,
-             p.joueur?.name,
-             p.joueur?.gender === 'H' ? 'Homme' : 'Femme',
-             p.role === 'capitaine' ? 'Capitaine' : 'Joueur'
+             p.name,
+             p.gender === 'H' ? 'Homme' : 'Femme',
+             (p as any).role === 'capitaine' ? 'Capitaine' : 'Joueur'
            ]) || []
          )
        ]

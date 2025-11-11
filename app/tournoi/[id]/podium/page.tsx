@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import confetti from 'canvas-confetti'
+import type { Match, Equipe, Joueur } from '@/lib/types'
 
 // Icônes premium
 const Icons = {
@@ -71,7 +72,7 @@ const Icons = {
 interface Team {
  id: string
  name: string
- players?: any[]
+ players?: Joueur[]
 }
 
 interface PodiumTeam {
@@ -84,6 +85,13 @@ interface PodiumTeam {
    pointsFor: number
    pointsAgainst: number
  }
+}
+
+interface TeamClassement {
+ team: Equipe
+ victories: number
+ difference: number
+ pointsFor: number
 }
 
 export default function PodiumPage() {
@@ -120,8 +128,8 @@ export default function PodiumPage() {
      const allMatches = await matchesResponse.json()
 
      // Trouver la finale et la petite finale
-     const finaleData = allMatches.find((m: any) => m.type === 'finale')
-     const petiteFinaleData = allMatches.find((m: any) => m.type === 'petite_finale')
+     const finaleData = allMatches.find((m: Match) => m.type === 'finale')
+     const petiteFinaleData = allMatches.find((m: Match) => m.type === 'petite_finale')
 
      // Construire le podium
      const podiumData: PodiumTeam[] = []
@@ -151,33 +159,33 @@ export default function PodiumPage() {
        const equipesResponse = await fetch(`/api/equipes?tournoi_id=${params.id}`, { credentials: 'include' })
        if (equipesResponse.ok) {
          const equipesData = await equipesResponse.json()
-         const classement = equipesData.map((team: any) => {
-           const teamMatches = allMatches.filter((m: any) =>
+         const classement: TeamClassement[] = equipesData.map((team: Equipe) => {
+           const teamMatches = allMatches.filter((m: Match) =>
              m.status === 'termine' && m.type === 'poule' &&
-             (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id)
+             (m.equipe_a_id === team.id || m.equipe_b_id === team.id)
            )
            let victories = 0, pointsFor = 0, pointsAgainst = 0
-           teamMatches.forEach((m: any) => {
-             if (m.equipe_a?.id === team.id) {
-               if (m.score_a > m.score_b) victories++
+           teamMatches.forEach((m: Match) => {
+             if (m.equipe_a_id === team.id) {
+               if ((m.score_a ?? 0) > (m.score_b ?? 0)) victories++
                pointsFor += m.score_a || 0
                pointsAgainst += m.score_b || 0
-             } else if (m.equipe_b?.id === team.id) {
-               if (m.score_b > m.score_a) victories++
+             } else if (m.equipe_b_id === team.id) {
+               if ((m.score_b ?? 0) > (m.score_a ?? 0)) victories++
                pointsFor += m.score_b || 0
                pointsAgainst += m.score_a || 0
              }
            })
            return { team, victories, difference: pointsFor - pointsAgainst, pointsFor }
-         }).sort((a: any, b: any) => {
+         }).sort((a: TeamClassement, b: TeamClassement) => {
            // 1. Nombre de victoires (règle FIPJP)
            if (b.victories !== a.victories) return b.victories - a.victories
 
            // 2. Confrontation directe (règle FIPJP)
-           const directMatch = allMatches.find((m: any) =>
+           const directMatch = allMatches.find((m: Match) =>
              m.status === 'termine' && m.type === 'poule' &&
-             ((m.equipe_a?.id === a.team.id && m.equipe_b?.id === b.team.id) ||
-              (m.equipe_a?.id === b.team.id && m.equipe_b?.id === a.team.id))
+             ((m.equipe_a_id === a.team.id && m.equipe_b_id === b.team.id) ||
+              (m.equipe_a_id === b.team.id && m.equipe_b_id === a.team.id))
            )
            if (directMatch) {
              const aWon = (directMatch.equipe_a?.id === a.team.id && directMatch.score_a > directMatch.score_b) ||
@@ -213,9 +221,9 @@ export default function PodiumPage() {
      for (const item of podiumData) {
        if (!item.team?.id) continue // Sécurité
        // Filtrer les matchs terminés pour cette équipe
-       const matchesData = allMatches.filter((match: any) =>
+       const matchesData = allMatches.filter((match: Match) =>
          match.status === 'termine' &&
-         (match.equipe_a?.id === item.team.id || match.equipe_b?.id === item.team.id)
+         (match.equipe_a_id === item.team.id || match.equipe_b_id === item.team.id)
        )
 
        if (matchesData.length > 0) {
@@ -226,7 +234,7 @@ export default function PodiumPage() {
            pointsAgainst: 0
          }
 
-         matchesData.forEach((match: any) => {
+         matchesData.forEach((match: Match) => {
            if (match.equipe_a?.id === item.team.id) {
              if (match.score_a > match.score_b) stats.victories++
              else stats.defeats++
@@ -280,7 +288,7 @@ export default function PodiumPage() {
      return Math.random() * (max - min) + min
    }
 
-   const interval: any = setInterval(function() {
+   const interval: NodeJS.Timeout = setInterval(function() {
      const timeLeft = animationEnd - Date.now()
 
      if (timeLeft <= 0) {
