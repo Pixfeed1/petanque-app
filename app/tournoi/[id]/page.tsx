@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
+import AdBanner from '@/components/AdBanner'
 
 // Icônes premium pour la pétanque
 const Icons = {
@@ -198,10 +199,18 @@ export default function TournamentDetailPage() {
   const [showStartModal, setShowStartModal] = useState(false)
   const [showTeamFormation, setShowTeamFormation] = useState(false)
   const [refreshingClassement, setRefreshingClassement] = useState(false)
+  const [userPlan, setUserPlan] = useState('free')
 
   // État pour la mêlée tournante
   const [currentRotation, setCurrentRotation] = useState(1)
   const [individualRankings, setIndividualRankings] = useState<any[]>([])
+
+  // Récupérer le plan de l'utilisateur
+  useEffect(() => {
+    if (organization?.settings?.plan && typeof organization.settings.plan === 'string') {
+      setUserPlan(organization.settings.plan)
+    }
+  }, [organization])
 
   // Calcul optimisé du classement avec useMemo
   const teamsWithStats = useMemo(() => {
@@ -1128,6 +1137,15 @@ export default function TournamentDetailPage() {
           </div>
 
           <div className="p-6">
+            {/* Publicité - Uniquement pour les utilisateurs gratuits */}
+            <div className="mb-6">
+              <AdBanner
+                variant="responsive"
+                userPlan={userPlan}
+                showOnlyForFree={true}
+              />
+            </div>
+
             {/* Vue d'ensemble */}
             {activeTab === 'vue' && (
               <div className="space-y-6">

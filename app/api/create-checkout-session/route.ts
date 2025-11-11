@@ -106,18 +106,25 @@ export async function POST(request: NextRequest) {
      )
    }
 
-   // Créer le prix Premium (4,99€ achat unique)
-   // Note: En production, créer ce prix dans le Dashboard Stripe et utiliser son ID
-   const price = await stripe.prices.create({
-     currency: 'eur',
-     unit_amount: 499, // 4,99€ en centimes
-     product_data: {
-       name: 'Tournoi Pétanque Premium',
-       metadata: {
-         product_type: 'lifetime_access'
+   // Utiliser le priceId fourni ou créer un prix temporaire (dev)
+   let finalPriceId = priceId
+
+   if (!finalPriceId || finalPriceId === 'premium_lifetime') {
+     // Créer le prix Premium (4,99€ achat unique) si pas de priceId
+     // Note: En production, utiliser un Price ID fixe du Dashboard Stripe
+     const price = await stripe.prices.create({
+       currency: 'eur',
+       unit_amount: 499, // 4,99€ en centimes
+       product_data: {
+         name: 'Tournoi Pétanque Premium',
+         description: 'Accès à vie sans publicité',
+         metadata: {
+           product_type: 'lifetime_access'
+         }
        }
-     }
-   })
+     })
+     finalPriceId = price.id
+   }
 
    // URL de base pour les redirections
    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
@@ -129,7 +136,7 @@ export async function POST(request: NextRequest) {
      mode: 'payment', // Achat unique, pas subscription
      line_items: [
        {
-         price: price.id,
+         price: finalPriceId,
          quantity: 1
        }
      ],
@@ -262,6 +269,18 @@ export async function GET(request: NextRequest) {
           )
           WHERE id = $2`,
          [JSON.stringify(new Date().toISOString()), userId]
+       )
+
+       // Mettre à jour l'organisation en Premium (CRITIQUE pour le dashboard)
+       await query(
+         `UPDATE organisations
+          SET settings = jsonb_set(
+            COALESCE(settings, '{}'::jsonb),
+            '{plan}',
+            '"premium"'::jsonb
+          )
+          WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+         [userId]
        )
 
        // Mettre à jour l'enregistrement de paiement
