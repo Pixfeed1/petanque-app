@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { query } from '@/lib/db'
+import { createCheckoutSessionSchema, validateRequest } from '@/lib/validations'
 
 // Initialiser Stripe uniquement si la clé est disponible
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -23,20 +24,18 @@ export async function POST(request: NextRequest) {
 
    // Récupérer les données de la requête
    const body = await request.json()
-   const {
-     priceId,
-     userId,
-     userEmail,
-     mode = 'payment' // Achat unique par défaut
-   } = body
 
-   // Vérifier les paramètres requis
-   if (!userId || !userEmail) {
+   // Validation Zod
+   const validation = validateRequest(createCheckoutSessionSchema, body)
+   if (!validation.success) {
      return NextResponse.json(
-       { error: 'Utilisateur non authentifié' },
-       { status: 401 }
+       { error: validation.errors.join(', ') },
+       { status: 400 }
      )
    }
+
+   const { priceId, userId, userEmail } = validation.data
+   const mode = (body as any).mode || 'payment'
 
    // Si c'est le plan gratuit, pas besoin de Stripe
    if (!priceId) {

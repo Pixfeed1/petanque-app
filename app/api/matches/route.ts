@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
 import { queryMany, query, queryOne } from '@/lib/db'
 import { MatchRawDB, MatchWithEquipes } from '@/lib/types'
+import { tournoiIdQuerySchema, validateRequest } from '@/lib/validations'
 
 // GET - Récupérer les matches d'un tournoi
 export async function GET(request: NextRequest) {
@@ -13,11 +14,16 @@ export async function GET(request: NextRequest) {
     if (authResult instanceof Response) return authResult
 
     const { searchParams } = new URL(request.url)
-    const tournoiId = searchParams.get('tournoi_id')
 
-    if (!tournoiId) {
-      return apiError('tournoi_id est requis', 400)
+    // Validation Zod
+    const validation = validateRequest(tournoiIdQuerySchema, {
+      tournoi_id: searchParams.get('tournoi_id')
+    })
+    if (!validation.success) {
+      return apiError(validation.errors.join(', '), 400)
     }
+
+    const tournoiId = validation.data.tournoi_id
 
     const matchesRaw = await queryMany<MatchRawDB>(
       `SELECT m.*,
