@@ -120,8 +120,7 @@ export async function POST(request: NextRequest) {
          interval_count: 1
        },
        product_data: {
-         name: 'Tournoi Pétanque Premium',
-         description: 'Abonnement annuel sans publicité',
+         name: 'Tournoi Pétanque Premium - Abonnement Annuel',
          metadata: {
            product_type: 'premium_yearly'
          }
