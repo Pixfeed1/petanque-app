@@ -1032,8 +1032,8 @@ export default function TournamentDetailPage() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-2xl shadow-lg mb-6">
-          <div className="flex border-b">
+        <div className="mb-6">
+          <div className="flex border-b border-gray-200 bg-white/80 backdrop-blur-xl rounded-t-2xl">
             {[
               { id: 'vue', label: 'Vue d\'ensemble', icon: Icons.grid },
               { id: 'matchs', label: 'Matchs', icon: Icons.flag },
@@ -1058,9 +1058,8 @@ export default function TournamentDetailPage() {
             ))}
           </div>
 
-          <div className="p-6">
-            {/* Publicité - Uniquement pour les utilisateurs gratuits */}
-            <div className="mb-6">
+          {/* Publicité - Uniquement pour les utilisateurs gratuits */}
+          <div className="mt-6 mb-6">
               <AdBanner
                 variant="responsive"
                 userPlan={userPlan}
@@ -1552,7 +1551,6 @@ export default function TournamentDetailPage() {
                 </div>
               </div>
             )}
-          </div>
         </div>
       </div>
 
