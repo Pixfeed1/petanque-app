@@ -34,8 +34,13 @@ export async function POST(request: NextRequest) {
      )
    }
 
-   const { priceId, userId, userEmail } = validation.data
-   const mode = (body as any).mode || 'payment'
+   const { userId, userEmail } = validation.data
+   let priceId = validation.data.priceId
+
+   // Utiliser le STRIPE_PRICE_ID de l'env si disponible et aucun priceId fourni
+   if (!priceId && process.env.STRIPE_PRICE_ID) {
+     priceId = process.env.STRIPE_PRICE_ID
+   }
 
    // Si c'est le plan gratuit, pas besoin de Stripe
    if (!priceId) {
@@ -105,28 +110,8 @@ export async function POST(request: NextRequest) {
      )
    }
 
-   // Utiliser le priceId fourni ou créer un prix temporaire (dev)
-   let finalPriceId: string = priceId
-
-   if (!finalPriceId || finalPriceId === 'premium_yearly') {
-     // Créer le prix Premium (4,99€/an abonnement annuel) si pas de priceId
-     // Note: En production, utiliser un Price ID fixe du Dashboard Stripe
-     const price = await stripe.prices.create({
-       currency: 'eur',
-       unit_amount: 499, // 4,99€ en centimes
-       recurring: {
-         interval: 'year', // Abonnement annuel
-         interval_count: 1
-       },
-       product_data: {
-         name: 'Tournoi Pétanque Premium - Abonnement Annuel',
-         metadata: {
-           product_type: 'premium_yearly'
-         }
-       }
-     })
-     finalPriceId = price.id
-   }
+   // Utiliser le priceId (soit fourni, soit depuis STRIPE_PRICE_ID env)
+   const finalPriceId: string = priceId
 
    // URL de base pour les redirections
    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
@@ -146,14 +131,14 @@ export async function POST(request: NextRequest) {
      metadata: {
        user_id: userId,
        user_email: userEmail,
-       product: 'premium_yearly'
+       product: 'premium'
      },
      // IMPORTANT: Métadonnées pour l'abonnement (pour les webhooks subscription.*)
      subscription_data: {
        metadata: {
          user_id: userId,
          user_email: userEmail,
-         product: 'premium_yearly'
+         product: 'premium'
        }
      },
      // URLs de redirection après paiement
@@ -167,7 +152,7 @@ export async function POST(request: NextRequest) {
      // Personnalisation
      custom_text: {
        submit: {
-         message: 'Abonnement annuel - 4,99€/an'
+         message: 'Passer Premium'
        }
      },
      
@@ -187,7 +172,7 @@ export async function POST(request: NextRequest) {
      sessionId: session.id,
      userId,
      userEmail,
-     amount: '4.99€'
+     priceId: finalPriceId
    })
 
    // Créer un enregistrement de la tentative de paiement

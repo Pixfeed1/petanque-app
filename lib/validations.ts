@@ -4,6 +4,22 @@
 import { z } from 'zod'
 
 // ============================================
+// HELPERS: Validation UUID ou Integer
+// ============================================
+
+// Accepte UUID ou integer pour compatibilité avec DB legacy
+export const idSchema = z.string().refine((val) => {
+  // Accepte les UUID
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (uuidRegex.test(val)) return true
+
+  // Accepte les integers
+  if (/^\d+$/.test(val)) return true
+
+  return false
+}, 'ID invalide (UUID ou nombre attendu)')
+
+// ============================================
 // AUTHENTIFICATION
 // ============================================
 
@@ -37,7 +53,7 @@ export const createJoueurSchema = z.object({
   email: z.string().email('Email invalide').optional().nullable(),
   phone: z.string().max(20).optional().nullable(),
   gender: z.enum(['H', 'F']).optional().nullable(),
-  org_id: z.string().uuid('ID organisation invalide')
+  org_id: idSchema
 })
 
 export const updateJoueurSchema = z.object({
@@ -48,7 +64,7 @@ export const updateJoueurSchema = z.object({
 })
 
 export const joueurIdSchema = z.object({
-  id: z.string().uuid('ID joueur invalide')
+  id: idSchema
 })
 
 // ============================================
@@ -57,17 +73,17 @@ export const joueurIdSchema = z.object({
 
 export const createEquipeSchema = z.object({
   name: z.string().min(1, 'Le nom est obligatoire').max(100),
-  tournoi_id: z.string().uuid('ID tournoi invalide'),
-  joueur_ids: z.array(z.string().uuid()).min(1, 'Au moins un joueur requis')
+  tournoi_id: idSchema,
+  joueur_ids: z.array(idSchema).min(1, 'Au moins un joueur requis')
 })
 
 export const updateEquipeSchema = z.object({
   name: z.string().min(1, 'Le nom est obligatoire').max(100).optional(),
-  joueur_ids: z.array(z.string().uuid()).optional()
+  joueur_ids: z.array(idSchema).optional()
 })
 
 export const equipeIdSchema = z.object({
-  id: z.string().uuid('ID équipe invalide')
+  id: idSchema
 })
 
 // ============================================
@@ -87,7 +103,7 @@ export const createTournoiSchema = z.object({
   }),
   terrains: z.number().int().min(1, 'Au moins 1 terrain requis').max(50),
   max_points: z.number().int().min(1, 'Au moins 1 point requis').max(50),
-  org_id: z.string().uuid('ID organisation invalide')
+  org_id: idSchema
 })
 
 export const updateTournoiSchema = z.object({
@@ -100,7 +116,7 @@ export const updateTournoiSchema = z.object({
 })
 
 export const tournoiIdSchema = z.object({
-  id: z.string().uuid('ID tournoi invalide')
+  id: idSchema
 })
 
 // ============================================
@@ -116,9 +132,9 @@ export const mancheSchema = z.object({
 })
 
 export const createMatchSchema = z.object({
-  tournoi_id: z.string().uuid('ID tournoi invalide'),
-  equipe_a_id: z.string().uuid('ID équipe A invalide').nullable(),
-  equipe_b_id: z.string().uuid('ID équipe B invalide').nullable(),
+  tournoi_id: idSchema,
+  equipe_a_id: idSchema.nullable(),
+  equipe_b_id: idSchema.nullable(),
   tour: z.number().int().min(1),
   terrain: z.number().int().min(1).nullable(),
   type: matchTypeEnum,
@@ -135,13 +151,13 @@ export const updateMatchSchema = z.object({
   ended_at: z.string().datetime().optional().nullable(),
   validated_at: z.string().datetime().optional().nullable(),
   played_at: z.string().datetime().optional().nullable(),
-  proposed_by: z.string().uuid().optional().nullable(),
+  proposed_by: idSchema.optional().nullable(),
   proposed_at: z.string().datetime().optional().nullable(),
-  winner_id: z.string().uuid().optional().nullable()
+  winner_id: idSchema.optional().nullable()
 })
 
 export const matchIdSchema = z.object({
-  id: z.string().uuid('ID match invalide')
+  id: idSchema
 })
 
 // ============================================
@@ -149,9 +165,9 @@ export const matchIdSchema = z.object({
 // ============================================
 
 export const createCheckoutSessionSchema = z.object({
-  userId: z.string().uuid('ID utilisateur invalide'),
+  userId: idSchema,
   userEmail: z.string().email('Email invalide'),
-  priceId: z.enum(['premium_yearly']).nullable().optional()
+  priceId: z.string().optional().nullable()
 })
 
 export const verifyPaymentSchema = z.object({
@@ -163,11 +179,11 @@ export const verifyPaymentSchema = z.object({
 // ============================================
 
 export const orgIdQuerySchema = z.object({
-  org_id: z.string().uuid('ID organisation invalide')
+  org_id: idSchema
 })
 
 export const tournoiIdQuerySchema = z.object({
-  tournoi_id: z.string().uuid('ID tournoi invalide')
+  tournoi_id: idSchema
 })
 
 export const paginationSchema = z.object({
