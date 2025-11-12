@@ -1,12 +1,12 @@
 // app/joueurs/page.tsx
-// Liste de tous les joueurs de l'organisation
+// Liste de tous les joueurs - Style cohérent avec l'app
 
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
-import { Users, Plus, Search, Filter, Eye, Edit, Trash, Loader, ArrowLeft } from '@/components/Icons'
+import { Users, Plus, Search, Eye, Loader } from '@/components/Icons'
 
 interface Joueur {
   id: string
@@ -24,8 +24,10 @@ export default function JoueursPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [genderFilter, setGenderFilter] = useState<'all' | 'H' | 'F'>('all')
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     if (organization?.id) {
       fetchJoueurs()
     }
@@ -66,34 +68,39 @@ export default function JoueursPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <Loader className="w-8 h-8 text-green-600 animate-spin" />
-          <p className="text-sm text-gray-600">Chargement des joueurs...</p>
+          <div className="w-8 h-8 border-2 border-green-200 border-t-green-600 rounded-full animate-spin" />
+          <p className="text-sm text-gray-600">Chargement...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center space-x-4">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="group flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 rounded-xl transition-all"
               >
-                <ArrowLeft className="w-5 h-5" />
+                ← <span className="font-medium">Retour</span>
               </button>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
-                  <Users className="w-6 h-6 text-white" />
+
+              <div className="h-10 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
+
+              <div className="flex items-center space-x-3">
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl text-white shadow-lg">
+                  <Users className="w-6 h-6" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">Joueurs</h1>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                    Tous les Joueurs
+                  </h1>
                   <p className="text-sm text-gray-500">{organization?.name}</p>
                 </div>
               </div>
@@ -101,122 +108,112 @@ export default function JoueursPage() {
 
             <button
               onClick={() => router.push('/dashboard')}
-              className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center gap-2"
+              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center space-x-2"
             >
               <Plus className="w-5 h-5" />
-              <span className="hidden sm:inline">Nouveau joueur</span>
+              <span>Nouveau joueur</span>
             </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-8">
         {/* Stats cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total joueurs</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
-              </div>
-              <div className="p-3 bg-green-100 rounded-lg">
-                <Users className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Hommes</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.hommes}</p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <span className="text-2xl">👨</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Femmes</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.femmes}</p>
-              </div>
-              <div className="p-3 bg-pink-100 rounded-lg">
-                <span className="text-2xl">👩</span>
+        <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+          {[
+            { label: 'Total joueurs', value: stats.total, icon: <Users className="w-6 h-6" />, gradient: 'from-blue-500 to-indigo-600', delay: '0ms' },
+            { label: 'Hommes', value: stats.hommes, icon: <span className="text-2xl">👨</span>, gradient: 'from-blue-400 to-cyan-600', delay: '100ms' },
+            { label: 'Femmes', value: stats.femmes, icon: <span className="text-2xl">👩</span>, gradient: 'from-pink-500 to-rose-600', delay: '200ms' }
+          ].map((stat, index) => (
+            <div
+              key={index}
+              className="group relative"
+              style={{ animationDelay: stat.delay }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl transform rotate-1 group-hover:rotate-2 transition-transform"></div>
+              <div className="relative bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all group-hover:-translate-y-1">
+                <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-5 rounded-2xl`}></div>
+                <div className="relative flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
+                    <p className="text-4xl font-bold bg-gradient-to-br from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                      {stat.value}
+                    </p>
+                  </div>
+                  <div className={`p-4 bg-gradient-to-br ${stat.gradient} rounded-2xl text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all`}>
+                    {stat.icon}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          ))}
         </div>
 
-        {/* Filtres */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Recherche */}
-            <div className="flex-1 relative">
-              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Rechercher un joueur..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-            </div>
+        {/* Barre de recherche et filtres */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Rechercher un joueur..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+            />
+          </div>
 
-            {/* Filtre genre */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setGenderFilter('all')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  genderFilter === 'all'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Tous
-              </button>
-              <button
-                onClick={() => setGenderFilter('H')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  genderFilter === 'H'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                👨 Hommes
-              </button>
-              <button
-                onClick={() => setGenderFilter('F')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  genderFilter === 'F'
-                    ? 'bg-pink-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                👩 Femmes
-              </button>
-            </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setGenderFilter('all')}
+              className={`px-4 py-3 rounded-xl font-medium transition-all ${
+                genderFilter === 'all'
+                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg'
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Tous
+            </button>
+            <button
+              onClick={() => setGenderFilter('H')}
+              className={`px-4 py-3 rounded-xl font-medium transition-all ${
+                genderFilter === 'H'
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              👨 Hommes
+            </button>
+            <button
+              onClick={() => setGenderFilter('F')}
+              className={`px-4 py-3 rounded-xl font-medium transition-all ${
+                genderFilter === 'F'
+                  ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-lg'
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              👩 Femmes
+            </button>
           </div>
         </div>
 
         {/* Liste des joueurs */}
         {filteredJoueurs.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <div className="py-24 text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-6">
+              <Users className="w-10 h-10 text-gray-400" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
               {searchQuery || genderFilter !== 'all' ? 'Aucun résultat' : 'Aucun joueur'}
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-8">
               {searchQuery || genderFilter !== 'all'
                 ? 'Essayez de modifier vos filtres'
-                : 'Commencez par ajouter des joueurs à votre organisation'}
+                : 'Commencez par ajouter des joueurs'}
             </p>
             {!searchQuery && genderFilter === 'all' && (
               <button
                 onClick={() => router.push('/dashboard')}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 Ajouter un joueur
@@ -224,85 +221,68 @@ export default function JoueursPage() {
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Nom
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Genre
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Téléphone
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredJoueurs.map((joueur) => (
-                    <tr
-                      key={joueur.id}
-                      className="hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => router.push(`/joueurs/${joueur.id}`)}
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                            joueur.gender === 'H' ? 'bg-blue-500' : 'bg-pink-500'
-                          }`}>
-                            {joueur.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{joueur.name}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          joueur.gender === 'H'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-pink-100 text-pink-800'
-                        }`}>
-                          {joueur.gender === 'H' ? '👨 Homme' : '👩 Femme'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {joueur.email || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {joueur.phone || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            router.push(`/joueurs/${joueur.id}`)
-                          }}
-                          className="text-green-600 hover:text-green-900 transition-colors"
-                        >
-                          <Eye className="w-5 h-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="space-y-3">
+            {filteredJoueurs.map((joueur, index) => (
+              <div
+                key={joueur.id}
+                onClick={() => router.push(`/joueurs/${joueur.id}`)}
+                className="group relative cursor-pointer"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl transform rotate-0 group-hover:rotate-1 transition-transform"></div>
+                <div className="relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all group-hover:-translate-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg ${
+                        joueur.gender === 'H'
+                          ? 'bg-gradient-to-br from-blue-500 to-indigo-600'
+                          : 'bg-gradient-to-br from-pink-500 to-rose-600'
+                      }`}>
+                        {joueur.name.charAt(0).toUpperCase()}
+                      </div>
 
-            {/* Pagination footer */}
-            <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
-                Affichage de <span className="font-medium">{filteredJoueurs.length}</span> joueur{filteredJoueurs.length > 1 ? 's' : ''}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-green-600 transition-colors">
+                          {joueur.name}
+                        </h3>
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg font-medium ${
+                            joueur.gender === 'H'
+                              ? 'bg-blue-50 text-blue-700'
+                              : 'bg-pink-50 text-pink-700'
+                          }`}>
+                            {joueur.gender === 'H' ? '👨 Homme' : '👩 Femme'}
+                          </span>
+                          {joueur.email && (
+                            <span className="hidden sm:inline truncate">{joueur.email}</span>
+                          )}
+                          {joueur.phone && (
+                            <span className="hidden md:inline">{joueur.phone}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/joueurs/${joueur.id}`)
+                      }}
+                      className="ml-4 p-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all group-hover:scale-110"
+                    >
+                      <Eye className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Footer résumé */}
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <p className="text-center text-sm text-gray-600">
+                Affichage de <span className="font-bold text-gray-900">{filteredJoueurs.length}</span> joueur{filteredJoueurs.length > 1 ? 's' : ''}
                 {filteredJoueurs.length !== joueurs.length && (
-                  <> sur <span className="font-medium">{joueurs.length}</span> au total</>
+                  <> sur <span className="font-bold text-gray-900">{joueurs.length}</span> au total</>
                 )}
               </p>
             </div>
