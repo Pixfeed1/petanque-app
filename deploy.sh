@@ -99,24 +99,48 @@ echo "  Arrêt des processus Node en cours..."
 free_port_3000() {
     echo "  Tentative de libération du port 3000..."
 
-    # Tuer les processus Node
+    # Tuer TOUS les processus Node (méthode 1: par nom)
     pkill -9 -f "next start" 2>/dev/null || true
-    pkill -9 node 2>/dev/null || true
+    pkill -9 -f "node" 2>/dev/null || true
 
-    # Libérer le port avec fuser
+    # Méthode 2: par port avec fuser
     fuser -k 3000/tcp 2>/dev/null || true
 
-    # Libérer le port avec lsof (au cas où fuser ne suffit pas)
+    # Méthode 3: par port avec lsof
     lsof -ti:3000 | xargs -r kill -9 2>/dev/null || true
 
-    sleep 2
+    # Méthode 4: avec netstat/ss pour trouver les PIDs
+    ss -lptn 'sport = :3000' 2>/dev/null | grep -oP 'pid=\K[0-9]+' | xargs -r kill -9 2>/dev/null || true
 
-    # Vérifier que le port est vraiment libre
+    # Attendre que les processus soient vraiment tués
+    sleep 3
+
+    # Vérifier avec PLUSIEURS outils que le port est libre
+    local port_busy=0
+
+    # Check 1: lsof
     if lsof -i:3000 >/dev/null 2>&1; then
-        return 1  # Port encore occupé
-    else
-        return 0  # Port libre
+        echo "    ⚠️  Port détecté occupé par lsof"
+        lsof -i:3000
+        port_busy=1
     fi
+
+    # Check 2: netstat/ss
+    if ss -ltn 'sport = :3000' 2>/dev/null | grep -q ':3000'; then
+        echo "    ⚠️  Port détecté occupé par ss/netstat"
+        ss -ltnp 'sport = :3000'
+        port_busy=1
+    fi
+
+    # Check 3: essai direct avec nc (netcat) si disponible
+    if command -v nc >/dev/null 2>&1; then
+        if nc -z localhost 3000 2>/dev/null; then
+            echo "    ⚠️  Port détecté occupé par nc"
+            port_busy=1
+        fi
+    fi
+
+    return $port_busy
 }
 
 # Essayer de libérer le port (max 3 tentatives)
@@ -151,6 +175,22 @@ echo ""
 echo -e "${GREEN}=================================="
 echo "✅ Déploiement terminé avec succès !"
 echo "==================================${NC}"
+echo ""
+
+# Vérification finale avant démarrage
+echo "🔍 Vérification finale du port 3000..."
+if lsof -i:3000 >/dev/null 2>&1 || ss -ltn 'sport = :3000' 2>/dev/null | grep -q ':3000'; then
+    echo -e "${RED}⚠️  ATTENTION: Le port 3000 semble encore occupé !${NC}"
+    echo ""
+    echo "Processus détectés :"
+    lsof -i:3000 2>/dev/null || true
+    ss -ltnp 'sport = :3000' 2>/dev/null || true
+    echo ""
+    echo -e "${YELLOW}Tentative de démarrage quand même...${NC}"
+else
+    echo -e "${GREEN}✅ Port 3000 est libre${NC}"
+fi
+
 echo ""
 echo "🚀 Démarrage de l'application..."
 echo "📝 Logs en direct (CTRL+C pour arrêter) :"
