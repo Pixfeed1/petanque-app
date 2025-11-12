@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Footer from './components/footer'
-import { Petanque, Menu, Close, Arrow, Check, Star, PlayLarge, TrophyAlt, Chart, Lightning, Shield, Book, Mobile, Users, Dice, Refresh, Logout, Dashboard } from '@/components/Icons'
+import { Petanque, Menu, Close, Arrow, Check, Star, PlayLarge, Users, Chart, Sparkles, Shield, Clock, Mobile, Dice, Refresh, Logout, Dashboard } from '@/components/Icons'
 
 // Icônes personnalisées professionnelles
 const Icons = {
@@ -14,11 +14,11 @@ const Icons = {
   check: <Check className="w-5 h-5" />,
   star: <Star className="w-5 h-5" />,
   play: <PlayLarge className="w-20 h-20" />,
-  trophy: <TrophyAlt className="w-8 h-8" />,
+  gamepad: <Users className="w-8 h-8" />,
   chart: <Chart className="w-8 h-8" />,
-  target: <Lightning className="w-8 h-8" />,
+  sparkles: <Sparkles className="w-8 h-8" />,
   shield: <Shield className="w-8 h-8" />,
-  book: <Book className="w-8 h-8" />,
+  clock: <Clock className="w-8 h-8" />,
   mobile: <Mobile className="w-8 h-8" />,
   users: <Users className="w-8 h-8" />,
   dice: <Dice className="w-8 h-8" />,
@@ -102,19 +102,19 @@ export default function HomePage() {
 
   const features = [
     {
-      icon: Icons.trophy,
+      icon: Icons.gamepad,
       title: 'Modes flexibles',
       description: 'Choisi, Mêlée fixe ou tournante avec gestion H/F automatique',
       color: 'from-green-400 to-emerald-600'
     },
     {
-      icon: Icons.chart,
+      icon: Icons.clock,
       title: 'Temps réel',
       description: 'Classements et stats mis à jour instantanément',
       color: 'from-blue-400 to-cyan-600'
     },
     {
-      icon: Icons.target,
+      icon: Icons.sparkles,
       title: 'Tirage intelligent',
       description: 'Poules avec gestion optimale des terrains',
       color: 'from-orange-400 to-amber-600'
