@@ -193,11 +193,12 @@ export async function PUT(
     }
 
     // Sécurité: Si le statut devient "en_attente_validation", forcer proposed_by à être l'utilisateur actuel
-    if (body.status === 'en_attente_validation') {
-      updates.push(`proposed_by = $${paramIndex++}`)
-      values.push(user.id)
-      updates.push(`proposed_at = NOW()`)
-    }
+    // TODO: Colonnes proposed_by et proposed_at désactivées (n'existent pas dans la DB actuelle)
+    // if (body.status === 'en_attente_validation') {
+    //   updates.push(`proposed_by = $${paramIndex++}`)
+    //   values.push(user.id)
+    //   updates.push(`proposed_at = NOW()`)
+    // }
 
     if (body.winner_id !== undefined) {
       updates.push(`winner_id = $${paramIndex++}`)
