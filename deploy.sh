@@ -103,38 +103,14 @@ sleep 2
 echo -e "  ${GREEN}✅ Port 3000 libéré${NC}"
 
 # Relancer l'application
-echo "  Démarrage de l'application..."
-nohup npm start > app.log 2>&1 &
-NEW_PID=$!
-
-echo -e "  ${GREEN}✅ Application démarrée (PID: $NEW_PID)${NC}"
-
-# 6. Vérification
-echo ""
-echo -e "${YELLOW}🔍 Vérification...${NC}"
-sleep 3
-
-if ps -p $NEW_PID > /dev/null; then
-    echo -e "${GREEN}✅ L'application tourne correctement${NC}"
-    echo ""
-    echo "📋 Logs en temps réel :"
-    echo "   tail -f app.log"
-    echo ""
-    echo "📊 Processus Node :"
-    ps aux | grep "next start" | grep -v grep
-else
-    echo -e "${RED}❌ L'application n'a pas démarré correctement${NC}"
-    echo ""
-    echo "Vérifiez les logs :"
-    tail -20 app.log
-    exit 1
-fi
-
 echo ""
 echo -e "${GREEN}=================================="
 echo "✅ Déploiement terminé avec succès !"
 echo "==================================${NC}"
 echo ""
-echo "🌐 Accès : https://petanquepro.fr"
-echo "📝 Logs : tail -f app.log"
+echo "🚀 Démarrage de l'application..."
+echo "📝 Logs en direct (CTRL+C pour arrêter) :"
 echo ""
+
+# Lancer npm start en direct (pas en background)
+npm start
