@@ -100,12 +100,6 @@ export default function HomePage() {
     }
   }
 
-  // Fonction pour ouvrir la démo (vidéo YouTube ou autre)
-  const openDemo = () => {
-    // Pour l'instant, on redirige vers la page de login en mode démo
-    router.push('/login')
-  }
-
   const features = [
     {
       icon: Icons.trophy,
@@ -352,7 +346,7 @@ export default function HomePage() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <button 
+              <button
                 onClick={() => user ? router.push('/dashboard') : router.push('/login')}
                 className="group px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-lg rounded-full hover:shadow-2xl transition-all transform hover:scale-105"
               >
@@ -361,15 +355,6 @@ export default function HomePage() {
                   <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
-                </span>
-              </button>
-              <button 
-                onClick={openDemo}
-                className="group px-8 py-4 bg-white text-gray-700 text-lg rounded-full border-2 border-gray-200 hover:border-green-600 hover:text-green-600 transition-all"
-              >
-                <span className="flex items-center justify-center">
-                  {Icons.play}
-                  <span className="ml-3">Voir la démo</span>
                 </span>
               </button>
             </div>
