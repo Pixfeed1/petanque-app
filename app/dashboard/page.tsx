@@ -345,9 +345,9 @@ export default function Dashboard() {
                           onClick={() => router.push(`/tournoi/${tournoi.id}`)}
                           className="flex-1 min-w-0 text-left"
                         >
-                          <h3 className="text-2xl font-semibold text-gray-900 mb-1 group-hover:text-green-600 transition-colors">{tournoi.name}</h3>
-                          <p className="text-base text-gray-600">{tournoi.format} · {tournoi.mode}</p>
-                          <p className="text-sm text-gray-500 mt-2">
+                          <h3 className="text-3xl font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">{tournoi.name}</h3>
+                          <p className="text-lg text-gray-600 mb-1">{tournoi.format} · {tournoi.mode}</p>
+                          <p className="text-base text-gray-500">
                             {tournoi.nb_matchs_joues || 0}/{tournoi.nb_matchs_total || 0} matchs joués
                           </p>
                         </button>
@@ -438,10 +438,10 @@ export default function Dashboard() {
                         onClick={() => router.push(`/tournoi/${tournoi.id}`)}
                         className="flex-1 min-w-0 text-left"
                       >
-                        <h3 className="text-2xl font-semibold text-gray-900 mb-1 group-hover:text-green-600 transition-colors">{tournoi.name}</h3>
-                        <p className="text-base text-gray-600">{tournoi.format} · {tournoi.mode}</p>
-                        <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                        <h3 className="text-3xl font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">{tournoi.name}</h3>
+                        <p className="text-lg text-gray-600 mb-2">{tournoi.format} · {tournoi.mode}</p>
+                        <div className="flex items-center gap-3 text-base text-gray-500">
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${
                             tournoi.status === 'en_cours' ? 'bg-green-100 text-green-800' :
                             tournoi.status === 'termine' ? 'bg-gray-200 text-gray-700' :
                             'bg-amber-100 text-amber-800'
