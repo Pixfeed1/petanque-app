@@ -94,13 +94,57 @@ echo -e "${YELLOW}🔄 Redémarrage de l'application...${NC}"
 
 # Arrêt propre de l'application
 echo "  Arrêt des processus Node en cours..."
-# Tuer les processus Node
-pkill -9 -f "next start" 2>/dev/null || true
-pkill -9 node 2>/dev/null || true
-# Libérer le port 3000 si occupé
-fuser -k 3000/tcp 2>/dev/null || true
-sleep 2
-echo -e "  ${GREEN}✅ Port 3000 libéré${NC}"
+
+# Fonction pour libérer le port 3000
+free_port_3000() {
+    echo "  Tentative de libération du port 3000..."
+
+    # Tuer les processus Node
+    pkill -9 -f "next start" 2>/dev/null || true
+    pkill -9 node 2>/dev/null || true
+
+    # Libérer le port avec fuser
+    fuser -k 3000/tcp 2>/dev/null || true
+
+    # Libérer le port avec lsof (au cas où fuser ne suffit pas)
+    lsof -ti:3000 | xargs -r kill -9 2>/dev/null || true
+
+    sleep 2
+
+    # Vérifier que le port est vraiment libre
+    if lsof -i:3000 >/dev/null 2>&1; then
+        return 1  # Port encore occupé
+    else
+        return 0  # Port libre
+    fi
+}
+
+# Essayer de libérer le port (max 3 tentatives)
+attempt=1
+max_attempts=3
+
+while [ $attempt -le $max_attempts ]; do
+    if free_port_3000; then
+        echo -e "  ${GREEN}✅ Port 3000 libéré (tentative $attempt/$max_attempts)${NC}"
+        break
+    else
+        echo -e "  ${YELLOW}⚠️  Port 3000 encore occupé, nouvelle tentative...${NC}"
+        attempt=$((attempt + 1))
+
+        if [ $attempt -le $max_attempts ]; then
+            sleep 2
+        else
+            echo -e "  ${RED}❌ Impossible de libérer le port 3000 après $max_attempts tentatives${NC}"
+            echo ""
+            echo "Processus encore actifs sur le port 3000 :"
+            lsof -i:3000 || echo "Aucun trouvé avec lsof"
+            echo ""
+            echo "Pour débloquer manuellement :"
+            echo "  sudo lsof -ti:3000 | xargs sudo kill -9"
+            exit 1
+        fi
+    fi
+done
 
 # Relancer l'application
 echo ""
