@@ -600,7 +600,7 @@ export default function HomePage() {
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Version Premium</h3>
                 <div className="text-5xl font-bold text-green-600 mb-2">4,99€</div>
-                <p className="text-gray-600">Paiement unique, à vie</p>
+                <p className="text-gray-600">Par an</p>
               </div>
               <ul className="space-y-3 text-left mb-8">
                 <li className="flex items-start">
