@@ -27,7 +27,7 @@ fi
 # 1. Pull des dernières modifications
 echo ""
 echo -e "${YELLOW}📥 Récupération des modifications...${NC}"
-git pull origin claude/analyze-project-a-011CUzVuwvd1PdpGfdVmRxu5
+git pull origin claude/yo-011CV4KFYaToG2qqeC1r68MK
 
 # 2. Installation des dépendances
 echo ""
