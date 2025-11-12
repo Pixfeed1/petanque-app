@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
               ) as joueurs
        FROM equipes e
        LEFT JOIN LATERAL unnest(e.joueur_ids) WITH ORDINALITY AS jid(id, ord) ON true
-       LEFT JOIN joueurs j ON j.id = jid.id::uuid
+       LEFT JOIN joueurs j ON j.id = jid.id
        WHERE e.tournoi_id = $1
        GROUP BY e.id
        ORDER BY e.name`,
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     const result = await query(
       `INSERT INTO equipes (tournoi_id, name, joueur_ids, stats, created_at)
-       VALUES ($1, $2, $3::uuid[], $4::jsonb, NOW())
+       VALUES ($1, $2, $3::bigint[], $4::jsonb, NOW())
        RETURNING *`,
       [
         tournoi_id,
