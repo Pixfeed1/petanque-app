@@ -338,16 +338,16 @@ export default function Dashboard() {
                   .map((tournoi) => (
                     <div
                       key={tournoi.id}
-                      className="bg-gray-50 hover:bg-gray-100 rounded-2xl p-6 transition-all group"
+                      className="bg-gray-50 hover:bg-gray-100 rounded-2xl p-8 transition-all group"
                     >
                       <div className="flex items-center justify-between gap-4">
                         <button
                           onClick={() => router.push(`/tournoi/${tournoi.id}`)}
                           className="flex-1 min-w-0 text-left"
                         >
-                          <h3 className="text-3xl font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">{tournoi.name}</h3>
-                          <p className="text-lg text-gray-600 mb-1">{tournoi.format} · {tournoi.mode}</p>
-                          <p className="text-base text-gray-500">
+                          <h3 className="text-4xl font-bold text-gray-900 mb-3 group-hover:text-green-600 transition-colors">{tournoi.name}</h3>
+                          <p className="text-xl text-gray-600 mb-2">{tournoi.format} · {tournoi.mode}</p>
+                          <p className="text-lg text-gray-500">
                             {tournoi.nb_matchs_joues || 0}/{tournoi.nb_matchs_total || 0} matchs joués
                           </p>
                         </button>
@@ -431,17 +431,17 @@ export default function Dashboard() {
                 {filteredTournois.map((tournoi) => (
                   <div
                     key={tournoi.id}
-                    className="bg-gray-50 hover:bg-gray-100 rounded-2xl p-6 transition-all group"
+                    className="bg-gray-50 hover:bg-gray-100 rounded-2xl p-8 transition-all group"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <button
                         onClick={() => router.push(`/tournoi/${tournoi.id}`)}
                         className="flex-1 min-w-0 text-left"
                       >
-                        <h3 className="text-3xl font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">{tournoi.name}</h3>
-                        <p className="text-lg text-gray-600 mb-2">{tournoi.format} · {tournoi.mode}</p>
-                        <div className="flex items-center gap-3 text-base text-gray-500">
-                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${
+                        <h3 className="text-4xl font-bold text-gray-900 mb-3 group-hover:text-green-600 transition-colors">{tournoi.name}</h3>
+                        <p className="text-xl text-gray-600 mb-3">{tournoi.format} · {tournoi.mode}</p>
+                        <div className="flex items-center gap-3 text-lg text-gray-500">
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-base font-medium ${
                             tournoi.status === 'en_cours' ? 'bg-green-100 text-green-800' :
                             tournoi.status === 'termine' ? 'bg-gray-200 text-gray-700' :
                             'bg-amber-100 text-amber-800'
