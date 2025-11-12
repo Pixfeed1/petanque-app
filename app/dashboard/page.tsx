@@ -135,7 +135,7 @@ export default function Dashboard() {
     }
   }
 
-  const handleDeleteTournament = async (tournoiId: string) => {
+  const handleDeleteTournament = async (tournoiId: number | string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce tournoi ? Cette action est irréversible.')) {
       return
     }
