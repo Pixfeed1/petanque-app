@@ -6,10 +6,9 @@ import { query } from '@/lib/db'
 import { createCheckoutSessionSchema, validateRequest } from '@/lib/validations'
 
 // Initialiser Stripe uniquement si la clé est disponible
+// Note: apiVersion non spécifiée = Stripe utilise automatiquement la version du package
 const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2024-11-20.acacia'
-    })
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : null
 
 export async function POST(request: NextRequest) {
