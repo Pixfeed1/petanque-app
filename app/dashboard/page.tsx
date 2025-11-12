@@ -135,6 +135,29 @@ export default function Dashboard() {
     }
   }
 
+  const handleDeleteTournament = async (tournoiId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce tournoi ? Cette action est irréversible.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/tournois/${tournoiId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        // Recharger les données du dashboard
+        refetch()
+      } else {
+        alert('Erreur lors de la suppression du tournoi')
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error)
+      alert('Une erreur est survenue')
+    }
+  }
+
   // Afficher un loader plein écran SEULEMENT au premier chargement
   if (authLoading) {
     return (
@@ -309,28 +332,37 @@ export default function Dashboard() {
                   {stats.tournoiEnCours} tournoi{stats.tournoiEnCours > 1 ? 's' : ''} en cours
                 </h2>
               </div>
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="divide-y divide-gray-100">
-                  {tournois
-                    .filter(t => t.status === 'en_cours')
-                    .map((tournoi) => (
-                      <button
-                        key={tournoi.id}
-                        onClick={() => router.push(`/tournoi/${tournoi.id}`)}
-                        className="w-full flex items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50 transition text-left"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-semibold text-gray-900">{tournoi.name}</h3>
-                          <p className="text-sm text-gray-500">{tournoi.format} · {tournoi.mode}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500">
-                            {tournoi.nb_matchs_joues || 0}/{tournoi.nb_matchs_total || 0} matchs
+              <div className="space-y-3">
+                {tournois
+                  .filter(t => t.status === 'en_cours')
+                  .map((tournoi) => (
+                    <div
+                      key={tournoi.id}
+                      className="bg-gray-50 hover:bg-gray-100 rounded-2xl p-6 transition-all group"
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <button
+                          onClick={() => router.push(`/tournoi/${tournoi.id}`)}
+                          className="flex-1 min-w-0 text-left"
+                        >
+                          <h3 className="text-2xl font-semibold text-gray-900 mb-1 group-hover:text-green-600 transition-colors">{tournoi.name}</h3>
+                          <p className="text-base text-gray-600">{tournoi.format} · {tournoi.mode}</p>
+                          <p className="text-sm text-gray-500 mt-2">
+                            {tournoi.nb_matchs_joues || 0}/{tournoi.nb_matchs_total || 0} matchs joués
                           </p>
-                        </div>
-                      </button>
-                    ))}
-                </div>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTournament(tournoi.id)}
+                          className="p-3 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                          title="Supprimer le tournoi"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
           )}
@@ -390,28 +422,53 @@ export default function Dashboard() {
               </button>
             </div>
 
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              {filteredTournois.length === 0 ? (
-                <div className="py-24 text-center">
-                  <p className="text-gray-600">Aucun tournoi trouvé</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-100">
-                  {filteredTournois.map((tournoi) => (
-                    <button
-                      key={tournoi.id}
-                      onClick={() => router.push(`/tournoi/${tournoi.id}`)}
-                      className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition text-left"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-gray-900">{tournoi.name}</h3>
-                        <p className="text-sm text-gray-500">{tournoi.format}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+{filteredTournois.length === 0 ? (
+              <div className="py-24 text-center bg-gray-50 rounded-2xl">
+                <p className="text-gray-600">Aucun tournoi trouvé</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredTournois.map((tournoi) => (
+                  <div
+                    key={tournoi.id}
+                    className="bg-gray-50 hover:bg-gray-100 rounded-2xl p-6 transition-all group"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <button
+                        onClick={() => router.push(`/tournoi/${tournoi.id}`)}
+                        className="flex-1 min-w-0 text-left"
+                      >
+                        <h3 className="text-2xl font-semibold text-gray-900 mb-1 group-hover:text-green-600 transition-colors">{tournoi.name}</h3>
+                        <p className="text-base text-gray-600">{tournoi.format} · {tournoi.mode}</p>
+                        <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            tournoi.status === 'en_cours' ? 'bg-green-100 text-green-800' :
+                            tournoi.status === 'termine' ? 'bg-gray-200 text-gray-700' :
+                            'bg-amber-100 text-amber-800'
+                          }`}>
+                            {tournoi.status === 'en_cours' ? 'En cours' :
+                             tournoi.status === 'termine' ? 'Terminé' :
+                             'Préparation'}
+                          </span>
+                          {(tournoi.nb_matchs_total || 0) > 0 && (
+                            <span>{tournoi.nb_matchs_joues || 0}/{tournoi.nb_matchs_total || 0} matchs</span>
+                          )}
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTournament(tournoi.id)}
+                        className="p-3 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                        title="Supprimer le tournoi"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </main>
