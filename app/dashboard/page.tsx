@@ -117,8 +117,8 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
-          userEmail: user.email,
-          priceId: 'premium_yearly' // Abonnement annuel 4,99€/an
+          userEmail: user.email
+          // priceId omis = utilise process.env.STRIPE_PRICE_ID configuré dans l'API
         })
       })
 
