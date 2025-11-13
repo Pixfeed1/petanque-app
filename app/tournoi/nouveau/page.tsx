@@ -1026,43 +1026,43 @@ export default function CreateTournamentPage() {
 
           {/* Étape 2: Configuration AMÉLIORÉE */}
           {currentStep === 2 && (
-            <div className="space-y-6 animate-fadeIn">
+            <div className="space-y-4 sm:space-y-6 animate-fadeIn">
               {/* Mode de jeu */}
-              <div className="bg-white rounded-3xl shadow-xl p-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl text-white mr-3">
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 md:p-8">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg sm:rounded-xl text-white">
                     {Icons.gamepad}
                   </div>
                   Mode de jeu
                 </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                   {modes.map((mode) => (
                     <button
                       key={mode.value}
                       onClick={() => setFormData({...formData, mode: mode.value})}
-                      className={`group relative p-6 rounded-2xl border-2 transition-all transform hover:scale-105 ${
+                      className={`group relative p-4 sm:p-6 rounded-xl sm:rounded-2xl border-2 transition-all transform hover:scale-105 ${
                         formData.mode === mode.value
                           ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg'
                           : 'border-gray-200 hover:border-gray-300 bg-white'
                       }`}
                     >
                       {mode.recommended && (
-                        <span className="absolute -top-3 -right-3 px-3 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold rounded-full animate-pulse">
+                        <span className="absolute -top-2 sm:-top-3 -right-2 sm:-right-3 px-2 sm:px-3 py-0.5 sm:py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold rounded-full animate-pulse">
                           Populaire
                         </span>
                       )}
-                      
-                      <div className={`inline-flex p-3 rounded-xl mb-3 bg-gradient-to-br ${mode.gradient} text-white`}>
+
+                      <div className={`inline-flex p-2 sm:p-3 rounded-lg sm:rounded-xl mb-2 sm:mb-3 bg-gradient-to-br ${mode.gradient} text-white scale-75 sm:scale-100`}>
                         {mode.icon}
                       </div>
-                      
-                      <h4 className="font-bold text-gray-900 mb-1">{mode.title}</h4>
-                      <p className="text-sm text-gray-600 mb-2">{mode.description}</p>
+
+                      <h4 className="text-sm sm:text-base font-bold text-gray-900 mb-1">{mode.title}</h4>
+                      <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">{mode.description}</p>
                       <p className="text-xs text-gray-500">{mode.detail}</p>
-                      
+
                       {formData.mode === mode.value && (
-                        <div className="absolute top-3 left-3 text-green-500 animate-fadeIn">
+                        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 text-green-500 animate-fadeIn scale-75 sm:scale-100">
                           {Icons.check}
                         </div>
                       )}
@@ -1072,32 +1072,32 @@ export default function CreateTournamentPage() {
 
                 {/* Options spécifiques mêlée tournante */}
                 {formData.mode === 'melee_tournante' && (
-                  <div className="mt-6 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl animate-fadeIn">
-                    <h4 className="font-bold text-gray-900 mb-3 flex items-center">
-                      {Icons.shuffle}
-                      <span className="ml-2">Rotation des équipes</span>
+                  <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl animate-fadeIn">
+                    <h4 className="text-sm sm:text-base font-bold text-gray-900 mb-2 sm:mb-3 flex items-center gap-1 sm:gap-2">
+                      <div className="scale-75 sm:scale-100">{Icons.shuffle}</div>
+                      <span>Rotation des équipes</span>
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                       <button
                         onClick={() => setFormData({...formData, meleeRotation: 'par_tour'})}
-                        className={`p-4 rounded-xl border-2 transition-all ${
+                        className={`p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 transition-all ${
                           formData.meleeRotation === 'par_tour'
                             ? 'border-green-500 bg-white shadow-md'
                             : 'border-gray-200 bg-white hover:border-gray-300'
                         }`}
                       >
-                        <p className="font-medium text-gray-900">Par tour</p>
-                        <p className="text-xs text-gray-600 mt-1">Nouvelles équipes à chaque tour (recommandé)</p>
+                        <p className="text-sm sm:text-base font-medium text-gray-900">Par tour</p>
+                        <p className="text-xs text-gray-600 mt-1">Nouvelles équipes à chaque tour <span className="hidden sm:inline">(recommandé)</span></p>
                       </button>
                       <button
                         onClick={() => setFormData({...formData, meleeRotation: 'par_match'})}
-                        className={`p-4 rounded-xl border-2 transition-all ${
+                        className={`p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 transition-all ${
                           formData.meleeRotation === 'par_match'
                             ? 'border-green-500 bg-white shadow-md'
                             : 'border-gray-200 bg-white hover:border-gray-300'
                         }`}
                       >
-                        <p className="font-medium text-gray-900">Par match</p>
+                        <p className="text-sm sm:text-base font-medium text-gray-900">Par match</p>
                         <p className="text-xs text-gray-600 mt-1">Nouvelles équipes après chaque partie</p>
                       </button>
                     </div>
@@ -1106,33 +1106,33 @@ export default function CreateTournamentPage() {
               </div>
 
               {/* Format */}
-              <div className="bg-white rounded-3xl shadow-xl p-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl text-white mr-3">
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 md:p-8">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg sm:rounded-xl text-white">
                     {Icons.users}
                   </div>
                   Format des équipes
                 </h3>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
                   {formats.map((format) => (
                     <button
                       key={format.value}
                       onClick={() => setFormData({...formData, format: format.value})}
-                      className={`group relative p-6 sm:p-8 rounded-2xl border-2 transition-all transform hover:scale-105 ${
+                      className={`group relative p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border-2 transition-all transform hover:scale-105 ${
                         formData.format === format.value
                           ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg'
                           : 'border-gray-200 hover:border-gray-300 bg-white'
                       }`}
                     >
-                      <div className="text-5xl mb-4">{format.icon}</div>
-                      
-                      <h4 className="text-xl font-bold text-gray-900 mb-2">{format.title}</h4>
-                      <p className="text-gray-600">{format.description}</p>
-                      <p className="text-sm text-gray-500 mt-2">Min. {format.minPlayers} joueurs</p>
-                      
+                      <div className="text-3xl sm:text-4xl md:text-5xl mb-2 sm:mb-3 md:mb-4">{format.icon}</div>
+
+                      <h4 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 mb-1 sm:mb-2">{format.title}</h4>
+                      <p className="text-sm sm:text-base text-gray-600">{format.description}</p>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-1 sm:mt-2">Min. {format.minPlayers} joueurs</p>
+
                       {formData.format === format.value && (
-                        <div className="absolute top-4 right-4 text-green-500 animate-fadeIn">
+                        <div className="absolute top-3 sm:top-4 right-3 sm:right-4 text-green-500 animate-fadeIn scale-75 sm:scale-100">
                           {Icons.check}
                         </div>
                       )}
@@ -1142,20 +1142,20 @@ export default function CreateTournamentPage() {
               </div>
 
               {/* Points pour gagner */}
-              <div className="bg-white rounded-3xl shadow-xl p-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl text-white mr-3">
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 md:p-8">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg sm:rounded-xl text-white">
                     {Icons.trophy}
                   </div>
                   Points pour gagner
                 </h3>
 
                 <div className="max-w-md mx-auto">
-                  <div className="text-center mb-6">
-                    <span className="text-6xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                  <div className="text-center mb-4 sm:mb-6">
+                    <span className="text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                       {formData.maxPoints}
                     </span>
-                    <p className="text-gray-600 mt-2">points</p>
+                    <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">points</p>
                   </div>
 
                   <input
@@ -1164,15 +1164,15 @@ export default function CreateTournamentPage() {
                     max="15"
                     value={formData.maxPoints}
                     onChange={(e) => setFormData({...formData, maxPoints: parseInt(e.target.value)})}
-                    className="w-full h-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full appearance-none cursor-pointer accent-green-600"
+                    className="w-full h-2 sm:h-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full appearance-none cursor-pointer accent-green-600"
                   />
 
-                  <div className="flex justify-between mt-3">
+                  <div className="flex justify-between mt-2 sm:mt-3 gap-1 sm:gap-2">
                     {[7,9,11,13,15].map(n => (
                       <button
                         key={n}
                         onClick={() => setFormData({...formData, maxPoints: n})}
-                        className={`px-4 py-2 rounded-xl transition-all ${
+                        className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-sm sm:text-base rounded-lg sm:rounded-xl transition-all ${
                           formData.maxPoints === n
                             ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold shadow-lg'
                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -1183,7 +1183,7 @@ export default function CreateTournamentPage() {
                     ))}
                   </div>
 
-                  <p className="text-sm text-gray-500 text-center mt-6">
+                  <p className="text-xs sm:text-sm text-gray-500 text-center mt-4 sm:mt-6">
                     {formData.maxPoints === 13 ? 'Recommandé pour tournois officiels FIPJP' :
                      formData.maxPoints < 11 ? 'Parties rapides' :
                      'Parties longues'}
@@ -1195,51 +1195,51 @@ export default function CreateTournamentPage() {
 
           {/* Étape 3: Joueurs AMÉLIORÉ */}
           {currentStep === 3 && (
-            <div className="space-y-6 animate-fadeIn">
+            <div className="space-y-4 sm:space-y-6 animate-fadeIn">
               {/* Message d'erreur de validation */}
               {validationError && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start">
-                  <div className="text-red-500 mr-3">{Icons.alert}</div>
-                  <p className="text-red-700">{validationError}</p>
+                <div className="bg-red-50 border border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4 flex items-start gap-2 sm:gap-3">
+                  <div className="text-red-500 scale-75 sm:scale-100 flex-shrink-0">{Icons.alert}</div>
+                  <p className="text-sm sm:text-base text-red-700">{validationError}</p>
                 </div>
               )}
 
-              <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-                <div className="p-8 bg-gradient-to-br from-green-50 to-emerald-50">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
-                    {Icons.users}
-                    <span className="ml-3">Sélection des joueurs</span>
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
+                <div className="p-4 sm:p-6 md:p-8 bg-gradient-to-br from-green-50 to-emerald-50">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3">
+                    <div className="scale-75 sm:scale-100">{Icons.users}</div>
+                    <span>Sélection des joueurs</span>
                   </h2>
-                  <div className="flex items-center justify-between">
-                    <p className="text-gray-600">Choisissez les participants au tournoi</p>
-                    <div className="flex items-center space-x-4">
-                      <span className="px-4 py-2 bg-white rounded-xl font-medium shadow-sm">
-                        <span className="text-2xl font-bold text-gray-900">{getTotalPlayers()}</span>
-                        <span className="text-gray-600 ml-1">joueurs</span>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                    <p className="text-sm sm:text-base text-gray-600">Choisissez les participants au tournoi</p>
+                    <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+                      <span className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white rounded-lg sm:rounded-xl font-medium shadow-sm">
+                        <span className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{getTotalPlayers()}</span>
+                        <span className="text-xs sm:text-sm text-gray-600 ml-1">joueurs</span>
                       </span>
-                      <span className={`px-4 py-2 rounded-xl font-medium ${
+                      <span className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium ${
                         getTotalPlayers() >= getMinPlayers()
                           ? 'bg-green-100 text-green-700'
                           : 'bg-green-100 text-green-700'
                       }`}>
-                        Min. {getMinPlayers()} requis
+                        Min. {getMinPlayers()}<span className="hidden sm:inline"> requis</span>
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-8">
+                <div className="p-4 sm:p-6 md:p-8">
                   {/* Joueurs existants */}
-                  <div className="mb-8">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-bold text-gray-900">
+                  <div className="mb-6 sm:mb-8">
+                    <div className="flex justify-between items-center mb-3 sm:mb-4">
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900">
                         Joueurs du club ({availablePlayers.length})
                       </h3>
                       {availablePlayers.length > 0 && (
                         <button
                           onClick={() => {
                             const selectAll = formData.selectedPlayers.length !== availablePlayers.length
-                            
+
                             if (selectAll) {
                               const allIds = availablePlayers.map(p => p.id)
                               setFormData({...formData, selectedPlayers: allIds})
@@ -1247,66 +1247,66 @@ export default function CreateTournamentPage() {
                               setFormData({...formData, selectedPlayers: []})
                             }
                           }}
-                          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                          className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium"
                         >
-                          {formData.selectedPlayers.length === availablePlayers.length 
-                            ? 'Désélectionner tout' 
+                          {formData.selectedPlayers.length === availablePlayers.length
+                            ? 'Désélectionner tout'
                             : 'Sélectionner tout'
                           }
                         </button>
                       )}
                     </div>
-                    
+
                     {loadingPlayers ? (
-                      <div className="flex justify-center py-12">
+                      <div className="flex justify-center py-8 sm:py-12">
                         <div className="text-center">
-                          {Icons.loader}
-                          <p className="mt-4 text-gray-500">Chargement des joueurs...</p>
+                          <div className="scale-75 sm:scale-100">{Icons.loader}</div>
+                          <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-500">Chargement des joueurs...</p>
                         </div>
                       </div>
                     ) : availablePlayers.length === 0 ? (
-                      <div className="text-center py-12 bg-gray-50 rounded-2xl">
-                        <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
-                          {Icons.users}
+                      <div className="text-center py-8 sm:py-12 bg-gray-50 rounded-xl sm:rounded-2xl">
+                        <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full mb-3 sm:mb-4">
+                          <div className="scale-75 sm:scale-100">{Icons.users}</div>
                         </div>
-                        <p className="text-gray-500 mb-2">Aucun joueur dans le club</p>
-                        <p className="text-sm text-gray-400">Ajoutez des joueurs ci-dessous</p>
+                        <p className="text-sm sm:text-base text-gray-500 mb-1 sm:mb-2">Aucun joueur dans le club</p>
+                        <p className="text-xs sm:text-sm text-gray-400">Ajoutez des joueurs ci-dessous</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 max-h-96 overflow-y-auto pr-1 sm:pr-2">
                         {availablePlayers.map((player) => (
                           <button
                             key={player.id}
                             onClick={() => togglePlayer(player.id)}
-                            className={`group relative p-4 rounded-xl border-2 transition-all hover:shadow-md ${
+                            className={`group relative p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 transition-all hover:shadow-md ${
                               formData.selectedPlayers.includes(player.id)
                                 ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-sm'
                                 : 'border-gray-200 hover:border-gray-300 bg-white'
                             }`}
                           >
-                            <div className="flex items-center">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mr-3 bg-gradient-to-br ${
+                            <div className="flex items-center gap-2 sm:gap-3">
+                              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-bold bg-gradient-to-br ${
                                 player.gender === 'F' ? 'from-pink-500 to-rose-600' : 'from-blue-500 to-indigo-600'
-                              } group-hover:scale-110 transition-transform`}>
+                              } group-hover:scale-110 transition-transform flex-shrink-0`}>
                                 {player.name.charAt(0).toUpperCase()}
                               </div>
-                              <div className="text-left flex-1">
-                                <p className="font-medium text-gray-900">{player.name}</p>
-                                <div className="flex items-center space-x-2 text-xs text-gray-500">
-                                  <span className={`px-2 py-0.5 rounded-full ${
-                                    player.gender === 'F' 
-                                      ? 'bg-pink-100 text-pink-700' 
+                              <div className="text-left flex-1 min-w-0">
+                                <p className="text-sm sm:text-base font-medium text-gray-900 truncate">{player.name}</p>
+                                <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-gray-500">
+                                  <span className={`px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${
+                                    player.gender === 'F'
+                                      ? 'bg-pink-100 text-pink-700'
                                       : 'bg-blue-100 text-blue-700'
                                   }`}>
                                     {player.gender === 'F' ? 'Femme' : 'Homme'}
                                   </span>
                                   {player.email && (
-                                    <span className="truncate max-w-[120px]">{player.email}</span>
+                                    <span className="truncate max-w-[100px] sm:max-w-[120px] hidden sm:inline">{player.email}</span>
                                   )}
                                 </div>
                               </div>
                               {formData.selectedPlayers.includes(player.id) && (
-                                <div className="ml-auto text-green-500 animate-fadeIn">
+                                <div className="ml-auto text-green-500 animate-fadeIn flex-shrink-0 scale-75 sm:scale-100">
                                   {Icons.check}
                                 </div>
                               )}
@@ -1318,37 +1318,37 @@ export default function CreateTournamentPage() {
                   </div>
 
                   {/* Nouveaux joueurs */}
-                  <div className="border-t pt-8">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-bold text-gray-900">Ajouter de nouveaux joueurs</h3>
+                  <div className="border-t pt-6 sm:pt-8">
+                    <div className="flex justify-between items-center mb-3 sm:mb-4">
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900">Ajouter de nouveaux joueurs</h3>
                     </div>
-                    
+
                     {formData.newPlayers.length === 0 ? (
-                      <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-xl">
-                        <p className="text-gray-500 mb-4">Cliquez sur le bouton pour inscrire de nouveaux participants</p>
+                      <div className="text-center py-6 sm:py-8 border-2 border-dashed border-gray-300 rounded-lg sm:rounded-xl">
+                        <p className="text-sm sm:text-base text-gray-500 mb-3 sm:mb-4 px-4">Cliquez sur le bouton pour inscrire de nouveaux participants</p>
                         <button
                           onClick={addNewPlayer}
-                          className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all transform hover:scale-105"
+                          className="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm sm:text-base rounded-lg sm:rounded-xl hover:shadow-lg transition-all transform hover:scale-105"
                         >
-                          {Icons.plus}
-                          <span className="ml-2">Ajouter un joueur</span>
+                          <div className="scale-75 sm:scale-100">{Icons.plus}</div>
+                          <span>Ajouter un joueur</span>
                         </button>
                       </div>
                     ) : (
-                      <div className="space-y-3 max-h-96 overflow-y-auto pr-2" ref={newPlayersRef}>
+                      <div className="space-y-2 sm:space-y-3 max-h-96 overflow-y-auto pr-1 sm:pr-2" ref={newPlayersRef}>
                         {formData.newPlayers.map((player, index) => (
-                          <div key={index} className="flex gap-3 p-4 bg-gray-50 rounded-xl animate-fadeIn">
+                          <div key={index} className="flex flex-col sm:flex-row gap-2 sm:gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl animate-fadeIn">
                             <input
                               type="text"
                               placeholder="Nom complet *"
                               value={player.name}
                               onChange={(e) => updateNewPlayer(index, 'name', e.target.value)}
-                              className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                              className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100"
                             />
                             <select
                               value={player.gender}
                               onChange={(e) => updateNewPlayer(index, 'gender', e.target.value)}
-                              className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500"
+                              className="px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-green-500"
                             >
                               <option value="H">Homme</option>
                               <option value="F">Femme</option>
@@ -1358,7 +1358,7 @@ export default function CreateTournamentPage() {
                               placeholder="Email (optionnel)"
                               value={player.email}
                               onChange={(e) => updateNewPlayer(index, 'email', e.target.value)}
-                              className={`flex-1 px-4 py-3 border-2 rounded-xl focus:border-green-500 ${
+                              className={`flex-1 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border-2 rounded-lg sm:rounded-xl focus:border-green-500 ${
                                 player.email && player.email.trim() && !isValidEmail(player.email)
                                   ? 'border-red-300 bg-red-50'
                                   : 'border-gray-200'
@@ -1366,9 +1366,9 @@ export default function CreateTournamentPage() {
                             />
                             <button
                               onClick={() => removeNewPlayer(index)}
-                              className="p-3 text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                              className="p-2 sm:p-3 text-red-600 hover:bg-red-50 rounded-lg sm:rounded-xl transition-all self-start sm:self-auto"
                             >
-                              {Icons.x}
+                              <div className="scale-75 sm:scale-100">{Icons.x}</div>
                             </button>
                           </div>
                         ))}
@@ -1377,13 +1377,13 @@ export default function CreateTournamentPage() {
 
                     {/* Bouton flottant pour ajouter un joueur */}
                     {formData.newPlayers.length > 0 && (
-                      <div className="mt-4 sticky bottom-0 bg-white pt-4 border-t">
+                      <div className="mt-3 sm:mt-4 sticky bottom-0 bg-white pt-3 sm:pt-4 border-t">
                         <button
                           onClick={addNewPlayer}
-                          className="w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all transform hover:scale-105"
+                          className="w-full flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm sm:text-base rounded-lg sm:rounded-xl hover:shadow-lg transition-all transform hover:scale-105"
                         >
-                          {Icons.plus}
-                          <span className="ml-2">Ajouter un autre joueur</span>
+                          <div className="scale-75 sm:scale-100">{Icons.plus}</div>
+                          <span>Ajouter un autre joueur</span>
                         </button>
                       </div>
                     )}
@@ -1395,28 +1395,28 @@ export default function CreateTournamentPage() {
 
           {/* Étape 4: Options avancées */}
           {currentStep === 4 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="bg-white rounded-3xl shadow-xl p-8">
-                <div className="p-8 bg-gradient-to-br from-green-50 to-emerald-50">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
-                    {Icons.settings}
-                    <span className="ml-3">Options avancées</span>
+            <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
+                <div className="p-4 sm:p-6 md:p-8 bg-gradient-to-br from-green-50 to-emerald-50">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2 flex items-center gap-2 sm:gap-3">
+                    <div className="scale-75 sm:scale-100">{Icons.settings}</div>
+                    <span>Options avancées</span>
                   </h2>
-                  <p className="text-gray-600">Personnalisez les paramètres de votre tournoi</p>
+                  <p className="text-sm sm:text-base text-gray-600">Personnalisez les paramètres de votre tournoi</p>
                 </div>
 
-                <div className="p-8 space-y-6">
+                <div className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
                   {/* Configuration technique */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     {/* Taille des poules */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                         Taille des poules
                       </label>
                       <select
                         value={formData.pouleSize}
                         onChange={(e) => setFormData({...formData, pouleSize: parseInt(e.target.value)})}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-green-500"
                       >
                         <option value={3}>3 équipes par poule</option>
                         <option value={4}>4 équipes par poule</option>
@@ -1429,13 +1429,13 @@ export default function CreateTournamentPage() {
 
                     {/* Qualifiés par poule */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                         Qualifiés par poule
                       </label>
                       <select
                         value={formData.qualifiedPerPoule}
                         onChange={(e) => setFormData({...formData, qualifiedPerPoule: parseInt(e.target.value)})}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-green-500"
                       >
                         <option value={1}>Le 1er de chaque poule</option>
                         <option value={2}>Les 2 premiers</option>
@@ -1445,59 +1445,59 @@ export default function CreateTournamentPage() {
                   </div>
 
                   {/* Options de jeu */}
-                  <div className="border-t pt-6 mt-6">
-                    <h3 className="font-bold text-gray-900 mb-4">Options de jeu</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                        <div>
-                          <p className="font-medium text-gray-900">Mixité obligatoire</p>
+                  <div className="border-t pt-4 sm:pt-6 mt-4 sm:mt-6">
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-3 sm:mb-4">Options de jeu</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                      <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <p className="text-sm sm:text-base font-medium text-gray-900">Mixité obligatoire</p>
                           <p className="text-xs text-gray-500">Imposer H/F dans les équipes</p>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
+                        <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
                           <input type="checkbox" checked={formData.mixiteObligatoire} onChange={(e) => setFormData({...formData, mixiteObligatoire: e.target.checked})} className="sr-only peer" />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                         </label>
                       </div>
 
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                        <div>
-                          <p className="font-medium text-gray-900">Petite finale</p>
+                      <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <p className="text-sm sm:text-base font-medium text-gray-900">Petite finale</p>
                           <p className="text-xs text-gray-500">Match pour la 3ème place</p>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
+                        <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
                           <input type="checkbox" checked={formData.consolante} onChange={(e) => setFormData({...formData, consolante: e.target.checked})} className="sr-only peer" />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                         </label>
                       </div>
 
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                        <div>
-                          <p className="font-medium text-gray-900">Détail des mènes</p>
+                      <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <p className="text-sm sm:text-base font-medium text-gray-900">Détail des mènes</p>
                           <p className="text-xs text-gray-500">Enregistrer chaque mène</p>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
+                        <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
                           <input type="checkbox" checked={formData.recordMenes} onChange={(e) => setFormData({...formData, recordMenes: e.target.checked})} className="sr-only peer" />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                         </label>
                       </div>
 
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                        <div>
-                          <p className="font-medium text-gray-900">Notation fair-play</p>
+                      <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <p className="text-sm sm:text-base font-medium text-gray-900">Notation fair-play</p>
                           <p className="text-xs text-gray-500">Évaluer l'esprit sportif</p>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
+                        <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
                           <input type="checkbox" checked={formData.fairPlay} onChange={(e) => setFormData({...formData, fairPlay: e.target.checked})} className="sr-only peer" />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                         </label>
                       </div>
 
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                        <div>
-                          <p className="font-medium text-gray-900">Limite de temps</p>
+                      <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <p className="text-sm sm:text-base font-medium text-gray-900">Limite de temps</p>
                           <p className="text-xs text-gray-500">Pour tournois rapides</p>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
+                        <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
                           <input type="checkbox" checked={formData.timeLimit} onChange={(e) => setFormData({...formData, timeLimit: e.target.checked})} className="sr-only peer" />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                         </label>
@@ -1505,11 +1505,11 @@ export default function CreateTournamentPage() {
                     </div>
 
                     {formData.timeLimit && (
-                      <div className="mt-4 p-4 bg-yellow-50 rounded-xl animate-fadeIn">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-yellow-50 rounded-lg sm:rounded-xl animate-fadeIn">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                           Durée maximum par match (minutes)
                         </label>
-                        <input type="number" min="15" max="120" value={formData.timeLimitMinutes} onChange={(e) => setFormData({...formData, timeLimitMinutes: parseInt(e.target.value)})} className="w-32 px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-green-500" />
+                        <input type="number" min="15" max="120" value={formData.timeLimitMinutes} onChange={(e) => setFormData({...formData, timeLimitMinutes: parseInt(e.target.value)})} className="w-24 sm:w-32 px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-green-500" />
                       </div>
                     )}
                   </div>
@@ -1520,18 +1520,18 @@ export default function CreateTournamentPage() {
 
           {/* Étape 5: Validation */}
           {currentStep === 5 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-                <div className="p-8 bg-gradient-to-br from-green-50 to-emerald-50">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
-                    {Icons.sparkles}
-                    <span className="ml-3">Récapitulatif du tournoi</span>
+            <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
+                <div className="p-4 sm:p-6 md:p-8 bg-gradient-to-br from-green-50 to-emerald-50">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2 flex items-center gap-2 sm:gap-3">
+                    <div className="scale-75 sm:scale-100">{Icons.sparkles}</div>
+                    <span>Récapitulatif du tournoi</span>
                   </h2>
-                  <p className="text-gray-600">Vérifiez les informations avant de créer le tournoi</p>
+                  <p className="text-sm sm:text-base text-gray-600">Vérifiez les informations avant de créer le tournoi</p>
                 </div>
 
-                <div className="p-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 sm:p-6 md:p-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     {[
                       { label: 'Nom', value: formData.name || 'Non défini', icon: Icons.trophy },
                       { label: 'Date', value: new Date(formData.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }), icon: Icons.calendar },
@@ -1546,32 +1546,32 @@ export default function CreateTournamentPage() {
                       { label: 'Qualifiés/poule', value: formData.qualifiedPerPoule === 1 ? '1er' : `${formData.qualifiedPerPoule} premiers`, icon: Icons.star },
                       { label: 'Phases finales', value: 'Élimination simple', icon: Icons.flag }
                     ].map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100">
-                        <div className="flex items-center">
-                          <div className="p-2.5 bg-white rounded-lg text-gray-400 mr-3 shadow-sm">
+                      <div key={index} className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-gray-50 to-white rounded-lg sm:rounded-xl border border-gray-100">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="p-1.5 sm:p-2.5 bg-white rounded-lg text-gray-400 shadow-sm scale-75 sm:scale-100">
                             {item.icon}
                           </div>
-                          <span className="text-sm text-gray-600">{item.label}</span>
+                          <span className="text-xs sm:text-sm text-gray-600">{item.label}</span>
                         </div>
-                        <span className="font-bold text-gray-900">{item.value}</span>
+                        <span className="text-sm sm:text-base font-bold text-gray-900 truncate ml-2">{item.value}</span>
                       </div>
                     ))}
                   </div>
 
                   {/* Options spéciales pour mêlée tournante */}
                   {formData.mode === 'melee_tournante' && (
-                    <div className="mt-6 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl">
-                      <h4 className="font-bold text-gray-900 mb-2 flex items-center">
-                        {Icons.shuffle}
-                        <span className="ml-2">Configuration Mêlée Tournante</span>
+                    <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl">
+                      <h4 className="text-sm sm:text-base font-bold text-gray-900 mb-1 sm:mb-2 flex items-center gap-1 sm:gap-2">
+                        <div className="scale-75 sm:scale-100">{Icons.shuffle}</div>
+                        <span>Configuration Mêlée Tournante</span>
                       </h4>
-                      <p className="text-sm text-gray-700">
+                      <p className="text-xs sm:text-sm text-gray-700">
                         Rotation des équipes : <span className="font-bold">
                           {formData.meleeRotation === 'par_tour' ? 'Par tour' : 'Après chaque match'}
                         </span>
                       </p>
                       <p className="text-xs text-gray-600 mt-1">
-                        {formData.meleeRotation === 'par_tour' 
+                        {formData.meleeRotation === 'par_tour'
                           ? 'Les équipes seront reformées à chaque nouveau tour'
                           : 'Les équipes seront reformées après chaque match joué'
                         }
@@ -1580,53 +1580,53 @@ export default function CreateTournamentPage() {
                   )}
 
                   {/* Options activées */}
-                  <div className="mt-6 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl">
-                    <h4 className="font-bold text-gray-900 mb-3">Options activées</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl">
+                    <h4 className="text-sm sm:text-base font-bold text-gray-900 mb-2 sm:mb-3">Options activées</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
                       {formData.consolante && (
-                        <div className="flex items-center text-sm text-gray-700">
-                          {Icons.check}
-                          <span className="ml-2">Petite finale (3ème place)</span>
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700">
+                          <div className="scale-75 sm:scale-100">{Icons.check}</div>
+                          <span>Petite finale (3ème place)</span>
                         </div>
                       )}
                       {formData.recordMenes && (
-                        <div className="flex items-center text-sm text-gray-700">
-                          {Icons.check}
-                          <span className="ml-2">Enregistrement des mènes</span>
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700">
+                          <div className="scale-75 sm:scale-100">{Icons.check}</div>
+                          <span>Enregistrement des mènes</span>
                         </div>
                       )}
                       {formData.fairPlay && (
-                        <div className="flex items-center text-sm text-gray-700">
-                          {Icons.check}
-                          <span className="ml-2">Notation fair-play</span>
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700">
+                          <div className="scale-75 sm:scale-100">{Icons.check}</div>
+                          <span>Notation fair-play</span>
                         </div>
                       )}
                       {formData.timeLimit && (
-                        <div className="flex items-center text-sm text-gray-700">
-                          {Icons.check}
-                          <span className="ml-2">Limite de temps ({formData.timeLimitMinutes} min)</span>
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700">
+                          <div className="scale-75 sm:scale-100">{Icons.check}</div>
+                          <span>Limite de temps ({formData.timeLimitMinutes} min)</span>
                         </div>
                       )}
                       {formData.allowPhotos && (
-                        <div className="flex items-center text-sm text-gray-700">
-                          {Icons.check}
-                          <span className="ml-2">Photos autorisées</span>
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700">
+                          <div className="scale-75 sm:scale-100">{Icons.check}</div>
+                          <span>Photos autorisées</span>
                         </div>
                       )}
                       {formData.sendNotifications && (
-                        <div className="flex items-center text-sm text-gray-700">
-                          {Icons.check}
-                          <span className="ml-2">Notifications activées</span>
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700">
+                          <div className="scale-75 sm:scale-100">{Icons.check}</div>
+                          <span>Notifications activées</span>
                         </div>
                       )}
                     </div>
                   </div>
 
                   {/* Résumé des joueurs */}
-                  <div className="mt-8 p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl">
-                    <h4 className="font-bold text-gray-900 mb-3 flex items-center">
-                      {Icons.users}
-                      <span className="ml-2">Participants ({getTotalPlayers()})</span>
+                  <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl">
+                    <h4 className="text-sm sm:text-base font-bold text-gray-900 mb-2 sm:mb-3 flex items-center gap-1 sm:gap-2">
+                      <div className="scale-75 sm:scale-100">{Icons.users}</div>
+                      <span>Participants ({getTotalPlayers()})</span>
                     </h4>
 
                     {/* Statistiques H/F */}
@@ -1635,92 +1635,92 @@ export default function CreateTournamentPage() {
                         ...availablePlayers.filter(p => formData.selectedPlayers.includes(p.id) && p.gender !== 'F'),
                         ...formData.newPlayers.filter(p => p.name.trim() && p.gender === 'H')
                       ].length
-                      
+
                       const femmes = [
                         ...availablePlayers.filter(p => formData.selectedPlayers.includes(p.id) && p.gender === 'F'),
                         ...formData.newPlayers.filter(p => p.name.trim() && p.gender === 'F')
                       ].length
-                      
+
                       return (
-                        <div className="mb-4 p-3 bg-white rounded-xl">
+                        <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-white rounded-lg sm:rounded-xl">
                           <div className="flex justify-around text-center">
                             <div>
-                              <p className="text-2xl font-bold text-blue-600">{hommes}</p>
+                              <p className="text-xl sm:text-2xl font-bold text-blue-600">{hommes}</p>
                               <p className="text-xs text-gray-600">Hommes</p>
                             </div>
                             <div className="w-px bg-gray-200"></div>
                             <div>
-                              <p className="text-2xl font-bold text-pink-600">{femmes}</p>
+                              <p className="text-xl sm:text-2xl font-bold text-pink-600">{femmes}</p>
                               <p className="text-xs text-gray-600">Femmes</p>
                             </div>
                             <div className="w-px bg-gray-200"></div>
                             <div>
-                              <p className="text-2xl font-bold text-green-600">{getEstimatedTeams()}</p>
-                              <p className="text-xs text-gray-600">Équipes possibles</p>
+                              <p className="text-xl sm:text-2xl font-bold text-green-600">{getEstimatedTeams()}</p>
+                              <p className="text-xs text-gray-600">Équipes<span className="hidden sm:inline"> possibles</span></p>
                             </div>
                           </div>
                         </div>
                       )
                     })()}
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 sm:gap-2">
                       {/* Joueurs existants sélectionnés */}
                       {availablePlayers
                         .filter(p => formData.selectedPlayers.includes(p.id))
                         .map(player => (
-                          <div key={player.id} className="flex items-center space-x-2 p-2 bg-white rounded-lg">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold bg-gradient-to-br ${
+                          <div key={player.id} className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-white rounded-lg">
+                            <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white text-xs font-bold bg-gradient-to-br flex-shrink-0 ${
                               player.gender === 'F' ? 'from-pink-500 to-rose-600' : 'from-blue-500 to-indigo-600'
                             }`}>
                               {player.name.charAt(0)}
                             </div>
-                            <span className="text-sm text-gray-700">{player.name}</span>
+                            <span className="text-xs sm:text-sm text-gray-700 truncate">{player.name}</span>
                           </div>
                         ))}
                       {/* Nouveaux joueurs */}
                       {formData.newPlayers
                         .filter(p => p.name.trim())
                         .map((player, index) => (
-                          <div key={`new-${index}`} className="flex items-center space-x-2 p-2 bg-white rounded-lg">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold bg-gradient-to-br ${
+                          <div key={`new-${index}`} className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-white rounded-lg">
+                            <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white text-xs font-bold bg-gradient-to-br flex-shrink-0 ${
                               player.gender === 'F' ? 'from-pink-500 to-rose-600' : 'from-blue-500 to-indigo-600'
                             }`}>
                               {player.name.charAt(0)}
                             </div>
-                            <span className="text-sm text-gray-700">{player.name}</span>
-                            <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Nouveau</span>
+                            <span className="text-xs sm:text-sm text-gray-700 truncate flex-1 min-w-0">{player.name}</span>
+                            <span className="text-xs bg-green-100 text-green-700 px-1 sm:px-1.5 py-0.5 rounded whitespace-nowrap">Nouveau</span>
                           </div>
                         ))}
                     </div>
                   </div>
 
                   {/* Estimation du déroulement */}
-                  <div className="mt-6 p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl">
-                    <h4 className="font-bold text-gray-900 mb-3 flex items-center">
-                      {Icons.petanque}
-                      <span className="ml-2">Estimation du tournoi</span>
+                  <div className="mt-4 sm:mt-6 p-4 sm:p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl">
+                    <h4 className="text-sm sm:text-base font-bold text-gray-900 mb-2 sm:mb-3 flex items-center gap-1 sm:gap-2">
+                      <div className="scale-75 sm:scale-100">{Icons.petanque}</div>
+                      <span>Estimation du tournoi</span>
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <p className="text-sm text-gray-600">Nombre de poules</p>
-                        <p className="text-lg font-bold text-gray-900">
+                        <p className="text-xs sm:text-sm text-gray-600">Nombre de poules</p>
+                        <p className="text-base sm:text-lg font-bold text-gray-900">
                           {getEstimatedPools()}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Matchs en poule/équipe</p>
-                        <p className="text-lg font-bold text-gray-900">{formData.pouleSize - 1}</p>
+                        <p className="text-xs sm:text-sm text-gray-600">Matchs en poule/équipe</p>
+                        <p className="text-base sm:text-lg font-bold text-gray-900">{formData.pouleSize - 1}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Équipes en phases finales</p>
-                        <p className="text-lg font-bold text-gray-900">
+                        <p className="text-xs sm:text-sm text-gray-600">Équipes en phases finales</p>
+                        <p className="text-base sm:text-lg font-bold text-gray-900">
                           {getEstimatedPools() * formData.qualifiedPerPoule}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Durée estimée</p>
-                        <p className="text-lg font-bold text-gray-900">
-                          {formData.timeLimit 
+                        <p className="text-xs sm:text-sm text-gray-600">Durée estimée</p>
+                        <p className="text-base sm:text-lg font-bold text-gray-900">
+                          {formData.timeLimit
                             ? `${Math.ceil((formData.pouleSize - 1 + 3) * formData.timeLimitMinutes / 60)}h`
                             : '3-5h'
                           }
@@ -1730,16 +1730,16 @@ export default function CreateTournamentPage() {
                   </div>
 
                   {/* Message de confirmation */}
-                  <div className="mt-8 p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border-2 border-green-200">
-                    <div className="flex items-start">
-                      <div className="p-2 bg-green-100 rounded-xl text-green-600 mr-3">
+                  <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl border-2 border-green-200">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg sm:rounded-xl text-green-600 flex-shrink-0 scale-75 sm:scale-100">
                         {Icons.info}
                       </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 mb-1">Tout est prêt !</h4>
-                        <p className="text-sm text-gray-600">
-                          Votre tournoi de pétanque sera créé avec ces paramètres. 
-                          {formData.mode === 'choisi' 
+                      <div className="flex-1">
+                        <h4 className="text-sm sm:text-base font-bold text-gray-900 mb-1">Tout est prêt !</h4>
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          Votre tournoi de pétanque sera créé avec ces paramètres.
+                          {formData.mode === 'choisi'
                             ? " Vous pourrez ensuite composer les équipes manuellement."
                             : formData.mode === 'melee_fixe'
                             ? " Les équipes seront tirées au sort automatiquement au démarrage."
@@ -1758,7 +1758,7 @@ export default function CreateTournamentPage() {
                   onClick={handleSubmit}
                   disabled={savingTournament}
                   className={`
-                    relative px-6 sm:px-12 py-4 sm:py-5 text-base sm:text-lg font-bold rounded-2xl transition-all transform
+                    relative px-6 sm:px-12 py-3.5 sm:py-4 md:py-5 text-sm sm:text-base md:text-lg font-bold rounded-xl sm:rounded-2xl transition-all transform
                     ${successAnimation
                       ? 'bg-green-600 text-white scale-105 shadow-2xl'
                       : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:shadow-2xl hover:scale-105'
@@ -1767,30 +1767,30 @@ export default function CreateTournamentPage() {
                     disabled:opacity-50 disabled:cursor-not-allowed
                   `}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000 rounded-2xl"></div>
-                  
-                  <span className="relative flex items-center justify-center">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000 rounded-xl sm:rounded-2xl"></div>
+
+                  <span className="relative flex items-center justify-center gap-2 sm:gap-3">
                     {savingTournament ? (
                       <>
-                        {Icons.loader}
-                        <span className="ml-3">Création en cours...</span>
+                        <div className="scale-75 sm:scale-100">{Icons.loader}</div>
+                        <span>Création en cours...</span>
                       </>
                     ) : successAnimation ? (
                       <>
-                        {Icons.check}
-                        <span className="ml-3">Tournoi créé !</span>
+                        <div className="scale-75 sm:scale-100">{Icons.check}</div>
+                        <span>Tournoi créé !</span>
                       </>
                     ) : (
                       <>
-                        {Icons.trophy}
-                        <span className="ml-3">Créer le tournoi</span>
+                        <div className="scale-75 sm:scale-100">{Icons.trophy}</div>
+                        <span>Créer le tournoi</span>
                       </>
                     )}
                   </span>
                 </button>
 
                 {savingTournament && (
-                  <p className="mt-4 text-sm text-gray-500 animate-pulse">
+                  <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-500 animate-pulse">
                     Enregistrement du tournoi et préparation des poules...
                   </p>
                 )}
@@ -1800,14 +1800,14 @@ export default function CreateTournamentPage() {
         </div>
 
         {/* Boutons de navigation */}
-        <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-12">
+        <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-8 sm:mt-12">
           <button
             onClick={() => {
               if (currentStep > 1) {
                 setCurrentStep(currentStep - 1)
               }
             }}
-            className={`px-4 sm:px-6 py-3 rounded-xl font-medium transition-all ${
+            className={`px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl font-medium transition-all ${
               currentStep === 1
                 ? 'text-gray-400 cursor-not-allowed'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -1822,15 +1822,15 @@ export default function CreateTournamentPage() {
               onClick={handleContinue}
               disabled={!canProceed()}
               className={`
-                flex items-center justify-center px-6 sm:px-8 py-3 rounded-xl font-medium transition-all
+                flex items-center justify-center gap-1.5 sm:gap-2 px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl font-medium transition-all
                 ${canProceed()
                   ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:shadow-lg hover:scale-105'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }
               `}
             >
-              Continuer
-              {Icons.arrow}
+              <span>Continuer</span>
+              <div className="scale-75 sm:scale-100">{Icons.arrow}</div>
             </button>
           )}
         </div>
