@@ -7,7 +7,7 @@
 -- Création de la table reviews
 CREATE TABLE IF NOT EXISTS reviews (
   id SERIAL PRIMARY KEY,
-  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
   rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
   content TEXT NOT NULL,
   name VARCHAR(100) NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   approved_at TIMESTAMP,
-  approved_by UUID REFERENCES users(id) ON DELETE SET NULL
+  approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Commentaires sur les colonnes
@@ -55,7 +55,7 @@ DROP TRIGGER IF EXISTS trigger_reviews_updated_at ON reviews;
 CREATE TRIGGER trigger_reviews_updated_at
   BEFORE UPDATE ON reviews
   FOR EACH ROW
-  EXECUTE FUNCTION update_reviews_updated_at();
+  EXECUTE PROCEDURE update_reviews_updated_at();
 
 -- Afficher un message de confirmation
 DO $$
