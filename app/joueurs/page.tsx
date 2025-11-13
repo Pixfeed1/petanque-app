@@ -82,7 +82,7 @@ export default function JoueursPage() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
+          <div className="flex justify-between items-center h-16 sm:h-20">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => router.push('/dashboard')}
@@ -94,14 +94,11 @@ export default function JoueursPage() {
               <div className="h-10 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
 
               <div className="flex items-center space-x-3">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl text-white shadow-lg">
-                  <Users className="w-6 h-6" />
-                </div>
                 <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                     Tous les Joueurs
                   </h1>
-                  <p className="text-sm text-gray-500">{organization?.name}</p>
+                  <p className="text-xs sm:text-sm text-gray-500">{organization?.name}</p>
                 </div>
               </div>
             </div>
@@ -119,30 +116,25 @@ export default function JoueursPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-8">
         {/* Stats cards */}
-        <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+        <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
           {[
-            { label: 'Total joueurs', value: stats.total, icon: <Users className="w-6 h-6" />, gradient: 'from-blue-500 to-indigo-600', delay: '0ms' },
-            { label: 'Hommes', value: stats.hommes, icon: <span className="text-2xl">👨</span>, gradient: 'from-blue-400 to-cyan-600', delay: '100ms' },
-            { label: 'Femmes', value: stats.femmes, icon: <span className="text-2xl">👩</span>, gradient: 'from-pink-500 to-rose-600', delay: '200ms' }
+            { label: 'Total joueurs', value: stats.total, icon: '👥' },
+            { label: 'Hommes', value: stats.hommes, icon: '👨' },
+            { label: 'Femmes', value: stats.femmes, icon: '👩' }
           ].map((stat, index) => (
             <div
               key={index}
-              className="group relative"
-              style={{ animationDelay: stat.delay }}
+              className="bg-gray-50 rounded-xl p-4 sm:p-6 border border-gray-200"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl transform rotate-1 group-hover:rotate-2 transition-transform"></div>
-              <div className="relative bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all group-hover:-translate-y-1">
-                <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-5 rounded-2xl`}></div>
-                <div className="relative flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-                    <p className="text-4xl font-bold bg-gradient-to-br from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                      {stat.value}
-                    </p>
-                  </div>
-                  <div className={`p-4 bg-gradient-to-br ${stat.gradient} rounded-2xl text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all`}>
-                    {stat.icon}
-                  </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
+                  <p className="text-3xl sm:text-4xl font-bold text-gray-900">
+                    {stat.value}
+                  </p>
+                </div>
+                <div className="text-3xl sm:text-4xl">
+                  {stat.icon}
                 </div>
               </div>
             </div>
@@ -162,12 +154,12 @@ export default function JoueursPage() {
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setGenderFilter('all')}
-              className={`px-4 py-3 rounded-xl font-medium transition-all ${
+              className={`px-3 sm:px-4 py-3 rounded-xl font-medium transition-all text-sm sm:text-base ${
                 genderFilter === 'all'
-                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg'
+                  ? 'bg-green-600 text-white'
                   : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -175,9 +167,9 @@ export default function JoueursPage() {
             </button>
             <button
               onClick={() => setGenderFilter('H')}
-              className={`px-4 py-3 rounded-xl font-medium transition-all ${
+              className={`px-3 sm:px-4 py-3 rounded-xl font-medium transition-all text-sm sm:text-base ${
                 genderFilter === 'H'
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
+                  ? 'bg-green-600 text-white'
                   : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -185,9 +177,9 @@ export default function JoueursPage() {
             </button>
             <button
               onClick={() => setGenderFilter('F')}
-              className={`px-4 py-3 rounded-xl font-medium transition-all ${
+              className={`px-3 sm:px-4 py-3 rounded-xl font-medium transition-all text-sm sm:text-base ${
                 genderFilter === 'F'
-                  ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-lg'
+                  ? 'bg-green-600 text-white'
                   : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -233,11 +225,7 @@ export default function JoueursPage() {
                 <div className="relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all group-hover:-translate-y-1">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg ${
-                        joueur.gender === 'H'
-                          ? 'bg-gradient-to-br from-blue-500 to-indigo-600'
-                          : 'bg-gradient-to-br from-pink-500 to-rose-600'
-                      }`}>
+                      <div className="w-12 h-12 flex items-center justify-center text-gray-400 font-bold text-2xl">
                         {joueur.name.charAt(0).toUpperCase()}
                       </div>
 
@@ -246,11 +234,7 @@ export default function JoueursPage() {
                           {joueur.name}
                         </h3>
                         <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg font-medium ${
-                            joueur.gender === 'H'
-                              ? 'bg-blue-50 text-blue-700'
-                              : 'bg-pink-50 text-pink-700'
-                          }`}>
+                          <span className="text-gray-500">
                             {joueur.gender === 'H' ? '👨 Homme' : '👩 Femme'}
                           </span>
                           {joueur.email && (
@@ -268,7 +252,7 @@ export default function JoueursPage() {
                         e.stopPropagation()
                         router.push(`/joueurs/${joueur.id}`)
                       }}
-                      className="ml-4 p-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all group-hover:scale-110"
+                      className="ml-4 p-3 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
                     >
                       <Eye className="w-5 h-5" />
                     </button>
