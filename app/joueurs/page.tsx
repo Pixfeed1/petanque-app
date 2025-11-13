@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
-import { Users, Plus, Search, Eye, Loader } from '@/components/Icons'
+import { User, Users, Plus, Search, Eye, Loader } from '@/components/Icons'
 
 interface Joueur {
   id: string
@@ -118,9 +118,9 @@ export default function JoueursPage() {
         {/* Stats cards */}
         <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
           {[
-            { label: 'Total joueurs', value: stats.total, icon: '👥' },
-            { label: 'Hommes', value: stats.hommes, icon: '👨' },
-            { label: 'Femmes', value: stats.femmes, icon: '👩' }
+            { label: 'Total joueurs', value: stats.total, icon: <Users className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" /> },
+            { label: 'Hommes', value: stats.hommes, icon: <User className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" /> },
+            { label: 'Femmes', value: stats.femmes, icon: <User className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" /> }
           ].map((stat, index) => (
             <div
               key={index}
@@ -133,7 +133,7 @@ export default function JoueursPage() {
                     {stat.value}
                   </p>
                 </div>
-                <div className="text-3xl sm:text-4xl">
+                <div>
                   {stat.icon}
                 </div>
               </div>
