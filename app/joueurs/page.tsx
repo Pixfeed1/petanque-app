@@ -93,30 +93,30 @@ export default function JoueursPage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="group flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 rounded-xl transition-all"
+                className="group flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 rounded-xl transition-all flex-shrink-0"
               >
                 <span className="text-lg">←</span>
                 <span className="hidden sm:inline font-medium">Retour</span>
               </button>
 
-              <div className="hidden sm:block h-10 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
+              <div className="hidden sm:block h-10 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent flex-shrink-0"></div>
 
-              <div className="flex items-center space-x-3">
-                <div>
-                  <h1 className="text-base sm:text-xl md:text-2xl font-bold text-gray-900">
+              <div className="flex items-center space-x-3 min-w-0">
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-xl md:text-2xl font-bold text-gray-900 truncate">
                     Joueurs
                   </h1>
-                  <p className="hidden sm:block text-xs sm:text-sm text-gray-500">{organization?.name}</p>
+                  <p className="hidden sm:block text-xs sm:text-sm text-gray-500 truncate">{organization?.name}</p>
                 </div>
               </div>
             </div>
 
             <button
               onClick={() => router.push('/dashboard/joueurs')}
-              className="px-3 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center space-x-1 sm:space-x-2"
+              className="ml-2 sm:ml-4 flex-shrink-0 w-10 h-10 sm:w-auto sm:h-auto sm:px-6 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center justify-center sm:space-x-2"
             >
               <Plus className="w-5 h-5" />
               <span className="hidden sm:inline">Nouveau joueur</span>
@@ -127,24 +127,24 @@ export default function JoueursPage() {
 
       <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pt-20 pb-8">
         {/* Stats cards */}
-        <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+        <div className={`grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 mb-6 sm:mb-8 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
           {[
-            { label: 'Total joueurs', value: stats.total, icon: <Users className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" /> },
-            { label: 'Hommes', value: stats.hommes, icon: <User className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" /> },
-            { label: 'Femmes', value: stats.femmes, icon: <User className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" /> }
+            { label: 'Total', value: stats.total, icon: <Users className="w-6 h-6 sm:w-10 sm:h-10 md:w-12 md:h-12 text-gray-400" /> },
+            { label: 'Hommes', value: stats.hommes, icon: <User className="w-6 h-6 sm:w-10 sm:h-10 md:w-12 md:h-12 text-gray-400" /> },
+            { label: 'Femmes', value: stats.femmes, icon: <User className="w-6 h-6 sm:w-10 sm:h-10 md:w-12 md:h-12 text-gray-400" /> }
           ].map((stat, index) => (
             <div
               key={index}
-              className="bg-gray-50 rounded-xl p-4 sm:p-6 border border-gray-200"
+              className="bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-4 md:p-6 border border-gray-200"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-                  <p className="text-3xl sm:text-4xl font-bold text-gray-900">
+              <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-1 sm:gap-0">
+                <div className="text-center sm:text-left w-full">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-0.5 sm:mb-1">{stat.label}</p>
+                  <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
                     {stat.value}
                   </p>
                 </div>
-                <div>
+                <div className="hidden sm:block">
                   {stat.icon}
                 </div>
               </div>
@@ -153,22 +153,22 @@ export default function JoueursPage() {
         </div>
 
         {/* Barre de recherche et filtres */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+        <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:gap-4">
+          <div className="relative">
+            <Search className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-3 sm:left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Rechercher un joueur..."
+              placeholder="Rechercher..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+              className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 text-sm sm:text-base bg-white border border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2">
             <button
               onClick={() => setGenderFilter('all')}
-              className={`px-3 sm:px-4 py-3 rounded-xl font-medium transition-all text-sm sm:text-base ${
+              className={`flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all text-xs sm:text-sm ${
                 genderFilter === 'all'
                   ? 'bg-green-600 text-white'
                   : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
@@ -178,7 +178,7 @@ export default function JoueursPage() {
             </button>
             <button
               onClick={() => setGenderFilter('H')}
-              className={`px-3 sm:px-4 py-3 rounded-xl font-medium transition-all text-sm sm:text-base ${
+              className={`flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all text-xs sm:text-sm ${
                 genderFilter === 'H'
                   ? 'bg-green-600 text-white'
                   : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
@@ -188,7 +188,7 @@ export default function JoueursPage() {
             </button>
             <button
               onClick={() => setGenderFilter('F')}
-              className={`px-3 sm:px-4 py-3 rounded-xl font-medium transition-all text-sm sm:text-base ${
+              className={`flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all text-xs sm:text-sm ${
                 genderFilter === 'F'
                   ? 'bg-green-600 text-white'
                   : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
@@ -224,7 +224,7 @@ export default function JoueursPage() {
             )}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {filteredJoueurs.map((joueur, index) => (
               <div
                 key={joueur.id}
@@ -232,21 +232,21 @@ export default function JoueursPage() {
                 className="group relative cursor-pointer"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl transform rotate-0 group-hover:rotate-1 transition-transform"></div>
-                <div className="relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all group-hover:-translate-y-1">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-12 h-12 flex items-center justify-center text-gray-400 font-bold text-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl sm:rounded-2xl transform rotate-0 group-hover:rotate-1 transition-transform"></div>
+                <div className="relative bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg hover:shadow-2xl transition-all group-hover:-translate-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-gray-400 font-bold text-xl sm:text-2xl flex-shrink-0">
                         {joueur.name.charAt(0).toUpperCase()}
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-green-600 transition-colors">
+                        <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-0.5 sm:mb-1 group-hover:text-green-600 transition-colors truncate">
                           {joueur.name}
                         </h3>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span className="text-gray-500">
-                            {joueur.gender === 'H' ? 'Homme' : joueur.gender === 'F' ? 'Femme' : 'Non spécifié'}
+                        <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                          <span className="text-gray-500 flex-shrink-0">
+                            {joueur.gender === 'H' ? 'H' : joueur.gender === 'F' ? 'F' : '-'}
                           </span>
                           {joueur.email && (
                             <span className="hidden sm:inline truncate">{joueur.email}</span>
@@ -263,9 +263,9 @@ export default function JoueursPage() {
                         e.stopPropagation()
                         router.push(`/joueurs/${joueur.id}-${createSlug(joueur.name)}`)
                       }}
-                      className="ml-4 p-3 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
+                      className="ml-2 sm:ml-4 p-2 sm:p-3 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg sm:rounded-xl transition-all flex-shrink-0"
                     >
-                      <Eye className="w-5 h-5" />
+                      <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   </div>
                 </div>
