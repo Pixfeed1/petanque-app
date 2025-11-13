@@ -824,34 +824,34 @@ export default function CreateTournamentPage() {
 
       {/* Header glassmorphism avec logo pétanque */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl text-white">
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0">
+              <div className="p-1.5 sm:p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg sm:rounded-xl text-white flex-shrink-0">
                 {Icons.petanque}
               </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                  Nouveau Tournoi de Pétanque
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-base md:text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent truncate">
+                  Nouveau Tournoi
                 </h1>
-                <p className="text-xs text-gray-500">Créez votre compétition en quelques clics</p>
+                <p className="hidden sm:block text-xs text-gray-500 truncate">Créez votre compétition en quelques clics</p>
               </div>
             </div>
-            
-            <button 
+
+            <button
               onClick={() => router.push('/dashboard')}
-              className="group flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+              className="group flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all flex-shrink-0"
             >
               {Icons.x}
-              <span>Annuler</span>
+              <span className="hidden sm:inline">Annuler</span>
             </button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Progress Steps */}
-        <div className={`mb-12 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+        <div className={`mb-8 sm:mb-12 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
           <div className="flex items-center justify-between">
             {steps.map((step, index) => (
               <div key={step.number} className="flex items-center">
@@ -859,29 +859,32 @@ export default function CreateTournamentPage() {
                   {currentStep === step.number && (
                     <div className={`absolute inset-0 bg-gradient-to-br ${step.color} rounded-full animate-ping opacity-20`}></div>
                   )}
-                  
+
                   <div className={`
-                    relative w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg
+                    relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center font-bold text-base sm:text-lg
                     transition-all duration-500 transform
-                    ${currentStep >= step.number 
-                      ? `bg-gradient-to-br ${step.color} text-white shadow-lg scale-100` 
+                    ${currentStep >= step.number
+                      ? `bg-gradient-to-br ${step.color} text-white shadow-lg scale-100`
                       : 'bg-gray-200 text-gray-400 scale-90'}
-                    ${currentStep === step.number ? 'ring-4 ring-white shadow-2xl scale-110' : ''}
+                    ${currentStep === step.number ? 'ring-2 sm:ring-4 ring-white shadow-2xl scale-110' : ''}
                   `}>
-                    {currentStep > step.number ? Icons.check : step.icon}
+                    <div className="scale-75 sm:scale-100">
+                      {currentStep > step.number ? Icons.check : step.icon}
+                    </div>
                   </div>
-                  
-                  <div className={`absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-xs font-medium transition-all duration-500 ${
+
+                  <div className={`absolute -bottom-6 sm:-bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-xs sm:text-xs font-medium transition-all duration-500 ${
                     currentStep >= step.number ? 'text-gray-900' : 'text-gray-400'
                   }`}>
-                    {step.title}
+                    <span className="hidden sm:inline">{step.title}</span>
+                    <span className="sm:hidden">{step.number}</span>
                   </div>
                 </div>
-                
+
                 {index < steps.length - 1 && (
-                  <div className="w-24 h-1 mx-4">
+                  <div className="w-8 sm:w-16 md:w-24 h-1 mx-1 sm:mx-2 md:mx-4">
                     <div className="h-full bg-gray-200 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={`h-full bg-gradient-to-r ${step.color} transition-all duration-700`}
                         style={{ width: currentStep > step.number ? '100%' : '0%' }}
                       ></div>
@@ -894,25 +897,25 @@ export default function CreateTournamentPage() {
         </div>
 
         {/* Contenu des étapes */}
-        <div className={`mt-16 transition-all duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`mt-10 sm:mt-16 transition-all duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
           
           {/* Étape 1: Informations */}
           {currentStep === 1 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-                <div className="p-8 bg-gradient-to-br from-green-50 to-emerald-50">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
-                    {Icons.sparkles}
-                    <span className="ml-3">Informations générales</span>
+            <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
+                <div className="p-4 sm:p-6 md:p-8 bg-gradient-to-br from-green-50 to-emerald-50">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2 flex items-center gap-2 sm:gap-3">
+                    <div className="scale-75 sm:scale-100">{Icons.sparkles}</div>
+                    <span>Informations générales</span>
                   </h2>
-                  <p className="text-gray-600">Définissez les bases de votre tournoi de pétanque</p>
+                  <p className="text-sm sm:text-base text-gray-600">Définissez les bases de votre tournoi de pétanque</p>
                 </div>
-                
-                <div className="p-8 space-y-6">
+
+                <div className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
                   {/* Nom du tournoi */}
                   <div className="group">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nom du tournoi * (max 100 caractères)
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                      Nom du tournoi * <span className="hidden sm:inline">(max 100 caractères)</span>
                     </label>
                     <div className="relative">
                       <input
@@ -922,14 +925,14 @@ export default function CreateTournamentPage() {
                           const newValue = e.target.value.slice(0, 100)
                           setFormData({...formData, name: newValue})
                         }}
-                        className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg"
+                        className="w-full px-3 sm:px-4 md:px-5 py-3 sm:py-3.5 md:py-4 border-2 border-gray-200 rounded-xl sm:rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-sm sm:text-base md:text-lg"
                         placeholder="Ex: Tournoi de Printemps 2025"
                         maxLength={100}
                       />
-                      <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
+                      <div className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-1.5 sm:gap-2">
                         <span className="text-xs text-gray-400">{formData.name.length}/100</span>
                         {formData.name && (
-                          <div className="text-green-500 animate-fadeIn">
+                          <div className="text-green-500 animate-fadeIn scale-75 sm:scale-100">
                             {Icons.check}
                           </div>
                         )}
