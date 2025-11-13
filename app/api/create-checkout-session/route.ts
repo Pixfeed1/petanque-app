@@ -158,11 +158,6 @@ export async function POST(request: NextRequest) {
      // Consentements légaux
      consent_collection: {
        terms_of_service: 'required'
-     },
-
-     // Facture automatique
-     invoice_creation: {
-       enabled: true
      }
    })
 
