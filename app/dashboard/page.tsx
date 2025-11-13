@@ -174,7 +174,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-white">
       {/* Header comme le reste de l'app */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div
               onClick={() => router.push('/')}
@@ -184,36 +184,36 @@ export default function Dashboard() {
                 {Icons.petanque}
                 <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              <span className="hidden md:inline text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 Pétanque Pro
               </span>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               {loading && (
-                <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-600 rounded-full text-xs">
+                <div className="flex items-center gap-2 px-2 sm:px-3 py-1 bg-green-50 text-green-600 rounded-full text-xs">
                   <div className="w-3 h-3 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-                  <span>Actualisation...</span>
+                  <span className="hidden sm:inline">Actualisation...</span>
                 </div>
               )}
               <button
                 onClick={() => router.push('/joueurs')}
-                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+                className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
               >
                 {Icons.users}
-                <span className="text-sm">Joueurs</span>
+                <span className="hidden sm:inline text-sm">Joueurs</span>
               </button>
               <button
                 onClick={() => router.push('/parametres')}
-                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+                className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
               >
                 {Icons.settings}
-                <span className="text-sm">Paramètres</span>
+                <span className="hidden sm:inline text-sm">Paramètres</span>
               </button>
               <div className="relative">
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-xl transition"
+                  className="flex items-center gap-2 px-2 sm:px-3 py-2 hover:bg-gray-100 rounded-xl transition"
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
                     <span className="text-sm font-medium text-white">
