@@ -11,12 +11,13 @@ export async function POST(request: NextRequest) {
   })
 
   // Supprimer le cookie
+  // sameSite: 'strict' pour protection CSRF maximale
   response.cookies.set({
     name: 'auth-token',
     value: '',
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict', // Protection CSRF renforcée
     maxAge: 0,
     path: '/'
   })

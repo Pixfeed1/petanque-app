@@ -44,6 +44,16 @@ export async function GET(
       }
     }
 
+    // Parse manches_json seulement si c'est une chaîne non-vide
+    let manchesData = null
+    if (matchRaw.manches_json && typeof matchRaw.manches_json === 'string' && matchRaw.manches_json.trim().length > 0) {
+      try {
+        manchesData = JSON.parse(matchRaw.manches_json)
+      } catch (e) {
+        console.warn(`⚠️  JSON invalide pour match ${matchRaw.id}:`, matchRaw.manches_json)
+      }
+    }
+
     // Transform to nested format
     const match: MatchWithEquipes = {
       id: matchRaw.id,
@@ -72,7 +82,7 @@ export async function GET(
       type: matchRaw.type as MatchWithEquipes['type'],
       poule: matchRaw.poule,
       round: matchRaw.round,
-      manches_json: matchRaw.manches_json ? JSON.parse(matchRaw.manches_json) : null,
+      manches_json: manchesData,
       started_at: matchRaw.started_at,
       ended_at: matchRaw.ended_at,
       validated_at: matchRaw.validated_at,
@@ -183,11 +193,12 @@ export async function PUT(
     }
 
     // Sécurité: Si le statut devient "en_attente_validation", forcer proposed_by à être l'utilisateur actuel
-    if (body.status === 'en_attente_validation') {
-      updates.push(`proposed_by = $${paramIndex++}`)
-      values.push(user.id)
-      updates.push(`proposed_at = NOW()`)
-    }
+    // TODO: Colonnes proposed_by et proposed_at désactivées (n'existent pas dans la DB actuelle)
+    // if (body.status === 'en_attente_validation') {
+    //   updates.push(`proposed_by = $${paramIndex++}`)
+    //   values.push(user.id)
+    //   updates.push(`proposed_at = NOW()`)
+    // }
 
     if (body.winner_id !== undefined) {
       updates.push(`winner_id = $${paramIndex++}`)

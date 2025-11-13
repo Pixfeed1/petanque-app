@@ -3,124 +3,33 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
+import AdBanner from '@/components/AdBanner'
+import type { Manche, EquipeJoueur, Joueur } from '@/lib/types'
+import { Petanque, Trophy, Users, Play, Flag, Clock, Calendar, Settings, Check, X, Plus, Loader, Shuffle, Chart, Edit, Refresh, Sparkles, Lightning, Arrow, Grid, Medal } from '@/components/Icons'
 
 // Icônes premium pour la pétanque
 const Icons = {
-  petanque: (
-    <svg className="w-8 h-8" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="32" cy="32" r="28" fill="url(#metalGradient)" stroke="currentColor" strokeWidth="2"/>
-      <circle cx="26" cy="24" r="3" fill="white" opacity="0.8"/>
-      <circle cx="36" cy="36" r="2" fill="currentColor" opacity="0.3"/>
-      <defs>
-        <radialGradient id="metalGradient">
-          <stop offset="0%" stopColor="#a8b2c3"/>
-          <stop offset="100%" stopColor="#8e9aaf"/>
-        </radialGradient>
-      </defs>
-    </svg>
-  ),
-  trophy: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v6m-3 0h6m4-13V7a2 2 0 00-2-2h-2.5a.5.5 0 01-.5-.5V3a1 1 0 00-1-1H11a1 1 0 00-1 1v1.5a.5.5 0 01-.5.5H7a2 2 0 00-2 2v1c0 3.5 2.5 6 5.5 6.5m9 0c3-0.5 5.5-3 5.5-6.5V7a2 2 0 00-2-2h-2.5a.5.5 0 01-.5-.5V3a1 1 0 00-1-1h-2" />
-    </svg>
-  ),
-  users: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  ),
-  play: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  flag: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-    </svg>
-  ),
-  clock: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  calendar: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </svg>
-  ),
-  settings: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-    </svg>
-  ),
-  check: (
-    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-    </svg>
-  ),
-  x: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  ),
-  plus: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-    </svg>
-  ),
-  loader: (
-    <svg className="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-  ),
-  shuffle: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-    </svg>
-  ),
-  chart: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-    </svg>
-  ),
-  edit: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-    </svg>
-  ),
-  refresh: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-    </svg>
-  ),
-  sparkles: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-    </svg>
-  ),
-  lightning: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-    </svg>
-  ),
-  arrow: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-    </svg>
-  ),
-  grid: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-    </svg>
-  ),
-  medal: (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-    </svg>
-  )
+  petanque: <Petanque className="w-8 h-8" />,
+  trophy: <Trophy className="w-6 h-6" />,
+  users: <Users className="w-6 h-6" />,
+  play: <Play className="w-6 h-6" />,
+  flag: <Flag className="w-6 h-6" />,
+  clock: <Clock className="w-6 h-6" />,
+  calendar: <Calendar className="w-6 h-6" />,
+  settings: <Settings className="w-6 h-6" />,
+  check: <Check className="w-5 h-5" />,
+  x: <X className="w-5 h-5" />,
+  plus: <Plus className="w-5 h-5" />,
+  loader: <Loader className="animate-spin h-6 w-6" />,
+  shuffle: <Shuffle className="w-6 h-6" />,
+  chart: <Chart className="w-6 h-6" />,
+  edit: <Edit className="w-5 h-5" />,
+  refresh: <Refresh className="w-6 h-6" />,
+  sparkles: <Sparkles className="w-6 h-6" />,
+  lightning: <Lightning className="w-6 h-6" />,
+  arrow: <Arrow className="w-5 h-5" />,
+  grid: <Grid className="w-6 h-6" />,
+  medal: <Medal className="w-8 h-8" />
 }
 
 // Types pour le tournoi
@@ -155,7 +64,21 @@ interface Tournament {
 interface Team {
   id: string
   name: string
-  equipes_joueurs?: any[]
+  joueur_ids?: string[]
+  equipes_joueurs?: EquipeJoueur[]
+  victories?: number
+  defeats?: number
+  difference?: number
+  points?: number
+  pointsFor?: number
+  pointsAgainst?: number
+}
+
+interface PlayerWithStats extends Joueur {
+  victories: number
+  defeats: number
+  difference: number
+  points: number
 }
 
 interface Match {
@@ -172,7 +95,7 @@ interface Match {
   type?: 'poule' | 'elimination' | 'demi' | 'finale' | 'petite_finale'
   poule?: string
   round?: number
-  manches_json?: any
+  manches_json?: Manche[]
   started_at?: string
   ended_at?: string
   validated_at?: string
@@ -198,10 +121,18 @@ export default function TournamentDetailPage() {
   const [showStartModal, setShowStartModal] = useState(false)
   const [showTeamFormation, setShowTeamFormation] = useState(false)
   const [refreshingClassement, setRefreshingClassement] = useState(false)
+  const [userPlan, setUserPlan] = useState('free')
 
   // État pour la mêlée tournante
   const [currentRotation, setCurrentRotation] = useState(1)
   const [individualRankings, setIndividualRankings] = useState<any[]>([])
+
+  // Récupérer le plan de l'utilisateur
+  useEffect(() => {
+    if (organization?.settings?.plan && typeof organization.settings.plan === 'string') {
+      setUserPlan(organization.settings.plan)
+    }
+  }, [organization])
 
   // Calcul optimisé du classement avec useMemo
   const teamsWithStats = useMemo(() => {
@@ -246,7 +177,7 @@ export default function TournamentDetailPage() {
 
   // Classement par poule optimisé
   const teamsByPoule = useMemo(() => {
-    const poules: { [key: string]: any[] } = {}
+    const poules: { [key: string]: Team[] } = {}
 
     teamsWithStats.forEach(team => {
       // Trouver la poule de cette équipe
@@ -263,10 +194,10 @@ export default function TournamentDetailPage() {
     Object.keys(poules).forEach(poule => {
       poules[poule].sort((a, b) => {
         // 1. Nombre de victoires (règle FIPJP)
-        if (b.victories !== a.victories) return b.victories - a.victories
+        if ((b.victories ?? 0) !== (a.victories ?? 0)) return (b.victories ?? 0) - (a.victories ?? 0)
 
         // 2. Confrontation directe (règle FIPJP)
-        const directMatch = matches.find((m: any) =>
+        const directMatch = matches.find((m: Match) =>
           m.status === 'termine' && m.poule === poule &&
           ((m.equipe_a?.id === a.id && m.equipe_b?.id === b.id) ||
            (m.equipe_a?.id === b.id && m.equipe_b?.id === a.id))
@@ -279,10 +210,10 @@ export default function TournamentDetailPage() {
         }
 
         // 3. Différence de points (règle FIPJP)
-        if (b.difference !== a.difference) return b.difference - a.difference
+        if ((b.difference ?? 0) !== (a.difference ?? 0)) return (b.difference ?? 0) - (a.difference ?? 0)
 
         // 4. Nombre de points marqués (règle FIPJP complète)
-        return b.pointsFor - a.pointsFor
+        return (b.pointsFor ?? 0) - (a.pointsFor ?? 0)
       })
     })
 
@@ -319,7 +250,7 @@ export default function TournamentDetailPage() {
 
         // Enrichir chaque équipe avec les détails des joueurs
         const enrichedTeams = await Promise.all(
-          teamsData.map(async (team: any) => {
+          teamsData.map(async (team: Team) => {
             if (team.joueur_ids && Array.isArray(team.joueur_ids) && team.joueur_ids.length > 0) {
               const joueursResponse = await fetch(`/api/equipes/${team.id}`, {
                 credentials: 'include'
@@ -328,7 +259,7 @@ export default function TournamentDetailPage() {
                 const enrichedTeam = await joueursResponse.json()
                 // Adapter la structure pour correspondre à l'ancienne structure Supabase
                 if (enrichedTeam.joueurs) {
-                  team.equipes_joueurs = enrichedTeam.joueurs.map((joueur: any) => ({
+                  team.equipes_joueurs = enrichedTeam.joueurs.map((joueur: Joueur) => ({
                     joueur: joueur,
                     role: 'joueur'
                   }))
@@ -397,24 +328,24 @@ export default function TournamentDetailPage() {
       const matchesData = await matchesResponse.json()
 
       // Calculer les stats de chaque joueur
-      const playerStats = joueurs.map((joueur: any) => {
+      const playerStats = joueurs.map((joueur: Joueur): PlayerWithStats => {
         let victories = 0
         let defeats = 0
         let pointsFor = 0
         let pointsAgainst = 0
 
         // Trouver toutes les équipes où ce joueur a joué
-        const playerTeams = equipesData.filter((eq: any) =>
+        const playerTeams = equipesData.filter((eq: Team) =>
           eq.joueur_ids && eq.joueur_ids.includes(joueur.id)
         )
 
         // Pour chaque équipe, compter les matchs terminés
-        playerTeams.forEach((team: any) => {
-          const teamMatches = matchesData.filter((m: any) =>
+        playerTeams.forEach((team: Team) => {
+          const teamMatches = matchesData.filter((m: Match) =>
             m.status === 'termine' && (m.equipe_a_id === team.id || m.equipe_b_id === team.id)
           )
 
-          teamMatches.forEach((match: any) => {
+          teamMatches.forEach((match: Match) => {
             if (match.equipe_a_id === team.id) {
               pointsFor += match.score_a || 0
               pointsAgainst += match.score_b || 0
@@ -439,7 +370,7 @@ export default function TournamentDetailPage() {
       })
 
       // Trier par nombre de victoires, puis différence, puis points totaux (règle FIPJP)
-      playerStats.sort((a: any, b: any) => {
+      playerStats.sort((a: PlayerWithStats, b: PlayerWithStats) => {
         if (b.victories !== a.victories) return b.victories - a.victories
         if (b.difference !== a.difference) return b.difference - a.difference
         return b.points - a.points
@@ -756,7 +687,7 @@ export default function TournamentDetailPage() {
       const allPlayers = await joueursResponse.json()
 
       // Filtrer pour obtenir seulement les joueurs du tournoi
-      const players = allPlayers.filter((p: any) =>
+      const players = allPlayers.filter((p: Joueur) =>
         tournament.settings.players.includes(p.id)
       )
 
@@ -787,8 +718,8 @@ export default function TournamentDetailPage() {
         }
       } else {
         // Si mixité OBLIGATOIRE : respecter H/F
-        const hommes = shuffled.filter((p: any) => p.gender === 'H')
-        const femmes = shuffled.filter((p: any) => p.gender === 'F')
+        const hommes = shuffled.filter((p: Joueur) => p.gender === 'H')
+        const femmes = shuffled.filter((p: Joueur) => p.gender === 'F')
 
         if (tournament.format === 'doublette') {
           // Pour doublette: 1H + 1F autant que possible
@@ -1101,8 +1032,8 @@ export default function TournamentDetailPage() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-2xl shadow-lg mb-6">
-          <div className="flex border-b">
+        <div className="mb-6">
+          <div className="flex border-b border-gray-200 bg-white/80 backdrop-blur-xl rounded-t-2xl">
             {[
               { id: 'vue', label: 'Vue d\'ensemble', icon: Icons.grid },
               { id: 'matchs', label: 'Matchs', icon: Icons.flag },
@@ -1127,7 +1058,15 @@ export default function TournamentDetailPage() {
             ))}
           </div>
 
-          <div className="p-6">
+          {/* Publicité - Uniquement pour les utilisateurs gratuits */}
+          <div className="mt-6 mb-6">
+              <AdBanner
+                variant="responsive"
+                userPlan={userPlan}
+                showOnlyForFree={true}
+              />
+            </div>
+
             {/* Vue d'ensemble */}
             {activeTab === 'vue' && (
               <div className="space-y-6">
@@ -1612,7 +1551,6 @@ export default function TournamentDetailPage() {
                 </div>
               </div>
             )}
-          </div>
         </div>
       </div>
 

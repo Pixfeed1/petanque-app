@@ -3,84 +3,24 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
+import type { Manche } from '@/lib/types'
+import { Trophy, Plus, Minus, Check, Clock, ArrowLeft, Flag, Sparkles, Fire, Undo, Loader, Save, Petanque } from '@/components/Icons'
 
 // Icônes premium
 const Icons = {
-  trophy: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v6m-3 0h6m4-13V7a2 2 0 00-2-2h-2.5a.5.5 0 01-.5-.5V3a1 1 0 00-1-1H11a1 1 0 00-1 1v1.5a.5.5 0 01-.5.5H7a2 2 0 00-2 2v1c0 3.5 2.5 6 5.5 6.5m9 0c3-0.5 5.5-3 5.5-6.5V7a2 2 0 00-2-2h-2.5a.5.5 0 01-.5-.5V3a1 1 0 00-1-1h-2" />
-    </svg>
-  ),
-  plus: (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-    </svg>
-  ),
-  minus: (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-    </svg>
-  ),
-  check: (
-    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-    </svg>
-  ),
-  clock: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  arrowLeft: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-    </svg>
-  ),
-  flag: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-    </svg>
-  ),
-  sparkles: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-    </svg>
-  ),
-  fire: (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
-    </svg>
-  ),
-  undo: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-    </svg>
-  ),
-  loader: (
-    <svg className="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-  ),
-  save: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V2" />
-    </svg>
-  ),
-  petanque: (
-    <svg className="w-8 h-8" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="32" cy="32" r="28" fill="url(#metalGradient)" stroke="currentColor" strokeWidth="2"/>
-      <circle cx="26" cy="24" r="3" fill="white" opacity="0.8"/>
-      <circle cx="36" cy="36" r="2" fill="currentColor" opacity="0.3"/>
-      <defs>
-        <radialGradient id="metalGradient">
-          <stop offset="0%" stopColor="#a8b2c3"/>
-          <stop offset="100%" stopColor="#8e9aaf"/>
-        </radialGradient>
-      </defs>
-    </svg>
-  )
+  trophy: <Trophy className="w-6 h-6" />,
+  plus: <Plus className="w-8 h-8" />,
+  minus: <Minus className="w-8 h-8" />,
+  check: <Check className="w-6 h-6" />,
+  clock: <Clock className="w-5 h-5" />,
+  arrowLeft: <ArrowLeft className="w-5 h-5" />,
+  flag: <Flag className="w-6 h-6" />,
+  sparkles: <Sparkles className="w-6 h-6" />,
+  fire: <Fire className="w-8 h-8" />,
+  undo: <Undo className="w-5 h-5" />,
+  loader: <Loader className="animate-spin h-6 w-6" />,
+  save: <Save className="w-6 h-6" />,
+  petanque: <Petanque className="w-8 h-8" />
 }
 
 export default function MatchScorePage() {
@@ -218,7 +158,7 @@ export default function MatchScorePage() {
     }
   }
 
-  const finishMatch = async (finalScoreA: number, finalScoreB: number, allManches: any[]) => {
+  const finishMatch = async (finalScoreA: number, finalScoreB: number, allManches: Manche[]) => {
     setSaving(true)
     try {
       // Gestion des égalités - ne devrait pas arriver en pétanque normale
@@ -260,10 +200,20 @@ export default function MatchScorePage() {
     }
   }
 
-  const saveProgress = async (finalScoreA: number, finalScoreB: number, allManches: any[], isFinished: boolean) => {
+  const saveProgress = async (finalScoreA: number, finalScoreB: number, allManches: Manche[], isFinished: boolean) => {
     setSaving(true)
     try {
-      const updateData: any = {
+      const updateData: Partial<{
+        score_a: number
+        score_b: number
+        manches_json: Manche[]
+        status: string
+        updated_at: string
+        started_at?: string
+        ended_at?: string
+        validated_at?: string
+        winner_id?: string
+      }> = {
         score_a: finalScoreA,
         score_b: finalScoreB,
         manches_json: allManches,

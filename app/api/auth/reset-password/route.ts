@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import crypto from 'crypto'
 import nodemailer from 'nodemailer'
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  // Rate limiting: 3 demandes de reset max par IP toutes les 60 minutes
+  const rateLimitResponse = applyRateLimit(request, 'reset-password', RATE_LIMITS.resetPassword)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const body = await request.json()
     const { email } = body

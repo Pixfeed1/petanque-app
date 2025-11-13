@@ -3,32 +3,37 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { authenticateUser } from '@/lib/auth'
-import { apiError, apiSuccess, validateRequiredFields, parseJsonBody } from '@/lib/middleware'
-import cookie from 'cookie'
+import { apiError, apiSuccess, parseJsonBody } from '@/lib/middleware'
+import { loginSchema, validateRequest } from '@/lib/validations'
+import { applyRateLimit, RATE_LIMITS, resetRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  // Rate limiting: 5 tentatives max par IP toutes les 15 minutes
+  const rateLimitResponse = applyRateLimit(request, 'login', RATE_LIMITS.login)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     // Parse le body
-    const bodyResult = await parseJsonBody<{
-      email: string
-      password: string
-      rememberMe?: boolean
-    }>(request)
+    const bodyResult = await parseJsonBody(request)
 
     if ('error' in bodyResult) {
       return bodyResult.error
     }
 
-    const { email, password, rememberMe } = bodyResult.data
-
-    // Validation des champs requis
-    const validation = validateRequiredFields(bodyResult.data, ['email', 'password'])
-    if (validation) {
-      return validation
+    // Validation Zod
+    const validation = validateRequest(loginSchema, bodyResult.data)
+    if (!validation.success) {
+      return apiError(validation.errors.join(', '), 400)
     }
+
+    const { email, password } = validation.data
+    const rememberMe = (bodyResult.data as any).rememberMe
 
     // Authentification
     const session = await authenticateUser(email, password)
+
+    // Connexion réussie : réinitialiser le rate limit pour cet IP
+    resetRateLimit(request, 'login')
 
     // Durée du cookie (7 jours si rememberMe, sinon session)
     const maxAge = rememberMe ? 7 * 24 * 60 * 60 : undefined
@@ -40,12 +45,13 @@ export async function POST(request: NextRequest) {
     })
 
     // Définir le cookie avec le token
+    // sameSite: 'strict' pour protection CSRF maximale
     response.cookies.set({
       name: 'auth-token',
       value: session.token,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict', // Protection CSRF renforcée
       maxAge,
       path: '/'
     })

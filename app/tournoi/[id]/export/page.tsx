@@ -5,94 +5,27 @@ import { useParams, useRouter } from 'next/navigation'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
+import type { Equipe, Joueur, EquipeJoueur } from '@/lib/types'
+import { sanitizeForExcel, cleanControlCharacters } from '@/lib/sanitize'
+import { Download, Trophy, Users, Calendar, Loader, Flag, Chart, Petanque, Medal, Check, Grid, Settings } from '@/components/Icons'
 
 // Icônes premium
 const Icons = {
- download: (
-   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-   </svg>
- ),
- pdf: (
-   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-   </svg>
- ),
- excel: (
-   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-   </svg>
- ),
- printer: (
-   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-   </svg>
- ),
- trophy: (
-   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v6m0 0H8m4 0h4m-4-6V9m0 6h4.5M12 9h-4.5m0 0H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2h-2.5M12 9V3" />
-   </svg>
- ),
- users: (
-   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-   </svg>
- ),
- calendar: (
-   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-   </svg>
- ),
- loader: (
-   <svg className="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-   </svg>
- ),
- flag: (
-   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-   </svg>
- ),
- chart: (
-   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-   </svg>
- ),
- petanque: (
-   <svg className="w-8 h-8" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-     <circle cx="32" cy="32" r="28" fill="url(#metalGradient)" stroke="currentColor" strokeWidth="2"/>
-     <circle cx="26" cy="24" r="3" fill="white" opacity="0.8"/>
-     <circle cx="36" cy="36" r="2" fill="currentColor" opacity="0.3"/>
-     <defs>
-       <radialGradient id="metalGradient">
-         <stop offset="0%" stopColor="#a8b2c3"/>
-         <stop offset="100%" stopColor="#8e9aaf"/>
-       </radialGradient>
-     </defs>
-   </svg>
- ),
- medal: (
-   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-   </svg>
- ),
- check: (
-   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-   </svg>
- ),
- grid: (
-   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-   </svg>
- ),
- settings: (
-   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-   </svg>
- )
+ download: <Download className="w-6 h-6" />,
+ pdf: <Download className="w-8 h-8" />,
+ excel: <Chart className="w-8 h-8" />,
+ printer: <Download className="w-8 h-8" />,
+ trophy: <Trophy className="w-6 h-6" />,
+ users: <Users className="w-6 h-6" />,
+ calendar: <Calendar className="w-6 h-6" />,
+ loader: <Loader className="h-6 w-6" />,
+ flag: <Flag className="w-6 h-6" />,
+ chart: <Chart className="w-6 h-6" />,
+ petanque: <Petanque className="w-8 h-8" />,
+ medal: <Medal className="w-8 h-8" />,
+ check: <Check className="w-5 h-5" />,
+ grid: <Grid className="w-6 h-6" />,
+ settings: <Settings className="w-5 h-5" />
 }
 
 interface Tournament {
@@ -115,7 +48,7 @@ interface Tournament {
 interface Team {
  id: string
  name: string
- players: any[]
+ players: Joueur[]
 }
 
 interface Match {
@@ -129,13 +62,14 @@ interface Match {
  tour: number
  type?: 'poule' | 'elimination' | 'finale'
  poule?: string
+ manches_json?: Array<{ points: number, team: 'A' | 'B' }>
  menes?: Array<{ points: number, team: 'A' | 'B' }>
 }
 
 interface Player {
  id: string
  name: string
- gender: 'H' | 'F'
+ gender?: 'H' | 'F'
  email?: string
  phone?: string
 }
@@ -185,7 +119,7 @@ export default function ExportTournamentPage() {
 
        // Enrichir chaque équipe avec les joueurs
        teamsData = await Promise.all(
-         teamsData.map(async (team: any) => {
+         teamsData.map(async (team: Equipe) => {
            if (team.joueur_ids && team.joueur_ids.length > 0) {
              const enrichedResponse = await fetch(`/api/equipes/${team.id}`, {
                credentials: 'include'
@@ -193,7 +127,7 @@ export default function ExportTournamentPage() {
              if (enrichedResponse.ok) {
                const enrichedTeam = await enrichedResponse.json()
                if (enrichedTeam.joueurs) {
-                 team.equipes_joueurs = enrichedTeam.joueurs.map((j: any) => ({
+                 (team as any).equipes_joueurs = enrichedTeam.joueurs.map((j: Joueur) => ({
                    joueur: j,
                    role: 'joueur'
                  }))
@@ -208,8 +142,8 @@ export default function ExportTournamentPage() {
 
        // Extraire tous les joueurs uniques
        const allPlayers = new Set<Player>()
-       teamsData?.forEach((team: any) => {
-         team.equipes_joueurs?.forEach((ej: any) => {
+       teamsData?.forEach((team: Equipe) => {
+         (team as any).equipes_joueurs?.forEach((ej: EquipeJoueur) => {
            if (ej.joueur) {
              allPlayers.add(ej.joueur)
            }
@@ -225,7 +159,7 @@ export default function ExportTournamentPage() {
        const matchesData = await matchesResponse.json()
 
        // Transformer manches_json en menes pour cohérence
-       const matchesWithMenes = matchesData?.map((match: any) => ({
+       const matchesWithMenes = matchesData?.map((match: Match) => ({
          ...match,
          menes: match.manches_json || []
        })) || []
@@ -316,7 +250,7 @@ export default function ExportTournamentPage() {
 
    matches.filter(m => m.status === 'termine').forEach(match => {
      // Joueurs équipe A
-     match.equipe_a?.players?.forEach((player: any) => {
+     match.equipe_a?.players?.forEach((player: Joueur) => {
        if (!player) return
 
        const stats = playerStats.get(player.id) || {
@@ -341,7 +275,7 @@ export default function ExportTournamentPage() {
      })
 
      // Joueurs équipe B
-     match.equipe_b?.players?.forEach((player: any) => {
+     match.equipe_b?.players?.forEach((player: Joueur) => {
        if (!player) return
 
        const stats = playerStats.get(player.id) || {
@@ -393,18 +327,19 @@ export default function ExportTournamentPage() {
      // En-tête avec logo pétanque
      pdf.setFillColor(74, 124, 89)
      pdf.rect(0, 0, 210, 40, 'F')
-     
+
      pdf.setTextColor(255, 255, 255)
      pdf.setFontSize(24)
      pdf.setFont('helvetica', 'bold')
-     pdf.text(tournament?.name || 'Tournoi', 105, 20, { align: 'center' })
-     
+     // ✅ Nettoyage des caractères de contrôle pour PDF
+     pdf.text(cleanControlCharacters(tournament?.name) || 'Tournoi', 105, 20, { align: 'center' })
+
      pdf.setFontSize(12)
      pdf.setFont('helvetica', 'normal')
      const modeText = tournament?.mode === 'choisi' ? 'Équipes choisies' :
                       tournament?.mode === 'melee_fixe' ? 'Mêlée fixe' : 'Mêlée tournante'
      pdf.text(`${modeText} - ${tournament?.format === 'doublette' ? 'Doublette' : 'Triplette'}`, 105, 30, { align: 'center' })
-     
+
      pdf.setTextColor(0, 0, 0)
      yPosition = 50
 
@@ -469,10 +404,10 @@ export default function ExportTournamentPage() {
 
          pdf.setFontSize(10)
          pdf.setFont('helvetica', 'normal')
-         team.players?.forEach((player: any) => {
-           const role = player.role === 'capitaine' ? ' (C)' : ''
-           const gender = player.joueur?.gender === 'H' ? '♂' : '♀'
-           pdf.text(`   ${gender} ${player.joueur?.name}${role}`, 25, yPosition)
+         team.players?.forEach((player: Joueur) => {
+           const role = (player as any).role === 'capitaine' ? ' (C)' : ''
+           const gender = player.gender === 'H' ? '♂' : '♀'
+           pdf.text(`   ${gender} ${player.name}${role}`, 25, yPosition)
            yPosition += 5
          })
          yPosition += 3
@@ -737,10 +672,10 @@ export default function ExportTournamentPage() {
        const playersData = [
          ['Nom', 'Genre', 'Email', 'Téléphone'],
          ...players.map(p => [
-           p.name,
+           sanitizeForExcel(p.name),  // ✅ Protection CSV Formula Injection
            p.gender === 'H' ? 'Homme' : 'Femme',
-           p.email || '',
-           p.phone || ''
+           sanitizeForExcel(p.email),  // ✅ Protection CSV Formula Injection
+           sanitizeForExcel(p.phone)   // ✅ Protection CSV Formula Injection
          ])
        ]
        const wsPlayers = XLSX.utils.aoa_to_sheet(playersData)
@@ -749,12 +684,12 @@ export default function ExportTournamentPage() {
        // Export équipes
        const teamsData = [
          ['Équipe', 'Joueur', 'Genre', 'Rôle'],
-         ...teams.flatMap(team => 
-           team.players?.map((p: any) => [
-             team.name,
-             p.joueur?.name,
-             p.joueur?.gender === 'H' ? 'Homme' : 'Femme',
-             p.role === 'capitaine' ? 'Capitaine' : 'Joueur'
+         ...teams.flatMap(team =>
+           team.players?.map((p: Joueur) => [
+             sanitizeForExcel(team.name),  // ✅ Protection CSV Formula Injection
+             sanitizeForExcel(p.name),     // ✅ Protection CSV Formula Injection
+             p.gender === 'H' ? 'Homme' : 'Femme',
+             (p as any).role === 'capitaine' ? 'Capitaine' : 'Joueur'
            ]) || []
          )
        ]
@@ -769,11 +704,11 @@ export default function ExportTournamentPage() {
          ...matches.map(m => [
            m.tour,
            m.type === 'poule' ? 'Poule' : m.type === 'finale' ? 'Finale' : 'Élimination',
-           m.poule || '',
-           m.equipe_a?.name || '',
+           sanitizeForExcel(m.poule),          // ✅ Protection CSV Formula Injection
+           sanitizeForExcel(m.equipe_a?.name), // ✅ Protection CSV Formula Injection
            m.score_a || '',
            m.score_b || '',
-           m.equipe_b?.name || '',
+           sanitizeForExcel(m.equipe_b?.name), // ✅ Protection CSV Formula Injection
            m.terrain || '',
            m.status === 'termine' ? 'Terminé' : m.status === 'en_cours' ? 'En cours' : 'À jouer'
          ])
@@ -790,7 +725,7 @@ export default function ExportTournamentPage() {
            ['Position', 'Joueur', 'Genre', 'Joués', 'Victoires', 'Défaites', 'Points Pour', 'Points Contre', 'Différence', 'Taux Victoire', 'Points'],
            ...rankings.map((player, index) => [
              index + 1,
-             player.name,
+             sanitizeForExcel(player.name), // ✅ Protection CSV Formula Injection
              player.gender === 'H' ? 'Homme' : 'Femme',
              player.played || 0,
              player.victories || 0,
@@ -810,7 +745,7 @@ export default function ExportTournamentPage() {
            ['Position', 'Équipe', 'Joués', 'Victoires', 'Défaites', 'Points Pour', 'Points Contre', 'Différence', 'Points'],
            ...rankings.map((team, index) => [
              index + 1,
-             team.name,
+             sanitizeForExcel(team.name), // ✅ Protection CSV Formula Injection
              team.played || 0,
              team.victories || 0,
              team.defeats || 0,

@@ -4,10 +4,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
 import { loadStripe } from '@stripe/stripe-js'
 import { useDashboardData } from './hooks/useDashboardData'
+import AdBanner from '@/components/AdBanner'
+import { Petanque, Trophy, Users, Play, Chart, Plus, Logout, Settings } from '@/components/Icons'
+import type { ActionItem } from '@/lib/types'
 
 const stripePromise = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
@@ -15,60 +18,19 @@ const stripePromise = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_S
 
 // Icônes
 const Icons = {
-  petanque: (
-    <svg className="w-10 h-10" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="32" cy="32" r="30" fill="url(#metalGradient)" stroke="#5a6978" strokeWidth="2"/>
-      <circle cx="26" cy="26" r="3" fill="#ffffff" opacity="0.8"/>
-      <circle cx="38" cy="38" r="2" fill="#2d3748" opacity="0.3"/>
-      <circle cx="40" cy="28" r="2" fill="#2d3748" opacity="0.3"/>
-      <defs>
-        <radialGradient id="metalGradient">
-          <stop offset="0%" stopColor="#a8b2c3"/>
-          <stop offset="100%" stopColor="#8e9aaf"/>
-        </radialGradient>
-      </defs>
-    </svg>
-  ),
-  trophy: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v6m-3 0h6m4-13V7a2 2 0 00-2-2h-2.5a.5.5 0 01-.5-.5V3a1 1 0 00-1-1H11a1 1 0 00-1 1v1.5a.5.5 0 01-.5.5H7a2 2 0 00-2 2v1c0 3.5 2.5 6 5.5 6.5m9 0c3-0.5 5.5-3 5.5-6.5V7a2 2 0 00-2-2h-2.5a.5.5 0 01-.5-.5V3a1 1 0 00-1-1h-2" />
-    </svg>
-  ),
-  users: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  ),
-  play: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  chart: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-    </svg>
-  ),
-  plus: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-    </svg>
-  ),
-  logout: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-    </svg>
-  ),
-  settings: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-    </svg>
-  )
+  petanque: <Petanque className="w-10 h-10" />,
+  trophy: <Trophy />,
+  users: <Users />,
+  play: <Play />,
+  chart: <Chart />,
+  plus: <Plus />,
+  logout: <Logout />,
+  settings: <Settings />
 }
 
 export default function Dashboard() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, organization, loading: authLoading, signOut } = useAuth()
   const { loading, stats, tournois, recentMatches, refetch } = useDashboardData(organization?.id ? Number(organization.id) : undefined)
 
@@ -84,6 +46,16 @@ export default function Dashboard() {
       setUserPlan(organization.settings.plan)
     }
   }, [organization])
+
+  // Détecter le paramètre ?upgrade=true pour ouvrir automatiquement la modal de paiement
+  useEffect(() => {
+    const upgrade = searchParams.get('upgrade')
+    if (upgrade === 'true' && user && !authLoading) {
+      setShowUpgradeModal(true)
+      // Nettoyer l'URL après ouverture de la modal
+      router.replace('/dashboard', { scroll: false })
+    }
+  }, [searchParams, user, authLoading, router])
 
   // Raccourcis clavier
   useEffect(() => {
@@ -109,7 +81,7 @@ export default function Dashboard() {
   }, [router])
 
   // Actions intelligentes
-  const actionItems = tournois.reduce((actions: any[], tournoi) => {
+  const actionItems = tournois.reduce((actions: ActionItem[], tournoi) => {
     if (tournoi.status === 'preparation' && tournoi.nb_joueurs && tournoi.nb_joueurs % 2 !== 0) {
       actions.push({
         id: `odd-${tournoi.id}`,
@@ -117,6 +89,7 @@ export default function Dashboard() {
         title: 'Nombre impair',
         subtitle: tournoi.name,
         label: 'Corriger',
+        labelColor: 'red',
         url: `/tournoi/${tournoi.id}`
       })
     }
@@ -134,7 +107,59 @@ export default function Dashboard() {
     await signOut()
   }
 
-  if (authLoading || loading) {
+  const handleUpgrade = async () => {
+    if (!user?.id) return
+
+    setProcessingPayment(true)
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          userEmail: user.email
+          // priceId omis = utilise process.env.STRIPE_PRICE_ID configuré dans l'API
+        })
+      })
+
+      const { sessionId, url } = await response.json()
+
+      if (url) {
+        // Rediriger vers Stripe Checkout
+        window.location.href = url
+      }
+    } catch (error) {
+      console.error('Erreur lors de la création de la session:', error)
+      alert('Une erreur est survenue. Veuillez réessayer.')
+      setProcessingPayment(false)
+    }
+  }
+
+  const handleDeleteTournament = async (tournoiId: number | string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce tournoi ? Cette action est irréversible.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/tournois/${tournoiId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        // Recharger les données du dashboard
+        refetch()
+      } else {
+        alert('Erreur lors de la suppression du tournoi')
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error)
+      alert('Une erreur est survenue')
+    }
+  }
+
+  // Afficher un loader plein écran SEULEMENT au premier chargement
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -161,6 +186,12 @@ export default function Dashboard() {
                 </h1>
                 <p className="text-xs text-gray-500">{organization?.name || 'Mon organisation'}</p>
               </div>
+              {loading && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-600 rounded-full text-xs">
+                  <div className="w-3 h-3 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                  <span>Actualisation...</span>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center space-x-2">
@@ -195,8 +226,30 @@ export default function Dashboard() {
                     <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-b border-gray-100">
                       <p className="text-sm font-medium text-gray-900">{user?.email}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{organization?.name}</p>
+                      {userPlan === 'premium' && (
+                        <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-medium rounded-full">
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          Premium
+                        </div>
+                      )}
                     </div>
                     <div className="p-2">
+                      {userPlan !== 'premium' && (
+                        <button
+                          onClick={() => {
+                            setShowProfileMenu(false)
+                            setShowUpgradeModal(true)
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-md transition font-medium mb-1"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          <span>Passer à Premium</span>
+                        </button>
+                      )}
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition"
@@ -261,6 +314,15 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Publicité 1 - Uniquement pour les utilisateurs gratuits */}
+          <div className="mb-16">
+            <AdBanner
+              variant="responsive"
+              userPlan={userPlan}
+              showOnlyForFree={true}
+            />
+          </div>
+
           {/* Tournois en cours */}
           {stats.tournoiEnCours > 0 && (
             <div className="mb-16">
@@ -270,28 +332,37 @@ export default function Dashboard() {
                   {stats.tournoiEnCours} tournoi{stats.tournoiEnCours > 1 ? 's' : ''} en cours
                 </h2>
               </div>
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="divide-y divide-gray-100">
-                  {tournois
-                    .filter(t => t.status === 'en_cours')
-                    .map((tournoi) => (
-                      <button
-                        key={tournoi.id}
-                        onClick={() => router.push(`/tournoi/${tournoi.id}`)}
-                        className="w-full flex items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50 transition text-left"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-gray-900">{tournoi.name}</h3>
-                          <p className="text-xs text-gray-500">{tournoi.format} · {tournoi.mode}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500">
-                            {tournoi.nb_matchs_joues || 0}/{tournoi.nb_matchs_total || 0} matchs
+              <div className="space-y-3">
+                {tournois
+                  .filter(t => t.status === 'en_cours')
+                  .map((tournoi) => (
+                    <div
+                      key={tournoi.id}
+                      className="bg-gray-50 hover:bg-gray-100 rounded-2xl p-8 transition-all group"
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <button
+                          onClick={() => router.push(`/tournoi/${tournoi.id}`)}
+                          className="flex-1 min-w-0 text-left"
+                        >
+                          <h3 className="text-4xl font-bold text-gray-900 mb-3 group-hover:text-green-600 transition-colors">{tournoi.name}</h3>
+                          <p className="text-xl text-gray-600 mb-2">{tournoi.format} · {tournoi.mode}</p>
+                          <p className="text-lg text-gray-500">
+                            {tournoi.nb_matchs_joues || 0}/{tournoi.nb_matchs_total || 0} matchs joués
                           </p>
-                        </div>
-                      </button>
-                    ))}
-                </div>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTournament(tournoi.id)}
+                          className="p-3 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                          title="Supprimer le tournoi"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
           )}
@@ -330,6 +401,15 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* Publicité 2 - Uniquement pour les utilisateurs gratuits */}
+          <div className="mb-16">
+            <AdBanner
+              variant="horizontal"
+              userPlan={userPlan}
+              showOnlyForFree={true}
+            />
+          </div>
+
           {/* Tournois */}
           <div>
             <div className="flex items-center justify-between mb-6">
@@ -342,31 +422,162 @@ export default function Dashboard() {
               </button>
             </div>
 
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              {filteredTournois.length === 0 ? (
-                <div className="py-24 text-center">
-                  <p className="text-gray-600">Aucun tournoi trouvé</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-100">
-                  {filteredTournois.map((tournoi) => (
-                    <button
-                      key={tournoi.id}
-                      onClick={() => router.push(`/tournoi/${tournoi.id}`)}
-                      className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition text-left"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-medium text-gray-900">{tournoi.name}</h3>
-                        <p className="text-xs text-gray-500">{tournoi.format}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+{filteredTournois.length === 0 ? (
+              <div className="py-24 text-center bg-gray-50 rounded-2xl">
+                <p className="text-gray-600">Aucun tournoi trouvé</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredTournois.map((tournoi) => (
+                  <div
+                    key={tournoi.id}
+                    className="bg-gray-50 hover:bg-gray-100 rounded-2xl p-8 transition-all group"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <button
+                        onClick={() => router.push(`/tournoi/${tournoi.id}`)}
+                        className="flex-1 min-w-0 text-left"
+                      >
+                        <h3 className="text-4xl font-bold text-gray-900 mb-3 group-hover:text-green-600 transition-colors">{tournoi.name}</h3>
+                        <p className="text-xl text-gray-600 mb-3">{tournoi.format} · {tournoi.mode}</p>
+                        <div className="flex items-center gap-3 text-lg text-gray-500">
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-base font-medium ${
+                            tournoi.status === 'en_cours' ? 'bg-green-100 text-green-800' :
+                            tournoi.status === 'termine' ? 'bg-gray-200 text-gray-700' :
+                            'bg-amber-100 text-amber-800'
+                          }`}>
+                            {tournoi.status === 'en_cours' ? 'En cours' :
+                             tournoi.status === 'termine' ? 'Terminé' :
+                             'Préparation'}
+                          </span>
+                          {(tournoi.nb_matchs_total || 0) > 0 && (
+                            <span>{tournoi.nb_matchs_joues || 0}/{tournoi.nb_matchs_total || 0} matchs</span>
+                          )}
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTournament(tournoi.id)}
+                        className="p-3 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                        title="Supprimer le tournoi"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </main>
+
+      {/* Modal Upgrade Premium */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-fadeIn">
+            {/* Header avec gradient vert */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-white">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold">Passer à Premium</h2>
+                <button
+                  onClick={() => setShowUpgradeModal(false)}
+                  disabled={processingPayment}
+                  className="text-white/80 hover:text-white transition"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-5xl font-bold">4,99€</span>
+                <span className="text-white/80">/an</span>
+              </div>
+            </div>
+
+            {/* Contenu */}
+            <div className="p-6 space-y-6">
+              {/* Avantages */}
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
+                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Sans publicité</p>
+                    <p className="text-sm text-gray-600">Une expérience pure et fluide</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
+                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Accès illimité</p>
+                    <p className="text-sm text-gray-600">Tous les tournois, sans limite</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
+                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Support prioritaire</p>
+                    <p className="text-sm text-gray-600">Réponse rapide à vos questions</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
+                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Mises à jour gratuites</p>
+                    <p className="text-sm text-gray-600">Toutes les nouvelles fonctionnalités</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bouton de paiement */}
+              <button
+                onClick={handleUpgrade}
+                disabled={processingPayment}
+                className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {processingPayment ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Redirection...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span>S'abonner - 4,99€/an</span>
+                  </>
+                )}
+              </button>
+
+              <p className="text-xs text-center text-gray-500">
+                Paiement sécurisé par Stripe • Satisfait ou remboursé 30 jours
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -124,19 +124,30 @@ if ps -p $NEW_PID > /dev/null; then
     echo ""
     echo "📊 Processus Node :"
     ps aux | grep "next start" | grep -v grep
-else
-    echo -e "${RED}❌ L'application n'a pas démarré correctement${NC}"
-    echo ""
-    echo "Vérifiez les logs :"
-    tail -20 app.log
-    exit 1
-fi
-
 echo ""
 echo -e "${GREEN}=================================="
 echo "✅ Déploiement terminé avec succès !"
 echo "==================================${NC}"
 echo ""
-echo "🌐 Accès : https://petanquepro.fr"
-echo "📝 Logs : tail -f app.log"
+
+# Vérification finale avant démarrage
+echo "🔍 Vérification finale du port 3000..."
+if lsof -i:3000 >/dev/null 2>&1 || ss -ltn 'sport = :3000' 2>/dev/null | grep -q ':3000'; then
+    echo -e "${RED}⚠️  ATTENTION: Le port 3000 semble encore occupé !${NC}"
+    echo ""
+    echo "Processus détectés :"
+    lsof -i:3000 2>/dev/null || true
+    ss -ltnp 'sport = :3000' 2>/dev/null || true
+    echo ""
+    echo -e "${YELLOW}Tentative de démarrage quand même...${NC}"
+else
+    echo -e "${GREEN}✅ Port 3000 est libre${NC}"
+fi
+
 echo ""
+echo "🚀 Démarrage de l'application..."
+echo "📝 Logs en direct (CTRL+C pour arrêter) :"
+echo ""
+
+# Lancer npm start en direct (pas en background)
+npm start

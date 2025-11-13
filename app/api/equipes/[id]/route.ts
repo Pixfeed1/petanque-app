@@ -29,7 +29,7 @@ export async function GET(
     // Enrichir avec les détails des joueurs
     if (equipe.joueur_ids && Array.isArray(equipe.joueur_ids)) {
       const joueurs = await queryMany(
-        `SELECT * FROM joueurs WHERE id = ANY($1::uuid[])`,
+        `SELECT * FROM joueurs WHERE id = ANY($1::bigint[])`,
         [equipe.joueur_ids]
       )
       equipe.joueurs = joueurs
@@ -73,7 +73,7 @@ export async function PUT(
     }
 
     if (body.joueur_ids !== undefined) {
-      updates.push(`joueur_ids = $${paramIndex++}::uuid[]`)
+      updates.push(`joueur_ids = $${paramIndex++}::bigint[]`)
       values.push(body.joueur_ids)
     }
 

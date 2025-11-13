@@ -3,12 +3,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { query } from '@/lib/db'
+import { createCheckoutSessionSchema, validateRequest } from '@/lib/validations'
 
 // Initialiser Stripe uniquement si la clé est disponible
+// Note: apiVersion non spécifiée = Stripe utilise automatiquement la version du package
 const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-07-30.basil'
-    })
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : null
 
 export async function POST(request: NextRequest) {
@@ -23,19 +23,22 @@ export async function POST(request: NextRequest) {
 
    // Récupérer les données de la requête
    const body = await request.json()
-   const {
-     priceId,
-     userId,
-     userEmail,
-     mode = 'payment' // Achat unique par défaut
-   } = body
 
-   // Vérifier les paramètres requis
-   if (!userId || !userEmail) {
+   // Validation Zod
+   const validation = validateRequest(createCheckoutSessionSchema, body)
+   if (!validation.success) {
      return NextResponse.json(
-       { error: 'Utilisateur non authentifié' },
-       { status: 401 }
+       { error: validation.errors.join(', ') },
+       { status: 400 }
      )
+   }
+
+   const { userId, userEmail } = validation.data
+   let priceId = validation.data.priceId
+
+   // Utiliser le STRIPE_PRICE_ID de l'env si disponible et aucun priceId fourni
+   if (!priceId && process.env.STRIPE_PRICE_ID) {
+     priceId = process.env.STRIPE_PRICE_ID
    }
 
    // Si c'est le plan gratuit, pas besoin de Stripe
@@ -106,18 +109,8 @@ export async function POST(request: NextRequest) {
      )
    }
 
-   // Créer le prix Premium (4,99€ achat unique)
-   // Note: En production, créer ce prix dans le Dashboard Stripe et utiliser son ID
-   const price = await stripe.prices.create({
-     currency: 'eur',
-     unit_amount: 499, // 4,99€ en centimes
-     product_data: {
-       name: 'Tournoi Pétanque Premium',
-       metadata: {
-         product_type: 'lifetime_access'
-       }
-     }
-   })
+   // Utiliser le priceId (soit fourni, soit depuis STRIPE_PRICE_ID env)
+   const finalPriceId: string = priceId
 
    // URL de base pour les redirections
    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
@@ -126,31 +119,39 @@ export async function POST(request: NextRequest) {
    const session = await stripe.checkout.sessions.create({
      customer: customerId,
      payment_method_types: ['card'],
-     mode: 'payment', // Achat unique, pas subscription
+     mode: 'subscription', // Abonnement annuel
      line_items: [
        {
-         price: price.id,
+         price: finalPriceId,
          quantity: 1
        }
      ],
-     // Métadonnées pour le webhook
+     // Métadonnées pour le webhook de session
      metadata: {
        user_id: userId,
        user_email: userEmail,
-       product: 'premium_lifetime'
+       product: 'premium'
+     },
+     // IMPORTANT: Métadonnées pour l'abonnement (pour les webhooks subscription.*)
+     subscription_data: {
+       metadata: {
+         user_id: userId,
+         user_email: userEmail,
+         product: 'premium'
+       }
      },
      // URLs de redirection après paiement
      success_url: `${baseUrl}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
      cancel_url: `${baseUrl}/checkout?payment=cancelled`,
-     
+
      // Options supplémentaires
      allow_promotion_codes: true, // Permettre les codes promo
      billing_address_collection: 'auto',
-     
+
      // Personnalisation
      custom_text: {
        submit: {
-         message: 'Paiement unique de 4,99€ - Accès à vie'
+         message: 'Passer Premium'
        }
      },
      
@@ -158,7 +159,7 @@ export async function POST(request: NextRequest) {
      consent_collection: {
        terms_of_service: 'required'
      },
-     
+
      // Facture automatique
      invoice_creation: {
        enabled: true
@@ -170,7 +171,7 @@ export async function POST(request: NextRequest) {
      sessionId: session.id,
      userId,
      userEmail,
-     amount: '4.99€'
+     priceId: finalPriceId
    })
 
    // Créer un enregistrement de la tentative de paiement
@@ -187,18 +188,20 @@ export async function POST(request: NextRequest) {
      url: session.url
    })
 
- } catch (error: any) {
+ } catch (error: unknown) {
    console.error('Erreur création session Stripe:', error)
-   
+
    // Gestion des erreurs spécifiques Stripe
-   if (error.type === 'StripeCardError') {
+   const stripeError = error as { type?: string; message?: string }
+
+   if (stripeError.type === 'StripeCardError') {
      return NextResponse.json(
        { error: 'Erreur avec la carte bancaire' },
        { status: 400 }
      )
    }
-   
-   if (error.type === 'StripeInvalidRequestError') {
+
+   if (stripeError.type === 'StripeInvalidRequestError') {
      return NextResponse.json(
        { error: 'Configuration Stripe invalide' },
        { status: 400 }
@@ -207,9 +210,9 @@ export async function POST(request: NextRequest) {
 
    // Erreur générique
    return NextResponse.json(
-     { 
+     {
        error: 'Une erreur est survenue lors de la création du paiement',
-       details: error.message 
+       details: stripeError.message || 'Unknown error'
      },
      { status: 500 }
    )
@@ -264,6 +267,18 @@ export async function GET(request: NextRequest) {
          [JSON.stringify(new Date().toISOString()), userId]
        )
 
+       // Mettre à jour l'organisation en Premium (CRITIQUE pour le dashboard)
+       await query(
+         `UPDATE organisations
+          SET settings = jsonb_set(
+            COALESCE(settings, '{}'::jsonb),
+            '{plan}',
+            '"premium"'::jsonb
+          )
+          WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+         [userId]
+       )
+
        // Mettre à jour l'enregistrement de paiement
        await query(
          `UPDATE payment_attempts
@@ -291,7 +306,7 @@ export async function GET(request: NextRequest) {
      message: 'Paiement en attente ou échoué'
    })
 
- } catch (error: any) {
+ } catch (error: unknown) {
    console.error('Erreur vérification paiement:', error)
    return NextResponse.json(
      { error: 'Erreur lors de la vérification du paiement' },
