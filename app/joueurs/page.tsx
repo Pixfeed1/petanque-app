@@ -183,7 +183,7 @@ export default function JoueursPage() {
                   : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
-              👨 Hommes
+              Hommes
             </button>
             <button
               onClick={() => setGenderFilter('F')}
@@ -193,7 +193,7 @@ export default function JoueursPage() {
                   : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
-              👩 Femmes
+              Femmes
             </button>
           </div>
         </div>
