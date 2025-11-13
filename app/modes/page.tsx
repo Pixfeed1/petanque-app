@@ -73,7 +73,7 @@ export default function GameModesPage() {
       name: 'Mêlée Tournante',
       icon: Icons.refresh,
       color: 'from-purple-500 to-indigo-600',
-      description: 'Nouvelles équipes à chaque partie',
+      description: 'Rotation par tour ou par match selon votre choix',
       tagline: 'Maximum de rencontres et de fun'
     }
   ]
@@ -153,7 +153,7 @@ export default function GameModesPage() {
     },
     'melee-tournante': {
       title: 'Mêlée Tournante - Maximum de Variété',
-      subtitle: 'Changement de partenaires et d\'adversaires à chaque tour',
+      subtitle: 'Changement de partenaires selon votre choix : par tour ou par match',
       advantages: [
         'Jouer avec tout le monde',
         'Pas de routine ni de lassitude',
@@ -162,18 +162,18 @@ export default function GameModesPage() {
       ],
       howItWorks: [
         'Inscription individuelle des joueurs',
-        'Nouveau tirage à chaque partie',
-        'Éviter de rejouer avec les mêmes',
+        'Choix de rotation : par tour (recommandé) ou par match',
+        'Nouveau tirage selon votre paramétrage',
         'Classement individuel final'
       ],
       idealFor: 'Animations, tournois découverte, événements festifs',
       teamFormation: {
-        title: 'Rotation des équipes',
+        title: 'Options de rotation',
         rules: [
-          'Nouveau tirage à chaque tour',
+          '📅 Par tour : Nouvelles équipes à chaque tour (recommandé)',
+          '🔄 Par match : Nouvelles équipes après chaque partie',
           'Algorithme évite les répétitions',
-          'Mixité H/F respectée à chaque fois',
-          'Tous jouent contre tous idéalement'
+          'Mixité H/F respectée à chaque tirage'
         ]
       },
       ranking: {
@@ -469,7 +469,7 @@ export default function GameModesPage() {
                   <td className="px-6 py-4 font-medium">Formation équipes</td>
                   <td className="px-6 py-4 text-center">Par les joueurs</td>
                   <td className="px-6 py-4 text-center">Tirage au sort</td>
-                  <td className="px-6 py-4 text-center">Nouveau tirage/tour</td>
+                  <td className="px-6 py-4 text-center">Par tour ou par match</td>
                 </tr>
                 <tr className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium">Classement</td>
