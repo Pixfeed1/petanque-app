@@ -481,8 +481,8 @@ export default function PlayersManagementPage() {
                   className={`group px-3 sm:px-4 md:px-6 py-3 sm:py-4 hover:bg-gradient-to-r hover:from-gray-50 hover:to-white transition-all animate-slideIn`}
                   style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                    <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 sm:gap-4">
+                    <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 flex-1 min-w-0">
                       <input
                         type="checkbox"
                         checked={selectedPlayers.includes(player.id)}
@@ -490,18 +490,18 @@ export default function PlayersManagementPage() {
                         className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 rounded focus:ring-green-500 flex-shrink-0"
                       />
 
-                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-lg bg-gradient-to-br ${
+                      <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base md:text-lg shadow-lg bg-gradient-to-br ${
                         player.gender === 'H' ? 'from-blue-500 to-indigo-600' : 'from-pink-500 to-rose-600'
                       } group-hover:scale-110 transition-transform flex-shrink-0`}>
                         {player.name.charAt(0).toUpperCase()}
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-gray-900 text-sm sm:text-base md:text-lg group-hover:text-green-600 transition-colors truncate">
+                        <h3 className="font-bold text-gray-900 text-xs sm:text-sm md:text-base lg:text-lg group-hover:text-green-600 transition-colors truncate">
                           {player.name}
                         </h3>
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:gap-4 text-xs sm:text-sm text-gray-500">
-                          <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${
+                        <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 md:gap-4 text-xs text-gray-500">
+                          <span className={`px-1 sm:px-1.5 md:px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${
                             player.gender === 'H'
                               ? 'bg-blue-100 text-blue-700'
                               : 'bg-pink-100 text-pink-700'
@@ -509,13 +509,13 @@ export default function PlayersManagementPage() {
                             {player.gender === 'H' ? 'H' : 'F'}
                           </span>
                           {player.email && (
-                            <span className="hidden sm:flex items-center truncate">
+                            <span className="hidden md:flex items-center truncate">
                               {Icons.mail}
                               <span className="ml-1 truncate">{player.email}</span>
                             </span>
                           )}
                           {player.phone && (
-                            <span className="hidden md:flex items-center">
+                            <span className="hidden lg:flex items-center">
                               {Icons.phone}
                               <span className="ml-1">{player.phone}</span>
                             </span>
@@ -524,26 +524,28 @@ export default function PlayersManagementPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-1 sm:gap-1.5 md:gap-3 flex-shrink-0">
                       {/* Tournois actifs */}
                       {(player as any).equipes_joueurs?.some((ej: any) => ej.equipe?.tournoi?.status === 'en_cours') && (
-                        <div className="hidden sm:flex items-center px-2 md:px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs md:text-sm font-medium">
+                        <div className="hidden md:flex items-center px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
                           {Icons.trophy}
                           <span className="ml-1">Actif</span>
                         </div>
                       )}
 
-                      {/* Actions - toujours visibles sur mobile */}
-                      <div className="flex items-center gap-1 sm:gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                      {/* Actions - toujours visibles */}
+                      <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2">
                         <button
                           onClick={() => openModal(player)}
-                          className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all hover:scale-110"
+                          className="p-1 sm:p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all hover:scale-110"
+                          title="Modifier"
                         >
                           {Icons.edit}
                         </button>
                         <button
                           onClick={() => handleDeletePlayer(player.id)}
-                          className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all hover:scale-110"
+                          className="p-1 sm:p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all hover:scale-110"
+                          title="Supprimer"
                         >
                           {Icons.trash}
                         </button>
