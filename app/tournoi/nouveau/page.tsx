@@ -938,7 +938,7 @@ export default function CreateTournamentPage() {
                   </div>
 
                   {/* Date et Heure */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="group">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Date du tournoi *
@@ -1074,7 +1074,7 @@ export default function CreateTournamentPage() {
                       {Icons.shuffle}
                       <span className="ml-2">Rotation des équipes</span>
                     </h4>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <button
                         onClick={() => setFormData({...formData, meleeRotation: 'par_tour'})}
                         className={`p-4 rounded-xl border-2 transition-all ${
@@ -1111,12 +1111,12 @@ export default function CreateTournamentPage() {
                   Format des équipes
                 </h3>
                 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {formats.map((format) => (
                     <button
                       key={format.value}
                       onClick={() => setFormData({...formData, format: format.value})}
-                      className={`group relative p-8 rounded-2xl border-2 transition-all transform hover:scale-105 ${
+                      className={`group relative p-6 sm:p-8 rounded-2xl border-2 transition-all transform hover:scale-105 ${
                         formData.format === format.value
                           ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg'
                           : 'border-gray-200 hover:border-gray-300 bg-white'
@@ -1579,7 +1579,7 @@ export default function CreateTournamentPage() {
                   {/* Options activées */}
                   <div className="mt-6 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl">
                     <h4 className="font-bold text-gray-900 mb-3">Options activées</h4>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {formData.consolante && (
                         <div className="flex items-center text-sm text-gray-700">
                           {Icons.check}
@@ -1697,7 +1697,7 @@ export default function CreateTournamentPage() {
                       {Icons.petanque}
                       <span className="ml-2">Estimation du tournoi</span>
                     </h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-gray-600">Nombre de poules</p>
                         <p className="text-lg font-bold text-gray-900">
@@ -1755,9 +1755,9 @@ export default function CreateTournamentPage() {
                   onClick={handleSubmit}
                   disabled={savingTournament}
                   className={`
-                    relative px-12 py-5 text-lg font-bold rounded-2xl transition-all transform
-                    ${successAnimation 
-                      ? 'bg-green-600 text-white scale-105 shadow-2xl' 
+                    relative px-6 sm:px-12 py-4 sm:py-5 text-base sm:text-lg font-bold rounded-2xl transition-all transform
+                    ${successAnimation
+                      ? 'bg-green-600 text-white scale-105 shadow-2xl'
                       : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:shadow-2xl hover:scale-105'
                     }
                     ${loading ? 'opacity-75 cursor-wait' : ''}
@@ -1797,16 +1797,16 @@ export default function CreateTournamentPage() {
         </div>
 
         {/* Boutons de navigation */}
-        <div className="flex justify-between mt-12">
+        <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-12">
           <button
             onClick={() => {
               if (currentStep > 1) {
                 setCurrentStep(currentStep - 1)
               }
             }}
-            className={`px-6 py-3 rounded-xl font-medium transition-all ${
-              currentStep === 1 
-                ? 'text-gray-400 cursor-not-allowed' 
+            className={`px-4 sm:px-6 py-3 rounded-xl font-medium transition-all ${
+              currentStep === 1
+                ? 'text-gray-400 cursor-not-allowed'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
             }`}
             disabled={currentStep === 1}
@@ -1819,7 +1819,7 @@ export default function CreateTournamentPage() {
               onClick={handleContinue}
               disabled={!canProceed()}
               className={`
-                flex items-center px-8 py-3 rounded-xl font-medium transition-all
+                flex items-center justify-center px-6 sm:px-8 py-3 rounded-xl font-medium transition-all
                 ${canProceed()
                   ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:shadow-lg hover:scale-105'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
