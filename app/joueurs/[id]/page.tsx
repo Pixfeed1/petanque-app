@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import type { Joueur } from '@/lib/types'
 import { sanitizeRowForCSV } from '@/lib/sanitize'
@@ -29,8 +29,12 @@ const Icons = {
 
 export default function PlayersManagementPage() {
   const router = useRouter()
+  const params = useParams()
   const { user, organization } = useAuth()
   const [mounted, setMounted] = useState(false)
+
+  // Extraire l'ID du paramètre (format: "3-jean-dupont" -> "3")
+  const joueurId = params.id ? String(params.id).split('-')[0] : null
   const [loading, setLoading] = useState(true)
   const [players, setPlayers] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')

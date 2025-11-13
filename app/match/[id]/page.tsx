@@ -407,7 +407,9 @@ export default function MatchScorePage() {
                   </div>
                   
                   {winner === 'A' && (
-                    <div className="animate-bounce text-5xl">🏆</div>
+                    <div className="animate-bounce">
+                      <Trophy className="w-16 h-16 text-yellow-500" />
+                    </div>
                   )}
                 </div>
               </div>
@@ -442,7 +444,9 @@ export default function MatchScorePage() {
                   </div>
                   
                   {winner === 'B' && (
-                    <div className="animate-bounce text-5xl">🏆</div>
+                    <div className="animate-bounce">
+                      <Trophy className="w-16 h-16 text-yellow-500" />
+                    </div>
                   )}
                 </div>
               </div>

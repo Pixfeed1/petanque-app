@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import type { Tournoi, Joueur } from '@/lib/types'
-import { Trophy, Petanque, Calendar, Users, Check, Sparkles, Lightning, Star, Plus, X, Info, ArrowRight, Loader, Clock, Shuffle, Grid, Settings, Flag, Warning, Gamepad, Map } from '@/components/Icons'
+import { Trophy, Petanque, Calendar, User, Users, Check, Sparkles, Lightning, Star, Plus, X, Info, ArrowRight, Loader, Clock, Shuffle, Grid, Settings, Flag, Warning, Gamepad, Map, Target } from '@/components/Icons'
 
 // Icônes premium améliorées
 const Icons = {
@@ -189,7 +189,7 @@ export default function CreateTournamentPage() {
       title: 'Tête à tête',
       description: '1 joueur (individuel)',
       minPlayers: 2,
-      icon: '🎯',
+      icon: <User className="w-12 h-12" />,
       gradient: 'from-blue-400 to-blue-600'
     },
     {
@@ -197,7 +197,7 @@ export default function CreateTournamentPage() {
       title: 'Doublette',
       description: '2 joueurs par équipe',
       minPlayers: 4,
-      icon: '👥',
+      icon: <Users className="w-12 h-12" />,
       gradient: 'from-green-400 to-emerald-600'
     },
     {
@@ -205,7 +205,7 @@ export default function CreateTournamentPage() {
       title: 'Triplette',
       description: '3 joueurs par équipe',
       minPlayers: 6,
-      icon: '👥👤',
+      icon: <Users className="w-12 h-12" />,
       gradient: 'from-green-400 to-emerald-600'
     }
   ]
@@ -1181,9 +1181,9 @@ export default function CreateTournamentPage() {
                   </div>
 
                   <p className="text-sm text-gray-500 text-center mt-6">
-                    {formData.maxPoints === 13 ? '🎯 Recommandé pour tournois officiels FIPJP' :
-                     formData.maxPoints < 11 ? '⚡ Parties rapides' :
-                     '🏆 Parties longues'}
+                    {formData.maxPoints === 13 ? 'Recommandé pour tournois officiels FIPJP' :
+                     formData.maxPoints < 11 ? 'Parties rapides' :
+                     'Parties longues'}
                   </p>
                 </div>
               </div>

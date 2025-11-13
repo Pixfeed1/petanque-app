@@ -17,6 +17,16 @@ interface Joueur {
   created_at?: string
 }
 
+// Fonction pour créer un slug à partir d'un nom
+function createSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Retire les accents
+    .replace(/[^a-z0-9]+/g, '-') // Remplace les caractères spéciaux par des tirets
+    .replace(/^-+|-+$/g, '') // Retire les tirets au début et à la fin
+}
+
 export default function JoueursPage() {
   const router = useRouter()
   const { user, organization } = useAuth()
@@ -217,7 +227,7 @@ export default function JoueursPage() {
             {filteredJoueurs.map((joueur, index) => (
               <div
                 key={joueur.id}
-                onClick={() => router.push(`/joueurs/${joueur.id}`)}
+                onClick={() => router.push(`/joueurs/${joueur.id}-${createSlug(joueur.name)}`)}
                 className="group relative cursor-pointer"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
@@ -235,7 +245,7 @@ export default function JoueursPage() {
                         </h3>
                         <div className="flex items-center gap-4 text-sm text-gray-600">
                           <span className="text-gray-500">
-                            {joueur.gender === 'H' ? '👨 Homme' : '👩 Femme'}
+                            {joueur.gender === 'H' ? 'Homme' : 'Femme'}
                           </span>
                           {joueur.email && (
                             <span className="hidden sm:inline truncate">{joueur.email}</span>
@@ -250,7 +260,7 @@ export default function JoueursPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        router.push(`/joueurs/${joueur.id}`)
+                        router.push(`/joueurs/${joueur.id}-${createSlug(joueur.name)}`)
                       }}
                       className="ml-4 p-3 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
                     >
