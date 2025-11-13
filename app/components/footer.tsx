@@ -53,11 +53,6 @@ export default function Footer({ scrollToSection }: FooterProps) {
             <h4 className="text-white font-semibold mb-4">Produit</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/features" className="hover:text-white transition">
-                  Fonctionnalités
-                </Link>
-              </li>
-              <li>
                 <Link href="/modes" className="hover:text-white transition">
                   Modes de jeu
                 </Link>
