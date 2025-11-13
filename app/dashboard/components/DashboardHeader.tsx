@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Petanque, Bell, ChevronDown, Settings, Logout, Crown, Star } from '@/components/Icons'
+import { Bell, ChevronDown, Settings, Logout, Crown, Star } from '@/components/Icons'
 
 interface DashboardHeaderProps {
   user: any
@@ -24,9 +24,25 @@ interface DashboardHeaderProps {
   onOpenUpgrade: () => void
 }
 
+// Logo local (même que footer et homepage)
+const LogoIcon = (
+  <svg className="w-10 h-10" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="32" r="30" fill="url(#metalGradientHeader)" stroke="#5a6978" strokeWidth="2"/>
+    <circle cx="26" cy="26" r="3" fill="#ffffff" opacity="0.8"/>
+    <circle cx="38" cy="38" r="2" fill="#2d3748" opacity="0.3"/>
+    <circle cx="40" cy="28" r="2" fill="#2d3748" opacity="0.3"/>
+    <defs>
+      <radialGradient id="metalGradientHeader">
+        <stop offset="0%" stopColor="#a8b2c3"/>
+        <stop offset="100%" stopColor="#8e9aaf"/>
+      </radialGradient>
+    </defs>
+  </svg>
+)
+
 // Icônes SVG
 const Icons = {
-  logo: <Petanque className="w-10 h-10" />,
+  logo: LogoIcon,
   bell: <Bell className="w-5 h-5" />,
   chevronDown: <ChevronDown className="w-4 h-4" />,
   settings: <Settings className="w-4 h-4" />,
