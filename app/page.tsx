@@ -157,6 +157,36 @@ export default function HomePage() {
     return () => clearInterval(interval)
   }, [])
 
+  // Charger les avis dynamiques
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const response = await fetch('/api/reviews?approved=true&limit=3&order_by=rating')
+        if (!response.ok) throw new Error('Erreur chargement avis')
+
+        const data = await response.json()
+
+        // Si au moins 3 avis, utiliser les vrais, sinon garder les hardcodés
+        if (data.reviews && data.reviews.length >= 3) {
+          setTestimonials(data.reviews)
+        }
+
+        // Mettre à jour les stats
+        if (data.stats) {
+          setReviewsStats({
+            average: data.stats.average || 0,
+            total: data.stats.total_approved || 0
+          })
+        }
+      } catch (error) {
+        console.error('Erreur chargement avis:', error)
+        // En cas d'erreur, garder les avis hardcodés
+      }
+    }
+
+    fetchReviews()
+  }, [])
+
   // Fonction de déconnexion
   const handleLogout = async () => {
     try {
@@ -219,7 +249,8 @@ export default function HomePage() {
     }
   ]
 
-  const testimonials = [
+  // Témoignages hardcodés (fallback si moins de 3 vrais avis)
+  const testimonials_hardcoded = [
     {
       name: 'Jean-Pierre M.',
       role: 'Président club de Marseille',
@@ -239,6 +270,10 @@ export default function HomePage() {
       rating: 5
     }
   ]
+
+  // Avis dynamiques (chargés depuis l'API)
+  const [testimonials, setTestimonials] = useState(testimonials_hardcoded)
+  const [reviewsStats, setReviewsStats] = useState({ average: 0, total: 0 })
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
@@ -641,6 +676,24 @@ export default function HomePage() {
             <p className="text-xl text-gray-600">
               Découvrez ce que disent les organisateurs
             </p>
+            {reviewsStats.total > 0 && (
+              <div className="flex items-center justify-center mt-4 space-x-2">
+                <div className="flex">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className={i < Math.round(reviewsStats.average) ? 'text-yellow-400' : 'text-gray-300'}>
+                      {Icons.star}
+                    </span>
+                  ))}
+                </div>
+                <span className="text-lg font-semibold text-gray-700">
+                  {reviewsStats.average.toFixed(1)}/5
+                </span>
+                <span className="text-gray-500">•</span>
+                <span className="text-gray-600">
+                  {reviewsStats.total} avis
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -664,6 +717,21 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+
+          {/* Lien vers tous les avis */}
+          {reviewsStats.total > 3 && (
+            <div className="text-center mt-12">
+              <button
+                onClick={() => router.push('/avis')}
+                className="inline-flex items-center px-6 py-3 bg-white text-green-600 border-2 border-green-600 rounded-full hover:bg-green-600 hover:text-white transition-all font-medium"
+              >
+                Voir tous les {reviewsStats.total} avis
+                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
