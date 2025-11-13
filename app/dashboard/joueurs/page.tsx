@@ -417,41 +417,43 @@ export default function PlayersManagementPage() {
 
             {/* Actions groupées */}
             {selectedPlayers.length > 0 && (
-              <div className="flex items-center space-x-2 animate-slideIn">
-                <span className="text-sm text-gray-600">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 animate-slideIn">
+                <span className="text-xs sm:text-sm text-gray-600">
                   {selectedPlayers.length} sélectionné(s)
                 </span>
-                <button
-                  onClick={handleBulkDelete}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all"
-                >
-                  Supprimer
-                </button>
-                <button
-                  onClick={handleExport}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all"
-                >
-                  Exporter
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleBulkDelete}
+                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-all"
+                  >
+                    Supprimer
+                  </button>
+                  <button
+                    onClick={handleExport}
+                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-all"
+                  >
+                    Exporter
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
 
         {/* Liste des joueurs */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl overflow-hidden">
           {/* Header du tableau */}
-          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b">
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 <input
                   type="checkbox"
                   checked={selectedPlayers.length === filteredPlayers.length && filteredPlayers.length > 0}
                   onChange={selectAll}
-                  className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                  className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 rounded focus:ring-green-500"
                 />
-                <span className="text-sm text-gray-600">
-                  {filteredPlayers.length} joueur(s) trouvé(s)
+                <span className="text-xs sm:text-sm text-gray-600">
+                  {filteredPlayers.length} joueur(s)
                 </span>
               </div>
             </div>
@@ -474,46 +476,46 @@ export default function PlayersManagementPage() {
               </div>
             ) : (
               filteredPlayers.map((player, index) => (
-                <div 
-                  key={player.id} 
-                  className={`group px-6 py-4 hover:bg-gradient-to-r hover:from-gray-50 hover:to-white transition-all animate-slideIn`}
+                <div
+                  key={player.id}
+                  className={`group px-3 sm:px-4 md:px-6 py-3 sm:py-4 hover:bg-gradient-to-r hover:from-gray-50 hover:to-white transition-all animate-slideIn`}
                   style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
                       <input
                         type="checkbox"
                         checked={selectedPlayers.includes(player.id)}
                         onChange={() => togglePlayerSelection(player.id)}
-                        className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                        className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 rounded focus:ring-green-500 flex-shrink-0"
                       />
-                      
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg bg-gradient-to-br ${
+
+                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-lg bg-gradient-to-br ${
                         player.gender === 'H' ? 'from-blue-500 to-indigo-600' : 'from-pink-500 to-rose-600'
-                      } group-hover:scale-110 transition-transform`}>
+                      } group-hover:scale-110 transition-transform flex-shrink-0`}>
                         {player.name.charAt(0).toUpperCase()}
                       </div>
-                      
-                      <div>
-                        <h3 className="font-bold text-gray-900 text-lg group-hover:text-green-600 transition-colors">
+
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 text-sm sm:text-base md:text-lg group-hover:text-green-600 transition-colors truncate">
                           {player.name}
                         </h3>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            player.gender === 'H' 
-                              ? 'bg-blue-100 text-blue-700' 
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:gap-4 text-xs sm:text-sm text-gray-500">
+                          <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${
+                            player.gender === 'H'
+                              ? 'bg-blue-100 text-blue-700'
                               : 'bg-pink-100 text-pink-700'
                           }`}>
-                            {player.gender === 'H' ? 'Homme' : 'Femme'}
+                            {player.gender === 'H' ? 'H' : 'F'}
                           </span>
                           {player.email && (
-                            <span className="flex items-center">
+                            <span className="hidden sm:flex items-center truncate">
                               {Icons.mail}
-                              <span className="ml-1">{player.email}</span>
+                              <span className="ml-1 truncate">{player.email}</span>
                             </span>
                           )}
                           {player.phone && (
-                            <span className="flex items-center">
+                            <span className="hidden md:flex items-center">
                               {Icons.phone}
                               <span className="ml-1">{player.phone}</span>
                             </span>
@@ -522,26 +524,26 @@ export default function PlayersManagementPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
                       {/* Tournois actifs */}
                       {(player as any).equipes_joueurs?.some((ej: any) => ej.equipe?.tournoi?.status === 'en_cours') && (
-                        <div className="flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                        <div className="hidden sm:flex items-center px-2 md:px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs md:text-sm font-medium">
                           {Icons.trophy}
                           <span className="ml-1">Actif</span>
                         </div>
                       )}
-                      
-                      {/* Actions */}
-                      <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+
+                      {/* Actions - toujours visibles sur mobile */}
+                      <div className="flex items-center gap-1 sm:gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => openModal(player)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all hover:scale-110"
+                          className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all hover:scale-110"
                         >
                           {Icons.edit}
                         </button>
                         <button
                           onClick={() => handleDeletePlayer(player.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all hover:scale-110"
+                          className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all hover:scale-110"
                         >
                           {Icons.trash}
                         </button>
@@ -551,11 +553,11 @@ export default function PlayersManagementPage() {
 
                   {/* Équipes du joueur */}
                   {player.equipes_joueurs && player.equipes_joueurs.length > 0 && (
-                    <div className="mt-3 ml-16 flex flex-wrap gap-2">
+                    <div className="mt-2 sm:mt-3 ml-6 sm:ml-16 flex flex-wrap gap-1.5 sm:gap-2">
                       {player.equipes_joueurs.map((ej: any, i: number) => (
-                        <span 
+                        <span
                           key={i}
-                          className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs"
+                          className="px-2 sm:px-3 py-0.5 sm:py-1 bg-gray-100 text-gray-700 rounded-lg text-xs"
                         >
                           {ej.equipe?.name} • {ej.equipe?.tournoi?.name}
                         </span>
