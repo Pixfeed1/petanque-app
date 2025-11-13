@@ -94,8 +94,15 @@ echo -e "${YELLOW}🔄 Redémarrage de l'application...${NC}"
 
 # Trouver et tuer les processus Node existants
 echo "  Arrêt des processus Node en cours..."
-pkill -f "next start" || true
+pkill -9 -f "next start" || true
 sleep 2
+
+# Vérifier et tuer tout processus sur le port 3000
+if lsof -ti:3000 > /dev/null 2>&1; then
+    echo "  Force l'arrêt du processus sur le port 3000..."
+    lsof -ti:3000 | xargs kill -9 || true
+    sleep 2
+fi
 
 # Relancer l'application
 echo "  Démarrage de l'application..."
