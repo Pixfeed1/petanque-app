@@ -1,0 +1,4 @@
+003_add_validation_fields.sql
+004_fix_joueur_ids_type.sql
+005_create_reviews_table.sql
+005_fix_joueur_ids_to_bigint.sql
