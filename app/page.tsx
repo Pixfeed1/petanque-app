@@ -210,11 +210,6 @@ export default function HomePage() {
     }
   }
 
-  // Fonction pour ouvrir la démo (vidéo YouTube ou autre)
-  const openDemo = () => {
-    // Pour l'instant, on redirige vers la page de login en mode démo
-    router.push('/login')
-  }
 
   const features = [
     {
@@ -478,15 +473,6 @@ export default function HomePage() {
                   </svg>
                 </span>
               </button>
-              <button 
-                onClick={openDemo}
-                className="group px-8 py-4 bg-white text-gray-700 text-lg rounded-full border-2 border-gray-200 hover:border-green-600 hover:text-green-600 transition-all"
-              >
-                <span className="flex items-center justify-center">
-                  {Icons.play}
-                  <span className="ml-3">Voir la démo</span>
-                </span>
-              </button>
             </div>
 
             {/* Trust indicators */}
@@ -502,39 +488,6 @@ export default function HomePage() {
               <div className="flex items-center">
                 {Icons.check}
                 <span className="ml-2">Données sécurisées</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Hero Image/Mockup */}
-          <div className="mt-16 relative">
-            <div className="relative mx-auto max-w-5xl">
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-1">
-                <div className="bg-white rounded-xl p-8">
-                  {/* Mockup content avec boule de pétanque */}
-                  <div className="aspect-video bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center">
-                    <div className="text-center">
-                      <svg className="w-24 h-24 mx-auto mb-4" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="32" cy="32" r="30" fill="url(#metalGradientLarge)" stroke="#5a6978" strokeWidth="2"/>
-                        <circle cx="26" cy="26" r="4" fill="#ffffff" opacity="0.8"/>
-                        <circle cx="38" cy="38" r="3" fill="#2d3748" opacity="0.3"/>
-                        <circle cx="40" cy="28" r="3" fill="#2d3748" opacity="0.3"/>
-                        <defs>
-                          <radialGradient id="metalGradientLarge">
-                            <stop offset="0%" stopColor="#a8b2c3"/>
-                            <stop offset="100%" stopColor="#8e9aaf"/>
-                          </radialGradient>
-                        </defs>
-                      </svg>
-                      <p className="text-gray-600 font-medium">Interface de gestion des tournois</p>
-                      <div className="mt-6 flex justify-center space-x-2">
-                        <div className="w-32 h-2 bg-green-500 rounded-full"></div>
-                        <div className="w-20 h-2 bg-gray-300 rounded-full"></div>
-                        <div className="w-24 h-2 bg-gray-300 rounded-full"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
