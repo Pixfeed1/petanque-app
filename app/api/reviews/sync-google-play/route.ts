@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     // const androidpublisher = google.androidpublisher('v3')
 
     // SIMULATION pour l'instant (à remplacer par vraie API)
-    const mockReviews = []
+    const mockReviews: any[] = []
 
     /*
     // Code réel à activer plus tard :

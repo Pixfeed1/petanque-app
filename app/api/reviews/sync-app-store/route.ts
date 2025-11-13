@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     console.log('🔄 Début synchronisation App Store...')
 
     // SIMULATION pour l'instant (à remplacer par vraie API)
-    const mockReviews = []
+    const mockReviews: any[] = []
 
     /*
     // Code réel à activer plus tard :
