@@ -537,3 +537,6 @@ export default function TermsPage() {
 
       {/* Footer */}
       <Footer />
+    </div>
+  )
+}
