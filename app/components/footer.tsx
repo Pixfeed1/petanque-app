@@ -77,11 +77,6 @@ export default function Footer({ scrollToSection }: FooterProps) {
             <h4 className="text-white font-semibold mb-4">Support</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/guide" className="hover:text-white transition">
-                  Guide d'utilisation
-                </Link>
-              </li>
-              <li>
                 <Link href="/faq" className="hover:text-white transition">
                   FAQ
                 </Link>
@@ -92,8 +87,8 @@ export default function Footer({ scrollToSection }: FooterProps) {
                 </a>
               </li>
               <li>
-                <button 
-                  onClick={() => handleNavigation('testimonials')} 
+                <button
+                  onClick={() => handleNavigation('testimonials')}
                   className="hover:text-white transition text-left"
                 >
                   Témoignages
