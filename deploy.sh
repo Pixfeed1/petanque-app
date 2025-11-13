@@ -110,9 +110,26 @@ echo "✅ Déploiement terminé avec succès !"
 echo "==================================${NC}"
 echo ""
 echo "🌐 Accès : https://petanquepro.fr"
-echo "🚀 Démarrage de l'application..."
-echo "📝 Logs en direct (CTRL+C pour arrêter) :"
+echo "🚀 Démarrage de l'application en arrière-plan..."
 echo ""
 
-# Lancer npm start en direct pour voir les logs
-npm start
+# Lancer npm start en arrière-plan
+nohup npm start > server.log 2>&1 &
+
+# Attendre que le serveur démarre
+sleep 3
+
+# Vérifier que le serveur est bien démarré
+if lsof -ti:3000 > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Serveur démarré avec succès !${NC}"
+    echo ""
+    echo "📝 Pour voir les logs en temps réel :"
+    echo "    tail -f server.log"
+    echo ""
+    echo "🛑 Pour arrêter le serveur :"
+    echo "    pkill -9 -f 'next start'"
+else
+    echo -e "${RED}❌ Erreur : le serveur n'a pas pu démarrer${NC}"
+    echo "📝 Vérifiez les logs : tail -f server.log"
+    exit 1
+fi
