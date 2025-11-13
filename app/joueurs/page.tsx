@@ -114,7 +114,7 @@ export default function JoueursPage() {
             </div>
 
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/dashboard/joueurs')}
               className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center space-x-2"
             >
               <Plus className="w-5 h-5" />
@@ -214,7 +214,7 @@ export default function JoueursPage() {
             </p>
             {!searchQuery && genderFilter === 'all' && (
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push('/dashboard/joueurs')}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
@@ -245,7 +245,7 @@ export default function JoueursPage() {
                         </h3>
                         <div className="flex items-center gap-4 text-sm text-gray-600">
                           <span className="text-gray-500">
-                            {joueur.gender === 'H' ? 'Homme' : 'Femme'}
+                            {joueur.gender === 'H' ? 'Homme' : joueur.gender === 'F' ? 'Femme' : 'Non spécifié'}
                           </span>
                           {joueur.email && (
                             <span className="hidden sm:inline truncate">{joueur.email}</span>
