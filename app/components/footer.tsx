@@ -1,7 +1,22 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Petanque } from '@/components/Icons'
+
+// Logo Icon
+const LogoIcon = (
+  <svg className="w-10 h-10" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="32" r="30" fill="url(#metalGradient)" stroke="#5a6978" strokeWidth="2"/>
+    <circle cx="26" cy="26" r="3" fill="#ffffff" opacity="0.8"/>
+    <circle cx="38" cy="38" r="2" fill="#2d3748" opacity="0.3"/>
+    <circle cx="40" cy="28" r="2" fill="#2d3748" opacity="0.3"/>
+    <defs>
+      <radialGradient id="metalGradient">
+        <stop offset="0%" stopColor="#a8b2c3"/>
+        <stop offset="100%" stopColor="#8e9aaf"/>
+      </radialGradient>
+    </defs>
+  </svg>
+)
 
 interface FooterProps {
   scrollToSection?: (sectionId: string) => void
@@ -24,7 +39,7 @@ export default function Footer({ scrollToSection }: FooterProps) {
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div>
             <Link href="/" className="flex items-center space-x-3 mb-4 group">
-              <Petanque className="w-10 h-10" />
+              {LogoIcon}
               <span className="text-xl font-bold text-white group-hover:text-green-400 transition-colors">
                 Pétanque Pro
               </span>
