@@ -297,77 +297,78 @@ export default function PlayersManagementPage() {
 
       {/* Header glassmorphism */}
       <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-2xl border-b border-gray-200/50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center space-x-4">
-              <button 
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
+              <button
                 onClick={() => router.push('/dashboard')}
-                className="group flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 rounded-xl transition-all"
+                className="group flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 rounded-xl transition-all flex-shrink-0"
               >
-                ← <span className="font-medium">Retour</span>
+                <span className="text-lg">←</span>
+                <span className="hidden sm:inline font-medium">Retour</span>
               </button>
-              
-              <div className="h-10 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
-              
-              <div className="flex items-center space-x-3">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl text-white shadow-lg">
+
+              <div className="hidden sm:block h-10 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent flex-shrink-0"></div>
+
+              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+                <div className="hidden sm:block p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl text-white shadow-lg flex-shrink-0">
                   {Icons.users}
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                    Gestion des Joueurs
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent truncate">
+                    Gestion Joueurs
                   </h1>
-                  <p className="text-sm text-gray-500">Gérez vos participants</p>
+                  <p className="hidden sm:block text-xs sm:text-sm text-gray-500 truncate">Gérez vos participants</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
               <button
                 onClick={handleExport}
-                className="px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all flex items-center space-x-2"
+                className="w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all flex items-center justify-center sm:space-x-2"
               >
                 {Icons.download}
-                <span>Exporter</span>
+                <span className="hidden sm:inline">Exporter</span>
               </button>
-              
+
               <button
                 onClick={() => openModal()}
-                className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center space-x-2"
+                className="w-10 h-10 sm:w-auto sm:h-auto sm:px-6 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center justify-center sm:space-x-2"
               >
                 {Icons.plus}
-                <span>Nouveau joueur</span>
+                <span className="hidden sm:inline">Nouveau joueur</span>
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
         {/* Stats cards */}
-        <div className={`grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+        <div className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
           {[
             { label: 'Total joueurs', value: stats.total, icon: Icons.users, gradient: 'from-blue-500 to-indigo-600', delay: '0ms' },
             { label: 'Hommes', value: stats.hommes, icon: Icons.users, gradient: 'from-blue-400 to-cyan-600', delay: '100ms' },
             { label: 'Femmes', value: stats.femmes, icon: Icons.users, gradient: 'from-pink-500 to-rose-600', delay: '200ms' },
             { label: 'Actifs', value: stats.actifs, icon: Icons.star, gradient: 'from-green-500 to-emerald-600', delay: '300ms' }
           ].map((stat, index) => (
-            <div 
+            <div
               key={index}
               className="group relative animate-slideUp"
               style={{ animationDelay: stat.delay }}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl transform rotate-1 group-hover:rotate-2 transition-transform"></div>
-              <div className="relative bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all group-hover:-translate-y-1">
-                <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-5 rounded-2xl`}></div>
-                <div className="relative flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-                    <p className="text-4xl font-bold bg-gradient-to-br from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl sm:rounded-2xl transform rotate-1 group-hover:rotate-2 transition-transform"></div>
+              <div className="relative bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 shadow-xl hover:shadow-2xl transition-all group-hover:-translate-y-1">
+                <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-5 rounded-xl sm:rounded-2xl`}></div>
+                <div className="relative flex flex-col sm:flex-row items-center sm:justify-between gap-2 sm:gap-0">
+                  <div className="text-center sm:text-left w-full">
+                    <p className="text-xs sm:text-sm text-gray-600 mb-0.5 sm:mb-1 truncate">{stat.label}</p>
+                    <p className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-br from-gray-900 to-gray-600 bg-clip-text text-transparent">
                       {stat.value}
                     </p>
                   </div>
-                  <div className={`p-4 bg-gradient-to-br ${stat.gradient} rounded-2xl text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all`}>
+                  <div className={`hidden sm:flex p-3 md:p-4 bg-gradient-to-br ${stat.gradient} rounded-xl md:rounded-2xl text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all`}>
                     {stat.icon}
                   </div>
                 </div>
@@ -377,7 +378,7 @@ export default function PlayersManagementPage() {
         </div>
 
         {/* Barre de recherche et filtres */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Recherche */}
             <div className="flex-1 relative">
