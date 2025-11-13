@@ -101,8 +101,8 @@ export default function Footer({ scrollToSection }: FooterProps) {
             <h4 className="text-white font-semibold mb-4">Légal</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/legal/terms" className="hover:text-white transition">
-                  Conditions d'utilisation
+                <Link href="/legal/mentions" className="hover:text-white transition">
+                  Mentions légales
                 </Link>
               </li>
               <li>
@@ -111,18 +111,8 @@ export default function Footer({ scrollToSection }: FooterProps) {
                 </Link>
               </li>
               <li>
-                <Link href="/legal/cookies" className="hover:text-white transition">
-                  Politique des cookies
-                </Link>
-              </li>
-              <li>
-                <Link href="/legal/rgpd" className="hover:text-white transition">
-                  RGPD
-                </Link>
-              </li>
-              <li>
-                <Link href="/legal/mentions" className="hover:text-white transition">
-                  Mentions légales
+                <Link href="/legal/terms" className="hover:text-white transition">
+                  Conditions d'utilisation
                 </Link>
               </li>
             </ul>
