@@ -450,7 +450,7 @@ export default function PlayersManagementPage() {
                   type="checkbox"
                   checked={selectedPlayers.length === filteredPlayers.length && filteredPlayers.length > 0}
                   onChange={selectAll}
-                  className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 rounded focus:ring-green-500"
+                  className="hidden sm:block w-5 h-5 text-green-600 rounded focus:ring-green-500"
                 />
                 <span className="text-xs sm:text-sm text-gray-600">
                   {filteredPlayers.length} joueur(s)
@@ -487,7 +487,7 @@ export default function PlayersManagementPage() {
                         type="checkbox"
                         checked={selectedPlayers.includes(player.id)}
                         onChange={() => togglePlayerSelection(player.id)}
-                        className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 rounded focus:ring-green-500 flex-shrink-0"
+                        className="hidden sm:block w-5 h-5 text-green-600 rounded focus:ring-green-500 flex-shrink-0"
                       />
 
                       <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base md:text-lg shadow-lg bg-gradient-to-br ${
