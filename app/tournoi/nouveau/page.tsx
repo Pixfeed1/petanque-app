@@ -861,19 +861,17 @@ export default function CreateTournamentPage() {
                   )}
 
                   <div className={`
-                    relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center font-bold text-base sm:text-lg
-                    transition-all duration-500 transform
+                    relative w-10 h-10 sm:w-14 sm:h-14 rounded-full flex items-center justify-center font-bold text-sm sm:text-base
+                    transition-all duration-500
                     ${currentStep >= step.number
-                      ? `bg-gradient-to-br ${step.color} text-white shadow-lg scale-100`
-                      : 'bg-gray-200 text-gray-400 scale-90'}
-                    ${currentStep === step.number ? 'ring-2 sm:ring-4 ring-white shadow-2xl scale-110' : ''}
+                      ? `bg-gradient-to-br ${step.color} text-white shadow-lg`
+                      : 'bg-gray-200 text-gray-400'}
+                    ${currentStep === step.number ? 'ring-2 sm:ring-4 ring-white shadow-2xl' : ''}
                   `}>
-                    <div className="scale-75 sm:scale-100">
-                      {currentStep > step.number ? Icons.check : step.icon}
-                    </div>
+                    {currentStep > step.number ? Icons.check : step.icon}
                   </div>
 
-                  <div className={`absolute -bottom-6 sm:-bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-xs sm:text-xs font-medium transition-all duration-500 ${
+                  <div className={`absolute -bottom-6 sm:-bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-sm font-medium transition-all duration-500 ${
                     currentStep >= step.number ? 'text-gray-900' : 'text-gray-400'
                   }`}>
                     <span className="hidden sm:inline">{step.title}</span>
@@ -882,7 +880,7 @@ export default function CreateTournamentPage() {
                 </div>
 
                 {index < steps.length - 1 && (
-                  <div className="w-8 sm:w-16 md:w-24 h-1 mx-1 sm:mx-2 md:mx-4">
+                  <div className="w-12 sm:w-16 md:w-24 h-1 mx-2 sm:mx-3 md:mx-4">
                     <div className="h-full bg-gray-200 rounded-full overflow-hidden">
                       <div
                         className={`h-full bg-gradient-to-r ${step.color} transition-all duration-700`}
@@ -905,7 +903,7 @@ export default function CreateTournamentPage() {
               <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
                 <div className="p-4 sm:p-6 md:p-8 bg-gradient-to-br from-green-50 to-emerald-50">
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2 flex items-center gap-2 sm:gap-3">
-                    <div className="scale-75 sm:scale-100">{Icons.sparkles}</div>
+                    {Icons.sparkles}
                     <span>Informations générales</span>
                   </h2>
                   <p className="text-sm sm:text-base text-gray-600">Définissez les bases de votre tournoi de pétanque</p>
@@ -932,7 +930,7 @@ export default function CreateTournamentPage() {
                       <div className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-1.5 sm:gap-2">
                         <span className="text-xs text-gray-400">{formData.name.length}/100</span>
                         {formData.name && (
-                          <div className="text-green-500 animate-fadeIn scale-75 sm:scale-100">
+                          <div className="text-green-500 animate-fadeIn">
                             {Icons.check}
                           </div>
                         )}
@@ -1053,7 +1051,7 @@ export default function CreateTournamentPage() {
                         </span>
                       )}
 
-                      <div className={`inline-flex p-2 sm:p-3 rounded-lg sm:rounded-xl mb-2 sm:mb-3 bg-gradient-to-br ${mode.gradient} text-white scale-75 sm:scale-100`}>
+                      <div className={`inline-flex p-2 sm:p-3 rounded-lg sm:rounded-xl mb-2 sm:mb-3 bg-gradient-to-br ${mode.gradient} text-white`}>
                         {mode.icon}
                       </div>
 
@@ -1062,7 +1060,7 @@ export default function CreateTournamentPage() {
                       <p className="text-xs text-gray-500">{mode.detail}</p>
 
                       {formData.mode === mode.value && (
-                        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 text-green-500 animate-fadeIn scale-75 sm:scale-100">
+                        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 text-green-500 animate-fadeIn">
                           {Icons.check}
                         </div>
                       )}
@@ -1074,7 +1072,7 @@ export default function CreateTournamentPage() {
                 {formData.mode === 'melee_tournante' && (
                   <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl animate-fadeIn">
                     <h4 className="text-sm sm:text-base font-bold text-gray-900 mb-2 sm:mb-3 flex items-center gap-1 sm:gap-2">
-                      <div className="scale-75 sm:scale-100">{Icons.shuffle}</div>
+                      {Icons.shuffle}
                       <span>Rotation des équipes</span>
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
@@ -1132,7 +1130,7 @@ export default function CreateTournamentPage() {
                       <p className="text-xs sm:text-sm text-gray-500 mt-1 sm:mt-2">Min. {format.minPlayers} joueurs</p>
 
                       {formData.format === format.value && (
-                        <div className="absolute top-3 sm:top-4 right-3 sm:right-4 text-green-500 animate-fadeIn scale-75 sm:scale-100">
+                        <div className="absolute top-3 sm:top-4 right-3 sm:right-4 text-green-500 animate-fadeIn">
                           {Icons.check}
                         </div>
                       )}
@@ -1199,7 +1197,7 @@ export default function CreateTournamentPage() {
               {/* Message d'erreur de validation */}
               {validationError && (
                 <div className="bg-red-50 border border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4 flex items-start gap-2 sm:gap-3">
-                  <div className="text-red-500 scale-75 sm:scale-100 flex-shrink-0">{Icons.alert}</div>
+                  <div className="text-red-500 flex-shrink-0">{Icons.alert}</div>
                   <p className="text-sm sm:text-base text-red-700">{validationError}</p>
                 </div>
               )}
@@ -1207,7 +1205,7 @@ export default function CreateTournamentPage() {
               <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
                 <div className="p-4 sm:p-6 md:p-8 bg-gradient-to-br from-green-50 to-emerald-50">
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2 sm:mb-3 flex items-center gap-2 sm:gap-3">
-                    <div className="scale-75 sm:scale-100">{Icons.users}</div>
+                    {Icons.users}
                     <span>Sélection des joueurs</span>
                   </h2>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
@@ -1260,14 +1258,14 @@ export default function CreateTournamentPage() {
                     {loadingPlayers ? (
                       <div className="flex justify-center py-8 sm:py-12">
                         <div className="text-center">
-                          <div className="scale-75 sm:scale-100">{Icons.loader}</div>
+                          {Icons.loader}
                           <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-500">Chargement des joueurs...</p>
                         </div>
                       </div>
                     ) : availablePlayers.length === 0 ? (
                       <div className="text-center py-8 sm:py-12 bg-gray-50 rounded-xl sm:rounded-2xl">
                         <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full mb-3 sm:mb-4">
-                          <div className="scale-75 sm:scale-100">{Icons.users}</div>
+                          {Icons.users}
                         </div>
                         <p className="text-sm sm:text-base text-gray-500 mb-1 sm:mb-2">Aucun joueur dans le club</p>
                         <p className="text-xs sm:text-sm text-gray-400">Ajoutez des joueurs ci-dessous</p>
@@ -1306,7 +1304,7 @@ export default function CreateTournamentPage() {
                                 </div>
                               </div>
                               {formData.selectedPlayers.includes(player.id) && (
-                                <div className="ml-auto text-green-500 animate-fadeIn flex-shrink-0 scale-75 sm:scale-100">
+                                <div className="ml-auto text-green-500 animate-fadeIn flex-shrink-0">
                                   {Icons.check}
                                 </div>
                               )}
@@ -1330,7 +1328,7 @@ export default function CreateTournamentPage() {
                           onClick={addNewPlayer}
                           className="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm sm:text-base rounded-lg sm:rounded-xl hover:shadow-lg transition-all transform hover:scale-105"
                         >
-                          <div className="scale-75 sm:scale-100">{Icons.plus}</div>
+                          {Icons.plus}
                           <span>Ajouter un joueur</span>
                         </button>
                       </div>
@@ -1368,7 +1366,7 @@ export default function CreateTournamentPage() {
                               onClick={() => removeNewPlayer(index)}
                               className="p-2 sm:p-3 text-red-600 hover:bg-red-50 rounded-lg sm:rounded-xl transition-all self-start sm:self-auto"
                             >
-                              <div className="scale-75 sm:scale-100">{Icons.x}</div>
+                              {Icons.x}
                             </button>
                           </div>
                         ))}
@@ -1382,7 +1380,7 @@ export default function CreateTournamentPage() {
                           onClick={addNewPlayer}
                           className="w-full flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm sm:text-base rounded-lg sm:rounded-xl hover:shadow-lg transition-all transform hover:scale-105"
                         >
-                          <div className="scale-75 sm:scale-100">{Icons.plus}</div>
+                          {Icons.plus}
                           <span>Ajouter un autre joueur</span>
                         </button>
                       </div>
@@ -1399,7 +1397,7 @@ export default function CreateTournamentPage() {
               <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
                 <div className="p-4 sm:p-6 md:p-8 bg-gradient-to-br from-green-50 to-emerald-50">
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2 flex items-center gap-2 sm:gap-3">
-                    <div className="scale-75 sm:scale-100">{Icons.settings}</div>
+                    {Icons.settings}
                     <span>Options avancées</span>
                   </h2>
                   <p className="text-sm sm:text-base text-gray-600">Personnalisez les paramètres de votre tournoi</p>
@@ -1524,7 +1522,7 @@ export default function CreateTournamentPage() {
               <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
                 <div className="p-4 sm:p-6 md:p-8 bg-gradient-to-br from-green-50 to-emerald-50">
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2 flex items-center gap-2 sm:gap-3">
-                    <div className="scale-75 sm:scale-100">{Icons.sparkles}</div>
+                    {Icons.sparkles}
                     <span>Récapitulatif du tournoi</span>
                   </h2>
                   <p className="text-sm sm:text-base text-gray-600">Vérifiez les informations avant de créer le tournoi</p>
@@ -1548,7 +1546,7 @@ export default function CreateTournamentPage() {
                     ].map((item, index) => (
                       <div key={index} className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-gray-50 to-white rounded-lg sm:rounded-xl border border-gray-100">
                         <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="p-1.5 sm:p-2.5 bg-white rounded-lg text-gray-400 shadow-sm scale-75 sm:scale-100">
+                          <div className="p-1.5 sm:p-2.5 bg-white rounded-lg text-gray-400 shadow-sm">
                             {item.icon}
                           </div>
                           <span className="text-xs sm:text-sm text-gray-600">{item.label}</span>
@@ -1562,7 +1560,7 @@ export default function CreateTournamentPage() {
                   {formData.mode === 'melee_tournante' && (
                     <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl">
                       <h4 className="text-sm sm:text-base font-bold text-gray-900 mb-1 sm:mb-2 flex items-center gap-1 sm:gap-2">
-                        <div className="scale-75 sm:scale-100">{Icons.shuffle}</div>
+                        {Icons.shuffle}
                         <span>Configuration Mêlée Tournante</span>
                       </h4>
                       <p className="text-xs sm:text-sm text-gray-700">
@@ -1585,37 +1583,37 @@ export default function CreateTournamentPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
                       {formData.consolante && (
                         <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700">
-                          <div className="scale-75 sm:scale-100">{Icons.check}</div>
+                          {Icons.check}
                           <span>Petite finale (3ème place)</span>
                         </div>
                       )}
                       {formData.recordMenes && (
                         <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700">
-                          <div className="scale-75 sm:scale-100">{Icons.check}</div>
+                          {Icons.check}
                           <span>Enregistrement des mènes</span>
                         </div>
                       )}
                       {formData.fairPlay && (
                         <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700">
-                          <div className="scale-75 sm:scale-100">{Icons.check}</div>
+                          {Icons.check}
                           <span>Notation fair-play</span>
                         </div>
                       )}
                       {formData.timeLimit && (
                         <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700">
-                          <div className="scale-75 sm:scale-100">{Icons.check}</div>
+                          {Icons.check}
                           <span>Limite de temps ({formData.timeLimitMinutes} min)</span>
                         </div>
                       )}
                       {formData.allowPhotos && (
                         <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700">
-                          <div className="scale-75 sm:scale-100">{Icons.check}</div>
+                          {Icons.check}
                           <span>Photos autorisées</span>
                         </div>
                       )}
                       {formData.sendNotifications && (
                         <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-700">
-                          <div className="scale-75 sm:scale-100">{Icons.check}</div>
+                          {Icons.check}
                           <span>Notifications activées</span>
                         </div>
                       )}
@@ -1625,7 +1623,7 @@ export default function CreateTournamentPage() {
                   {/* Résumé des joueurs */}
                   <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl">
                     <h4 className="text-sm sm:text-base font-bold text-gray-900 mb-2 sm:mb-3 flex items-center gap-1 sm:gap-2">
-                      <div className="scale-75 sm:scale-100">{Icons.users}</div>
+                      {Icons.users}
                       <span>Participants ({getTotalPlayers()})</span>
                     </h4>
 
@@ -1697,7 +1695,7 @@ export default function CreateTournamentPage() {
                   {/* Estimation du déroulement */}
                   <div className="mt-4 sm:mt-6 p-4 sm:p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl">
                     <h4 className="text-sm sm:text-base font-bold text-gray-900 mb-2 sm:mb-3 flex items-center gap-1 sm:gap-2">
-                      <div className="scale-75 sm:scale-100">{Icons.petanque}</div>
+                      {Icons.petanque}
                       <span>Estimation du tournoi</span>
                     </h4>
                     <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -1732,7 +1730,7 @@ export default function CreateTournamentPage() {
                   {/* Message de confirmation */}
                   <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl border-2 border-green-200">
                     <div className="flex items-start gap-2 sm:gap-3">
-                      <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg sm:rounded-xl text-green-600 flex-shrink-0 scale-75 sm:scale-100">
+                      <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg sm:rounded-xl text-green-600 flex-shrink-0">
                         {Icons.info}
                       </div>
                       <div className="flex-1">
@@ -1772,17 +1770,17 @@ export default function CreateTournamentPage() {
                   <span className="relative flex items-center justify-center gap-2 sm:gap-3">
                     {savingTournament ? (
                       <>
-                        <div className="scale-75 sm:scale-100">{Icons.loader}</div>
+                        {Icons.loader}
                         <span>Création en cours...</span>
                       </>
                     ) : successAnimation ? (
                       <>
-                        <div className="scale-75 sm:scale-100">{Icons.check}</div>
+                        {Icons.check}
                         <span>Tournoi créé !</span>
                       </>
                     ) : (
                       <>
-                        <div className="scale-75 sm:scale-100">{Icons.trophy}</div>
+                        {Icons.trophy}
                         <span>Créer le tournoi</span>
                       </>
                     )}
@@ -1807,7 +1805,7 @@ export default function CreateTournamentPage() {
                 setCurrentStep(currentStep - 1)
               }
             }}
-            className={`px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl font-medium transition-all ${
+            className={`px-4 sm:px-6 py-3 text-sm sm:text-base rounded-lg sm:rounded-xl font-medium transition-all ${
               currentStep === 1
                 ? 'text-gray-400 cursor-not-allowed'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -1822,7 +1820,7 @@ export default function CreateTournamentPage() {
               onClick={handleContinue}
               disabled={!canProceed()}
               className={`
-                flex items-center justify-center gap-1.5 sm:gap-2 px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl font-medium transition-all
+                flex items-center justify-center gap-2 px-6 sm:px-8 py-3 text-sm sm:text-base rounded-lg sm:rounded-xl font-medium transition-all
                 ${canProceed()
                   ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:shadow-lg hover:scale-105'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
@@ -1830,7 +1828,7 @@ export default function CreateTournamentPage() {
               `}
             >
               <span>Continuer</span>
-              <div className="scale-75 sm:scale-100">{Icons.arrow}</div>
+              {Icons.arrow}
             </button>
           )}
         </div>
