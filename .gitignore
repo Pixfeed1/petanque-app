@@ -47,3 +47,4 @@ next-env.d.ts
 .migrations_applied
 app.log
 nohup.out
+server.log
