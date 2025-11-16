@@ -922,7 +922,7 @@ export default function CreateTournamentPage() {
                           const newValue = e.target.value.slice(0, 100)
                           setFormData({...formData, name: newValue})
                         }}
-                        className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg"
+                        className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
                         placeholder="Ex: Tournoi de Printemps 2025"
                         maxLength={100}
                       />
@@ -980,14 +980,14 @@ export default function CreateTournamentPage() {
                       Lieu (optionnel)
                     </label>
                     <div className="relative">
-                      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block">
                         {Icons.map}
                       </div>
                       <input
                         type="text"
                         value={formData.location}
                         onChange={(e) => setFormData({...formData, location: e.target.value})}
-                        className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+                        className="w-full px-5 sm:pl-12 sm:pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
                         placeholder="Ex: Boulodrome Municipal"
                       />
                     </div>
