@@ -34,12 +34,4 @@ body {
   position: relative;
 }
 
-/* Empêcher les éléments de dépasser */
-* {
-  max-width: 100%;
-}
-
-/* Permettre aux containers intentionnels de dépasser */
-.allow-overflow {
-  max-width: none;
-}
+/* Pas de max-width global - laisse Tailwind gérer ça */
