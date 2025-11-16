@@ -45,7 +45,7 @@ export default function RootLayout({
       <head>
         {/* Utilisation de polices système */}
       </head>
-      <body className="antialiased bg-gray-50 text-gray-900 font-sans">
+      <body className="antialiased bg-gray-50 text-gray-900 font-sans overflow-x-hidden">
         <AuthProvider>
           {children}
         </AuthProvider>
