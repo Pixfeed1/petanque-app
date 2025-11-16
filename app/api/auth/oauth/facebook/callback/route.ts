@@ -31,16 +31,19 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get('code')
     const error = searchParams.get('error')
 
+    // URL de base pour les redirections (utilise NEXT_PUBLIC_APP_URL en priorité)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.url
+
     // Si l'utilisateur refuse l'accès
     if (error) {
       return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent('Connexion annulée')}`, request.url)
+        new URL(`/login?error=${encodeURIComponent('Connexion annulée')}`, baseUrl)
       )
     }
 
     if (!code) {
       return NextResponse.redirect(
-        new URL('/login?error=missing_code', request.url)
+        new URL('/login?error=missing_code', baseUrl)
       )
     }
 
@@ -50,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     if (!appId || !appSecret) {
       return NextResponse.redirect(
-        new URL('/login?error=oauth_not_configured', request.url)
+        new URL('/login?error=oauth_not_configured', baseUrl)
       )
     }
 
@@ -67,7 +70,7 @@ export async function GET(request: NextRequest) {
     if (!tokenResponse.ok) {
       console.error('Erreur échange token Facebook:', await tokenResponse.text())
       return NextResponse.redirect(
-        new URL('/login?error=token_exchange_failed', request.url)
+        new URL('/login?error=token_exchange_failed', baseUrl)
       )
     }
 
@@ -81,7 +84,7 @@ export async function GET(request: NextRequest) {
     if (!userInfoResponse.ok) {
       console.error('Erreur récupération profil Facebook:', await userInfoResponse.text())
       return NextResponse.redirect(
-        new URL('/login?error=profile_fetch_failed', request.url)
+        new URL('/login?error=profile_fetch_failed', baseUrl)
       )
     }
 
@@ -90,7 +93,7 @@ export async function GET(request: NextRequest) {
     // Vérifier que l'email est disponible
     if (!facebookUser.email) {
       return NextResponse.redirect(
-        new URL('/login?error=email_required', request.url)
+        new URL('/login?error=email_required', baseUrl)
       )
     }
 
@@ -172,15 +175,16 @@ export async function GET(request: NextRequest) {
     })
 
     // 9. Rediriger vers le dashboard
-    const response = NextResponse.redirect(new URL('/dashboard', request.url))
+    const response = NextResponse.redirect(new URL('/dashboard', baseUrl))
     response.headers.set('Set-Cookie', cookie)
 
     return response
 
   } catch (error) {
     console.error('Erreur OAuth Facebook:', error)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.url
     return NextResponse.redirect(
-      new URL('/login?error=oauth_error', request.url)
+      new URL('/login?error=oauth_error', baseUrl)
     )
   }
 }
