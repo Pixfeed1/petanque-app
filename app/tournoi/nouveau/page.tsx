@@ -1403,18 +1403,18 @@ export default function CreateTournamentPage() {
           {/* Étape 4: Options avancées */}
           {currentStep === 4 && (
             <div className="space-y-6 animate-fadeIn">
-              <div className="bg-white rounded-3xl shadow-xl p-8">
-                <div className="p-8 bg-gradient-to-br from-green-50 to-emerald-50">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
-                    {Icons.settings}
-                    <span className="ml-3">Options avancées</span>
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
+                <div className="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-green-50 to-emerald-50">
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-2 flex items-center">
+                    <span className="w-6 h-6 sm:w-auto sm:h-auto">{Icons.settings}</span>
+                    <span className="ml-2 sm:ml-3">Options avancées</span>
                   </h2>
-                  <p className="text-gray-600">Personnalisez les paramètres de votre tournoi</p>
+                  <p className="text-sm sm:text-base text-gray-600">Personnalisez les paramètres de votre tournoi</p>
                 </div>
 
-                <div className="p-8 space-y-6">
+                <div className="p-4 sm:p-6 lg:p-8 space-y-6">
                   {/* Configuration technique */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     {/* Taille des poules */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1423,7 +1423,7 @@ export default function CreateTournamentPage() {
                       <select
                         value={formData.pouleSize}
                         onChange={(e) => setFormData({...formData, pouleSize: parseInt(e.target.value)})}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500"
+                        className="w-full h-11 sm:h-auto px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 text-sm sm:text-base text-gray-900 bg-white"
                       >
                         <option value={3}>3 équipes par poule</option>
                         <option value={4}>4 équipes par poule</option>
@@ -1442,7 +1442,7 @@ export default function CreateTournamentPage() {
                       <select
                         value={formData.qualifiedPerPoule}
                         onChange={(e) => setFormData({...formData, qualifiedPerPoule: parseInt(e.target.value)})}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500"
+                        className="w-full h-11 sm:h-auto px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 text-sm sm:text-base text-gray-900 bg-white"
                       >
                         <option value={1}>Le 1er de chaque poule</option>
                         <option value={2}>Les 2 premiers</option>
@@ -1528,20 +1528,20 @@ export default function CreateTournamentPage() {
           {/* Étape 5: Validation */}
           {currentStep === 5 && (
             <div className="space-y-6 animate-fadeIn">
-              <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-                <div className="p-8 bg-gradient-to-br from-green-50 to-emerald-50">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
-                    {Icons.sparkles}
-                    <span className="ml-3">Récapitulatif du tournoi</span>
+              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
+                <div className="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-green-50 to-emerald-50">
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-2 flex items-center">
+                    <span className="w-6 h-6 sm:w-auto sm:h-auto">{Icons.sparkles}</span>
+                    <span className="ml-2 sm:ml-3">Récapitulatif du tournoi</span>
                   </h2>
-                  <p className="text-gray-600">Vérifiez les informations avant de créer le tournoi</p>
+                  <p className="text-sm sm:text-base text-gray-600">Vérifiez les informations avant de créer le tournoi</p>
                 </div>
 
-                <div className="p-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 sm:p-6 lg:p-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     {[
                       { label: 'Nom', value: formData.name || 'Non défini', icon: Icons.trophy },
-                      { label: 'Date', value: new Date(formData.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }), icon: Icons.calendar },
+                      { label: 'Date', value: new Date(formData.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }), icon: Icons.calendar },
                       { label: 'Heure', value: formData.time, icon: Icons.clock },
                       { label: 'Lieu', value: formData.location || 'Non spécifié', icon: Icons.map },
                       { label: 'Mode', value: modes.find(m => m.value === formData.mode)?.title, icon: Icons.gamepad },
@@ -1650,19 +1650,19 @@ export default function CreateTournamentPage() {
                       
                       return (
                         <div className="mb-4 p-3 bg-white rounded-xl">
-                          <div className="flex justify-around text-center">
-                            <div>
-                              <p className="text-2xl font-bold text-blue-600">{hommes}</p>
+                          <div className="flex flex-col sm:flex-row sm:justify-around gap-3 sm:gap-0 text-center">
+                            <div className="flex-1">
+                              <p className="text-xl sm:text-2xl font-bold text-blue-600">{hommes}</p>
                               <p className="text-xs text-gray-600">Hommes</p>
                             </div>
-                            <div className="w-px bg-gray-200"></div>
-                            <div>
-                              <p className="text-2xl font-bold text-pink-600">{femmes}</p>
+                            <div className="hidden sm:block w-px bg-gray-200"></div>
+                            <div className="flex-1">
+                              <p className="text-xl sm:text-2xl font-bold text-pink-600">{femmes}</p>
                               <p className="text-xs text-gray-600">Femmes</p>
                             </div>
-                            <div className="w-px bg-gray-200"></div>
-                            <div>
-                              <p className="text-2xl font-bold text-green-600">{getEstimatedTeams()}</p>
+                            <div className="hidden sm:block w-px bg-gray-200"></div>
+                            <div className="flex-1">
+                              <p className="text-xl sm:text-2xl font-bold text-green-600">{getEstimatedTeams()}</p>
                               <p className="text-xs text-gray-600">Équipes possibles</p>
                             </div>
                           </div>
@@ -1670,7 +1670,7 @@ export default function CreateTournamentPage() {
                       )
                     })()}
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                       {/* Joueurs existants sélectionnés */}
                       {availablePlayers
                         .filter(p => formData.selectedPlayers.includes(p.id))
@@ -1681,7 +1681,7 @@ export default function CreateTournamentPage() {
                             }`}>
                               {player.name.charAt(0)}
                             </div>
-                            <span className="text-sm text-gray-700">{player.name}</span>
+                            <span className="text-sm text-gray-700 truncate">{player.name}</span>
                           </div>
                         ))}
                       {/* Nouveaux joueurs */}
@@ -1694,8 +1694,8 @@ export default function CreateTournamentPage() {
                             }`}>
                               {player.name.charAt(0)}
                             </div>
-                            <span className="text-sm text-gray-700">{player.name}</span>
-                            <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Nouveau</span>
+                            <span className="text-sm text-gray-700 truncate flex-1">{player.name}</span>
+                            <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded whitespace-nowrap">Nouveau</span>
                           </div>
                         ))}
                     </div>
