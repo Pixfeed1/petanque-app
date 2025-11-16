@@ -195,10 +195,10 @@ export default function Dashboard() {
               )}
               <button
                 onClick={() => router.push('/joueurs')}
-                className="hidden md:flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+                className="flex items-center space-x-2 px-3 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
               >
                 {Icons.users}
-                <span className="text-sm">Joueurs</span>
+                <span className="text-sm hidden sm:inline">Joueurs</span>
               </button>
               <button
                 onClick={() => router.push('/parametres')}
