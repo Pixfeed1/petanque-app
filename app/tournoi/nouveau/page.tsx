@@ -1349,12 +1349,12 @@ export default function CreateTournamentPage() {
                               placeholder="Nom complet *"
                               value={player.name}
                               onChange={(e) => updateNewPlayer(index, 'name', e.target.value)}
-                              className="w-full sm:flex-1 px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 sm:focus:ring-4 focus:ring-green-100 text-sm sm:text-base"
+                              className="w-full sm:flex-1 h-11 sm:h-auto px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 sm:focus:ring-4 focus:ring-green-100 text-sm sm:text-base text-gray-900"
                             />
                             <select
                               value={player.gender}
                               onChange={(e) => updateNewPlayer(index, 'gender', e.target.value)}
-                              className="w-full sm:w-auto px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 text-sm sm:text-base"
+                              className="w-full sm:w-auto h-11 sm:h-auto px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 text-sm sm:text-base text-gray-900 bg-white"
                             >
                               <option value="H">Homme</option>
                               <option value="F">Femme</option>
@@ -1364,10 +1364,10 @@ export default function CreateTournamentPage() {
                               placeholder="Email (optionnel)"
                               value={player.email}
                               onChange={(e) => updateNewPlayer(index, 'email', e.target.value)}
-                              className={`w-full sm:flex-1 px-3 sm:px-4 py-2.5 sm:py-3 border-2 rounded-xl focus:border-green-500 text-sm sm:text-base ${
+                              className={`w-full sm:flex-1 h-11 sm:h-auto px-3 sm:px-4 py-2.5 sm:py-3 border-2 rounded-xl focus:border-green-500 text-sm sm:text-base text-gray-900 ${
                                 player.email && player.email.trim() && !isValidEmail(player.email)
                                   ? 'border-red-300 bg-red-50'
-                                  : 'border-gray-200'
+                                  : 'border-gray-200 bg-white'
                               }`}
                             />
                             <button
