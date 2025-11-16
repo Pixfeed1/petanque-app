@@ -938,40 +938,39 @@ export default function CreateTournamentPage() {
                     </div>
                   </div>
 
-                  {/* Date et Heure */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="group">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date du tournoi *
-                      </label>
-                      <div className="relative">
-                        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block">
-                          {Icons.calendar}
-                        </div>
-                        <input
-                          type="date"
-                          value={formData.date}
-                          onChange={(e) => setFormData({...formData, date: e.target.value})}
-                          className="w-full h-14 px-5 sm:pl-12 sm:pr-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
-                        />
+                  {/* Date du tournoi */}
+                  <div className="group">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Date du tournoi *
+                    </label>
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block">
+                        {Icons.calendar}
                       </div>
+                      <input
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) => setFormData({...formData, date: e.target.value})}
+                        className="w-full h-14 px-5 sm:pl-12 sm:pr-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
+                      />
                     </div>
+                  </div>
 
-                    <div className="group">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Heure de début *
-                      </label>
-                      <div className="relative">
-                        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block">
-                          {Icons.clock}
-                        </div>
-                        <input
-                          type="time"
-                          value={formData.time}
-                          onChange={(e) => setFormData({...formData, time: e.target.value})}
-                          className="w-full h-14 px-5 sm:pl-12 sm:pr-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
-                        />
+                  {/* Heure de début */}
+                  <div className="group">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Heure de début *
+                    </label>
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block">
+                        {Icons.clock}
                       </div>
+                      <input
+                        type="time"
+                        value={formData.time}
+                        onChange={(e) => setFormData({...formData, time: e.target.value})}
+                        className="w-full h-14 px-5 sm:pl-12 sm:pr-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
+                      />
                     </div>
                   </div>
 
