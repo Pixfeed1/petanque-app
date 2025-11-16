@@ -944,14 +944,14 @@ export default function CreateTournamentPage() {
                         Date du tournoi *
                       </label>
                       <div className="relative">
-                        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block">
+                        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
                           {Icons.calendar}
                         </div>
                         <input
                           type="date"
                           value={formData.date}
                           onChange={(e) => setFormData({...formData, date: e.target.value})}
-                          className="w-full px-4 sm:pl-12 sm:pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+                          className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
                         />
                       </div>
                     </div>
@@ -961,14 +961,14 @@ export default function CreateTournamentPage() {
                         Heure de début *
                       </label>
                       <div className="relative">
-                        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block">
+                        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
                           {Icons.clock}
                         </div>
                         <input
                           type="time"
                           value={formData.time}
                           onChange={(e) => setFormData({...formData, time: e.target.value})}
-                          className="w-full px-4 sm:pl-12 sm:pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+                          className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
                         />
                       </div>
                     </div>
