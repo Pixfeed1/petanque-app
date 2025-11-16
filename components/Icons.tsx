@@ -9,22 +9,13 @@ import React from 'react'
 
 export const Petanque = ({ className = "w-8 h-8" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Boule de pétanque métallique */}
-    <circle cx="32" cy="32" r="28" fill="url(#metalGradient)" stroke="#5a6978" strokeWidth="2.5"/>
-
-    {/* Reflets sur la boule */}
-    <circle cx="26" cy="26" r="4" fill="#ffffff" opacity="0.85"/>
-    <circle cx="38" cy="38" r="2.5" fill="#2d3748" opacity="0.35"/>
+    <circle cx="32" cy="32" r="30" fill="url(#metalGradient)" stroke="#5a6978" strokeWidth="2"/>
+    <circle cx="26" cy="26" r="3" fill="#ffffff" opacity="0.8"/>
+    <circle cx="38" cy="38" r="2" fill="#2d3748" opacity="0.3"/>
     <circle cx="40" cy="28" r="2" fill="#2d3748" opacity="0.3"/>
-
-    {/* Cochonnet vert en bas à droite */}
-    <circle cx="52" cy="52" r="8" fill="#10b981" stroke="#059669" strokeWidth="1.5"/>
-    <circle cx="49" cy="49" r="2" fill="#ffffff" opacity="0.6"/>
-
     <defs>
       <radialGradient id="metalGradient">
-        <stop offset="0%" stopColor="#c1ccd9"/>
-        <stop offset="50%" stopColor="#a8b2c3"/>
+        <stop offset="0%" stopColor="#a8b2c3"/>
         <stop offset="100%" stopColor="#8e9aaf"/>
       </radialGradient>
     </defs>
