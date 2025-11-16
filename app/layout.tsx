@@ -21,11 +21,7 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     siteName: "Pétanque Pro",
   },
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-icon.png",
-  },
-  // viewport a été retiré d'ici
+  // Next.js détecte automatiquement icon.svg et apple-icon.svg dans app/
 }
 
 // Export séparé pour viewport
