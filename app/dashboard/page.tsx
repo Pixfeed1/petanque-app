@@ -181,12 +181,12 @@ export default function Dashboard() {
               className="flex items-center space-x-3 cursor-pointer group"
             >
               {Icons.petanque}
-              <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              <span className="hidden sm:block text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 Pétanque Pro
               </span>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               {loading && (
                 <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-600 rounded-full text-xs">
                   <div className="w-3 h-3 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
@@ -280,7 +280,12 @@ export default function Dashboard() {
           <div className="mb-16">
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">Vue d'ensemble</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
+              <button
+                onClick={() => {
+                  document.getElementById('tournois-section')?.scrollIntoView({ behavior: 'smooth' })
+                }}
+                className="text-left hover:bg-gray-50 p-4 rounded-xl transition-all cursor-pointer"
+              >
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-4xl font-semibold text-gray-900">{stats.totalTournois}</span>
                   {stats.nouveauxTournois > 0 && (
@@ -288,9 +293,12 @@ export default function Dashboard() {
                   )}
                 </div>
                 <p className="text-sm text-gray-600">Tournois créés</p>
-              </div>
+              </button>
 
-              <div>
+              <button
+                onClick={() => router.push('/joueurs')}
+                className="text-left hover:bg-gray-50 p-4 rounded-xl transition-all cursor-pointer"
+              >
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-4xl font-semibold text-gray-900">{stats.totalJoueurs}</span>
                   {stats.nouveauxJoueurs > 0 && (
@@ -298,9 +306,14 @@ export default function Dashboard() {
                   )}
                 </div>
                 <p className="text-sm text-gray-600">Joueurs actifs</p>
-              </div>
+              </button>
 
-              <div>
+              <button
+                onClick={() => {
+                  document.getElementById('recent-matches')?.scrollIntoView({ behavior: 'smooth' })
+                }}
+                className="text-left hover:bg-gray-50 p-4 rounded-xl transition-all cursor-pointer"
+              >
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-4xl font-semibold text-gray-900">{stats.totalMatchs}</span>
                   {stats.nouveauxMatchs > 0 && (
@@ -308,7 +321,7 @@ export default function Dashboard() {
                   )}
                 </div>
                 <p className="text-sm text-gray-600">Matchs joués</p>
-              </div>
+              </button>
             </div>
           </div>
 
@@ -367,7 +380,7 @@ export default function Dashboard() {
 
           {/* Activité récente */}
           {recentMatches.length > 0 && (
-            <div className="mb-16">
+            <div id="recent-matches" className="mb-16">
               <h2 className="text-2xl font-semibold text-gray-900 mb-6">Activité récente</h2>
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="divide-y divide-gray-100">
@@ -409,7 +422,7 @@ export default function Dashboard() {
           </div>
 
           {/* Tournois */}
-          <div>
+          <div id="tournois-section">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-semibold text-gray-900">Tournois</h2>
               <button

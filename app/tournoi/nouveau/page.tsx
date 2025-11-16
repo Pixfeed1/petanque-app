@@ -943,7 +943,7 @@ export default function CreateTournamentPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Date du tournoi *
                     </label>
-                    <div className="relative">
+                    <div className="relative w-full">
                       <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block">
                         {Icons.calendar}
                       </div>
@@ -951,7 +951,8 @@ export default function CreateTournamentPage() {
                         type="date"
                         value={formData.date}
                         onChange={(e) => setFormData({...formData, date: e.target.value})}
-                        className="w-full h-14 px-5 sm:pl-12 sm:pr-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
+                        className="w-full max-w-full h-14 px-3 sm:px-5 sm:pl-12 sm:pr-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-base sm:text-lg text-gray-900 box-border"
+                        style={{ WebkitAppearance: 'none' }}
                       />
                     </div>
                   </div>
@@ -961,7 +962,7 @@ export default function CreateTournamentPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Heure de début *
                     </label>
-                    <div className="relative">
+                    <div className="relative w-full">
                       <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block">
                         {Icons.clock}
                       </div>
@@ -969,7 +970,8 @@ export default function CreateTournamentPage() {
                         type="time"
                         value={formData.time}
                         onChange={(e) => setFormData({...formData, time: e.target.value})}
-                        className="w-full h-14 px-5 sm:pl-12 sm:pr-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
+                        className="w-full max-w-full h-14 px-3 sm:px-5 sm:pl-12 sm:pr-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-base sm:text-lg text-gray-900 box-border"
+                        style={{ WebkitAppearance: 'none' }}
                       />
                     </div>
                   </div>
