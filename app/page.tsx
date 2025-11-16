@@ -198,14 +198,11 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div 
+            <div
               onClick={() => router.push('/')}
               className="flex items-center space-x-3 cursor-pointer group"
             >
-              <div className="relative">
-                {Icons.logo}
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-              </div>
+              {Icons.logo}
               <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 Pétanque Pro
               </span>
