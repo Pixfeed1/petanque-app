@@ -923,7 +923,7 @@ export default function CreateTournamentPage() {
                           const newValue = e.target.value.slice(0, 100)
                           setFormData({...formData, name: newValue})
                         }}
-                        className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
+                        className="w-full h-14 px-5 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
                         placeholder="Ex: Tournoi de Printemps 2025"
                         maxLength={100}
                       />
@@ -952,7 +952,7 @@ export default function CreateTournamentPage() {
                           type="date"
                           value={formData.date}
                           onChange={(e) => setFormData({...formData, date: e.target.value})}
-                          className="w-full px-5 sm:pl-12 sm:pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
+                          className="w-full h-14 px-5 sm:pl-12 sm:pr-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
                         />
                       </div>
                     </div>
@@ -969,7 +969,7 @@ export default function CreateTournamentPage() {
                           type="time"
                           value={formData.time}
                           onChange={(e) => setFormData({...formData, time: e.target.value})}
-                          className="w-full px-5 sm:pl-12 sm:pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
+                          className="w-full h-14 px-5 sm:pl-12 sm:pr-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
                         />
                       </div>
                     </div>
@@ -988,7 +988,7 @@ export default function CreateTournamentPage() {
                         type="text"
                         value={formData.location}
                         onChange={(e) => setFormData({...formData, location: e.target.value})}
-                        className="w-full px-5 sm:pl-12 sm:pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
+                        className="w-full h-14 px-5 sm:pl-12 sm:pr-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-lg text-gray-900"
                         placeholder="Ex: Boulodrome Municipal"
                       />
                     </div>
