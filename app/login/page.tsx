@@ -263,9 +263,8 @@ export default function LoginPage() {
             className="inline-block cursor-pointer group mb-4"
           >
             <div className="flex items-center justify-center mb-4">
-              <div className="relative group-hover:scale-110 transition-transform duration-200">
+              <div className="group-hover:scale-110 transition-transform duration-200">
                 {Icons.boule}
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
               </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">Pétanque Pro</h1>
