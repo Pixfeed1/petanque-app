@@ -896,10 +896,10 @@ export default function CreateTournamentPage() {
 
         {/* Contenu des étapes */}
         <div className={`mt-16 transition-all duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          
+
           {/* Étape 1: Informations */}
           {currentStep === 1 && (
-            <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+            <div className="animate-fadeIn">
               <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
                 <div className="p-4 sm:p-8 bg-gradient-to-br from-green-50 to-emerald-50">
                   <h2 className="text-xl sm:text-3xl font-bold text-gray-900 mb-2 flex items-center">
@@ -1025,7 +1025,7 @@ export default function CreateTournamentPage() {
 
           {/* Étape 2: Configuration AMÉLIORÉE */}
           {currentStep === 2 && (
-            <div className="space-y-6 animate-fadeIn">
+            <div className="animate-fadeIn">
               {/* Mode de jeu */}
               <div className="bg-white rounded-3xl shadow-xl p-8">
                 <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
@@ -1194,10 +1194,10 @@ export default function CreateTournamentPage() {
 
           {/* Étape 3: Joueurs AMÉLIORÉ */}
           {currentStep === 3 && (
-            <div className="space-y-6 animate-fadeIn">
+            <div className="animate-fadeIn">
               {/* Message d'erreur de validation */}
               {validationError && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start mb-4 sm:mb-6">
                   <div className="text-red-500 mr-3">{Icons.alert}</div>
                   <p className="text-red-700">{validationError}</p>
                 </div>
@@ -1402,7 +1402,7 @@ export default function CreateTournamentPage() {
 
           {/* Étape 4: Options avancées */}
           {currentStep === 4 && (
-            <div className="space-y-6 animate-fadeIn">
+            <div className="animate-fadeIn">
               <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
                 <div className="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-green-50 to-emerald-50">
                   <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-2 flex items-center">
@@ -1527,7 +1527,7 @@ export default function CreateTournamentPage() {
 
           {/* Étape 5: Validation */}
           {currentStep === 5 && (
-            <div className="space-y-6 animate-fadeIn">
+            <div className="animate-fadeIn">
               <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
                 <div className="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-green-50 to-emerald-50">
                   <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-2 flex items-center">
