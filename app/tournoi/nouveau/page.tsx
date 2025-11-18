@@ -1760,7 +1760,7 @@ export default function CreateTournamentPage() {
               </div>
 
               {/* Bouton de création */}
-              <div className="text-center">
+              <div className="text-center mt-6 sm:mt-8">
                 <button
                   onClick={handleSubmit}
                   disabled={savingTournament}
