@@ -91,34 +91,34 @@ export default function JoueursPage() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 sm:h-20">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="group flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 rounded-xl transition-all"
+                className="group flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 rounded-xl transition-all flex-shrink-0"
               >
-                ← <span className="font-medium">Retour</span>
+                ← <span className="font-medium hidden sm:inline">Retour</span>
               </button>
 
-              <div className="h-10 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
+              <div className="hidden md:block h-10 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent flex-shrink-0"></div>
 
-              <div className="flex items-center space-x-3">
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                    Tous les Joueurs
+              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+                <div className="min-w-0">
+                  <h1 className="text-sm sm:text-2xl font-bold text-gray-900 truncate">
+                    <span className="hidden sm:inline">Tous les </span>Joueurs
                   </h1>
-                  <p className="text-xs sm:text-sm text-gray-500">{organization?.name}</p>
+                  <p className="text-xs sm:text-sm text-gray-500 truncate">{organization?.name}</p>
                 </div>
               </div>
             </div>
 
             <button
               onClick={() => router.push('/dashboard/joueurs')}
-              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center space-x-2"
+              className="px-3 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center space-x-1 sm:space-x-2 flex-shrink-0"
             >
-              <Plus className="w-5 h-5" />
-              <span>Nouveau joueur</span>
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="text-sm sm:text-base"><span className="hidden sm:inline">Nouveau </span>joueur</span>
             </button>
           </div>
         </div>
