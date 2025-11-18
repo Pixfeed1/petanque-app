@@ -1202,12 +1202,12 @@ export default function TournamentDetailPage() {
                               
                               <div className="flex justify-between items-center">
                                 <div className="text-center flex-1">
-                                  <p className="font-medium text-gray-900 text-sm sm:text-base truncate px-1">{match.equipe_a?.name}</p>
+                                  <p className="font-medium text-gray-900 text-xs sm:text-base truncate px-1">{match.equipe_a?.name}</p>
                                   {(() => {
                                     const players = getTeamPlayers(match.equipe_a_id || match.equipe_a?.id)
                                     if (players.length > 0) {
                                       return (
-                                        <p className="text-xs text-gray-600 mt-0.5 px-1 truncate">
+                                        <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 px-1 truncate leading-tight">
                                           {players.join(', ')}
                                         </p>
                                       )
@@ -1216,21 +1216,21 @@ export default function TournamentDetailPage() {
                                   })()}
                                   {match.status !== 'a_jouer' && (
                                     <div className="flex items-center justify-center gap-1 mt-1">
-                                      <p className="text-3xl sm:text-2xl font-bold text-gray-900">{match.score_a ?? 0}</p>
+                                      <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_a ?? 0}</p>
                                       {match.status === 'termine' && match.score_a === (tournament?.settings?.maxPoints || 13) && match.score_b === 0 && (
-                                        <span className="text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                        <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
                                       )}
                                     </div>
                                   )}
                                 </div>
-                                <div className="px-2 sm:px-4 text-gray-400 font-bold">VS</div>
+                                <div className="px-1 sm:px-4 text-gray-400 font-bold text-sm sm:text-base">VS</div>
                                 <div className="text-center flex-1">
-                                  <p className="font-medium text-gray-900 text-sm sm:text-base truncate px-1">{match.equipe_b?.name}</p>
+                                  <p className="font-medium text-gray-900 text-xs sm:text-base truncate px-1">{match.equipe_b?.name}</p>
                                   {(() => {
                                     const players = getTeamPlayers(match.equipe_b_id || match.equipe_b?.id)
                                     if (players.length > 0) {
                                       return (
-                                        <p className="text-xs text-gray-600 mt-0.5 px-1 truncate">
+                                        <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 px-1 truncate leading-tight">
                                           {players.join(', ')}
                                         </p>
                                       )
@@ -1239,9 +1239,9 @@ export default function TournamentDetailPage() {
                                   })()}
                                   {match.status !== 'a_jouer' && (
                                     <div className="flex items-center justify-center gap-1 mt-1">
-                                      <p className="text-3xl sm:text-2xl font-bold text-gray-900">{match.score_b ?? 0}</p>
+                                      <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_b ?? 0}</p>
                                       {match.status === 'termine' && match.score_b === (tournament?.settings?.maxPoints || 13) && match.score_a === 0 && (
-                                        <span className="text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                        <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
                                       )}
                                     </div>
                                   )}
@@ -1429,12 +1429,12 @@ export default function TournamentDetailPage() {
                                     match.status === 'termine' && match.score_a > match.score_b ? 'bg-green-50' : ''
                                   }`}>
                                     <div className="flex-1 pr-2 min-w-0">
-                                      <span className="font-medium text-sm sm:text-base truncate block">{match.equipe_a?.name}</span>
+                                      <span className="font-medium text-xs sm:text-base truncate block">{match.equipe_a?.name}</span>
                                       {(() => {
                                         const players = getTeamPlayers(match.equipe_a_id || match.equipe_a?.id)
                                         if (players.length > 0) {
                                           return (
-                                            <span className="text-xs text-gray-600 truncate block">
+                                            <span className="text-[10px] sm:text-xs text-gray-600 truncate block leading-tight">
                                               {players.join(', ')}
                                             </span>
                                           )
@@ -1444,9 +1444,9 @@ export default function TournamentDetailPage() {
                                     </div>
                                     {match.status !== 'a_jouer' && (
                                       <div className="flex items-center gap-2 flex-shrink-0">
-                                        <span className="text-2xl sm:text-xl font-bold">{match.score_a ?? 0}</span>
+                                        <span className="text-xl sm:text-xl font-bold">{match.score_a ?? 0}</span>
                                         {match.status === 'termine' && match.score_a === (tournament?.settings?.maxPoints || 13) && match.score_b === 0 && (
-                                          <span className="text-xl sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                          <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
                                         )}
                                       </div>
                                     )}
@@ -1455,12 +1455,12 @@ export default function TournamentDetailPage() {
                                     match.status === 'termine' && match.score_b > match.score_a ? 'bg-green-50' : ''
                                   }`}>
                                     <div className="flex-1 pr-2 min-w-0">
-                                      <span className="font-medium text-sm sm:text-base truncate block">{match.equipe_b?.name}</span>
+                                      <span className="font-medium text-xs sm:text-base truncate block">{match.equipe_b?.name}</span>
                                       {(() => {
                                         const players = getTeamPlayers(match.equipe_b_id || match.equipe_b?.id)
                                         if (players.length > 0) {
                                           return (
-                                            <span className="text-xs text-gray-600 truncate block">
+                                            <span className="text-[10px] sm:text-xs text-gray-600 truncate block leading-tight">
                                               {players.join(', ')}
                                             </span>
                                           )
@@ -1470,9 +1470,9 @@ export default function TournamentDetailPage() {
                                     </div>
                                     {match.status !== 'a_jouer' && (
                                       <div className="flex items-center gap-2 flex-shrink-0">
-                                        <span className="text-2xl sm:text-xl font-bold">{match.score_b ?? 0}</span>
+                                        <span className="text-xl sm:text-xl font-bold">{match.score_b ?? 0}</span>
                                         {match.status === 'termine' && match.score_b === (tournament?.settings?.maxPoints || 13) && match.score_a === 0 && (
-                                          <span className="text-xl sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                          <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
                                         )}
                                       </div>
                                     )}
