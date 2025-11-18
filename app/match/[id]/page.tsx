@@ -168,8 +168,10 @@ export default function MatchScorePage() {
         return
       }
 
-      // Double validation : le match passe en "en_attente_validation"
-      // L'autre équipe devra confirmer le score
+      // Déterminer le gagnant
+      const winnerId = finalScoreA > finalScoreB ? match.equipe_a_id : match.equipe_b_id
+
+      // Le match passe directement à "termine"
       const response = await fetch(`/api/matches/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -178,15 +180,15 @@ export default function MatchScorePage() {
           score_a: finalScoreA,
           score_b: finalScoreB,
           manches_json: allManches,
-          status: 'en_attente_validation',
+          status: 'termine',
+          winner_id: winnerId,
           ended_at: new Date().toISOString(),
-          proposed_by: user?.id, // Qui a proposé le score
-          proposed_at: new Date().toISOString()
+          validated_at: new Date().toISOString()
         })
       })
 
       if (response.ok) {
-        alert('Score enregistré ! L\'équipe adverse doit maintenant confirmer le résultat.')
+        alert('Match terminé ! Score enregistré avec succès.')
         // Redirection vers le tournoi
         if (match?.tournoi?.id) {
           router.push(`/tournoi/${match.tournoi.id}`)

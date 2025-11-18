@@ -227,6 +227,60 @@ export default function TournamentDetailPage() {
     }
   }, [user, params.id])
 
+  const checkAndUpdateTournamentStatus = async (tournamentData: Tournament, matchesData: Match[]) => {
+    if (matchesData.length === 0) return tournamentData
+
+    // 1. Si le tournoi est en "préparation" et qu'un match a commencé ou est terminé, passer à "en_cours"
+    if (tournamentData.status === 'preparation') {
+      const hasStartedMatches = matchesData.some(m => m.status === 'en_cours' || m.status === 'termine')
+
+      if (hasStartedMatches) {
+        try {
+          const updateResponse = await fetch(`/api/tournois/${params.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ status: 'en_cours' })
+          })
+
+          if (updateResponse.ok) {
+            const updatedTournoi = await updateResponse.json()
+            setTournament(updatedTournoi)
+            return updatedTournoi
+          }
+        } catch (error) {
+          console.error('Erreur mise à jour statut tournoi en_cours:', error)
+        }
+      }
+    }
+
+    // 2. Si le tournoi est "en_cours" et que tous les matchs sont terminés, passer à "termine"
+    if (tournamentData.status === 'en_cours') {
+      const allMatchesFinished = matchesData.every(m => m.status === 'termine')
+
+      if (allMatchesFinished) {
+        try {
+          const updateResponse = await fetch(`/api/tournois/${params.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ status: 'termine' })
+          })
+
+          if (updateResponse.ok) {
+            const updatedTournoi = await updateResponse.json()
+            setTournament(updatedTournoi)
+            return updatedTournoi
+          }
+        } catch (error) {
+          console.error('Erreur mise à jour statut tournoi termine:', error)
+        }
+      }
+    }
+
+    return tournamentData
+  }
+
   const loadTournamentData = async () => {
     try {
       // Charger le tournoi
@@ -282,14 +336,17 @@ export default function TournamentDetailPage() {
         // Mise à jour de l'état des matchs
         setMatches(matchesData || [])
 
+        // Vérifier et mettre à jour le statut du tournoi si nécessaire
+        const finalTournamentData = await checkAndUpdateTournamentStatus(tournamentData, matchesData)
+
         // Si mêlée tournante, charger le classement individuel
-        if (tournamentData.mode === 'melee_tournante') {
+        if (finalTournamentData.mode === 'melee_tournante') {
           loadIndividualRankings()
         }
 
         // Vérifier si l'utilisateur est organisateur
         // Vérifier que le tournoi appartient bien à l'organisation de l'utilisateur
-        if (user && organization && tournamentData.org_id === organization.id) {
+        if (user && organization && finalTournamentData.org_id === organization.id) {
           setIsOrganizer(true)
         } else {
           setIsOrganizer(false)
@@ -1036,28 +1093,30 @@ export default function TournamentDetailPage() {
           ))}
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - Améliorés pour mobile */}
         <div className="mb-6">
-          <div className="flex border-b border-gray-200 bg-white/80 backdrop-blur-xl rounded-t-2xl">
+          <div className="flex border-b border-gray-200 bg-white/80 backdrop-blur-xl rounded-t-2xl overflow-x-auto">
             {[
-              { id: 'vue', label: 'Vue d\'ensemble', icon: Icons.grid },
-              { id: 'matchs', label: 'Matchs', icon: Icons.flag },
-              { id: 'classement', label: tournament.mode === 'melee_tournante' ? 'Classement individuel' : 'Classement', icon: Icons.trophy },
-              { id: 'equipes', label: 'Équipes', icon: Icons.users }
+              { id: 'vue', label: 'Vue d\'ensemble', shortLabel: 'Vue', icon: Icons.grid },
+              { id: 'matchs', label: 'Matchs', shortLabel: 'Matchs', icon: Icons.flag },
+              { id: 'classement', label: tournament.mode === 'melee_tournante' ? 'Classement individuel' : 'Classement', shortLabel: 'Classement', icon: Icons.trophy },
+              { id: 'equipes', label: 'Équipes', shortLabel: 'Équipes', icon: Icons.users }
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex-1 flex items-center justify-center space-x-2 px-2 sm:px-4 py-4 transition-all relative ${
+                className={`flex-1 min-w-max flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2 px-3 sm:px-4 py-3 sm:py-4 transition-all relative ${
                   activeTab === tab.id
-                    ? 'text-green-600 font-medium'
+                    ? 'text-green-600 font-bold'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                {tab.icon}
-                <span className="hidden sm:inline">{tab.label}</span>
+                <span className={activeTab === tab.id ? 'scale-110 transition-transform' : ''}>
+                  {tab.icon}
+                </span>
+                <span className="text-xs sm:text-base font-medium">{tab.shortLabel}</span>
                 {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-green-600 to-emerald-600"></div>
+                  <div className="absolute bottom-0 left-0 right-0 h-1 sm:h-0.5 bg-gradient-to-r from-green-600 to-emerald-600"></div>
                 )}
               </button>
             ))}
@@ -1131,22 +1190,22 @@ export default function TournamentDetailPage() {
                               
                               <div className="flex justify-between items-center">
                                 <div className="text-center flex-1">
-                                  <p className="font-medium text-gray-900">{match.equipe_a?.name}</p>
+                                  <p className="font-medium text-gray-900 text-sm sm:text-base truncate px-1">{match.equipe_a?.name}</p>
                                   {match.status !== 'a_jouer' && (
                                     <div className="flex items-center justify-center gap-1 mt-1">
-                                      <p className="text-2xl font-bold text-gray-900">{match.score_a}</p>
+                                      <p className="text-3xl sm:text-2xl font-bold text-gray-900">{match.score_a ?? 0}</p>
                                       {match.status === 'termine' && match.score_a === (tournament?.settings?.maxPoints || 13) && match.score_b === 0 && (
                                         <span className="text-2xl animate-bounce" title="FANNY !">🍑</span>
                                       )}
                                     </div>
                                   )}
                                 </div>
-                                <div className="px-4 text-gray-400">VS</div>
+                                <div className="px-2 sm:px-4 text-gray-400 font-bold">VS</div>
                                 <div className="text-center flex-1">
-                                  <p className="font-medium text-gray-900">{match.equipe_b?.name}</p>
+                                  <p className="font-medium text-gray-900 text-sm sm:text-base truncate px-1">{match.equipe_b?.name}</p>
                                   {match.status !== 'a_jouer' && (
                                     <div className="flex items-center justify-center gap-1 mt-1">
-                                      <p className="text-2xl font-bold text-gray-900">{match.score_b}</p>
+                                      <p className="text-3xl sm:text-2xl font-bold text-gray-900">{match.score_b ?? 0}</p>
                                       {match.status === 'termine' && match.score_b === (tournament?.settings?.maxPoints || 13) && match.score_a === 0 && (
                                         <span className="text-2xl animate-bounce" title="FANNY !">🍑</span>
                                       )}
@@ -1332,28 +1391,28 @@ export default function TournamentDetailPage() {
                                 </div>
                                 
                                 <div className="space-y-2">
-                                  <div className={`flex justify-between items-center p-2 rounded-lg ${
+                                  <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg ${
                                     match.status === 'termine' && match.score_a > match.score_b ? 'bg-green-50' : ''
                                   }`}>
-                                    <span className="font-medium">{match.equipe_a?.name}</span>
+                                    <span className="font-medium text-sm sm:text-base truncate flex-1 pr-2">{match.equipe_a?.name}</span>
                                     {match.status !== 'a_jouer' && (
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xl font-bold">{match.score_a}</span>
+                                      <div className="flex items-center gap-2 flex-shrink-0">
+                                        <span className="text-2xl sm:text-xl font-bold">{match.score_a ?? 0}</span>
                                         {match.status === 'termine' && match.score_a === (tournament?.settings?.maxPoints || 13) && match.score_b === 0 && (
-                                          <span className="text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                          <span className="text-xl sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
                                         )}
                                       </div>
                                     )}
                                   </div>
-                                  <div className={`flex justify-between items-center p-2 rounded-lg ${
+                                  <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg ${
                                     match.status === 'termine' && match.score_b > match.score_a ? 'bg-green-50' : ''
                                   }`}>
-                                    <span className="font-medium">{match.equipe_b?.name}</span>
+                                    <span className="font-medium text-sm sm:text-base truncate flex-1 pr-2">{match.equipe_b?.name}</span>
                                     {match.status !== 'a_jouer' && (
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xl font-bold">{match.score_b}</span>
+                                      <div className="flex items-center gap-2 flex-shrink-0">
+                                        <span className="text-2xl sm:text-xl font-bold">{match.score_b ?? 0}</span>
                                         {match.status === 'termine' && match.score_b === (tournament?.settings?.maxPoints || 13) && match.score_a === 0 && (
-                                          <span className="text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                          <span className="text-xl sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
                                         )}
                                       </div>
                                     )}
