@@ -907,23 +907,23 @@ export default function TournamentDetailPage() {
 
               <div className="hidden sm:block h-10 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
 
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="p-1.5 sm:p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl text-white">
-                  {Icons.petanque}
+              <div className="flex items-center space-x-1.5 sm:space-x-3">
+                <div className="p-1 sm:p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg sm:rounded-xl text-white">
+                  <Petanque className="w-5 h-5 sm:w-8 sm:h-8" />
                 </div>
                 <div>
                   <h1 className="text-sm sm:text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                     <span className="hidden sm:inline">{tournament.name}</span>
                     <span className="sm:hidden">{tournament.name.length > 20 ? tournament.name.substring(0, 20) + '...' : tournament.name}</span>
                   </h1>
-                  <div className="flex items-center space-x-2 sm:space-x-4 text-xs text-gray-500">
-                    <span className="flex items-center">
-                      <span className="hidden sm:inline">{Icons.calendar}</span>
-                      <span className="ml-0 sm:ml-1">{new Date(tournament.settings.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</span>
+                  <div className="flex items-center space-x-1 sm:space-x-4 text-xs text-gray-500">
+                    <span className="hidden md:flex items-center">
+                      {Icons.calendar}
+                      <span className="ml-1">{new Date(tournament.settings.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</span>
                     </span>
-                    <span className="flex items-center">
-                      <span className="hidden sm:inline">{Icons.clock}</span>
-                      <span className="ml-0 sm:ml-1">{tournament.settings.time}</span>
+                    <span className="hidden md:flex items-center">
+                      {Icons.clock}
+                      <span className="ml-1">{tournament.settings.time}</span>
                     </span>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                       tournament.status === 'preparation'
@@ -941,7 +941,7 @@ export default function TournamentDetailPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="flex items-center space-x-1 sm:space-x-3">
               {tournament.status === 'preparation' && isOrganizer && (
                 <button
                   onClick={() => setShowStartModal(true)}
@@ -996,7 +996,7 @@ export default function TournamentDetailPage() {
 
       {/* Infos du tournoi */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {[
             { 
               label: 'Mode', 
@@ -1048,14 +1048,14 @@ export default function TournamentDetailPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex-1 flex items-center justify-center space-x-2 px-4 py-4 transition-all relative ${
-                  activeTab === tab.id 
-                    ? 'text-green-600 font-medium' 
+                className={`flex-1 flex items-center justify-center space-x-2 px-2 sm:px-4 py-4 transition-all relative ${
+                  activeTab === tab.id
+                    ? 'text-green-600 font-medium'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 {tab.icon}
-                <span>{tab.label}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
                 {activeTab === tab.id && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-green-600 to-emerald-600"></div>
                 )}
