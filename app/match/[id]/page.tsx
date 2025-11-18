@@ -308,46 +308,48 @@ export default function MatchScorePage() {
         <div className="absolute -bottom-40 right-40 w-96 h-96 bg-gradient-to-br from-purple-300 to-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>
 
-      {/* Header */}
+      {/* Header - Optimisé responsive */}
       <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-gray-200/50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center space-x-4">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="flex justify-between items-center h-16 sm:h-20">
+            {/* Section gauche */}
+            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
               <button
                 onClick={() => match?.tournoi?.id && router.push(`/tournoi/${match.tournoi.id}`)}
-                className="group flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 rounded-xl transition-all"
+                className="group flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 rounded-xl transition-all flex-shrink-0"
               >
                 {Icons.arrowLeft}
-                <span className="font-medium">Retour au tournoi</span>
+                <span className="font-medium hidden sm:inline">Retour</span>
               </button>
-              
-              <div className="h-10 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
-              
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl text-white">
-                  {Icons.petanque}
+
+              <div className="hidden md:block h-10 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent flex-shrink-0"></div>
+
+              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+                <div className="p-1.5 sm:p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg sm:rounded-xl text-white flex-shrink-0">
+                  <Petanque className="w-4 h-4 sm:w-8 sm:h-8" />
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">
-                    Match • Tour {match.tour} • Terrain {match.terrain || '?'}
+                <div className="min-w-0">
+                  <h1 className="text-sm sm:text-xl font-bold text-gray-900 truncate">
+                    <span className="hidden sm:inline">Match • </span>T{match.tour}<span className="hidden sm:inline"> • Terrain</span><span className="sm:hidden"> T</span>{match.terrain || '?'}
                   </h1>
-                  <p className="text-sm text-gray-500">{match.tournoi?.name}</p>
+                  <p className="text-xs sm:text-sm text-gray-500 truncate">{match.tournoi?.name}</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center space-x-6">
+            {/* Section droite */}
+            <div className="flex items-center space-x-2 sm:space-x-4 lg:space-x-6 flex-shrink-0">
               {/* Timer */}
-              <div className="flex items-center space-x-2 px-4 py-2 bg-gray-100 rounded-xl">
-                {Icons.clock}
-                <span className="font-mono font-bold text-lg">{formatTime(elapsedTime)}</span>
+              <div className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-100 rounded-lg sm:rounded-xl">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="font-mono font-bold text-sm sm:text-lg">{formatTime(elapsedTime)}</span>
               </div>
 
               {/* Mène actuelle */}
               {!winner && (
-                <div className="px-4 py-2 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl">
-                  <span className="text-sm text-gray-600">Mène</span>
-                  <span className="ml-2 font-bold text-lg text-green-700">{currentManche}</span>
+                <div className="px-2 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg sm:rounded-xl">
+                  <span className="text-xs sm:text-sm text-gray-600 hidden sm:inline">Mène </span>
+                  <span className="sm:ml-2 font-bold text-sm sm:text-lg text-green-700">{currentManche}</span>
                 </div>
               )}
             </div>
@@ -386,68 +388,69 @@ export default function MatchScorePage() {
             </div>
           </div>
 
-          {/* Zone principale : Équipes côte à côte avec gros VS */}
-          <div className="p-8">
-            <div className="grid grid-cols-5 gap-4 items-center">
-              {/* Équipe A - Gauche */}
-              <div className="col-span-2">
-                <div className={`p-6 rounded-2xl text-center transition-all ${
-                  winner === 'A' 
-                    ? 'bg-gradient-to-br from-yellow-50 to-orange-50 scale-105 shadow-2xl' 
+          {/* Zone principale : Équipes - Responsive */}
+          <div className="p-4 sm:p-8">
+            {/* Desktop: côte à côte / Mobile: vertical */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+              {/* Équipe A */}
+              <div className="md:col-span-2">
+                <div className={`p-4 sm:p-6 rounded-2xl text-center transition-all ${
+                  winner === 'A'
+                    ? 'bg-gradient-to-br from-yellow-50 to-orange-50 scale-105 shadow-2xl'
                     : 'bg-gradient-to-br from-blue-50 to-indigo-50'
                 }`}>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
                     {match.equipe_a?.name}
                   </h2>
-                  
-                  <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full font-bold text-6xl mb-4 transition-all ${
-                    winner === 'A' 
-                      ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-2xl animate-pulse' 
+
+                  <div className={`inline-flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 rounded-full font-bold text-5xl sm:text-6xl mb-3 sm:mb-4 transition-all ${
+                    winner === 'A'
+                      ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-2xl animate-pulse'
                       : 'bg-gradient-to-br from-blue-100 to-indigo-200 text-blue-900'
                   }`}>
                     {scoreA}
                   </div>
-                  
+
                   {winner === 'A' && (
                     <div className="animate-bounce">
-                      <Trophy className="w-16 h-16 text-yellow-500" />
+                      <Trophy className="w-12 h-12 sm:w-16 sm:h-16 text-yellow-500 mx-auto" />
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* VS au centre - Plus gros */}
-              <div className="col-span-1">
+              {/* VS au centre */}
+              <div className="md:col-span-1 flex justify-center">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full blur-2xl opacity-20"></div>
-                  <div className="relative bg-white rounded-full p-8 shadow-2xl text-center">
-                    <span className="text-5xl font-black bg-gradient-to-br from-gray-600 to-gray-800 bg-clip-text text-transparent">VS</span>
+                  <div className="relative bg-white rounded-full p-4 sm:p-8 shadow-2xl text-center">
+                    <span className="text-3xl sm:text-5xl font-black bg-gradient-to-br from-gray-600 to-gray-800 bg-clip-text text-transparent">VS</span>
                   </div>
                 </div>
               </div>
 
-              {/* Équipe B - Droite */}
-              <div className="col-span-2">
-                <div className={`p-6 rounded-2xl text-center transition-all ${
-                  winner === 'B' 
-                    ? 'bg-gradient-to-br from-yellow-50 to-orange-50 scale-105 shadow-2xl' 
+              {/* Équipe B */}
+              <div className="md:col-span-2">
+                <div className={`p-4 sm:p-6 rounded-2xl text-center transition-all ${
+                  winner === 'B'
+                    ? 'bg-gradient-to-br from-yellow-50 to-orange-50 scale-105 shadow-2xl'
                     : 'bg-gradient-to-br from-green-50 to-emerald-50'
                 }`}>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
                     {match.equipe_b?.name}
                   </h2>
-                  
-                  <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full font-bold text-6xl mb-4 transition-all ${
-                    winner === 'B' 
-                      ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-2xl animate-pulse' 
+
+                  <div className={`inline-flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 rounded-full font-bold text-5xl sm:text-6xl mb-3 sm:mb-4 transition-all ${
+                    winner === 'B'
+                      ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-2xl animate-pulse'
                       : 'bg-gradient-to-br from-green-100 to-emerald-200 text-green-900'
                   }`}>
                     {scoreB}
                   </div>
-                  
+
                   {winner === 'B' && (
                     <div className="animate-bounce">
-                      <Trophy className="w-16 h-16 text-yellow-500" />
+                      <Trophy className="w-12 h-12 sm:w-16 sm:h-16 text-yellow-500 mx-auto" />
                     </div>
                   )}
                 </div>
@@ -456,67 +459,70 @@ export default function MatchScorePage() {
 
             {/* Zone de saisie des points */}
             {!winner && (
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 mt-8">
-                <h3 className="text-center text-xl font-bold text-gray-700 mb-6">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-4 sm:p-6 mt-6 sm:mt-8">
+                <h3 className="text-center text-lg sm:text-xl font-bold text-gray-700 mb-4 sm:mb-6">
                   Points de la mène {currentManche}
                 </h3>
-                
-                <div className="grid grid-cols-5 gap-4 items-center">
+
+                {/* Desktop: côte à côte / Mobile: vertical */}
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
                   {/* Contrôles Équipe A */}
-                  <div className="col-span-2 text-center">
+                  <div className="md:col-span-2 text-center">
+                    <p className="text-sm font-semibold text-blue-800 mb-2 md:hidden">{match.equipe_a?.name}</p>
                     <div className="bg-white rounded-2xl p-4 shadow-lg">
-                      <div className="text-5xl font-bold text-blue-900 mb-4">
+                      <div className="text-4xl sm:text-5xl font-bold text-blue-900 mb-4">
                         {mancheScoreA}
                       </div>
                       <div className="flex justify-center space-x-3">
                         <button
                           onClick={() => updateScore('A', -1)}
-                          className="p-4 bg-white hover:bg-red-50 rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="p-3 sm:p-4 bg-white hover:bg-red-50 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
                           disabled={mancheScoreA === 0}
                         >
                           <span className="text-red-500 group-hover:scale-110 transition-transform block">
-                            {Icons.minus}
+                            <Minus className="w-6 h-6 sm:w-8 sm:h-8" />
                           </span>
                         </button>
                         <button
                           onClick={() => updateScore('A', 1)}
-                          className="p-4 bg-white hover:bg-green-50 rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="p-3 sm:p-4 bg-white hover:bg-green-50 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
                           disabled={mancheScoreA === maxPointsPerManche}
                         >
                           <span className="text-green-500 group-hover:scale-110 transition-transform block">
-                            {Icons.plus}
+                            <Plus className="w-6 h-6 sm:w-8 sm:h-8" />
                           </span>
                         </button>
                       </div>
                     </div>
                   </div>
 
-                  {/* Espace central */}
-                  <div className="col-span-1"></div>
+                  {/* Espace central - caché sur mobile */}
+                  <div className="hidden md:block md:col-span-1"></div>
 
                   {/* Contrôles Équipe B */}
-                  <div className="col-span-2 text-center">
+                  <div className="md:col-span-2 text-center">
+                    <p className="text-sm font-semibold text-green-800 mb-2 md:hidden">{match.equipe_b?.name}</p>
                     <div className="bg-white rounded-2xl p-4 shadow-lg">
-                      <div className="text-5xl font-bold text-green-900 mb-4">
+                      <div className="text-4xl sm:text-5xl font-bold text-green-900 mb-4">
                         {mancheScoreB}
                       </div>
                       <div className="flex justify-center space-x-3">
                         <button
                           onClick={() => updateScore('B', -1)}
-                          className="p-4 bg-white hover:bg-red-50 rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="p-3 sm:p-4 bg-white hover:bg-red-50 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
                           disabled={mancheScoreB === 0}
                         >
                           <span className="text-red-500 group-hover:scale-110 transition-transform block">
-                            {Icons.minus}
+                            <Minus className="w-6 h-6 sm:w-8 sm:h-8" />
                           </span>
                         </button>
                         <button
                           onClick={() => updateScore('B', 1)}
-                          className="p-4 bg-white hover:bg-green-50 rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="p-3 sm:p-4 bg-white hover:bg-green-50 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
                           disabled={mancheScoreB === maxPointsPerManche}
                         >
                           <span className="text-green-500 group-hover:scale-110 transition-transform block">
-                            {Icons.plus}
+                            <Plus className="w-6 h-6 sm:w-8 sm:h-8" />
                           </span>
                         </button>
                       </div>

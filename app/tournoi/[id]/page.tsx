@@ -1184,7 +1184,7 @@ export default function TournamentDetailPage() {
                                    'À jouer'}
                                 </span>
                                 {match.terrain && (
-                                  <span className="text-sm text-gray-500">Terrain {match.terrain}</span>
+                                  <span className="text-sm font-semibold text-gray-900">Terrain {match.terrain}</span>
                                 )}
                               </div>
                               
@@ -1386,7 +1386,7 @@ export default function TournamentDetailPage() {
                                      'À jouer'}
                                   </span>
                                   {match.terrain && (
-                                    <span className="text-sm text-gray-500">Terrain {match.terrain}</span>
+                                    <span className="text-sm font-semibold text-gray-900">Terrain {match.terrain}</span>
                                   )}
                                 </div>
                                 
