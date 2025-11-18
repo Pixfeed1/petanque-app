@@ -161,9 +161,16 @@ export default function MatchScorePage() {
   const finishMatch = async (finalScoreA: number, finalScoreB: number, allManches: Manche[]) => {
     setSaving(true)
     try {
-      // Gestion des égalités - ne devrait pas arriver en pétanque normale
+      // Validation des règles de pétanque
       if (finalScoreA === finalScoreB) {
-        alert('Erreur: Le match ne peut pas se terminer sur une égalité. Veuillez jouer une mène supplémentaire.')
+        alert('❌ Erreur: Le match ne peut pas se terminer sur une égalité. Veuillez jouer une mène supplémentaire.')
+        setSaving(false)
+        return
+      }
+
+      // Vérifier qu'au moins une équipe a atteint le score maximum
+      if (finalScoreA < maxPoints && finalScoreB < maxPoints) {
+        alert(`❌ Erreur: Le match doit se terminer quand une équipe atteint ${maxPoints} points. Score actuel: ${finalScoreA}-${finalScoreB}`)
         setSaving(false)
         return
       }

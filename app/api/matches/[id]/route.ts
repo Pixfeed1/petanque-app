@@ -168,13 +168,45 @@ export async function PUT(
     }
 
     if (body.status !== undefined) {
-      updates.push(`status = $${paramIndex++}`)
-      values.push(body.status)
-
-      // Si le statut devient "termine", enregistrer played_at
+      // Validation des règles de pétanque si le statut devient "termine"
       if (body.status === 'termine') {
+        const scoreA = body.score_a !== undefined ? body.score_a : existingMatch.score_a
+        const scoreB = body.score_b !== undefined ? body.score_b : existingMatch.score_b
+
+        // Vérifier qu'il n'y a pas d'égalité
+        if (scoreA === scoreB) {
+          return apiError('Un match de pétanque ne peut pas se terminer sur une égalité', 400)
+        }
+
+        // Récupérer le maxPoints du tournoi (par défaut 13)
+        const tournoiQuery = await query(
+          'SELECT settings FROM tournois WHERE id = $1',
+          [existingMatch.tournoi_id]
+        )
+        const maxPoints = (tournoiQuery.rows[0]?.settings as any)?.maxPoints || 13
+
+        // Vérifier qu'au moins une équipe a atteint le score maximum
+        if (scoreA < maxPoints && scoreB < maxPoints) {
+          return apiError(
+            `Le match doit se terminer quand une équipe atteint ${maxPoints} points. Score actuel: ${scoreA}-${scoreB}`,
+            400
+          )
+        }
+
+        // Calculer automatiquement le winner_id basé sur les scores
+        const calculatedWinnerId = scoreA > scoreB ? existingMatch.equipe_a_id : existingMatch.equipe_b_id
+        if (!body.winner_id) {
+          body.winner_id = calculatedWinnerId
+        } else if (body.winner_id !== calculatedWinnerId) {
+          return apiError('Le winner_id ne correspond pas au score final', 400)
+        }
+
+        // Enregistrer played_at quand le match se termine
         updates.push(`played_at = NOW()`)
       }
+
+      updates.push(`status = $${paramIndex++}`)
+      values.push(body.status)
     }
 
     if (body.started_at !== undefined) {
@@ -200,7 +232,8 @@ export async function PUT(
     //   updates.push(`proposed_at = NOW()`)
     // }
 
-    if (body.winner_id !== undefined) {
+    // Le winner_id peut être calculé automatiquement pour un match terminé
+    if (body.winner_id !== undefined && body.winner_id !== null) {
       updates.push(`winner_id = $${paramIndex++}`)
       values.push(body.winner_id)
     }
