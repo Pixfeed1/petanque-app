@@ -132,7 +132,10 @@ export default function PodiumPage() {
            // 1. Nombre de victoires (règle FIPJP)
            if (b.victories !== a.victories) return b.victories - a.victories
 
-           // 2. Confrontation directe (règle FIPJP)
+           // 2. Différence de points - Moyenne générale (règle FIPJP)
+           if (b.difference !== a.difference) return b.difference - a.difference
+
+           // 3. Confrontation directe (règle FIPJP)
            const directMatch = allMatches.find((m: Match) =>
              m.status === 'termine' && m.type === 'poule' &&
              ((m.equipe_a_id === a.team.id && m.equipe_b_id === b.team.id) ||
@@ -144,9 +147,6 @@ export default function PodiumPage() {
              if (aWon) return -1 // a gagne
              else return 1 // b gagne
            }
-
-           // 3. Différence de points (règle FIPJP)
-           if (b.difference !== a.difference) return b.difference - a.difference
 
            // 4. Nombre de points marqués (règle FIPJP complète)
            return b.pointsFor - a.pointsFor

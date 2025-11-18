@@ -196,7 +196,10 @@ export default function TournamentDetailPage() {
         // 1. Nombre de victoires (règle FIPJP)
         if ((b.victories ?? 0) !== (a.victories ?? 0)) return (b.victories ?? 0) - (a.victories ?? 0)
 
-        // 2. Confrontation directe (règle FIPJP)
+        // 2. Différence de points - Moyenne générale (règle FIPJP)
+        if ((b.difference ?? 0) !== (a.difference ?? 0)) return (b.difference ?? 0) - (a.difference ?? 0)
+
+        // 3. Confrontation directe (règle FIPJP)
         const directMatch = matches.find((m: Match) =>
           m.status === 'termine' && m.poule === poule &&
           ((m.equipe_a?.id === a.id && m.equipe_b?.id === b.id) ||
@@ -208,9 +211,6 @@ export default function TournamentDetailPage() {
           if (aWon) return -1 // a gagne
           else return 1 // b gagne
         }
-
-        // 3. Différence de points (règle FIPJP)
-        if ((b.difference ?? 0) !== (a.difference ?? 0)) return (b.difference ?? 0) - (a.difference ?? 0)
 
         // 4. Nombre de points marqués (règle FIPJP complète)
         return (b.pointsFor ?? 0) - (a.pointsFor ?? 0)
