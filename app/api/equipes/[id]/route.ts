@@ -54,8 +54,12 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
+    // Récupérer l'équipe avec le statut du tournoi
     const existingEquipe = await queryOne(
-      'SELECT * FROM equipes WHERE id = $1',
+      `SELECT e.*, t.status as tournoi_status
+       FROM equipes e
+       LEFT JOIN tournois t ON e.tournoi_id = t.id
+       WHERE e.id = $1`,
       [id]
     )
 
@@ -63,16 +67,31 @@ export async function PUT(
       return apiError('Équipe introuvable', 404)
     }
 
+    // Ne permettre la modification que si le tournoi est en préparation
+    if (existingEquipe.tournoi_status !== 'preparation') {
+      return apiError('Impossible de modifier une équipe une fois le tournoi démarré', 400)
+    }
+
     const updates: string[] = []
     const values: SQLValue[] = []
     let paramIndex = 1
 
     if (body.name !== undefined) {
+      // Validation du nom
+      if (typeof body.name !== 'string' || body.name.trim().length === 0) {
+        return apiError('Le nom de l\'équipe ne peut pas être vide', 400)
+      }
+      if (body.name.trim().length > 50) {
+        return apiError('Le nom de l\'équipe est trop long (maximum 50 caractères)', 400)
+      }
       updates.push(`name = $${paramIndex++}`)
-      values.push(body.name)
+      values.push(body.name.trim())
     }
 
     if (body.joueur_ids !== undefined) {
+      if (!Array.isArray(body.joueur_ids)) {
+        return apiError('joueur_ids doit être un tableau', 400)
+      }
       updates.push(`joueur_ids = $${paramIndex++}::bigint[]`)
       values.push(body.joueur_ids)
     }
@@ -90,7 +109,7 @@ export async function PUT(
 
     const result = await query(
       `UPDATE equipes
-       SET ${updates.join(', ')}
+       SET ${updates.join(', ')}, updated_at = NOW()
        WHERE id = $${paramIndex}
        RETURNING *`,
       values

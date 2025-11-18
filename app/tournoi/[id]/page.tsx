@@ -122,6 +122,8 @@ export default function TournamentDetailPage() {
   const [showTeamFormation, setShowTeamFormation] = useState(false)
   const [refreshingClassement, setRefreshingClassement] = useState(false)
   const [userPlan, setUserPlan] = useState('free')
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null)
+  const [newTeamName, setNewTeamName] = useState('')
 
   // État pour la mêlée tournante
   const [currentRotation, setCurrentRotation] = useState(1)
@@ -927,6 +929,31 @@ export default function TournamentDetailPage() {
     }
   }
 
+  const renameTeam = async () => {
+    if (!editingTeam || !newTeamName.trim()) return
+
+    try {
+      const response = await fetch(`/api/equipes/${editingTeam.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: newTeamName.trim() })
+      })
+
+      if (response.ok) {
+        await loadTournamentData()
+        setEditingTeam(null)
+        setNewTeamName('')
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Erreur lors du renommage de l\'équipe')
+      }
+    } catch (error) {
+      console.error('Erreur renommage équipe:', error)
+      alert('Erreur lors du renommage de l\'équipe')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30 flex items-center justify-center">
@@ -1666,10 +1693,13 @@ export default function TournamentDetailPage() {
                       
                       {tournament.status === 'preparation' && isOrganizer && (
                         <button
-                          onClick={() => {/* Ouvrir modal édition équipe */}}
+                          onClick={() => {
+                            setEditingTeam(team)
+                            setNewTeamName(team.name)
+                          }}
                           className="mt-4 w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all text-sm font-medium"
                         >
-                          Modifier l'équipe
+                          ✏️ Renommer l'équipe
                         </button>
                       )}
                     </div>
@@ -1753,6 +1783,70 @@ export default function TournamentDetailPage() {
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all"
                 >
                   Démarrer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de renommage d'équipe */}
+      {editingTeam && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-slideUp">
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6">
+              <h2 className="text-2xl font-bold text-white">
+                ✏️ Renommer l'équipe
+              </h2>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nom actuel : <span className="font-bold">{editingTeam.name}</span>
+                </label>
+                <input
+                  type="text"
+                  value={newTeamName}
+                  onChange={(e) => setNewTeamName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') renameTeam()
+                  }}
+                  placeholder="Nouveau nom de l'équipe"
+                  maxLength={50}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all"
+                  autoFocus
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {newTeamName.length}/50 caractères
+                </p>
+              </div>
+
+              <div className="bg-blue-50 rounded-xl p-4 mb-6">
+                <p className="text-sm text-gray-600">
+                  💡 <strong>Astuce :</strong> Choisissez un nom unique et amusant pour votre équipe !
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Exemples : "Les Champions", "Team Rocket", "Les Invincibles"
+                </p>
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setEditingTeam(null)
+                    setNewTeamName('')
+                  }}
+                  className="flex-1 px-6 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={renameTeam}
+                  disabled={!newTeamName.trim() || newTeamName.trim() === editingTeam.name}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Renommer
                 </button>
               </div>
             </div>
