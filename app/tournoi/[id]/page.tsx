@@ -134,6 +134,14 @@ export default function TournamentDetailPage() {
     }
   }, [organization])
 
+  // Helper function to get player names for a team
+  const getTeamPlayers = (teamId: string | null | undefined): string[] => {
+    if (!teamId) return []
+    const team = teams.find(t => t.id === teamId)
+    if (!team || !team.equipes_joueurs || team.equipes_joueurs.length === 0) return []
+    return team.equipes_joueurs.map(ej => ej.joueur.name)
+  }
+
   // Calcul optimisé du classement avec useMemo
   const teamsWithStats = useMemo(() => {
     return teams.map(team => {
@@ -887,9 +895,13 @@ export default function TournamentDetailPage() {
       )
 
       if (conflicts.length > 0) {
-        const conflictNames = conflicts.map(m =>
-          `${m.equipe_a?.name} vs ${m.equipe_b?.name}`
-        ).join(', ')
+        const conflictNames = conflicts.map(m => {
+          const playersA = getTeamPlayers(m.equipe_a_id || m.equipe_a?.id)
+          const playersB = getTeamPlayers(m.equipe_b_id || m.equipe_b?.id)
+          const teamADisplay = playersA.length > 0 ? `${m.equipe_a?.name} (${playersA.join(', ')})` : m.equipe_a?.name
+          const teamBDisplay = playersB.length > 0 ? `${m.equipe_b?.name} (${playersB.join(', ')})` : m.equipe_b?.name
+          return `${teamADisplay} vs ${teamBDisplay}`
+        }).join('\n')
 
         const confirm = window.confirm(
           `⚠️ CONFLIT DE TERRAIN !\n\n` +
@@ -1191,6 +1203,17 @@ export default function TournamentDetailPage() {
                               <div className="flex justify-between items-center">
                                 <div className="text-center flex-1">
                                   <p className="font-medium text-gray-900 text-sm sm:text-base truncate px-1">{match.equipe_a?.name}</p>
+                                  {(() => {
+                                    const players = getTeamPlayers(match.equipe_a_id || match.equipe_a?.id)
+                                    if (players.length > 0) {
+                                      return (
+                                        <p className="text-xs text-gray-600 mt-0.5 px-1 truncate">
+                                          {players.join(', ')}
+                                        </p>
+                                      )
+                                    }
+                                    return null
+                                  })()}
                                   {match.status !== 'a_jouer' && (
                                     <div className="flex items-center justify-center gap-1 mt-1">
                                       <p className="text-3xl sm:text-2xl font-bold text-gray-900">{match.score_a ?? 0}</p>
@@ -1203,6 +1226,17 @@ export default function TournamentDetailPage() {
                                 <div className="px-2 sm:px-4 text-gray-400 font-bold">VS</div>
                                 <div className="text-center flex-1">
                                   <p className="font-medium text-gray-900 text-sm sm:text-base truncate px-1">{match.equipe_b?.name}</p>
+                                  {(() => {
+                                    const players = getTeamPlayers(match.equipe_b_id || match.equipe_b?.id)
+                                    if (players.length > 0) {
+                                      return (
+                                        <p className="text-xs text-gray-600 mt-0.5 px-1 truncate">
+                                          {players.join(', ')}
+                                        </p>
+                                      )
+                                    }
+                                    return null
+                                  })()}
                                   {match.status !== 'a_jouer' && (
                                     <div className="flex items-center justify-center gap-1 mt-1">
                                       <p className="text-3xl sm:text-2xl font-bold text-gray-900">{match.score_b ?? 0}</p>
@@ -1394,7 +1428,20 @@ export default function TournamentDetailPage() {
                                   <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg ${
                                     match.status === 'termine' && match.score_a > match.score_b ? 'bg-green-50' : ''
                                   }`}>
-                                    <span className="font-medium text-sm sm:text-base truncate flex-1 pr-2">{match.equipe_a?.name}</span>
+                                    <div className="flex-1 pr-2 min-w-0">
+                                      <span className="font-medium text-sm sm:text-base truncate block">{match.equipe_a?.name}</span>
+                                      {(() => {
+                                        const players = getTeamPlayers(match.equipe_a_id || match.equipe_a?.id)
+                                        if (players.length > 0) {
+                                          return (
+                                            <span className="text-xs text-gray-600 truncate block">
+                                              {players.join(', ')}
+                                            </span>
+                                          )
+                                        }
+                                        return null
+                                      })()}
+                                    </div>
                                     {match.status !== 'a_jouer' && (
                                       <div className="flex items-center gap-2 flex-shrink-0">
                                         <span className="text-2xl sm:text-xl font-bold">{match.score_a ?? 0}</span>
@@ -1407,7 +1454,20 @@ export default function TournamentDetailPage() {
                                   <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg ${
                                     match.status === 'termine' && match.score_b > match.score_a ? 'bg-green-50' : ''
                                   }`}>
-                                    <span className="font-medium text-sm sm:text-base truncate flex-1 pr-2">{match.equipe_b?.name}</span>
+                                    <div className="flex-1 pr-2 min-w-0">
+                                      <span className="font-medium text-sm sm:text-base truncate block">{match.equipe_b?.name}</span>
+                                      {(() => {
+                                        const players = getTeamPlayers(match.equipe_b_id || match.equipe_b?.id)
+                                        if (players.length > 0) {
+                                          return (
+                                            <span className="text-xs text-gray-600 truncate block">
+                                              {players.join(', ')}
+                                            </span>
+                                          )
+                                        }
+                                        return null
+                                      })()}
+                                    </div>
                                     {match.status !== 'a_jouer' && (
                                       <div className="flex items-center gap-2 flex-shrink-0">
                                         <span className="text-2xl sm:text-xl font-bold">{match.score_b ?? 0}</span>
