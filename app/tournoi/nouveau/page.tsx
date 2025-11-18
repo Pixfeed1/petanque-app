@@ -1086,7 +1086,7 @@ export default function CreateTournamentPage() {
                         }`}
                       >
                         <p className="font-medium text-gray-900">Par tour</p>
-                        <p className="text-xs text-gray-600 mt-1">Nouvelles équipes à chaque tour (recommandé)</p>
+                        <p className="text-xs text-gray-900 mt-1">Nouvelles équipes à chaque tour (recommandé)</p>
                       </button>
                       <button
                         onClick={() => setFormData({...formData, meleeRotation: 'par_match'})}
@@ -1097,7 +1097,7 @@ export default function CreateTournamentPage() {
                         }`}
                       >
                         <p className="font-medium text-gray-900">Par match</p>
-                        <p className="text-xs text-gray-600 mt-1">Nouvelles équipes après chaque partie</p>
+                        <p className="text-xs text-gray-900 mt-1">Nouvelles équipes après chaque partie</p>
                       </button>
                     </div>
                   </div>
@@ -1417,7 +1417,7 @@ export default function CreateTournamentPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     {/* Taille des poules */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
                         Taille des poules
                       </label>
                       <select
@@ -1436,7 +1436,7 @@ export default function CreateTournamentPage() {
 
                     {/* Qualifiés par poule */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
                         Qualifiés par poule
                       </label>
                       <select
@@ -1572,13 +1572,13 @@ export default function CreateTournamentPage() {
                         {Icons.shuffle}
                         <span className="ml-2">Configuration Mêlée Tournante</span>
                       </h4>
-                      <p className="text-sm text-gray-700">
+                      <p className="text-sm text-gray-900">
                         Rotation des équipes : <span className="font-bold">
                           {formData.meleeRotation === 'par_tour' ? 'Par tour' : 'Après chaque match'}
                         </span>
                       </p>
-                      <p className="text-xs text-gray-600 mt-1">
-                        {formData.meleeRotation === 'par_tour' 
+                      <p className="text-xs text-gray-900 mt-1">
+                        {formData.meleeRotation === 'par_tour'
                           ? 'Les équipes seront reformées à chaque nouveau tour'
                           : 'Les équipes seront reformées après chaque match joué'
                         }
