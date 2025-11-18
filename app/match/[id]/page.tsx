@@ -553,24 +553,24 @@ export default function MatchScorePage() {
               </div>
             )}
 
-            {/* Message de victoire */}
+            {/* Message de victoire - Responsive */}
             {winner && (
-              <div className="mt-8 text-center">
-                <div className="inline-block bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl p-8 shadow-2xl">
-                  <div className="text-6xl mb-4">🎉</div>
-                  <h2 className="text-3xl font-bold text-white mb-2">
+              <div className="mt-6 sm:mt-8 text-center px-2">
+                <div className="inline-block bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl max-w-full">
+                  <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">🎉</div>
+                  <h2 className="text-xl sm:text-3xl font-bold text-white mb-2 px-2">
                     Victoire de {winner === 'A' ? match.equipe_a?.name : match.equipe_b?.name} !
                   </h2>
-                  <p className="text-white/90 text-xl">
+                  <p className="text-white/90 text-base sm:text-xl px-2">
                     Score final : {scoreA} - {scoreB}
                   </p>
-                  <p className="text-white/80 text-sm mt-4">
+                  <p className="text-white/80 text-xs sm:text-sm mt-3 sm:mt-4">
                     Match terminé en {formatTime(elapsedTime)}
                   </p>
                   {saving && (
-                    <div className="mt-4 flex items-center justify-center text-white">
+                    <div className="mt-3 sm:mt-4 flex items-center justify-center text-white">
                       {Icons.loader}
-                      <span className="ml-2">Retour au tournoi...</span>
+                      <span className="ml-2 text-sm sm:text-base">Retour au tournoi...</span>
                     </div>
                   )}
                 </div>
