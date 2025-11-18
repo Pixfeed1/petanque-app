@@ -1459,29 +1459,31 @@ export default function TournamentDetailPage() {
                     <div className="p-4">
                       <table className="w-full">
                         <thead>
-                          <tr className="border-b">
-                            <th className="text-left py-2">Pos</th>
-                            <th className="text-left py-2">Joueur</th>
-                            <th className="text-center py-2">V</th>
-                            <th className="text-center py-2">D</th>
-                            <th className="text-center py-2">+/-</th>
-                            <th className="text-center py-2">Pts</th>
+                          <tr className="border-b border-gray-300">
+                            <th className="text-left py-2 px-2 font-bold text-gray-900">Pos</th>
+                            <th className="text-left py-2 px-2 font-bold text-gray-900">Joueur</th>
+                            <th className="text-center py-2 px-2 font-bold text-purple-600">V</th>
+                            <th className="text-center py-2 px-2 font-bold text-gray-900">D</th>
+                            <th className="text-center py-2 px-2 font-bold text-gray-900">+/-</th>
+                            <th className="text-center py-2 px-2 font-bold text-gray-900">Pts</th>
                           </tr>
                         </thead>
                         <tbody>
                           {individualRankings.map((player, index) => (
-                            <tr key={player.id} className="border-b hover:bg-gray-50">
-                              <td className="py-3">
+                            <tr key={player.id} className={`border-b hover:bg-gray-50 ${
+                              index < 3 ? 'bg-purple-50' : ''
+                            }`}>
+                              <td className="py-3 px-2 text-gray-900 font-semibold text-lg">
                                 {index === 0 && '🥇'}
                                 {index === 1 && '🥈'}
                                 {index === 2 && '🥉'}
                                 {index > 2 && index + 1}
                               </td>
-                              <td className="py-3 font-medium">{player.name}</td>
-                              <td className="py-3 text-center">{player.victories || 0}</td>
-                              <td className="py-3 text-center">{player.defeats || 0}</td>
-                              <td className="py-3 text-center">{player.difference || 0}</td>
-                              <td className="py-3 text-center font-bold">{player.points || 0}</td>
+                              <td className="py-3 px-2 font-semibold text-gray-900">{player.name}</td>
+                              <td className="py-3 px-2 text-center font-bold text-purple-600 text-lg">{player.victories || 0}</td>
+                              <td className="py-3 px-2 text-center font-medium text-gray-900">{player.defeats || 0}</td>
+                              <td className="py-3 px-2 text-center font-medium text-gray-900">{player.difference || 0}</td>
+                              <td className="py-3 px-2 text-center font-bold text-gray-900 text-lg">{player.points || 0}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1500,14 +1502,14 @@ export default function TournamentDetailPage() {
                         <div className="p-4">
                           <table className="w-full">
                             <thead>
-                              <tr className="border-b">
-                                <th className="text-left py-2">Pos</th>
-                                <th className="text-left py-2">Équipe</th>
-                                <th className="text-center py-2">J</th>
-                                <th className="text-center py-2 text-green-600 font-bold">V</th>
-                                <th className="text-center py-2">D</th>
-                                <th className="text-center py-2">+/-</th>
-                                <th className="text-center py-2">PM</th>
+                              <tr className="border-b border-gray-300">
+                                <th className="text-left py-2 px-2 font-bold text-gray-900">Pos</th>
+                                <th className="text-left py-2 px-2 font-bold text-gray-900">Équipe</th>
+                                <th className="text-center py-2 px-2 font-bold text-gray-900">J</th>
+                                <th className="text-center py-2 px-2 font-bold text-green-600">V</th>
+                                <th className="text-center py-2 px-2 font-bold text-gray-900">D</th>
+                                <th className="text-center py-2 px-2 font-bold text-gray-900">+/-</th>
+                                <th className="text-center py-2 px-2 font-bold text-gray-900">PM</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1515,18 +1517,18 @@ export default function TournamentDetailPage() {
                                 <tr key={team.id} className={`border-b hover:bg-gray-50 ${
                                   index < 2 ? 'bg-green-50' : ''
                                 }`}>
-                                  <td className="py-3">
+                                  <td className="py-3 px-2 text-gray-900 font-semibold text-lg">
                                     {index === 0 && '🥇'}
                                     {index === 1 && '🥈'}
                                     {index === 2 && '🥉'}
                                     {index > 2 && index + 1}
                                   </td>
-                                  <td className="py-3 font-medium">{team.name}</td>
-                                  <td className="py-3 text-center">{team.played || 0}</td>
-                                  <td className="py-3 text-center font-bold text-green-600">{team.victories || 0}</td>
-                                  <td className="py-3 text-center">{team.defeats || 0}</td>
-                                  <td className="py-3 text-center">{team.difference > 0 ? '+' : ''}{team.difference || 0}</td>
-                                  <td className="py-3 text-center text-gray-600">{team.pointsFor || 0}</td>
+                                  <td className="py-3 px-2 font-semibold text-gray-900">{team.name}</td>
+                                  <td className="py-3 px-2 text-center font-medium text-gray-900">{team.played || 0}</td>
+                                  <td className="py-3 px-2 text-center font-bold text-green-600 text-lg">{team.victories || 0}</td>
+                                  <td className="py-3 px-2 text-center font-medium text-gray-900">{team.defeats || 0}</td>
+                                  <td className="py-3 px-2 text-center font-medium text-gray-900">{team.difference > 0 ? '+' : ''}{team.difference || 0}</td>
+                                  <td className="py-3 px-2 text-center font-medium text-gray-900">{team.pointsFor || 0}</td>
                                 </tr>
                               ))}
                             </tbody>
