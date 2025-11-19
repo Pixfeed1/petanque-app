@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import AdBanner from '@/components/AdBanner'
 import type { Manche, EquipeJoueur, Joueur } from '@/lib/types'
-import { Petanque, Trophy, Users, Play, Flag, Clock, Calendar, Settings, Check, X, Plus, Loader, Shuffle, Chart, Edit, Refresh, Sparkles, Lightning, Arrow, Grid, Medal } from '@/components/Icons'
+import { Petanque, Trophy, Users, Play, Flag, Clock, Calendar, Settings, Check, X, Plus, Loader, Shuffle, Chart, Edit, Refresh, Sparkles, Lightning, Arrow, Grid, Medal, Info } from '@/components/Icons'
 
 // Icônes premium pour la pétanque
 const Icons = {
@@ -29,7 +29,8 @@ const Icons = {
   lightning: <Lightning className="w-6 h-6" />,
   arrow: <Arrow className="w-5 h-5" />,
   grid: <Grid className="w-6 h-6" />,
-  medal: <Medal className="w-8 h-8" />
+  medal: <Medal className="w-8 h-8" />,
+  info: <Info className="w-5 h-5" />
 }
 
 // Types pour le tournoi
