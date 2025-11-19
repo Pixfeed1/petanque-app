@@ -260,39 +260,64 @@ export default function CreateTournamentPage() {
 
   const canProceed = () => {
     let canGo = false
-    
+
     switch(currentStep) {
-      case 1: 
-        canGo = formData.name.trim().length > 0 && 
-               formData.name.trim().length <= 100 && 
+      case 1:
+        canGo = formData.name.trim().length > 0 &&
+               formData.name.trim().length <= 100 &&
                formData.terrains > 0
         break
-      
-      case 2: 
+
+      case 2:
         canGo = true
         break
-      
-      case 3: 
+
+      case 3:
         const totalPlayers = getTotalPlayers()
         const minPlayers = getMinPlayers()
-        
+
+        // MODE CHOISI : Sélection de joueurs OPTIONNELLE
+        // L'organisateur compose les équipes manuellement dans le tournoi
+        if (formData.mode === 'choisi') {
+          canGo = true
+
+          // Validation seulement SI des joueurs sont sélectionnés
+          if (totalPlayers > 0 && totalPlayers < minPlayers) {
+            canGo = false
+            break
+          }
+
+          // Validation des emails pour nouveaux joueurs
+          for (const player of formData.newPlayers) {
+            if (player.name.trim()) {
+              if (player.email && player.email.trim() && !isValidEmail(player.email)) {
+                canGo = false
+                setValidationError(`Email invalide pour ${player.name}: ${player.email}`)
+                break
+              }
+            }
+          }
+          break
+        }
+
+        // MODES MÊLÉE : Joueurs OBLIGATOIRES
         canGo = true
-        
+
         if (totalPlayers < minPlayers) {
           canGo = false
           break
         }
-        
+
         if (formData.mode === 'melee_fixe' || formData.mode === 'melee_tournante') {
           const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
           const canFormCompleteTeams = totalPlayers % playersPerTeam === 0
-          
+
           if (!canFormCompleteTeams) {
             canGo = false
             break
           }
         }
-        
+
         for (const player of formData.newPlayers) {
           if (player.name.trim()) {
             if (player.email && player.email.trim() && !isValidEmail(player.email)) {
@@ -386,13 +411,11 @@ export default function CreateTournamentPage() {
   const createTeamsWithMixity = async (tournoi: Tournoi, allPlayerIds: string[], updatedPlayersList: Joueur[]) => {
     const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
     const nbEquipes = Math.floor(allPlayerIds.length / playersPerTeam)
-    
+
     if (formData.mode === 'choisi') {
-      // Pour le mode choisi, on crée des équipes VIDES que les joueurs rempliront eux-mêmes
-      for (let i = 0; i < nbEquipes; i++) {
-        await createTeamWithPlayers(tournoi.id, i + 1, [])
-      }
-      // Les joueurs seront assignés manuellement par l'organisateur dans l'interface
+      // MODE CHOISI : Ne PAS créer d'équipes automatiquement
+      // L'organisateur les composera manuellement dans l'interface du tournoi
+      // via le bouton "Composer les équipes"
       return 0
     } 
     else if (formData.mode === 'melee_fixe') {
@@ -1207,24 +1230,49 @@ export default function CreateTournamentPage() {
                 <div className="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-green-50 to-emerald-50">
                   <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-2 flex items-center">
                     <span className="w-6 h-6 sm:w-auto sm:h-auto">{Icons.users}</span>
-                    <span className="ml-2 sm:ml-3">Sélection des joueurs</span>
+                    <span className="ml-2 sm:ml-3">
+                      {formData.mode === 'choisi' ? 'Sélection des joueurs (optionnel)' : 'Sélection des joueurs'}
+                    </span>
                   </h2>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-                    <p className="text-sm sm:text-base text-gray-600">Choisissez les participants au tournoi</p>
-                    <div className="flex items-center gap-2 sm:space-x-4">
-                      <span className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-white rounded-xl font-medium shadow-sm text-center">
-                        <span className="text-xl sm:text-2xl font-bold text-gray-900">{getTotalPlayers()}</span>
-                        <span className="text-sm sm:text-base text-gray-600 ml-1">joueurs</span>
-                      </span>
-                      <span className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-xl font-medium text-center whitespace-nowrap ${
-                        getTotalPlayers() >= getMinPlayers()
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-green-100 text-green-700'
-                      }`}>
-                        <span className="text-sm sm:text-base">Min. {getMinPlayers()}</span>
-                      </span>
-                    </div>
+                    <p className="text-sm sm:text-base text-gray-600">
+                      {formData.mode === 'choisi'
+                        ? 'Vous pouvez passer cette étape et composer les équipes plus tard dans le tournoi'
+                        : 'Choisissez les participants au tournoi'}
+                    </p>
+                    {formData.mode !== 'choisi' && (
+                      <div className="flex items-center gap-2 sm:space-x-4">
+                        <span className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-white rounded-xl font-medium shadow-sm text-center">
+                          <span className="text-xl sm:text-2xl font-bold text-gray-900">{getTotalPlayers()}</span>
+                          <span className="text-sm sm:text-base text-gray-600 ml-1">joueurs</span>
+                        </span>
+                        <span className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-xl font-medium text-center whitespace-nowrap ${
+                          getTotalPlayers() >= getMinPlayers()
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-green-100 text-green-700'
+                        }`}>
+                          <span className="text-sm sm:text-base">Min. {getMinPlayers()}</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Message explicatif pour le mode choisi */}
+                  {formData.mode === 'choisi' && (
+                    <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                      <div className="flex items-start">
+                        <div className="text-blue-600 mr-3">{Icons.info}</div>
+                        <div>
+                          <h4 className="font-bold text-blue-900 mb-1">Mode "Équipes choisies"</h4>
+                          <p className="text-sm text-blue-700">
+                            En mode choisi, vous composez manuellement les équipes après la création du tournoi.
+                            <strong className="block mt-1">Vous pouvez passer cette étape</strong> et cliquer directement sur "Suivant" pour créer le tournoi vide.
+                            Vous ajouterez ensuite les équipes via le bouton <strong>"Composer les équipes"</strong> dans le tournoi.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-4 sm:p-6 lg:p-8">
