@@ -860,6 +860,12 @@ export default function TournamentDetailPage() {
   const startTournament = async () => {
     if (!tournament) return
 
+    // Validation : Minimum 4 équipes requises
+    if (teams.length < 4) {
+      alert(`❌ Impossible de démarrer le tournoi.\n\nVous avez ${teams.length} équipe${teams.length > 1 ? 's' : ''}, minimum requis : 4 équipes pour un tournoi par poules.`)
+      return
+    }
+
     try {
       // Générer les poules si pas encore fait
       if (matches.length === 0) {
@@ -1737,12 +1743,18 @@ export default function TournamentDetailPage() {
                       })}
                       className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-green-500"
                     >
-                      <option value={4}>4 équipes par poule</option>
-                      <option value={5}>5 équipes par poule</option>
-                      <option value={6}>6 équipes par poule</option>
+                      {teams.length >= 4 && <option value={4}>4 équipes par poule</option>}
+                      {teams.length >= 5 && <option value={5}>5 équipes par poule</option>}
+                      {teams.length >= 6 && <option value={6}>6 équipes par poule</option>}
+                      {teams.length < 4 && <option value={teams.length}>{teams.length} équipes (minimum requis: 4)</option>}
                     </select>
+                    {teams.length < 4 && (
+                      <p className="text-xs text-red-600 mt-1">
+                        ⚠️ Minimum 4 équipes requises pour un tournoi par poules
+                      </p>
+                    )}
                   </div>
-                  
+
                   {tournament.mode === 'melee_tournante' && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1764,12 +1776,24 @@ export default function TournamentDetailPage() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 mb-6">
-                <p className="text-sm text-gray-600">
-                  Le tournoi va démarrer avec {teams.length} équipes réparties en {Math.ceil(teams.length / (tournament.settings.pouleSize || 4))} poules.
-                  Les matchs seront générés automatiquement.
-                </p>
-              </div>
+              {teams.length >= 4 ? (
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 mb-6">
+                  <p className="text-sm text-gray-600">
+                    ✓ Le tournoi va démarrer avec {teams.length} équipes réparties en {Math.ceil(teams.length / (tournament.settings.pouleSize || 4))} poule{Math.ceil(teams.length / (tournament.settings.pouleSize || 4)) > 1 ? 's' : ''} de {tournament.settings.pouleSize || 4} équipes.
+                    Les matchs seront générés automatiquement.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl p-4 mb-6 border-2 border-red-200">
+                  <p className="text-sm text-red-700 font-medium">
+                    ❌ Impossible de démarrer : Vous avez seulement {teams.length} équipe{teams.length > 1 ? 's' : ''}.
+                    Minimum requis : 4 équipes pour un tournoi par poules.
+                  </p>
+                  <p className="text-xs text-red-600 mt-2">
+                    Ajoutez {4 - teams.length} équipe{4 - teams.length > 1 ? 's' : ''} supplémentaire{4 - teams.length > 1 ? 's' : ''} avant de démarrer.
+                  </p>
+                </div>
+              )}
 
               <div className="flex space-x-3">
                 <button
@@ -1780,7 +1804,8 @@ export default function TournamentDetailPage() {
                 </button>
                 <button
                   onClick={startTournament}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all"
+                  disabled={teams.length < 4}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg"
                 >
                   Démarrer
                 </button>
