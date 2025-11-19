@@ -125,6 +125,12 @@ export default function TournamentDetailPage() {
   const [editingTeam, setEditingTeam] = useState<Team | null>(null)
   const [newTeamName, setNewTeamName] = useState('')
 
+  // États pour composer les équipes (mode choisi)
+  const [availablePlayers, setAvailablePlayers] = useState<any[]>([])
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([])
+  const [newTeamNameForCreation, setNewTeamNameForCreation] = useState('')
+  const [creatingTeam, setCreatingTeam] = useState(false)
+
   // État pour la mêlée tournante
   const [currentRotation, setCurrentRotation] = useState(1)
   const [individualRankings, setIndividualRankings] = useState<any[]>([])
@@ -135,6 +141,93 @@ export default function TournamentDetailPage() {
       setUserPlan(organization.settings.plan)
     }
   }, [organization])
+
+  // Charger les joueurs disponibles quand on ouvre le modal de composition d'équipes
+  useEffect(() => {
+    if (showTeamFormation && organization?.id) {
+      loadAvailablePlayers()
+    }
+  }, [showTeamFormation, organization])
+
+  const loadAvailablePlayers = async () => {
+    if (!organization?.id) return
+
+    try {
+      const response = await fetch(`/api/joueurs?org_id=${organization.id}`, {
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const players = await response.json()
+        setAvailablePlayers(players)
+      }
+    } catch (error) {
+      console.error('Erreur chargement joueurs:', error)
+    }
+  }
+
+  const togglePlayerSelection = (playerId: string) => {
+    setSelectedPlayerIds(prev =>
+      prev.includes(playerId)
+        ? prev.filter(id => id !== playerId)
+        : [...prev, playerId]
+    )
+  }
+
+  const createTeamWithPlayers = async () => {
+    if (!tournament || !newTeamNameForCreation.trim()) {
+      alert('Veuillez entrer un nom d\'équipe')
+      return
+    }
+
+    const playersPerTeam = tournament.format === 'tete_a_tete' ? 1 :
+                          (tournament.format === 'doublette' ? 2 : 3)
+
+    if (selectedPlayerIds.length !== playersPerTeam) {
+      alert(`Vous devez sélectionner exactement ${playersPerTeam} joueur(s) pour une ${tournament.format}`)
+      return
+    }
+
+    setCreatingTeam(true)
+
+    try {
+      const response = await fetch('/api/equipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          tournoi_id: tournament.id,
+          name: newTeamNameForCreation.trim(),
+          joueur_ids: selectedPlayerIds,
+          stats: {
+            victoires: 0,
+            defaites: 0,
+            points_pour: 0,
+            points_contre: 0
+          }
+        })
+      })
+
+      if (response.ok) {
+        // Réinitialiser le formulaire
+        setNewTeamNameForCreation('')
+        setSelectedPlayerIds([])
+
+        // Recharger les données
+        await loadTournamentData()
+
+        alert('✅ Équipe créée avec succès !')
+      } else {
+        const error = await response.json()
+        alert(`Erreur : ${error.error || 'Impossible de créer l\'équipe'}`)
+      }
+    } catch (error) {
+      console.error('Erreur création équipe:', error)
+      alert('Erreur lors de la création de l\'équipe')
+    } finally {
+      setCreatingTeam(false)
+    }
+  }
 
   // Helper function to get player names for a team
   const getTeamPlayers = (teamId: string | null | undefined): string[] => {
@@ -1989,6 +2082,168 @@ export default function TournamentDetailPage() {
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Renommer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Composer les équipes (Mode choisi) */}
+      {showTeamFormation && tournament && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-slideUp">
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-white">
+                  ⚽ Composer une nouvelle équipe
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowTeamFormation(false)
+                    setNewTeamNameForCreation('')
+                    setSelectedPlayerIds([])
+                  }}
+                  className="text-white hover:bg-white/20 rounded-lg p-2 transition-all"
+                >
+                  {Icons.x}
+                </button>
+              </div>
+              <p className="text-blue-100 mt-2">
+                Format : {tournament.format === 'tete_a_tete' ? 'Tête-à-tête (1 joueur)' :
+                         tournament.format === 'doublette' ? 'Doublette (2 joueurs)' : 'Triplette (3 joueurs)'}
+              </p>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              {/* Nom de l'équipe */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nom de l'équipe *
+                </label>
+                <input
+                  type="text"
+                  value={newTeamNameForCreation}
+                  onChange={(e) => setNewTeamNameForCreation(e.target.value)}
+                  placeholder="Ex: Les Champions, Team Rocket..."
+                  maxLength={50}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {newTeamNameForCreation.length}/50 caractères
+                </p>
+              </div>
+
+              {/* Sélection des joueurs */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Sélectionner les joueurs *
+                  <span className="ml-2 text-blue-600">
+                    ({selectedPlayerIds.length}/
+                    {tournament.format === 'tete_a_tete' ? 1 : tournament.format === 'doublette' ? 2 : 3})
+                  </span>
+                </label>
+
+                {availablePlayers.length === 0 ? (
+                  <div className="text-center py-8 bg-gray-50 rounded-xl">
+                    <p className="text-gray-500 mb-2">Aucun joueur disponible</p>
+                    <p className="text-sm text-gray-400">Ajoutez des joueurs dans l'onglet "Joueurs" d'abord</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                    {availablePlayers.map((player) => {
+                      const isSelected = selectedPlayerIds.includes(player.id)
+                      const playersPerTeam = tournament.format === 'tete_a_tete' ? 1 :
+                                            tournament.format === 'doublette' ? 2 : 3
+                      const isDisabled = !isSelected && selectedPlayerIds.length >= playersPerTeam
+
+                      return (
+                        <button
+                          key={player.id}
+                          onClick={() => !isDisabled && togglePlayerSelection(player.id)}
+                          disabled={isDisabled}
+                          className={`p-4 rounded-xl border-2 transition-all ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-50'
+                              : isDisabled
+                              ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                              : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mr-3 ${
+                              player.gender === 'F' ? 'bg-gradient-to-br from-pink-500 to-rose-600' : 'bg-gradient-to-br from-blue-500 to-indigo-600'
+                            }`}>
+                              {player.name?.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="text-left flex-1">
+                              <p className="font-medium text-gray-900">{player.name}</p>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                player.gender === 'F'
+                                  ? 'bg-pink-100 text-pink-700'
+                                  : 'bg-blue-100 text-blue-700'
+                              }`}>
+                                {player.gender === 'F' ? 'F' : 'H'}
+                              </span>
+                            </div>
+                            {isSelected && (
+                              <div className="text-blue-500">
+                                {Icons.check}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Info box */}
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                <div className="flex items-start">
+                  <div className="text-blue-600 mr-3">{Icons.info}</div>
+                  <div>
+                    <h4 className="font-bold text-blue-900 mb-1">Comment ça marche ?</h4>
+                    <p className="text-sm text-blue-700">
+                      1. Donnez un nom à votre équipe<br/>
+                      2. Sélectionnez {tournament.format === 'tete_a_tete' ? '1 joueur' :
+                                       tournament.format === 'doublette' ? '2 joueurs' : '3 joueurs'}<br/>
+                      3. Cliquez sur "Créer l'équipe"<br/>
+                      4. Répétez pour créer toutes les équipes du tournoi
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Boutons d'action */}
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowTeamFormation(false)
+                    setNewTeamNameForCreation('')
+                    setSelectedPlayerIds([])
+                  }}
+                  className="flex-1 px-6 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+                >
+                  Fermer
+                </button>
+                <button
+                  onClick={createTeamWithPlayers}
+                  disabled={creatingTeam || !newTeamNameForCreation.trim() || selectedPlayerIds.length !== (tournament.format === 'tete_a_tete' ? 1 : tournament.format === 'doublette' ? 2 : 3)}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {creatingTeam ? (
+                    <>
+                      {Icons.loader}
+                      <span className="ml-2">Création...</span>
+                    </>
+                  ) : (
+                    <>
+                      {Icons.plus}
+                      <span className="ml-2">Créer l'équipe</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
