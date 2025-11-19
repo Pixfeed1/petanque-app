@@ -382,26 +382,26 @@ export default function Dashboard() {
           {recentMatches.length > 0 && (
             <div id="recent-matches" className="mb-16">
               <h2 className="text-2xl font-semibold text-gray-900 mb-6">Activité récente</h2>
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
                 <div className="divide-y divide-gray-100">
                   {recentMatches.slice(0, 5).map((match) => (
                     <div
                       key={match.id}
-                      className="flex items-center justify-between px-6 py-3"
+                      className="flex items-center justify-between px-8 py-5 hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-900">
+                        <p className="text-base font-medium text-gray-900 mb-1">
                           {match.equipe_a?.name || 'Équipe A'} vs {match.equipe_b?.name || 'Équipe B'}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-sm text-gray-500">
                           Tour {match.tour} {match.terrain ? `· Terrain ${match.terrain}` : ''}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-gray-900">
+                      <div className="text-right ml-4">
+                        <p className="text-lg font-bold text-gray-900 mb-1">
                           {match.score_a} - {match.score_b}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-sm text-gray-500">
                           {match.status === 'termine' ? 'Terminé' : 'En cours'}
                         </p>
                       </div>
