@@ -449,10 +449,56 @@ export default function TournamentDetailPage() {
     }
   }
 
+  // Helper function to validate pool configuration
+  const isValidPoolConfiguration = (teamCount: number, poolSize: number): boolean => {
+    if (teamCount < 4 || poolSize < 3) return false
+
+    const nbPoules = Math.ceil(teamCount / poolSize)
+    const lastPouleSize = teamCount - (nbPoules - 1) * poolSize
+
+    // La dernière poule doit avoir au moins 3 équipes
+    // Sinon c'est déséquilibré et non viable pour la compétition
+    return lastPouleSize >= 3
+  }
+
+  // Helper function to get valid pool sizes for current team count
+  const getValidPoolSizes = (teamCount: number): number[] => {
+    const validSizes: number[] = []
+
+    for (let size = 3; size <= 6; size++) {
+      if (isValidPoolConfiguration(teamCount, size)) {
+        validSizes.push(size)
+      }
+    }
+
+    return validSizes
+  }
+
+  // Helper function to calculate pool distribution
+  const getPoolDistribution = (teamCount: number, poolSize: number): number[] => {
+    const nbPoules = Math.ceil(teamCount / poolSize)
+    const distribution: number[] = []
+
+    for (let i = 0; i < nbPoules; i++) {
+      const start = i * poolSize
+      const end = Math.min((i + 1) * poolSize, teamCount)
+      distribution.push(end - start)
+    }
+
+    return distribution
+  }
+
   const generatePoules = async () => {
     if (!tournament || teams.length === 0) return
 
     const pouleSize = tournament.settings.pouleSize || 4
+
+    // Validation de la configuration avant génération
+    if (!isValidPoolConfiguration(teams.length, pouleSize)) {
+      alert(`❌ Configuration invalide\n\nLa répartition ${teams.length} équipes en poules de ${pouleSize} créerait des poules déséquilibrées.\n\nChaque poule doit avoir au minimum 3 équipes.`)
+      return
+    }
+
     const nbPoules = Math.ceil(teams.length / pouleSize)
 
     // Créer les poules
@@ -863,6 +909,14 @@ export default function TournamentDetailPage() {
     // Validation : Minimum 4 équipes requises
     if (teams.length < 4) {
       alert(`❌ Impossible de démarrer le tournoi.\n\nVous avez ${teams.length} équipe${teams.length > 1 ? 's' : ''}, minimum requis : 4 équipes pour un tournoi par poules.`)
+      return
+    }
+
+    // Validation : Configuration des poules doit être valide
+    const pouleSize = tournament.settings.pouleSize || 4
+    if (!isValidPoolConfiguration(teams.length, pouleSize)) {
+      const distribution = getPoolDistribution(teams.length, pouleSize)
+      alert(`❌ Configuration invalide\n\nLa répartition de ${teams.length} équipes en poules de ${pouleSize} créerait :\n${distribution.map((size, i) => `  • Poule ${String.fromCharCode(65 + i)}: ${size} équipe${size > 1 ? 's' : ''}`).join('\n')}\n\nChaque poule doit avoir au minimum 3 équipes.\nVeuillez ajuster la taille des poules dans les paramètres.`)
       return
     }
 
@@ -1742,17 +1796,32 @@ export default function TournamentDetailPage() {
                         settings: { ...tournament.settings, pouleSize: parseInt(e.target.value) }
                       })}
                       className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-green-500"
+                      disabled={teams.length < 4}
                     >
-                      {teams.length >= 4 && <option value={4}>4 équipes par poule</option>}
-                      {teams.length >= 5 && <option value={5}>5 équipes par poule</option>}
-                      {teams.length >= 6 && <option value={6}>6 équipes par poule</option>}
-                      {teams.length < 4 && <option value={teams.length}>{teams.length} équipes (minimum requis: 4)</option>}
+                      {teams.length < 4 ? (
+                        <option value={teams.length}>{teams.length} équipes (minimum requis: 4)</option>
+                      ) : (
+                        <>
+                          {getValidPoolSizes(teams.length).map(size => (
+                            <option key={size} value={size}>
+                              {size} équipes par poule
+                            </option>
+                          ))}
+                          {getValidPoolSizes(teams.length).length === 0 && (
+                            <option value={4}>Aucune configuration valide disponible</option>
+                          )}
+                        </>
+                      )}
                     </select>
-                    {teams.length < 4 && (
+                    {teams.length < 4 ? (
                       <p className="text-xs text-red-600 mt-1">
                         ⚠️ Minimum 4 équipes requises pour un tournoi par poules
                       </p>
-                    )}
+                    ) : !isValidPoolConfiguration(teams.length, tournament.settings.pouleSize || 4) ? (
+                      <p className="text-xs text-orange-600 mt-1">
+                        ⚠️ Configuration invalide : cette répartition créerait des poules déséquilibrées
+                      </p>
+                    ) : null}
                   </div>
 
                   {tournament.mode === 'melee_tournante' && (
@@ -1777,12 +1846,32 @@ export default function TournamentDetailPage() {
               </div>
 
               {teams.length >= 4 ? (
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 mb-6">
-                  <p className="text-sm text-gray-600">
-                    ✓ Le tournoi va démarrer avec {teams.length} équipes réparties en {Math.ceil(teams.length / (tournament.settings.pouleSize || 4))} poule{Math.ceil(teams.length / (tournament.settings.pouleSize || 4)) > 1 ? 's' : ''} de {tournament.settings.pouleSize || 4} équipes.
-                    Les matchs seront générés automatiquement.
-                  </p>
-                </div>
+                isValidPoolConfiguration(teams.length, tournament.settings.pouleSize || 4) ? (
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 mb-6">
+                    <p className="text-sm text-gray-600 mb-2">
+                      ✓ Le tournoi va démarrer avec {teams.length} équipes réparties en {getPoolDistribution(teams.length, tournament.settings.pouleSize || 4).length} poule{getPoolDistribution(teams.length, tournament.settings.pouleSize || 4).length > 1 ? 's' : ''} :
+                    </p>
+                    <div className="flex flex-wrap gap-2 text-xs text-gray-700">
+                      {getPoolDistribution(teams.length, tournament.settings.pouleSize || 4).map((size, i) => (
+                        <span key={i} className="bg-white px-2 py-1 rounded-lg font-medium">
+                          Poule {String.fromCharCode(65 + i)}: {size} équipe{size > 1 ? 's' : ''}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Les matchs seront générés automatiquement.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-4 mb-6 border-2 border-orange-300">
+                    <p className="text-sm text-orange-700 font-medium mb-2">
+                      ⚠️ Configuration invalide : répartition déséquilibrée
+                    </p>
+                    <p className="text-xs text-orange-600">
+                      Cette configuration créerait des poules avec trop peu d'équipes. Veuillez choisir une autre taille de poule.
+                    </p>
+                  </div>
+                )
               ) : (
                 <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl p-4 mb-6 border-2 border-red-200">
                   <p className="text-sm text-red-700 font-medium">
@@ -1804,7 +1893,7 @@ export default function TournamentDetailPage() {
                 </button>
                 <button
                   onClick={startTournament}
-                  disabled={teams.length < 4}
+                  disabled={teams.length < 4 || !isValidPoolConfiguration(teams.length, tournament.settings.pouleSize || 4)}
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg"
                 >
                   Démarrer
