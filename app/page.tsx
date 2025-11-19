@@ -151,8 +151,8 @@ export default function HomePage() {
     },
     {
       icon: Icons.shield,
-      title: 'Double validation',
-      description: 'Confirmation des scores par les deux équipes',
+      title: 'Règles FIPJP',
+      description: 'Validation stricte des scores selon les règles officielles',
       color: 'from-purple-400 to-indigo-600'
     },
     {
