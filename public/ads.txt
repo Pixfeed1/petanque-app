@@ -1,14 +1,4 @@
 # ads.txt - Google AdSense
-# À remplir avec ton ID Google AdSense
 # Format: google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
-#
-# Exemple:
-# google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0
-#
-# Pour trouver ton Publisher ID:
-# 1. Connecte-toi à Google AdSense
-# 2. Va dans Compte > Paramètres
-# 3. Copie ton ID (format: pub-XXXXXXXXXXXXXXXX)
-# 4. Remplace la ligne ci-dessous
 
-google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+google.com, pub-7977336597476261, DIRECT, f08c47fec0942fa0
