@@ -163,6 +163,31 @@ export async function PUT(
     }
 
     if (body.manches_json !== undefined) {
+      // Validation des mènes - Règle de pétanque : une seule équipe marque par mène
+      if (Array.isArray(body.manches_json)) {
+        for (let i = 0; i < body.manches_json.length; i++) {
+          const manche = body.manches_json[i]
+          const scoreA = manche.scoreA || 0
+          const scoreB = manche.scoreB || 0
+
+          // Vérifier qu'une seule équipe marque par mène
+          if (scoreA > 0 && scoreB > 0) {
+            return apiError(
+              `Mène ${i + 1} invalide (${scoreA}-${scoreB}). En pétanque, une seule équipe marque par mène.`,
+              400
+            )
+          }
+
+          // Au moins une équipe doit marquer
+          if (scoreA === 0 && scoreB === 0) {
+            return apiError(
+              `Mène ${i + 1} invalide (0-0). Au moins une équipe doit marquer.`,
+              400
+            )
+          }
+        }
+      }
+
       updates.push(`manches_json = $${paramIndex++}`)
       values.push(JSON.stringify(body.manches_json))
     }

@@ -124,7 +124,17 @@ export default function MatchScorePage() {
   }
 
   const finishManche = async () => {
-    if (mancheScoreA === 0 && mancheScoreB === 0) return
+    // Validation 1 : Au moins une équipe doit avoir marqué
+    if (mancheScoreA === 0 && mancheScoreB === 0) {
+      alert('⚠️ Vous devez saisir le score de la mène avant de valider.')
+      return
+    }
+
+    // Validation 2 : Règle de pétanque - Une seule équipe marque par mène
+    if (mancheScoreA > 0 && mancheScoreB > 0) {
+      alert(`❌ Erreur : En pétanque, une seule équipe marque des points par mène.\n\nScore invalide : ${mancheScoreA}-${mancheScoreB}\n\nExemples valides : 4-0, 0-2, 1-0, 0-3, etc.`)
+      return
+    }
 
     const newManches = [...manches, { scoreA: mancheScoreA, scoreB: mancheScoreB }]
     setManches(newManches)
