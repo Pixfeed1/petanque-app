@@ -348,16 +348,32 @@ export default function CreateTournamentPage() {
 
   const handleContinue = () => {
     setValidationError('')
-    
+
     if (currentStep === 3) {
       const totalPlayers = getTotalPlayers()
       const minPlayers = getMinPlayers()
-      
-      if (totalPlayers < minPlayers) {
-        setValidationError(`Minimum ${minPlayers} joueurs requis pour une ${formData.format}`)
-        return
+
+      // MODE CHOISI : validation SEULEMENT si des joueurs sont sélectionnés
+      if (formData.mode === 'choisi') {
+        // Si aucun joueur sélectionné, laisser passer (OK)
+        if (totalPlayers === 0) {
+          setCurrentStep(currentStep + 1)
+          return
+        }
+
+        // Si des joueurs sont sélectionnés, vérifier le minimum
+        if (totalPlayers > 0 && totalPlayers < minPlayers) {
+          setValidationError(`Si vous sélectionnez des joueurs, minimum ${minPlayers} joueurs requis pour une ${formData.format}`)
+          return
+        }
+      } else {
+        // MODES MÊLÉE : validation OBLIGATOIRE
+        if (totalPlayers < minPlayers) {
+          setValidationError(`Minimum ${minPlayers} joueurs requis pour une ${formData.format}`)
+          return
+        }
       }
-      
+
       if (formData.mode === 'melee_fixe' || formData.mode === 'melee_tournante') {
         const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
         const canFormCompleteTeams = totalPlayers % playersPerTeam === 0
