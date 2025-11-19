@@ -721,12 +721,14 @@ export default function CreateTournamentPage() {
 
       // 2. Créer le tournoi
       const allPlayerIds = [...formData.selectedPlayers, ...newPlayerIds]
-      
+
       // Vérification finale du nombre de joueurs
-      if (allPlayerIds.length === 0) {
+      // MODE CHOISI : Autoriser 0 joueurs (tournoi vide, équipes composées manuellement après)
+      // MODES MÊLÉE : Bloquer si 0 joueurs (obligatoires pour créer les équipes)
+      if (formData.mode !== 'choisi' && allPlayerIds.length === 0) {
         throw new Error('Aucun joueur sélectionné')
       }
-      
+
       const tournoiData = {
         org_id: organization.id,
         name: formData.name.trim(),
@@ -776,15 +778,18 @@ export default function CreateTournamentPage() {
       }
 
       // 3. Créer les équipes avec la liste mise à jour des joueurs
-      const unassignedPlayers = await createTeamsWithMixity(tournoi, allPlayerIds, allAvailablePlayersUpdated)
+      // MODE CHOISI avec 0 joueurs : sauter cette étape (équipes créées manuellement après)
+      if (formData.mode !== 'choisi' || allPlayerIds.length > 0) {
+        const unassignedPlayers = await createTeamsWithMixity(tournoi, allPlayerIds, allAvailablePlayersUpdated)
 
-      // Alerter si des joueurs n'ont pas pu être assignés
-      if (unassignedPlayers > 0) {
-        alert(`⚠️ Attention : ${unassignedPlayers} joueur(s) n'ont pas pu être assignés à une équipe complète en raison de la mixité obligatoire. Veuillez ajuster votre liste de joueurs ou désactiver la mixité obligatoire.`)
+        // Alerter si des joueurs n'ont pas pu être assignés
+        if (unassignedPlayers > 0) {
+          alert(`⚠️ Attention : ${unassignedPlayers} joueur(s) n'ont pas pu être assignés à une équipe complète en raison de la mixité obligatoire. Veuillez ajuster votre liste de joueurs ou désactiver la mixité obligatoire.`)
+        }
+
+        // 4. Créer les matchs de poules
+        await createPoolMatches(tournoi)
       }
-
-      // 4. Créer les matchs de poules
-      await createPoolMatches(tournoi)
       
       // 5. Mettre à jour le statut du tournoi (reste en "preparation" jusqu'à lancement manuel)
       await fetch(`/api/tournois/${tournoi.id}`, {
