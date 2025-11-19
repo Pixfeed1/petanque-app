@@ -663,21 +663,49 @@ export default function TournamentDetailPage() {
       }
 
       // Créer les matchs d'élimination
-      for (let i = 0; i < nbMatches && i * 2 + 1 < qualified.length; i++) {
-        await fetch('/api/matches', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            tournoi_id: tournament.id,
-            equipe_a_id: qualified[i * 2].id,
-            equipe_b_id: qualified[i * 2 + 1]?.id || null,
-            tour: 1,
-            terrain: null,
-            type: matchType,
-            status: 'a_jouer'
+      for (let i = 0; i < nbMatches; i++) {
+        const equipe_a = qualified[i * 2]
+        const equipe_b = qualified[i * 2 + 1]
+
+        // Ne créer le match que si on a au moins l'équipe A
+        if (!equipe_a) break
+
+        // Si pas d'équipe B, l'équipe A a un "bye" et avance automatiquement
+        if (!equipe_b) {
+          // Match avec bye - équipe A gagne par forfait
+          await fetch('/api/matches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              tournoi_id: tournament.id,
+              equipe_a_id: equipe_a.id,
+              equipe_b_id: null,
+              tour: 1,
+              terrain: null,
+              type: matchType,
+              status: 'termine',
+              score_a: 13,
+              score_b: 0
+            })
           })
-        })
+        } else {
+          // Match normal avec deux équipes
+          await fetch('/api/matches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              tournoi_id: tournament.id,
+              equipe_a_id: equipe_a.id,
+              equipe_b_id: equipe_b.id,
+              tour: 1,
+              terrain: null,
+              type: matchType,
+              status: 'a_jouer'
+            })
+          })
+        }
       }
 
       alert(`Phases éliminatoires générées : ${nbMatches} match(s) de ${matchType}`)
