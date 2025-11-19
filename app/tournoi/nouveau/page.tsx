@@ -792,19 +792,26 @@ export default function CreateTournamentPage() {
       }
       
       // 5. Mettre à jour le statut du tournoi (reste en "preparation" jusqu'à lancement manuel)
-      await fetch(`/api/tournois/${tournoi.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          status: 'preparation',
-          settings: {
-            ...tournoi.settings,
-            poules_created: true,
-            created_time: new Date().toISOString()
-          }
+      // SEULEMENT si des équipes/matchs ont été créés
+      if (formData.mode !== 'choisi' || allPlayerIds.length > 0) {
+        const updateResponse = await fetch(`/api/tournois/${tournoi.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            status: 'preparation',
+            settings: {
+              ...tournoi.settings,
+              poules_created: true,
+              created_time: new Date().toISOString()
+            }
+          })
         })
-      })
+
+        if (!updateResponse.ok) {
+          console.warn('⚠️ Erreur mise à jour tournoi (non bloquant)')
+        }
+      }
       
       // 6. Animation de succès
       setSuccessAnimation(true)
