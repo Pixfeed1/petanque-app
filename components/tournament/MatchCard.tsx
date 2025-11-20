@@ -19,7 +19,7 @@ interface MatchCardProps {
     equipe_a: Team | null
     equipe_b: Team | null
     terrain: number | null
-    status: 'a_jouer' | 'en_cours' | 'termine'
+    status: 'a_jouer' | 'en_cours' | 'termine' | 'en_attente_validation'
     score_a: number | null
     score_b: number | null
     type?: 'poule' | 'elimination' | 'demi' | 'finale' | 'petite_finale' | 'bye' | 'quart' | 'huitieme'
@@ -61,19 +61,30 @@ export default function MatchCard({
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border-2 border-gray-100 hover:border-green-200 transition-all hover:shadow-xl">
-      {/* Header - Terrain */}
-      {match.terrain && (
-        <div className="flex items-center justify-center mb-4">
+    <div className="bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition-all">
+      {/* Header - Statut et Terrain */}
+      <div className="flex justify-between items-center mb-2">
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          match.status === 'termine' ? 'bg-gray-100 text-gray-700' :
+          match.status === 'en_cours' ? 'bg-green-100 text-green-700' :
+          match.status === 'en_attente_validation' ? 'bg-orange-100 text-orange-700' :
+          'bg-yellow-100 text-yellow-700'
+        }`}>
+          {match.status === 'termine' ? 'Terminé' :
+           match.status === 'en_cours' ? 'En cours' :
+           match.status === 'en_attente_validation' ? '⏳ En attente validation' :
+           'À jouer'}
+        </span>
+        {match.terrain && (
           <span className="text-sm font-semibold text-gray-900">Terrain {match.terrain}</span>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Équipes */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-4 items-center">
+      <div className="flex justify-between items-center">
         {/* Équipe A */}
-        <div className="text-center">
-          <p className="text-xs sm:text-sm font-semibold text-gray-900 mb-1 truncate">
+        <div className="text-center flex-1">
+          <p className="font-medium text-gray-900 text-xs sm:text-base truncate px-1">
             {match.equipe_a?.name || 'En attente'}
           </p>
           {(() => {
@@ -98,15 +109,11 @@ export default function MatchCard({
         </div>
 
         {/* VS */}
-        <div className="flex items-center justify-center">
-          <div className="px-2 sm:px-4 py-1 sm:py-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg">
-            <span className="text-xs sm:text-sm font-bold text-gray-600">VS</span>
-          </div>
-        </div>
+        <div className="px-1 sm:px-4 text-gray-400 font-bold text-sm sm:text-base">VS</div>
 
         {/* Équipe B */}
-        <div className="text-center">
-          <p className="text-xs sm:text-sm font-semibold text-gray-900 mb-1 truncate">
+        <div className="text-center flex-1">
+          <p className="font-medium text-gray-900 text-xs sm:text-base truncate px-1">
             {match.equipe_b?.name || 'En attente'}
           </p>
           {(() => {

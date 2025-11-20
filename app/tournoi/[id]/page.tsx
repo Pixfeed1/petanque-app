@@ -1448,124 +1448,15 @@ export default function TournamentDetailPage() {
                         {matches
                           .filter(m => m.poule === selectedPoule)
                           .map(match => (
-                            <div key={match.id} className="bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition-all">
-                              <div className="flex justify-between items-center mb-2">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  match.status === 'termine' ? 'bg-gray-100 text-gray-700' :
-                                  match.status === 'en_cours' ? 'bg-green-100 text-green-700' :
-                                  match.status === 'en_attente_validation' ? 'bg-orange-100 text-orange-700' :
-                                  'bg-yellow-100 text-yellow-700'
-                                }`}>
-                                  {match.status === 'termine' ? 'Terminé' :
-                                   match.status === 'en_cours' ? 'En cours' :
-                                   match.status === 'en_attente_validation' ? '⏳ En attente validation' :
-                                   'À jouer'}
-                                </span>
-                                {match.terrain && (
-                                  <span className="text-sm font-semibold text-gray-900">Terrain {match.terrain}</span>
-                                )}
-                              </div>
-                              
-                              {/* Affichage spécial pour les matchs BYE */}
-                              {match.type === 'bye' ? (
-                                <div className="text-center py-4">
-                                  <p className="font-medium text-gray-900 text-base mb-2">{match.equipe_a?.name}</p>
-                                  {(() => {
-                                    const players = getTeamPlayers(match.equipe_a_id || match.equipe_a?.id)
-                                    if (players.length > 0) {
-                                      return (
-                                        <p className="text-xs text-gray-600 mb-3">
-                                          {players.join(', ')}
-                                        </p>
-                                      )
-                                    }
-                                    return null
-                                  })()}
-                                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200">
-                                    <div className="flex items-center justify-center gap-2 mb-1">
-                                      <span className="text-2xl">🎟️</span>
-                                      <p className="text-lg font-bold text-blue-900">BYE</p>
-                                    </div>
-                                    <p className="text-sm text-blue-700">Qualification automatique</p>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="flex justify-between items-center">
-                                  <div className="text-center flex-1">
-                                    <p className="font-medium text-gray-900 text-xs sm:text-base truncate px-1">{match.equipe_a?.name}</p>
-                                    {(() => {
-                                      const players = getTeamPlayers(match.equipe_a_id || match.equipe_a?.id)
-                                      if (players.length > 0) {
-                                        return (
-                                          <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 px-1 truncate leading-tight">
-                                            {players.join(', ')}
-                                          </p>
-                                        )
-                                      }
-                                      return null
-                                    })()}
-                                    {match.status !== 'a_jouer' && (
-                                      <div className="flex items-center justify-center gap-1 mt-1">
-                                        <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_a ?? 0}</p>
-                                        {match.status === 'termine' && match.score_a === (tournament?.settings?.maxPoints || 13) && match.score_b === 0 && (
-                                          <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="px-1 sm:px-4 text-gray-400 font-bold text-sm sm:text-base">VS</div>
-                                  <div className="text-center flex-1">
-                                    <p className="font-medium text-gray-900 text-xs sm:text-base truncate px-1">{match.equipe_b?.name}</p>
-                                    {(() => {
-                                      const players = getTeamPlayers(match.equipe_b_id || match.equipe_b?.id)
-                                      if (players.length > 0) {
-                                        return (
-                                          <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 px-1 truncate leading-tight">
-                                            {players.join(', ')}
-                                          </p>
-                                        )
-                                      }
-                                      return null
-                                    })()}
-                                    {match.status !== 'a_jouer' && (
-                                      <div className="flex items-center justify-center gap-1 mt-1">
-                                        <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_b ?? 0}</p>
-                                        {match.status === 'termine' && match.score_b === (tournament?.settings?.maxPoints || 13) && match.score_a === 0 && (
-                                          <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {match.status === 'a_jouer' && isOrganizer && (
-                                <div className="mt-3 flex space-x-2">
-                                  <select
-                                    value={match.terrain || ''}
-                                    onChange={(e) => assignTerrain(match.id, parseInt(e.target.value))}
-                                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:border-green-500"
-                                  >
-                                    <option value="">Terrain...</option>
-                                    {Array.from({ length: tournament.settings.terrains }, (_, i) => (
-                                      <option key={i + 1} value={i + 1}>Terrain {i + 1}</option>
-                                    ))}
-                                  </select>
-                                  <button
-                                    onClick={() => {
-                                      if (!match.terrain) {
-                                        alert('⚠️ Veuillez d\'abord assigner un terrain au match avant de le démarrer.')
-                                        return
-                                      }
-                                      router.push(`/match/${match.id}`)
-                                    }}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
-                                  >
-                                    Démarrer
-                                  </button>
-                                </div>
-                              )}
-                            </div>
+                            <MatchCard
+                              key={match.id}
+                              match={match}
+                              maxPoints={tournament?.settings?.maxPoints || 13}
+                              isOrganizer={isOrganizer}
+                              getTeamPlayers={(teamId) => getTeamPlayers(teamId)}
+                              onAssignTerrain={assignTerrain}
+                              availableTerrains={tournament.settings.terrains}
+                            />
                           ))}
                       </div>
                     </div>
@@ -1703,128 +1594,15 @@ export default function TournamentDetailPage() {
                           {matches
                             .filter(m => m.tour === tour)
                             .map(match => (
-                              <div key={match.id} className="border-2 border-gray-200 rounded-xl p-4 hover:border-green-500 transition-all">
-                                <div className="flex justify-between items-center mb-3">
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    match.status === 'termine' ? 'bg-gray-100 text-gray-700' :
-                                    match.status === 'en_cours' ? 'bg-green-100 text-green-700' :
-                                    match.status === 'en_attente_validation' ? 'bg-orange-100 text-orange-700' :
-                                    'bg-yellow-100 text-yellow-700'
-                                  }`}>
-                                    {match.status === 'termine' ? 'Terminé' :
-                                     match.status === 'en_cours' ? 'En cours' :
-                                     match.status === 'en_attente_validation' ? '⏳ En attente validation' :
-                                     'À jouer'}
-                                  </span>
-                                  {match.terrain && (
-                                    <span className="text-sm font-semibold text-gray-900">Terrain {match.terrain}</span>
-                                  )}
-                                </div>
-                                
-                                {/* Affichage spécial pour matchs BYE */}
-                                {match.type === 'bye' ? (
-                                  <div className="text-center py-3">
-                                    <p className="font-medium text-gray-900 mb-2">{match.equipe_a?.name}</p>
-                                    {(() => {
-                                      const players = getTeamPlayers(match.equipe_a_id || match.equipe_a?.id)
-                                      if (players.length > 0) {
-                                        return (
-                                          <p className="text-xs text-gray-600 mb-2">
-                                            {players.join(', ')}
-                                          </p>
-                                        )
-                                      }
-                                      return null
-                                    })()}
-                                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200">
-                                      <div className="flex items-center justify-center gap-2">
-                                        <span className="text-xl">🎟️</span>
-                                        <p className="font-bold text-blue-900">BYE</p>
-                                      </div>
-                                      <p className="text-xs text-blue-700 mt-1">Qualification automatique</p>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="space-y-2">
-                                    <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg ${
-                                      match.status === 'termine' && match.score_a > match.score_b ? 'bg-green-50' : ''
-                                    }`}>
-                                      <div className="flex-1 pr-2 min-w-0">
-                                        <span className="font-medium text-xs sm:text-base truncate block">{match.equipe_a?.name}</span>
-                                        {(() => {
-                                          const players = getTeamPlayers(match.equipe_a_id || match.equipe_a?.id)
-                                          if (players.length > 0) {
-                                            return (
-                                              <span className="text-[10px] sm:text-xs text-gray-600 truncate block leading-tight">
-                                                {players.join(', ')}
-                                              </span>
-                                            )
-                                          }
-                                          return null
-                                        })()}
-                                      </div>
-                                      {match.status !== 'a_jouer' && (
-                                        <div className="flex items-center gap-2 flex-shrink-0">
-                                          <span className="text-xl sm:text-xl font-bold">{match.score_a ?? 0}</span>
-                                          {match.status === 'termine' && match.score_a === (tournament?.settings?.maxPoints || 13) && match.score_b === 0 && (
-                                            <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg ${
-                                      match.status === 'termine' && match.score_b > match.score_a ? 'bg-green-50' : ''
-                                    }`}>
-                                      <div className="flex-1 pr-2 min-w-0">
-                                        <span className="font-medium text-xs sm:text-base truncate block">{match.equipe_b?.name}</span>
-                                        {(() => {
-                                          const players = getTeamPlayers(match.equipe_b_id || match.equipe_b?.id)
-                                          if (players.length > 0) {
-                                            return (
-                                              <span className="text-[10px] sm:text-xs text-gray-600 truncate block leading-tight">
-                                                {players.join(', ')}
-                                              </span>
-                                            )
-                                          }
-                                          return null
-                                        })()}
-                                      </div>
-                                      {match.status !== 'a_jouer' && (
-                                        <div className="flex items-center gap-2 flex-shrink-0">
-                                          <span className="text-xl sm:text-xl font-bold">{match.score_b ?? 0}</span>
-                                          {match.status === 'termine' && match.score_b === (tournament?.settings?.maxPoints || 13) && match.score_a === 0 && (
-                                            <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {match.status === 'a_jouer' && isOrganizer && (
-                                  <button
-                                    onClick={() => {
-                                      if (!match.terrain) {
-                                        alert('⚠️ Veuillez d\'abord assigner un terrain au match avant de le démarrer.')
-                                        return
-                                      }
-                                      router.push(`/match/${match.id}`)
-                                    }}
-                                    className="w-full mt-3 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all"
-                                  >
-                                    Saisir le score
-                                  </button>
-                                )}
-                                
-                                {match.status === 'en_cours' && (
-                                  <button
-                                    onClick={() => router.push(`/match/${match.id}`)}
-                                    className="w-full mt-3 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:shadow-lg transition-all animate-pulse"
-                                  >
-                                    Match en cours
-                                  </button>
-                                )}
-                              </div>
+                              <MatchCard
+                                key={match.id}
+                                match={match}
+                                maxPoints={tournament?.settings?.maxPoints || 13}
+                                isOrganizer={isOrganizer}
+                                getTeamPlayers={(teamId) => getTeamPlayers(teamId)}
+                                onAssignTerrain={assignTerrain}
+                                availableTerrains={tournament.settings.terrains}
+                              />
                             ))}
                         </div>
                       </div>
@@ -1838,44 +1616,27 @@ export default function TournamentDetailPage() {
             {activeTab === 'classement' && (
               <div>
                 {tournament.mode === 'melee_tournante' ? (
-                  // Classement individuel pour mêlée tournante
+                  // Classement individuel pour mêlée tournante avec composant PlayerRankingsTable
                   <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                     <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 text-white">
                       <h3 className="text-xl font-bold">Classement Individuel</h3>
                       <p className="text-sm opacity-90">Mode mêlée tournante - Rotation {tournament.settings.meleeRotation === 'par_match' ? 'par match' : 'par tour'}</p>
                     </div>
                     <div className="p-4">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b border-gray-300">
-                            <th className="text-left py-2 px-2 font-bold text-gray-900">Pos</th>
-                            <th className="text-left py-2 px-2 font-bold text-gray-900">Joueur</th>
-                            <th className="text-center py-2 px-2 font-bold text-purple-600">V</th>
-                            <th className="text-center py-2 px-2 font-bold text-gray-900">D</th>
-                            <th className="text-center py-2 px-2 font-bold text-gray-900">+/-</th>
-                            <th className="text-center py-2 px-2 font-bold text-gray-900">Pts</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {individualRankings.map((player, index) => (
-                            <tr key={player.id} className={`border-b hover:bg-gray-50 ${
-                              index < 3 ? 'bg-purple-50' : ''
-                            }`}>
-                              <td className="py-3 px-2 text-gray-900 font-semibold text-lg">
-                                {index === 0 && '🥇'}
-                                {index === 1 && '🥈'}
-                                {index === 2 && '🥉'}
-                                {index > 2 && index + 1}
-                              </td>
-                              <td className="py-3 px-2 font-semibold text-gray-900">{player.name}</td>
-                              <td className="py-3 px-2 text-center font-bold text-purple-600 text-lg">{player.victories || 0}</td>
-                              <td className="py-3 px-2 text-center font-medium text-gray-900">{player.defeats || 0}</td>
-                              <td className="py-3 px-2 text-center font-medium text-gray-900">{player.difference || 0}</td>
-                              <td className="py-3 px-2 text-center font-bold text-gray-900 text-lg">{player.points || 0}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <PlayerRankingsTable
+                        players={individualRankings.map(player => ({
+                          id: player.id,
+                          name: player.name,
+                          email: player.email,
+                          played: player.played || 0,
+                          victories: player.victories || 0,
+                          defeats: player.defeats || 0,
+                          draws: player.draws || 0,
+                          pointsFor: player.pointsFor || 0,
+                          pointsAgainst: player.pointsAgainst || 0,
+                          difference: player.difference || 0
+                        }))}
+                      />
                     </div>
                   </div>
                 ) : (
