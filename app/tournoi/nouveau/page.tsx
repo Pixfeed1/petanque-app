@@ -482,21 +482,27 @@ export default function CreateTournamentPage() {
       return 0
     }
     else if (formData.mode === 'melee_tournante') {
-      // Pour mêlée tournante, créer les équipes du premier tour (rotation 1)
-      const shuffledPlayers = [...allPlayerIds].sort(() => Math.random() - 0.5)
-      const nbEquipes = Math.floor(shuffledPlayers.length / playersPerTeam)
+      // 🔧 FIX Bug #4 : Appliquer la mixité obligatoire dès la rotation 1
+      // Pour mêlée tournante, créer les équipes du premier tour (rotation 1) avec mixité si nécessaire
+      const players = updatedPlayersList.filter(p => allPlayerIds.includes(p.id))
 
-      for (let i = 0; i < nbEquipes; i++) {
-        const teamPlayers = shuffledPlayers.slice(i * playersPerTeam, (i + 1) * playersPerTeam)
-        // Utiliser le format R1-Équipe X pour cohérence avec les rotations suivantes
+      const mixiteResult = MixiteService.createTeamsWithMixite(
+        players,
+        playersPerTeam as 2 | 3,
+        formData.mixiteObligatoire
+      )
+
+      // Créer les équipes en base de données
+      let teamNumber = 1
+      for (const team of mixiteResult.teams) {
         await fetch('/api/equipes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
             tournoi_id: tournoi.id,
-            name: `R1-Équipe ${i + 1}`,
-            joueur_ids: teamPlayers,
+            name: `R1-Équipe ${teamNumber}`,
+            joueur_ids: team.joueur_ids,
             stats: {
               victoires: 0,
               defaites: 0,
@@ -505,6 +511,12 @@ export default function CreateTournamentPage() {
             }
           })
         })
+        teamNumber++
+      }
+
+      // Alerter si des joueurs ne peuvent pas être assignés
+      if (mixiteResult.unassignedPlayerIds.length > 0) {
+        console.warn(`${mixiteResult.unassignedPlayerIds.length} joueur(s) non assigné(s) en rotation 1:`, mixiteResult.warnings)
       }
       
       // Sauvegarder la configuration pour les rotations futures
@@ -759,6 +771,12 @@ export default function CreateTournamentPage() {
       // MODES MÊLÉE : Bloquer si 0 joueurs (obligatoires pour créer les équipes)
       if (formData.mode !== 'choisi' && allPlayerIds.length === 0) {
         throw new Error('Aucun joueur sélectionné')
+      }
+
+      // 🔧 FIX Bug #8 : Valider pouleSize avant création (minimum 3 équipes par poule)
+      if (formData.pouleSize < 3) {
+        alert('❌ Configuration invalide\n\nLa taille de poule doit être au minimum de 3 équipes.\n\nValeur actuelle : ' + formData.pouleSize)
+        return
       }
 
       const tournoiData = {

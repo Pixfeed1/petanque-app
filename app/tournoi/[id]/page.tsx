@@ -606,23 +606,34 @@ export default function TournamentDetailPage() {
   ): Promise<void> => {
     if (!tournament) return
 
+    // 🔧 FIX Bug #9 : Ajouter gestion d'erreur pour les fetch API
     for (let i = 0; i < teams.length; i++) {
       for (let j = i + 1; j < teams.length; j++) {
-        await fetch('/api/matches', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            tournoi_id: tournament.id,
-            equipe_a_id: teams[i].id,
-            equipe_b_id: teams[j].id,
-            tour,
-            terrain: null,
-            type: 'poule',
-            poule,
-            status: 'a_jouer'
+        try {
+          const response = await fetch('/api/matches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              tournoi_id: tournament.id,
+              equipe_a_id: teams[i].id,
+              equipe_b_id: teams[j].id,
+              tour,
+              terrain: null,
+              type: 'poule',
+              poule,
+              status: 'a_jouer'
+            })
           })
-        })
+
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+            throw new Error(error.error || `Échec création match (${response.status})`)
+          }
+        } catch (error) {
+          console.error(`Erreur création match ${teams[i].name} vs ${teams[j].name}:`, error)
+          throw error // Propager l'erreur pour que l'appelant puisse réagir
+        }
       }
     }
   }
@@ -640,11 +651,15 @@ export default function TournamentDetailPage() {
 
     const nbPoules = Math.ceil(teams.length / pouleSize)
 
+    // 🔧 FIX Bug #3 : Mélanger les équipes avant de les répartir en poules (fairness)
+    // Sinon les mêmes équipes finissent toujours dans les mêmes poules
+    const shuffledTeams = [...teams].sort(() => Math.random() - 0.5)
+
     // Créer les poules
     const poules: { [key: string]: Team[] } = {}
     for (let i = 0; i < nbPoules; i++) {
       const pouleName = String.fromCharCode(65 + i) // A, B, C...
-      poules[pouleName] = teams.slice(i * pouleSize, (i + 1) * pouleSize)
+      poules[pouleName] = shuffledTeams.slice(i * pouleSize, (i + 1) * pouleSize)
     }
 
     // Générer les matchs de poule (round-robin) en utilisant la fonction réutilisable
@@ -957,8 +972,8 @@ export default function TournamentDetailPage() {
         })
       }
 
-      // Créer la petite finale si pas encore faite
-      if (!petiteFinaleExists && losers.length === 2) {
+      // 🔧 FIX Bug #11 : Créer la petite finale seulement si consolante est activée
+      if (!petiteFinaleExists && losers.length === 2 && tournament.settings.consolante) {
         await fetch('/api/matches', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1179,8 +1194,20 @@ export default function TournamentDetailPage() {
     if (!tournament) return
 
     try {
+      // 🔧 FIX Bug #2 : Recharger les équipes fraîches depuis la BD au lieu d'utiliser le state
+      // Le state 'teams' n'est pas encore mis à jour par React après createNewTeamsWithAlgorithm
+      const teamsResponse = await fetch(`/api/equipes?tournoi_id=${tournament.id}`, {
+        credentials: 'include'
+      })
+
+      if (!teamsResponse.ok) {
+        throw new Error('Échec chargement équipes depuis la BD')
+      }
+
+      const freshTeams = await teamsResponse.json()
+
       // Récupérer toutes les équipes du tour actuel (préfixe R{rotationNumber}-)
-      const rotationTeams = teams.filter(t =>
+      const rotationTeams = freshTeams.filter((t: Team) =>
         t.name.startsWith(`R${rotationNumber}-`)
       )
 
@@ -1240,6 +1267,46 @@ export default function TournamentDetailPage() {
           const unassignedCount = totalPlayers - assignedPlayers
           alert(`❌ Joueurs non assignés\n\n${unassignedCount} joueur(s) inscrit(s) ne sont pas assignés à une équipe.\n\nTotal inscrits: ${totalPlayers}\nAssignés: ${assignedPlayers}\n\nVeuillez créer des équipes pour tous les joueurs ou retirer les joueurs en trop.`)
           return
+        }
+      }
+
+      // 🔧 FIX Bug #7 : Valider la mixité des équipes en mode choisi si mixité obligatoire
+      if (tournament.settings.mixiteObligatoire && organization?.id) {
+        try {
+          // Charger les joueurs pour vérifier les genres
+          const joueursResponse = await fetch(`/api/joueurs?org_id=${organization.id}`, {
+            credentials: 'include'
+          })
+
+          if (joueursResponse.ok) {
+            const allJoueurs = await joueursResponse.json()
+
+            // Vérifier chaque équipe pour la mixité
+            const nonMixedTeams: string[] = []
+
+            for (const team of teams) {
+              if (!team.joueur_ids || team.joueur_ids.length === 0) continue
+
+              const teamPlayers = allJoueurs.filter((j: Joueur) =>
+                team.joueur_ids?.includes(j.id)
+              )
+
+              const hasH = teamPlayers.some((p: Joueur) => p.gender === 'H' || !p.gender)
+              const hasF = teamPlayers.some((p: Joueur) => p.gender === 'F')
+
+              // Si l'équipe n'a pas H ET F, elle n'est pas mixte
+              if (!hasH || !hasF) {
+                nonMixedTeams.push(team.name)
+              }
+            }
+
+            if (nonMixedTeams.length > 0) {
+              alert(`❌ Mixité obligatoire non respectée\n\nLes équipes suivantes ne sont pas mixtes (doivent avoir H et F) :\n${nonMixedTeams.join(', ')}\n\nVeuillez recomposer ces équipes avant de démarrer.`)
+              return
+            }
+          }
+        } catch (error) {
+          console.error('Erreur validation mixité:', error)
         }
       }
     }
@@ -1336,12 +1403,24 @@ export default function TournamentDetailPage() {
   const renameTeam = async () => {
     if (!editingTeam || !newTeamName.trim()) return
 
+    // 🔧 FIX Bug #10 : Vérifier l'unicité du nom avant renommage
+    const trimmedName = newTeamName.trim()
+    const existingTeam = teams.find(t =>
+      t.id !== editingTeam.id &&
+      t.name.toLowerCase() === trimmedName.toLowerCase()
+    )
+
+    if (existingTeam) {
+      alert(`❌ Une équipe nommée "${trimmedName}" existe déjà.\n\nVeuillez choisir un autre nom.`)
+      return
+    }
+
     try {
       const response = await fetch(`/api/equipes/${editingTeam.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ name: newTeamName.trim() })
+        body: JSON.stringify({ name: trimmedName })
       })
 
       if (response.ok) {

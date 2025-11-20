@@ -154,6 +154,14 @@ export function validateMatchStart(match: {
     }
   }
 
+  // 🔧 FIX Bug #15 : Empêcher de redémarrer un match déjà en cours
+  if (match.status === 'en_cours') {
+    return {
+      valid: false,
+      error: 'Ce match est déjà en cours'
+    }
+  }
+
   if (!match.terrain) {
     return {
       valid: false,

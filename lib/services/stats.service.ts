@@ -270,9 +270,9 @@ export function groupTeamsByPoule(
     poules[poule].push(stats)
   })
 
-  // Trier chaque poule selon règles FIPJP
+  // Trier chaque poule selon règles FIPJP (avec confrontation directe)
   Object.keys(poules).forEach(poule => {
-    poules[poule] = sortTeamsByFIPJPRules(poules[poule])
+    poules[poule] = sortTeamsByFIPJPRules(poules[poule], matches, poule)
   })
 
   return poules

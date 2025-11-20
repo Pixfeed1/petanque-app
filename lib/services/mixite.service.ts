@@ -130,6 +130,12 @@ export class MixiteService {
     const playersByGender: { H: Joueur[], F: Joueur[] } = { H: [], F: [] }
 
     for (const player of players) {
+      // 🔧 FIX Bug #14 : Logger les joueurs sans genre défini au lieu de masquer silencieusement
+      if (!player.gender || (player.gender !== 'H' && player.gender !== 'F')) {
+        console.warn(`⚠️ Joueur "${player.name || player.id}" sans genre valide (H/F), traité comme 'H' par défaut`)
+        result.warnings.push(`Joueur "${player.name || player.id}" sans genre défini, traité comme Homme`)
+      }
+
       // Normaliser le genre : tout ce qui n'est pas 'F' est considéré comme 'H'
       const gender = player.gender === 'F' ? 'F' : 'H'
       playersByGender[gender].push(player)

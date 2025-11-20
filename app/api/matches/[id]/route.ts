@@ -203,15 +203,18 @@ export async function PUT(
           return apiError('Un match de pétanque ne peut pas se terminer sur une égalité', 400)
         }
 
-        // Récupérer le maxPoints du tournoi (par défaut 13)
+        // Récupérer les settings du tournoi
         const tournoiQuery = await query(
           'SELECT settings FROM tournois WHERE id = $1',
           [existingMatch.tournoi_id]
         )
-        const maxPoints = (tournoiQuery.rows[0]?.settings as any)?.maxPoints || 13
+        const settings = (tournoiQuery.rows[0]?.settings as any) || {}
+        const maxPoints = settings.maxPoints || 13
+        const timeLimit = settings.timeLimit || false
 
-        // Vérifier qu'au moins une équipe a atteint le score maximum
-        if (scoreA < maxPoints && scoreB < maxPoints) {
+        // 🔧 FIX Bug #6 : Si timeLimit activé, permettre de terminer sans atteindre maxPoints
+        // Sinon, vérifier qu'au moins une équipe a atteint le score maximum
+        if (!timeLimit && scoreA < maxPoints && scoreB < maxPoints) {
           return apiError(
             `Le match doit se terminer quand une équipe atteint ${maxPoints} points. Score actuel: ${scoreA}-${scoreB}`,
             400
