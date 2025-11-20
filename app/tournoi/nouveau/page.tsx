@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import type { Tournoi, Joueur } from '@/lib/types'
 import { ValidationService } from '@/lib/services'
+import { MixiteService } from '@/lib/services/mixite.service'
 import { Trophy, Petanque, Calendar, User, Users, Check, Sparkles, Lightning, Star, Plus, X, Info, ArrowRight, Loader, Clock, Shuffle, Grid, Settings, Flag, Warning, Gamepad, Map, Target } from '@/components/Icons'
 
 // Icônes premium améliorées
@@ -427,7 +428,6 @@ export default function CreateTournamentPage() {
   // Fonction corrigée pour créer les équipes avec mixité
   const createTeamsWithMixity = async (tournoi: Tournoi, allPlayerIds: string[], updatedPlayersList: Joueur[]) => {
     const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
-    const nbEquipes = Math.floor(allPlayerIds.length / playersPerTeam)
 
     // Vérifier avec ValidationService qu'aucun joueur ne sera exclu
     const validation = ValidationService.validatePlayerCount(
@@ -456,81 +456,35 @@ export default function CreateTournamentPage() {
         return 0
       }
 
-      // Si mixité NON obligatoire : formation libre sans contrainte de genre
-      if (!formData.mixiteObligatoire) {
-        const shuffledPlayers = [...allPlayerIds].sort(() => Math.random() - 0.5)
-        let teamNumber = 1
+      // ========================================
+      // Utiliser MixiteService pour formation des équipes (Bug #1 - élimination duplication)
+      // ========================================
+      const players = updatedPlayersList.filter(p => allPlayerIds.includes(p.id))
 
-        for (let i = 0; i < nbEquipes; i++) {
-          const teamPlayers = shuffledPlayers.slice(i * playersPerTeam, (i + 1) * playersPerTeam)
-          await createTeamWithPlayers(tournoi.id, teamNumber++, teamPlayers)
-        }
+      const mixiteResult = MixiteService.createTeamsWithMixite(
+        players,
+        playersPerTeam as 2 | 3,
+        formData.mixiteObligatoire
+      )
 
-        return 0
-      }
-
-      // Si mixité OBLIGATOIRE : utiliser l'algorithme de mixité H/F
-      // Utiliser la liste mise à jour pour avoir les infos de genre
-      const playersByGender: { H: string[], F: string[] } = { H: [], F: [] }
-
-      for (const playerId of allPlayerIds) {
-        const player = updatedPlayersList.find(p => p.id === playerId)
-        if (player) {
-          const gender = player.gender === 'F' ? 'F' : 'H'
-          playersByGender[gender].push(playerId)
-        } else {
-          playersByGender.H.push(playerId)
-        }
-      }
-
-      // Mélanger et créer les équipes
-      playersByGender.H.sort(() => Math.random() - 0.5)
-      playersByGender.F.sort(() => Math.random() - 0.5)
-
+      // Créer les équipes en base de données
       let teamNumber = 1
-
-      // Créer équipes mixtes
-      if (formData.format === 'doublette') {
-        while (playersByGender.H.length > 0 && playersByGender.F.length > 0) {
-          const teamPlayers = [
-            playersByGender.H.shift()!,
-            playersByGender.F.shift()!
-          ]
-          await createTeamWithPlayers(tournoi.id, teamNumber++, teamPlayers)
-        }
-      } else {
-        while ((playersByGender.H.length >= 2 && playersByGender.F.length >= 1) || 
-               (playersByGender.H.length >= 1 && playersByGender.F.length >= 2)) {
-          let teamPlayers: string[]
-          if (playersByGender.H.length >= 2 && playersByGender.F.length >= 1) {
-            teamPlayers = [playersByGender.H.shift()!, playersByGender.H.shift()!, playersByGender.F.shift()!]
-          } else {
-            teamPlayers = [playersByGender.H.shift()!, playersByGender.F.shift()!, playersByGender.F.shift()!]
-          }
-          await createTeamWithPlayers(tournoi.id, teamNumber++, teamPlayers)
-        }
-      }
-      
-      // Créer équipes restantes en préservant la mixité autant que possible
-      const remainingPlayers = [...playersByGender.H, ...playersByGender.F]
-      remainingPlayers.sort(() => Math.random() - 0.5) // Mélanger pour alterner H/F
-
-      while (remainingPlayers.length >= playersPerTeam) {
-        const teamPlayers = remainingPlayers.splice(0, playersPerTeam)
-        await createTeamWithPlayers(tournoi.id, teamNumber++, teamPlayers)
+      for (const team of mixiteResult.teams) {
+        await createTeamWithPlayers(tournoi.id, teamNumber++, team.joueur_ids)
       }
 
-      // Avertir si des joueurs restent
-      if (remainingPlayers.length > 0) {
-        console.warn(`${remainingPlayers.length} joueur(s) non assigné(s) car nombre incompatible avec le format`)
-        // Retourner le nombre de joueurs non assignés pour alerter l'utilisateur
-        return remainingPlayers.length
+      // Retourner le nombre de joueurs non assignés (Bug #2 - alerter l'utilisateur)
+      if (mixiteResult.unassignedPlayerIds.length > 0) {
+        console.warn(`${mixiteResult.unassignedPlayerIds.length} joueur(s) non assigné(s):`, mixiteResult.warnings)
+        return mixiteResult.unassignedPlayerIds.length
       }
+
       return 0
     }
     else if (formData.mode === 'melee_tournante') {
       // Pour mêlée tournante, créer les équipes du premier tour (rotation 1)
       const shuffledPlayers = [...allPlayerIds].sort(() => Math.random() - 0.5)
+      const nbEquipes = Math.floor(shuffledPlayers.length / playersPerTeam)
 
       for (let i = 0; i < nbEquipes; i++) {
         const teamPlayers = shuffledPlayers.slice(i * playersPerTeam, (i + 1) * playersPerTeam)
@@ -708,9 +662,56 @@ export default function CreateTournamentPage() {
     console.log('✅ Organisation validée:', organization)
     console.log('✅ Organisation ID:', organization.id)
 
+    // ========================================
+    // VALIDATIONS PRÉALABLES (AVANT CRÉATION)
+    // ========================================
+
+    // VALIDATION 1: Format + Mixité (Bug #5)
+    const formatValidation = MixiteService.validateFormatMixite(
+      formData.format as 'tete_a_tete' | 'doublette' | 'triplette',
+      formData.mixiteObligatoire
+    )
+
+    if (!formatValidation.valid) {
+      alert(formatValidation.error)
+      return
+    }
+
+    // VALIDATION 2: Genres manquants si mixité obligatoire (Bug #3)
+    if (formData.mixiteObligatoire && formData.mode !== 'choisi') {
+      // Construire la liste complète des joueurs (existants + nouveaux)
+      const selectedExistingPlayers = availablePlayers.filter(p =>
+        formData.selectedPlayers.includes(p.id)
+      )
+
+      const newPlayersToCreate = formData.newPlayers
+        .filter(np => np.name.trim())
+        .map(np => ({
+          id: 'temp-' + Math.random(), // ID temporaire pour validation
+          name: np.name,
+          gender: np.gender as 'H' | 'F' | undefined,
+          stats: { gender: np.gender || 'H' }
+        }))
+
+      const allPlayersForValidation = [
+        ...selectedExistingPlayers,
+        ...newPlayersToCreate
+      ]
+
+      const genderValidation = MixiteService.validatePlayerGenders(
+        allPlayersForValidation,
+        formData.mixiteObligatoire
+      )
+
+      if (!genderValidation.valid) {
+        alert(genderValidation.error)
+        return
+      }
+    }
+
     setSavingTournament(true)
     setLoading(true)
-    
+
     try {
       // 1. Créer les nouveaux joueurs et récupérer leurs IDs
       const newPlayerIds = []

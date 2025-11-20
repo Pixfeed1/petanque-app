@@ -7,6 +7,7 @@ import AdBanner from '@/components/AdBanner'
 import type { Manche, EquipeJoueur, Joueur, Match as MatchType } from '@/lib/types'
 import { Petanque, Trophy, Users, Play, Flag, Clock, Calendar, Settings, Check, X, Plus, Loader, Shuffle, Chart, Edit, Refresh, Sparkles, Lightning, Arrow, Grid, Medal, Info } from '@/components/Icons'
 import { StatsService, ValidationService, BracketService } from '@/lib/services'
+import { MixiteService } from '@/lib/services/mixite.service'
 import { TournamentHeader, TournamentInfoCards, MatchCard, StandingsTable, PlayerRankingsTable } from '@/components/tournament'
 import type { TeamStanding, PlayerRanking } from '@/components/tournament'
 
@@ -1123,60 +1124,24 @@ export default function TournamentDetailPage() {
       // Utiliser le numéro de rotation actuel pour noms uniques (pas de calcul basé sur teams.length)
       const rotationNumber = currentRotation
       let teamNumber = 1
-      const newTeams = []
 
-      // Si mixité NON obligatoire : formation libre
-      if (!tournament.settings.mixiteObligatoire) {
-        for (let i = 0; i < nbEquipes; i++) {
-          const teamPlayers = shuffled.slice(i * teamSize, (i + 1) * teamSize).map(p => p.id)
-          newTeams.push({ name: `R${rotationNumber}-Équipe ${teamNumber}`, joueur_ids: teamPlayers })
-          teamNumber++
-        }
-      } else {
-        // Si mixité OBLIGATOIRE : respecter H/F
-        const hommes = shuffled.filter((p: Joueur) => p.gender === 'H')
-        const femmes = shuffled.filter((p: Joueur) => p.gender === 'F')
+      // ========================================
+      // Utiliser MixiteService pour formation des équipes (Bug #1 - élimination duplication)
+      // ========================================
+      const mixiteResult = MixiteService.createTeamsWithMixite(
+        players,
+        teamSize as 2 | 3,
+        tournament.settings.mixiteObligatoire || false
+      )
 
-        if (tournament.format === 'doublette') {
-          // Pour doublette: 1H + 1F autant que possible
-          while (hommes.length > 0 && femmes.length > 0 && teamNumber <= nbEquipes) {
-            const teamPlayers = [hommes.shift()!.id, femmes.shift()!.id]
-            newTeams.push({ name: `R${rotationNumber}-Équipe ${teamNumber}`, joueur_ids: teamPlayers })
-            teamNumber++
-          }
+      const newTeams = mixiteResult.teams.map(team => ({
+        name: `R${rotationNumber}-Équipe ${teamNumber++}`,
+        joueur_ids: team.joueur_ids
+      }))
 
-          // Équipes restantes sans mixité
-          const remaining = [...hommes, ...femmes].sort(() => Math.random() - 0.5)
-          while (remaining.length >= teamSize && teamNumber <= nbEquipes) {
-            const teamPlayers = remaining.splice(0, teamSize).map(p => p.id)
-            newTeams.push({ name: `R${rotationNumber}-Équipe ${teamNumber}`, joueur_ids: teamPlayers })
-            teamNumber++
-          }
-        } else {
-          // Pour triplette: 2H + 1F ou 1H + 2F
-          while (teamNumber <= nbEquipes) {
-            let teamPlayers: string[] = []
-
-            if (hommes.length >= 2 && femmes.length >= 1) {
-              teamPlayers = [hommes.shift()!.id, hommes.shift()!.id, femmes.shift()!.id]
-            } else if (hommes.length >= 1 && femmes.length >= 2) {
-              teamPlayers = [hommes.shift()!.id, femmes.shift()!.id, femmes.shift()!.id]
-            } else {
-              // Pas assez pour mixité, prendre ce qu'on a
-              const remaining = [...hommes, ...femmes]
-              if (remaining.length >= teamSize) {
-                teamPlayers = remaining.splice(0, teamSize).map(p => p.id)
-              } else {
-                break
-              }
-            }
-
-            if (teamPlayers.length === teamSize) {
-              newTeams.push({ name: `R${rotationNumber}-Équipe ${teamNumber}`, joueur_ids: teamPlayers })
-              teamNumber++
-            }
-          }
-        }
+      // Alerter si des joueurs ne peuvent pas être assignés
+      if (mixiteResult.unassignedPlayerIds.length > 0) {
+        console.warn(`${mixiteResult.unassignedPlayerIds.length} joueur(s) non assigné(s) pour la rotation ${rotationNumber}:`, mixiteResult.warnings)
       }
 
       // Créer les équipes en base
