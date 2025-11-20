@@ -94,7 +94,7 @@ interface Match {
   status: 'a_jouer' | 'en_cours' | 'termine' | 'en_attente_validation'
   score_a: number
   score_b: number
-  type?: 'poule' | 'elimination' | 'demi' | 'finale' | 'petite_finale'
+  type?: 'poule' | 'elimination' | 'demi' | 'finale' | 'petite_finale' | 'bye' | 'quart' | 'huitieme'
   poule?: string
   round?: number
   manches_json?: Manche[]
