@@ -839,12 +839,24 @@ export default function TournamentDetailPage() {
       const losers: string[] = []
 
       demiMatches.forEach(match => {
+        // Gérer les égalités (ne devrait pas arriver en pétanque standard, mais sécurité)
+        if (match.score_a === match.score_b) {
+          alert(`⚠️ Égalité détectée dans ${match.equipe_a?.name} vs ${match.equipe_b?.name}. Impossible de créer la finale. Veuillez rejouer le match.`)
+          throw new Error('Égalité en demi-finale')
+        }
+
+        // Vérifier que les deux équipes existent (sécurité contre matchs BYE ou null)
+        if (!match.equipe_a_id || !match.equipe_b_id) {
+          console.warn('⚠️ Match de demi avec équipe manquante (probablement un BYE), ignoré:', match)
+          return
+        }
+
         if (match.score_a > match.score_b) {
-          winners.push(match.equipe_a_id || '')
-          losers.push(match.equipe_b_id || '')
+          winners.push(match.equipe_a_id)
+          losers.push(match.equipe_b_id)
         } else {
-          winners.push(match.equipe_b_id || '')
-          losers.push(match.equipe_a_id || '')
+          winners.push(match.equipe_b_id)
+          losers.push(match.equipe_a_id)
         }
       })
 

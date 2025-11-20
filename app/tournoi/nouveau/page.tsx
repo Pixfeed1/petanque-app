@@ -427,13 +427,23 @@ export default function CreateTournamentPage() {
   const createTeamsWithMixity = async (tournoi: Tournoi, allPlayerIds: string[], updatedPlayersList: Joueur[]) => {
     const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
     const nbEquipes = Math.floor(allPlayerIds.length / playersPerTeam)
+    const remainingPlayers = allPlayerIds.length % playersPerTeam
+
+    // SÉCURITÉ : Vérifier qu'aucun joueur ne sera exclu
+    if (remainingPlayers > 0 && (formData.mode === 'melee_fixe' || formData.mode === 'melee_tournante')) {
+      throw new Error(
+        `❌ Erreur critique : ${remainingPlayers} joueur(s) seraient exclus du tournoi.\n\n` +
+        `Vous avez ${allPlayerIds.length} joueurs pour une ${formData.format} (${playersPerTeam} joueurs/équipe).\n` +
+        `Ajoutez ${playersPerTeam - remainingPlayers} joueur(s) ou retirez-en ${remainingPlayers}.`
+      )
+    }
 
     if (formData.mode === 'choisi') {
       // MODE CHOISI : Ne PAS créer d'équipes automatiquement
       // L'organisateur les composera manuellement dans l'interface du tournoi
       // via le bouton "Composer les équipes"
       return 0
-    } 
+    }
     else if (formData.mode === 'melee_fixe') {
       // Pour tête-à-tête, chaque joueur est sa propre équipe
       if (formData.format === 'tete_a_tete') {
