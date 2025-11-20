@@ -4,8 +4,11 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import AdBanner from '@/components/AdBanner'
-import type { Manche, EquipeJoueur, Joueur } from '@/lib/types'
+import type { Manche, EquipeJoueur, Joueur, Match as MatchType } from '@/lib/types'
 import { Petanque, Trophy, Users, Play, Flag, Clock, Calendar, Settings, Check, X, Plus, Loader, Shuffle, Chart, Edit, Refresh, Sparkles, Lightning, Arrow, Grid, Medal, Info } from '@/components/Icons'
+import { StatsService, ValidationService } from '@/lib/services'
+import { TournamentHeader, TournamentInfoCards, MatchCard, StandingsTable, PlayerRankingsTable } from '@/components/tournament'
+import type { TeamStanding, PlayerRanking } from '@/components/tournament'
 
 // Icônes premium pour la pétanque
 const Icons = {
@@ -239,51 +242,20 @@ export default function TournamentDetailPage() {
     return team.equipes_joueurs.map(ej => ej.joueur.name)
   }
 
-  // Calcul optimisé du classement avec useMemo
+  // Calcul optimisé du classement avec useMemo + StatsService
   const teamsWithStats = useMemo(() => {
     return teams.map(team => {
-      // Exclure les matchs BYE des statistiques
-      const teamMatches = matches.filter(m =>
-        (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id) &&
-        m.status === 'termine' &&
-        m.type !== 'bye'
-      )
-
-      const victories = teamMatches.filter(m =>
-        (m.equipe_a?.id === team.id && m.score_a > m.score_b) ||
-        (m.equipe_b?.id === team.id && m.score_b > m.score_a)
-      ).length
-
-      const defeats = teamMatches.filter(m =>
-        (m.equipe_a?.id === team.id && m.score_a < m.score_b) ||
-        (m.equipe_b?.id === team.id && m.score_b < m.score_a)
-      ).length
-
-      const draws = teamMatches.filter(m =>
-        m.score_a === m.score_b
-      ).length
-
-      const pointsFor = teamMatches.reduce((acc, m) => {
-        if (m.equipe_a?.id === team.id) return acc + (m.score_a || 0)
-        if (m.equipe_b?.id === team.id) return acc + (m.score_b || 0)
-        return acc
-      }, 0)
-
-      const pointsAgainst = teamMatches.reduce((acc, m) => {
-        if (m.equipe_a?.id === team.id) return acc + (m.score_b || 0)
-        if (m.equipe_b?.id === team.id) return acc + (m.score_a || 0)
-        return acc
-      }, 0)
-
+      // Les matches ont la structure nécessaire pour StatsService (id, equipe_a, equipe_b, score_a, score_b, status, type)
+      const stats = StatsService.calculateTeamStats(team.id, team.name, matches as unknown as MatchType[])
       return {
         ...team,
-        played: teamMatches.length,
-        victories,
-        defeats,
-        draws,
-        pointsFor,
-        pointsAgainst,
-        difference: pointsFor - pointsAgainst
+        played: stats.played,
+        victories: stats.victories,
+        defeats: stats.defeats,
+        draws: stats.draws,
+        pointsFor: stats.pointsFor,
+        pointsAgainst: stats.pointsAgainst,
+        difference: stats.difference
       }
     })
   }, [teams, matches])
@@ -1118,18 +1090,15 @@ export default function TournamentDetailPage() {
 
   const assignTerrain = async (matchId: string, terrain: number) => {
     try {
-      // Vérifier que le numéro de terrain est valide
+      // Vérifier que le numéro de terrain est valide avec ValidationService
       if (!tournament?.settings.terrains) {
         alert('❌ Erreur : Nombre de terrains non défini pour ce tournoi.')
         return
       }
 
-      if (terrain < 1 || terrain > tournament.settings.terrains) {
-        alert(
-          `❌ Terrain invalide !\n\n` +
-          `Le terrain ${terrain} n'existe pas.\n` +
-          `Ce tournoi dispose de ${tournament.settings.terrains} terrain(s) (numérotés de 1 à ${tournament.settings.terrains}).`
-        )
+      const validation = ValidationService.validateTerrainNumber(terrain, tournament.settings.terrains)
+      if (!validation.valid) {
+        alert(validation.error)
         return
       }
 
