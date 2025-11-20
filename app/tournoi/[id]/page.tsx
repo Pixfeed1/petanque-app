@@ -2096,8 +2096,9 @@ export default function TournamentDetailPage() {
           <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-slideUp">
             <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-white">
-                  ⚽ Composer une nouvelle équipe
+                <h2 className="text-2xl font-bold text-white flex items-center">
+                  <span className="mr-2">{Icons.users}</span>
+                  Composer une nouvelle équipe
                 </h2>
                 <button
                   onClick={() => {
