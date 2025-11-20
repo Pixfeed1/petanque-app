@@ -1,12 +1,24 @@
 // lib/types.ts
 // Types pour les modèles de base de données
 
+// Stats d'une équipe
+export interface EquipeStats {
+  victoires: number
+  defaites: number
+  nuls?: number // Égalités
+  points_pour: number
+  points_contre: number
+  difference?: number
+  points_fipjp?: number // Victoires × 3 + Nuls × 1
+}
+
 export interface Equipe {
   id: string
   tournoi_id: string
   name: string
   joueur_ids: string[] // UUID[]
-  stats?: Record<string, unknown>
+  poule?: string // Nom de la poule
+  stats?: EquipeStats
   created_at?: string
   updated_at?: string
 }
@@ -88,6 +100,10 @@ export type MatchType =
   | 'elimination'
   | 'petite_finale'
   | 'finale'
+  | 'demi'
+  | 'quart'
+  | 'huitieme'
+  | 'bye'
 
 // Type pour les lignes brutes de la base de données (avant transformation)
 export interface MatchRawDB {
@@ -124,6 +140,27 @@ export interface MatchRawDB {
   updated_at: string
 }
 
+// Types pour le mode et format de tournoi
+export type TournoiMode = 'choisi' | 'melee_fixe' | 'melee_tournante'
+export type TournoiFormat = 'tete_a_tete' | 'doublette' | 'triplette'
+export type MeleeRotation = 'par_tour' | 'par_match'
+export type EliminationFormat = 'simple' | 'double'
+
+// Settings précis pour un tournoi
+export interface TournoiSettings {
+  maxPoints: number // Défaut: 13
+  pouleSize?: number // Nombre d'équipes par poule
+  qualifiedPerPoule?: number // Nombre de qualifiés par poule pour les finales
+  eliminationFormat?: EliminationFormat
+  meleeRotation?: MeleeRotation // Pour mêlée tournante
+  mixiteObligatoire?: boolean // Forcer H/F dans les équipes
+  consolante?: boolean // Match pour la 3ème place
+  terrains: number // Nombre de terrains disponibles
+  players?: string[] // IDs des joueurs sélectionnés
+  melee_tournante_players?: string[] // IDs pour rotation mêlée
+  current_round?: number // Tour actuel (pour mêlée tournante)
+}
+
 export interface Tournoi {
   id: string
   org_id: string | null
@@ -131,12 +168,12 @@ export interface Tournoi {
   date_debut: string
   date_fin: string | null
   lieu: string | null
-  mode: string
-  format: string
+  mode: TournoiMode
+  format: TournoiFormat
   terrains: number
   status: TournoiStatus
   max_points: number
-  settings?: Record<string, unknown>
+  settings: TournoiSettings
   created_at: string
   updated_at: string
 }
