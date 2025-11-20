@@ -241,8 +241,11 @@ export default function TournamentDetailPage() {
   // Calcul optimisé du classement avec useMemo
   const teamsWithStats = useMemo(() => {
     return teams.map(team => {
+      // Exclure les matchs BYE des statistiques
       const teamMatches = matches.filter(m =>
-        (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id) && m.status === 'termine'
+        (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id) &&
+        m.status === 'termine' &&
+        m.type !== 'bye'
       )
 
       const victories = teamMatches.filter(m =>
@@ -766,7 +769,7 @@ export default function TournamentDetailPage() {
 
         // Si pas d'équipe B, l'équipe A a un "bye" et avance automatiquement
         if (!equipe_b) {
-          // Match avec bye - équipe A gagne par forfait
+          // Match BYE - Qualification automatique sans jouer
           await fetch('/api/matches', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -777,9 +780,9 @@ export default function TournamentDetailPage() {
               equipe_b_id: null,
               tour: 1,
               terrain: null,
-              type: matchType,
+              type: 'bye',  // Type spécial pour les byes
               status: 'termine',
-              score_a: 13,
+              score_a: 0,  // Pas de score pour un bye
               score_b: 0
             })
           })
@@ -1409,53 +1412,78 @@ export default function TournamentDetailPage() {
                                 )}
                               </div>
                               
-                              <div className="flex justify-between items-center">
-                                <div className="text-center flex-1">
-                                  <p className="font-medium text-gray-900 text-xs sm:text-base truncate px-1">{match.equipe_a?.name}</p>
+                              {/* Affichage spécial pour les matchs BYE */}
+                              {match.type === 'bye' ? (
+                                <div className="text-center py-4">
+                                  <p className="font-medium text-gray-900 text-base mb-2">{match.equipe_a?.name}</p>
                                   {(() => {
                                     const players = getTeamPlayers(match.equipe_a_id || match.equipe_a?.id)
                                     if (players.length > 0) {
                                       return (
-                                        <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 px-1 truncate leading-tight">
+                                        <p className="text-xs text-gray-600 mb-3">
                                           {players.join(', ')}
                                         </p>
                                       )
                                     }
                                     return null
                                   })()}
-                                  {match.status !== 'a_jouer' && (
-                                    <div className="flex items-center justify-center gap-1 mt-1">
-                                      <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_a ?? 0}</p>
-                                      {match.status === 'termine' && match.score_a === (tournament?.settings?.maxPoints || 13) && match.score_b === 0 && (
-                                        <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
-                                      )}
+                                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200">
+                                    <div className="flex items-center justify-center gap-2 mb-1">
+                                      <span className="text-2xl">🎟️</span>
+                                      <p className="text-lg font-bold text-blue-900">BYE</p>
                                     </div>
-                                  )}
+                                    <p className="text-sm text-blue-700">Qualification automatique</p>
+                                  </div>
                                 </div>
-                                <div className="px-1 sm:px-4 text-gray-400 font-bold text-sm sm:text-base">VS</div>
-                                <div className="text-center flex-1">
-                                  <p className="font-medium text-gray-900 text-xs sm:text-base truncate px-1">{match.equipe_b?.name}</p>
-                                  {(() => {
-                                    const players = getTeamPlayers(match.equipe_b_id || match.equipe_b?.id)
-                                    if (players.length > 0) {
-                                      return (
-                                        <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 px-1 truncate leading-tight">
-                                          {players.join(', ')}
-                                        </p>
-                                      )
-                                    }
-                                    return null
-                                  })()}
-                                  {match.status !== 'a_jouer' && (
-                                    <div className="flex items-center justify-center gap-1 mt-1">
-                                      <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_b ?? 0}</p>
-                                      {match.status === 'termine' && match.score_b === (tournament?.settings?.maxPoints || 13) && match.score_a === 0 && (
-                                        <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
-                                      )}
-                                    </div>
-                                  )}
+                              ) : (
+                                <div className="flex justify-between items-center">
+                                  <div className="text-center flex-1">
+                                    <p className="font-medium text-gray-900 text-xs sm:text-base truncate px-1">{match.equipe_a?.name}</p>
+                                    {(() => {
+                                      const players = getTeamPlayers(match.equipe_a_id || match.equipe_a?.id)
+                                      if (players.length > 0) {
+                                        return (
+                                          <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 px-1 truncate leading-tight">
+                                            {players.join(', ')}
+                                          </p>
+                                        )
+                                      }
+                                      return null
+                                    })()}
+                                    {match.status !== 'a_jouer' && (
+                                      <div className="flex items-center justify-center gap-1 mt-1">
+                                        <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_a ?? 0}</p>
+                                        {match.status === 'termine' && match.score_a === (tournament?.settings?.maxPoints || 13) && match.score_b === 0 && (
+                                          <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="px-1 sm:px-4 text-gray-400 font-bold text-sm sm:text-base">VS</div>
+                                  <div className="text-center flex-1">
+                                    <p className="font-medium text-gray-900 text-xs sm:text-base truncate px-1">{match.equipe_b?.name}</p>
+                                    {(() => {
+                                      const players = getTeamPlayers(match.equipe_b_id || match.equipe_b?.id)
+                                      if (players.length > 0) {
+                                        return (
+                                          <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 px-1 truncate leading-tight">
+                                            {players.join(', ')}
+                                          </p>
+                                        )
+                                      }
+                                      return null
+                                    })()}
+                                    {match.status !== 'a_jouer' && (
+                                      <div className="flex items-center justify-center gap-1 mt-1">
+                                        <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_b ?? 0}</p>
+                                        {match.status === 'termine' && match.score_b === (tournament?.settings?.maxPoints || 13) && match.score_a === 0 && (
+                                          <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
+                              )}
                               
                               {match.status === 'a_jouer' && isOrganizer && (
                                 <div className="mt-3 flex space-x-2">
@@ -1633,60 +1661,85 @@ export default function TournamentDetailPage() {
                                   )}
                                 </div>
                                 
-                                <div className="space-y-2">
-                                  <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg ${
-                                    match.status === 'termine' && match.score_a > match.score_b ? 'bg-green-50' : ''
-                                  }`}>
-                                    <div className="flex-1 pr-2 min-w-0">
-                                      <span className="font-medium text-xs sm:text-base truncate block">{match.equipe_a?.name}</span>
-                                      {(() => {
-                                        const players = getTeamPlayers(match.equipe_a_id || match.equipe_a?.id)
-                                        if (players.length > 0) {
-                                          return (
-                                            <span className="text-[10px] sm:text-xs text-gray-600 truncate block leading-tight">
-                                              {players.join(', ')}
-                                            </span>
-                                          )
-                                        }
-                                        return null
-                                      })()}
-                                    </div>
-                                    {match.status !== 'a_jouer' && (
-                                      <div className="flex items-center gap-2 flex-shrink-0">
-                                        <span className="text-xl sm:text-xl font-bold">{match.score_a ?? 0}</span>
-                                        {match.status === 'termine' && match.score_a === (tournament?.settings?.maxPoints || 13) && match.score_b === 0 && (
-                                          <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
-                                        )}
+                                {/* Affichage spécial pour matchs BYE */}
+                                {match.type === 'bye' ? (
+                                  <div className="text-center py-3">
+                                    <p className="font-medium text-gray-900 mb-2">{match.equipe_a?.name}</p>
+                                    {(() => {
+                                      const players = getTeamPlayers(match.equipe_a_id || match.equipe_a?.id)
+                                      if (players.length > 0) {
+                                        return (
+                                          <p className="text-xs text-gray-600 mb-2">
+                                            {players.join(', ')}
+                                          </p>
+                                        )
+                                      }
+                                      return null
+                                    })()}
+                                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200">
+                                      <div className="flex items-center justify-center gap-2">
+                                        <span className="text-xl">🎟️</span>
+                                        <p className="font-bold text-blue-900">BYE</p>
                                       </div>
-                                    )}
-                                  </div>
-                                  <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg ${
-                                    match.status === 'termine' && match.score_b > match.score_a ? 'bg-green-50' : ''
-                                  }`}>
-                                    <div className="flex-1 pr-2 min-w-0">
-                                      <span className="font-medium text-xs sm:text-base truncate block">{match.equipe_b?.name}</span>
-                                      {(() => {
-                                        const players = getTeamPlayers(match.equipe_b_id || match.equipe_b?.id)
-                                        if (players.length > 0) {
-                                          return (
-                                            <span className="text-[10px] sm:text-xs text-gray-600 truncate block leading-tight">
-                                              {players.join(', ')}
-                                            </span>
-                                          )
-                                        }
-                                        return null
-                                      })()}
+                                      <p className="text-xs text-blue-700 mt-1">Qualification automatique</p>
                                     </div>
-                                    {match.status !== 'a_jouer' && (
-                                      <div className="flex items-center gap-2 flex-shrink-0">
-                                        <span className="text-xl sm:text-xl font-bold">{match.score_b ?? 0}</span>
-                                        {match.status === 'termine' && match.score_b === (tournament?.settings?.maxPoints || 13) && match.score_a === 0 && (
-                                          <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
-                                        )}
-                                      </div>
-                                    )}
                                   </div>
-                                </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg ${
+                                      match.status === 'termine' && match.score_a > match.score_b ? 'bg-green-50' : ''
+                                    }`}>
+                                      <div className="flex-1 pr-2 min-w-0">
+                                        <span className="font-medium text-xs sm:text-base truncate block">{match.equipe_a?.name}</span>
+                                        {(() => {
+                                          const players = getTeamPlayers(match.equipe_a_id || match.equipe_a?.id)
+                                          if (players.length > 0) {
+                                            return (
+                                              <span className="text-[10px] sm:text-xs text-gray-600 truncate block leading-tight">
+                                                {players.join(', ')}
+                                              </span>
+                                            )
+                                          }
+                                          return null
+                                        })()}
+                                      </div>
+                                      {match.status !== 'a_jouer' && (
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                          <span className="text-xl sm:text-xl font-bold">{match.score_a ?? 0}</span>
+                                          {match.status === 'termine' && match.score_a === (tournament?.settings?.maxPoints || 13) && match.score_b === 0 && (
+                                            <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className={`flex justify-between items-center p-2 sm:p-3 rounded-lg ${
+                                      match.status === 'termine' && match.score_b > match.score_a ? 'bg-green-50' : ''
+                                    }`}>
+                                      <div className="flex-1 pr-2 min-w-0">
+                                        <span className="font-medium text-xs sm:text-base truncate block">{match.equipe_b?.name}</span>
+                                        {(() => {
+                                          const players = getTeamPlayers(match.equipe_b_id || match.equipe_b?.id)
+                                          if (players.length > 0) {
+                                            return (
+                                              <span className="text-[10px] sm:text-xs text-gray-600 truncate block leading-tight">
+                                                {players.join(', ')}
+                                              </span>
+                                            )
+                                          }
+                                          return null
+                                        })()}
+                                      </div>
+                                      {match.status !== 'a_jouer' && (
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                          <span className="text-xl sm:text-xl font-bold">{match.score_b ?? 0}</span>
+                                          {match.status === 'termine' && match.score_b === (tournament?.settings?.maxPoints || 13) && match.score_a === 0 && (
+                                            <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                                 
                                 {match.status === 'a_jouer' && isOrganizer && (
                                   <button
