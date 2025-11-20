@@ -1118,6 +1118,21 @@ export default function TournamentDetailPage() {
 
   const assignTerrain = async (matchId: string, terrain: number) => {
     try {
+      // Vérifier que le numéro de terrain est valide
+      if (!tournament?.settings.terrains) {
+        alert('❌ Erreur : Nombre de terrains non défini pour ce tournoi.')
+        return
+      }
+
+      if (terrain < 1 || terrain > tournament.settings.terrains) {
+        alert(
+          `❌ Terrain invalide !\n\n` +
+          `Le terrain ${terrain} n'existe pas.\n` +
+          `Ce tournoi dispose de ${tournament.settings.terrains} terrain(s) (numérotés de 1 à ${tournament.settings.terrains}).`
+        )
+        return
+      }
+
       // Vérifier les conflits de terrain
       const matchToAssign = matches.find(m => m.id === matchId)
       if (!matchToAssign) return
@@ -1546,7 +1561,13 @@ export default function TournamentDetailPage() {
                                     ))}
                                   </select>
                                   <button
-                                    onClick={() => router.push(`/match/${match.id}`)}
+                                    onClick={() => {
+                                      if (!match.terrain) {
+                                        alert('⚠️ Veuillez d\'abord assigner un terrain au match avant de le démarrer.')
+                                        return
+                                      }
+                                      router.push(`/match/${match.id}`)
+                                    }}
                                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
                                   >
                                     Démarrer
@@ -1791,7 +1812,13 @@ export default function TournamentDetailPage() {
                                 
                                 {match.status === 'a_jouer' && isOrganizer && (
                                   <button
-                                    onClick={() => router.push(`/match/${match.id}`)}
+                                    onClick={() => {
+                                      if (!match.terrain) {
+                                        alert('⚠️ Veuillez d\'abord assigner un terrain au match avant de le démarrer.')
+                                        return
+                                      }
+                                      router.push(`/match/${match.id}`)
+                                    }}
                                     className="w-full mt-3 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all"
                                   >
                                     Saisir le score
