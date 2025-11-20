@@ -661,7 +661,16 @@ export default function TournamentDetailPage() {
 
     // Calculer le classement de chaque poule
     const qualifiedPerPoule = tournament.settings.qualifiedPerPoule || 2
-    const pouleNames = [...new Set(pouleMatches.map(m => m.poule))].filter(Boolean)
+    const pouleNames = [...new Set(pouleMatches.map(m => m.poule))]
+
+    // Vérifier qu'aucune poule n'a un nom null/undefined
+    const invalidPoules = pouleNames.filter(p => !p)
+    if (invalidPoules.length > 0) {
+      console.error('❌ ERREUR : Poules sans nom détectées !', invalidPoules)
+      alert(`⚠️ Erreur critique : ${invalidPoules.length} poule(s) sans nom détectée(s).\nImpossible de générer les phases finales.\nContactez un administrateur.`)
+      return
+    }
+
     const qualified: Team[] = []
 
     for (const pouleName of pouleNames) {
@@ -733,9 +742,26 @@ export default function TournamentDetailPage() {
       return
     }
 
+    // Seeding correct pour éviter que deux équipes de la même poule se rencontrent en demi/quart
+    // Exemple avec 2 poules de 4, top 2 qualifiés :
+    // AVANT : [1er A, 2ème A, 1er B, 2ème B] → Match1: 1erA vs 2èmeA (même poule ❌)
+    // APRÈS : [1er A, 1er B, 2ème A, 2ème B] → Match1: 1erA vs 1erB (poules différentes ✅)
+    const nbQualifiedPerPoule = tournament.settings.qualifiedPerPoule || 2
+    const reorderedQualified: Team[] = []
+
+    // Réorganiser par rang plutôt que par poule
+    for (let rank = 0; rank < nbQualifiedPerPoule; rank++) {
+      for (let pouleIdx = 0; pouleIdx < pouleNames.length; pouleIdx++) {
+        const qualifiedIdx = pouleIdx * nbQualifiedPerPoule + rank
+        if (qualifiedIdx < qualified.length) {
+          reorderedQualified.push(qualified[qualifiedIdx])
+        }
+      }
+    }
+
     try {
       // Déterminer le nombre de matchs selon les qualifiés
-      const nbQualified = qualified.length
+      const nbQualified = reorderedQualified.length
       let matchType = 'finale'
       let nbMatches = 1
 
@@ -771,8 +797,8 @@ export default function TournamentDetailPage() {
 
       // Créer les matchs d'élimination
       for (let i = 0; i < nbMatches; i++) {
-        const equipe_a = qualified[i * 2]
-        const equipe_b = qualified[i * 2 + 1]
+        const equipe_a = reorderedQualified[i * 2]
+        const equipe_b = reorderedQualified[i * 2 + 1]
 
         // Ne créer le match que si on a au moins l'équipe A
         if (!equipe_a) break
