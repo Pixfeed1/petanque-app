@@ -6,7 +6,7 @@ import { useAuth } from '@/app/providers/AuthProvider'
 import AdBanner from '@/components/AdBanner'
 import type { Manche, EquipeJoueur, Joueur, Match as MatchType } from '@/lib/types'
 import { Petanque, Trophy, Users, Play, Flag, Clock, Calendar, Settings, Check, X, Plus, Loader, Shuffle, Chart, Edit, Refresh, Sparkles, Lightning, Arrow, Grid, Medal, Info } from '@/components/Icons'
-import { StatsService, ValidationService } from '@/lib/services'
+import { StatsService, ValidationService, BracketService } from '@/lib/services'
 import { TournamentHeader, TournamentInfoCards, MatchCard, StandingsTable, PlayerRankingsTable } from '@/components/tournament'
 import type { TeamStanding, PlayerRanking } from '@/components/tournament'
 
@@ -635,15 +635,15 @@ export default function TournamentDetailPage() {
     const qualifiedPerPoule = tournament.settings.qualifiedPerPoule || 2
     const pouleNames = [...new Set(pouleMatches.map(m => m.poule))]
 
-    // Vérifier qu'aucune poule n'a un nom null/undefined
-    const invalidPoules = pouleNames.filter(p => !p)
-    if (invalidPoules.length > 0) {
-      console.error('❌ ERREUR : Poules sans nom détectées !', invalidPoules)
-      alert(`⚠️ Erreur critique : ${invalidPoules.length} poule(s) sans nom détectée(s).\nImpossible de générer les phases finales.\nContactez un administrateur.`)
+    // Vérifier avec ValidationService qu'aucune poule n'a un nom null/undefined
+    const pouleValidation = ValidationService.validatePouleNames(pouleNames as string[])
+    if (!pouleValidation.valid) {
+      console.error('❌ ERREUR : Poules sans nom détectées !', pouleNames.filter(p => !p))
+      alert(pouleValidation.error)
       return
     }
 
-    const qualified: Team[] = []
+    const qualified: Array<{ team: Team; poule: string }> = []
 
     for (const pouleName of pouleNames) {
       // Équipes de cette poule
@@ -657,56 +657,74 @@ export default function TournamentDetailPage() {
 
       const pouleTeams = teams.filter(t => pouleTeamIds.has(t.id))
 
-      // Calculer stats pour chaque équipe
-      const rankings = pouleTeams.map(team => {
-        const teamMatches = pouleMatches.filter(m =>
+      // Calculer stats pour chaque équipe avec StatsService
+      const teamStatsForPoule = pouleTeams.map(team => {
+        // Filtrer les matchs de cette poule pour cette équipe
+        const teamPouleMatches = pouleMatches.filter(m =>
           m.poule === pouleName &&
           (m.equipe_a_id === team.id || m.equipe_b_id === team.id) &&
           m.status === 'termine'
         )
 
-        let victories = 0, pointsFor = 0, pointsAgainst = 0
+        // Convertir en format MatchType pour le service
+        const matchesForService: MatchType[] = teamPouleMatches.map(m => ({
+          ...m,
+          tournoi_id: tournament?.id || '',
+          equipe_a: m.equipe_a || { id: m.equipe_a_id || '', name: '', joueur_ids: [] },
+          equipe_b: m.equipe_b || { id: m.equipe_b_id || '', name: '', joueur_ids: [] },
+          score_a: m.score_a ?? null,
+          score_b: m.score_b ?? null,
+          terrain: m.terrain ?? null,
+          status: m.status as any,
+          type: m.type as any,
+          round: null,
+          manches_json: m.manches_json || null,
+          started_at: m.started_at || null,
+          ended_at: m.ended_at || null,
+          validated_at: m.validated_at || null,
+          validated_by: m.validated_by || null,
+          proposed_by: null,
+          proposed_at: null
+        }))
 
-        teamMatches.forEach(m => {
-          if (m.equipe_a_id === team.id) {
-            if (m.score_a > m.score_b) victories++
-            pointsFor += m.score_a
-            pointsAgainst += m.score_b
-          } else {
-            if (m.score_b > m.score_a) victories++
-            pointsFor += m.score_b
-            pointsAgainst += m.score_a
-          }
-        })
+        const stats = StatsService.calculateTeamStats(team.id, team.name, matchesForService)
 
         return {
           team,
-          victories,
-          difference: pointsFor - pointsAgainst,
-          pointsFor
+          victories: stats.victories,
+          difference: stats.difference,
+          pointsFor: stats.pointsFor,
+          stats // Garder les stats complètes pour référence
         }
-      }).sort((a, b) => {
-        // Classement FIPJP
-        if (b.victories !== a.victories) return b.victories - a.victories
-
-        // Confrontation directe
-        const directMatch = pouleMatches.find(m =>
-          m.status === 'termine' && m.poule === pouleName &&
-          ((m.equipe_a_id === a.team.id && m.equipe_b_id === b.team.id) ||
-           (m.equipe_a_id === b.team.id && m.equipe_b_id === a.team.id))
-        )
-        if (directMatch) {
-          const aWon = (directMatch.equipe_a_id === a.team.id && directMatch.score_a > directMatch.score_b) ||
-                       (directMatch.equipe_b_id === a.team.id && directMatch.score_b > directMatch.score_a)
-          if (aWon) return -1
-          else return 1
-        }
-
-        return b.difference - a.difference
       })
 
-      // Prendre les N premiers qualifiés
-      qualified.push(...rankings.slice(0, qualifiedPerPoule).map(r => r.team))
+      // Trier avec StatsService.sortTeamsByFIPJPRules
+      const rankings = StatsService.sortTeamsByFIPJPRules(
+        teamStatsForPoule.map(t => ({
+          id: t.team.id,
+          name: t.team.name,
+          played: t.stats.played,
+          victories: t.stats.victories,
+          defeats: t.stats.defeats,
+          draws: t.stats.draws,
+          pointsFor: t.stats.pointsFor,
+          pointsAgainst: t.stats.pointsAgainst,
+          difference: t.stats.difference,
+          points: t.stats.points
+        })),
+        pouleMatches.filter(m => m.poule === pouleName && m.status === 'termine') as unknown as MatchType[],
+        pouleName
+      ).map(stats => {
+        // Retrouver l'équipe correspondante
+        const teamStat = teamStatsForPoule.find(t => t.team.id === stats.id)
+        return teamStat!
+      })
+
+      // Prendre les N premiers qualifiés avec leur poule
+      qualified.push(...rankings.slice(0, qualifiedPerPoule).map(r => ({
+        team: r.team,
+        poule: pouleName
+      })))
     }
 
     if (qualified.length === 0) {
@@ -714,22 +732,26 @@ export default function TournamentDetailPage() {
       return
     }
 
-    // Seeding correct pour éviter que deux équipes de la même poule se rencontrent en demi/quart
-    // Exemple avec 2 poules de 4, top 2 qualifiés :
-    // AVANT : [1er A, 2ème A, 1er B, 2ème B] → Match1: 1erA vs 2èmeA (même poule ❌)
-    // APRÈS : [1er A, 1er B, 2ème A, 2ème B] → Match1: 1erA vs 1erB (poules différentes ✅)
+    // Seeding correct avec BracketService pour éviter que deux équipes
+    // de la même poule se rencontrent trop tôt en phase finale
     const nbQualifiedPerPoule = tournament.settings.qualifiedPerPoule || 2
-    const reorderedQualified: Team[] = []
 
-    // Réorganiser par rang plutôt que par poule
-    for (let rank = 0; rank < nbQualifiedPerPoule; rank++) {
-      for (let pouleIdx = 0; pouleIdx < pouleNames.length; pouleIdx++) {
-        const qualifiedIdx = pouleIdx * nbQualifiedPerPoule + rank
-        if (qualifiedIdx < qualified.length) {
-          reorderedQualified.push(qualified[qualifiedIdx])
-        }
-      }
-    }
+    // Utiliser BracketService.applySeedingByRank pour le seeding optimisé
+    const reorderedTeamsData = BracketService.applySeedingByRank(
+      qualified.map(q => ({
+        id: q.team.id,
+        name: q.team.name,
+        poule: q.poule
+      })),
+      nbQualifiedPerPoule,
+      pouleNames.length
+    )
+
+    // Reconstituer les objets Team complets
+    const reorderedQualified: Team[] = reorderedTeamsData.map(data => {
+      const qualifiedEntry = qualified.find(q => q.team.id === data.id)
+      return qualifiedEntry!.team
+    })
 
     try {
       // Déterminer le nombre de matchs selon les qualifiés
@@ -1859,49 +1881,36 @@ export default function TournamentDetailPage() {
                 ) : (
                   // Classement par équipe pour les autres modes
                   <div className="space-y-4">
-                    {/* Classement par poule */}
-                    {Object.keys(teamsByPoule).sort().map(poule => (
-                      <div key={poule} className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 text-white">
-                          <h3 className="text-xl font-bold">Poule {poule}</h3>
+                    {/* Classement par poule avec composant StandingsTable */}
+                    {Object.keys(teamsByPoule).sort().map(poule => {
+                      // Convertir les équipes en format TeamStanding
+                      const teamsForPoule: TeamStanding[] = (teamsByPoule[poule] || []).map(team => ({
+                        id: team.id,
+                        name: team.name,
+                        played: team.played || 0,
+                        victories: team.victories || 0,
+                        defeats: team.defeats || 0,
+                        draws: team.draws || 0,
+                        pointsFor: team.pointsFor || 0,
+                        pointsAgainst: team.pointsAgainst || 0,
+                        difference: team.difference || 0,
+                        points: (team.victories || 0) * 3 + (team.draws || 0) // Points FIPJP
+                      }))
+
+                      return (
+                        <div key={poule} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 text-white">
+                            <h3 className="text-xl font-bold">Poule {poule}</h3>
+                          </div>
+                          <div className="p-4">
+                            <StandingsTable
+                              teams={teamsForPoule}
+                              qualifiedCount={tournament.settings.qualifiedPerPoule || 2}
+                            />
+                          </div>
                         </div>
-                        <div className="p-4">
-                          <table className="w-full">
-                            <thead>
-                              <tr className="border-b border-gray-300">
-                                <th className="text-left py-2 px-2 font-bold text-gray-900">Pos</th>
-                                <th className="text-left py-2 px-2 font-bold text-gray-900">Équipe</th>
-                                <th className="text-center py-2 px-2 font-bold text-gray-900">J</th>
-                                <th className="text-center py-2 px-2 font-bold text-green-600">V</th>
-                                <th className="text-center py-2 px-2 font-bold text-gray-900">D</th>
-                                <th className="text-center py-2 px-2 font-bold text-gray-900">+/-</th>
-                                <th className="text-center py-2 px-2 font-bold text-gray-900">PM</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {teamsByPoule[poule]?.map((team: any, index: number) => (
-                                <tr key={team.id} className={`border-b hover:bg-gray-50 ${
-                                  index < 2 ? 'bg-green-50' : ''
-                                }`}>
-                                  <td className="py-3 px-2 text-gray-900 font-semibold text-lg">
-                                    {index === 0 && '🥇'}
-                                    {index === 1 && '🥈'}
-                                    {index === 2 && '🥉'}
-                                    {index > 2 && index + 1}
-                                  </td>
-                                  <td className="py-3 px-2 font-semibold text-gray-900">{team.name}</td>
-                                  <td className="py-3 px-2 text-center font-medium text-gray-900">{team.played || 0}</td>
-                                  <td className="py-3 px-2 text-center font-bold text-green-600 text-lg">{team.victories || 0}</td>
-                                  <td className="py-3 px-2 text-center font-medium text-gray-900">{team.defeats || 0}</td>
-                                  <td className="py-3 px-2 text-center font-medium text-gray-900">{team.difference > 0 ? '+' : ''}{team.difference || 0}</td>
-                                  <td className="py-3 px-2 text-center font-medium text-gray-900">{team.pointsFor || 0}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                     
                     {/* Bouton refresh classement CORRIGÉ */}
                     <div className="text-center">

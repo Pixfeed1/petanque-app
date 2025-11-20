@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import type { Tournoi, Joueur } from '@/lib/types'
+import { ValidationService } from '@/lib/services'
 import { Trophy, Petanque, Calendar, User, Users, Check, Sparkles, Lightning, Star, Plus, X, Info, ArrowRight, Loader, Clock, Shuffle, Grid, Settings, Flag, Warning, Gamepad, Map, Target } from '@/components/Icons'
 
 // Icônes premium améliorées
@@ -427,15 +428,16 @@ export default function CreateTournamentPage() {
   const createTeamsWithMixity = async (tournoi: Tournoi, allPlayerIds: string[], updatedPlayersList: Joueur[]) => {
     const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : (formData.format === 'doublette' ? 2 : 3)
     const nbEquipes = Math.floor(allPlayerIds.length / playersPerTeam)
-    const remainingPlayers = allPlayerIds.length % playersPerTeam
 
-    // SÉCURITÉ : Vérifier qu'aucun joueur ne sera exclu
-    if (remainingPlayers > 0 && (formData.mode === 'melee_fixe' || formData.mode === 'melee_tournante')) {
-      throw new Error(
-        `❌ Erreur critique : ${remainingPlayers} joueur(s) seraient exclus du tournoi.\n\n` +
-        `Vous avez ${allPlayerIds.length} joueurs pour une ${formData.format} (${playersPerTeam} joueurs/équipe).\n` +
-        `Ajoutez ${playersPerTeam - remainingPlayers} joueur(s) ou retirez-en ${remainingPlayers}.`
-      )
+    // Vérifier avec ValidationService qu'aucun joueur ne sera exclu
+    const validation = ValidationService.validatePlayerCount(
+      allPlayerIds.length,
+      formData.format,
+      formData.mode
+    )
+
+    if (!validation.valid) {
+      throw new Error(validation.error)
     }
 
     if (formData.mode === 'choisi') {
