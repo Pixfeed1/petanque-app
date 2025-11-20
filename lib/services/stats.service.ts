@@ -51,25 +51,36 @@ export function calculateTeamStats(
   )
 
   // Calcul des victoires
-  const victories = teamMatches.filter(m =>
-    (m.equipe_a?.id === teamId && m.score_a > m.score_b) ||
-    (m.equipe_b?.id === teamId && m.score_b > m.score_a)
-  ).length
+  const victories = teamMatches.filter(m => {
+    if (m.score_a === null || m.score_b === null) return false
+    return (
+      (m.equipe_a?.id === teamId && m.score_a > m.score_b) ||
+      (m.equipe_b?.id === teamId && m.score_b > m.score_a)
+    )
+  }).length
 
   // Calcul des défaites
-  const defeats = teamMatches.filter(m =>
-    (m.equipe_a?.id === teamId && m.score_a < m.score_b) ||
-    (m.equipe_b?.id === teamId && m.score_b < m.score_a)
-  ).length
+  const defeats = teamMatches.filter(m => {
+    if (m.score_a === null || m.score_b === null) return false
+    return (
+      (m.equipe_a?.id === teamId && m.score_a < m.score_b) ||
+      (m.equipe_b?.id === teamId && m.score_b < m.score_a)
+    )
+  }).length
 
   // Calcul des nuls
-  const draws = teamMatches.filter(m => m.score_a === m.score_b).length
+  const draws = teamMatches.filter(m => {
+    if (m.score_a === null || m.score_b === null) return false
+    return m.score_a === m.score_b
+  }).length
 
   // Calcul points marqués et encaissés
   let pointsFor = 0
   let pointsAgainst = 0
 
   teamMatches.forEach(m => {
+    if (m.score_a === null || m.score_b === null) return
+
     if (m.equipe_a?.id === teamId) {
       pointsFor += m.score_a
       pointsAgainst += m.score_b
@@ -128,6 +139,8 @@ export function calculatePlayerStats(
   let pointsAgainst = 0
 
   playerMatches.forEach(match => {
+    if (match.score_a === null || match.score_b === null) return
+
     const isTeamA = playerTeamIds.includes(match.equipe_a?.id || '')
 
     // Comptabiliser résultat
