@@ -78,6 +78,7 @@ interface Team {
 interface PlayerWithStats extends Joueur {
   victories: number
   defeats: number
+  draws: number
   difference: number
   points: number
 }
@@ -258,6 +259,10 @@ export default function TournamentDetailPage() {
         (m.equipe_b?.id === team.id && m.score_b < m.score_a)
       ).length
 
+      const draws = teamMatches.filter(m =>
+        m.score_a === m.score_b
+      ).length
+
       const pointsFor = teamMatches.reduce((acc, m) => {
         if (m.equipe_a?.id === team.id) return acc + (m.score_a || 0)
         if (m.equipe_b?.id === team.id) return acc + (m.score_b || 0)
@@ -275,6 +280,7 @@ export default function TournamentDetailPage() {
         played: teamMatches.length,
         victories,
         defeats,
+        draws,
         pointsFor,
         pointsAgainst,
         difference: pointsFor - pointsAgainst
@@ -495,6 +501,7 @@ export default function TournamentDetailPage() {
       const playerStats = joueurs.map((joueur: Joueur): PlayerWithStats => {
         let victories = 0
         let defeats = 0
+        let draws = 0
         let pointsFor = 0
         let pointsAgainst = 0
 
@@ -506,7 +513,7 @@ export default function TournamentDetailPage() {
         // Pour chaque équipe, compter les matchs terminés
         playerTeams.forEach((team: Team) => {
           const teamMatches = matchesData.filter((m: Match) =>
-            m.status === 'termine' && (m.equipe_a_id === team.id || m.equipe_b_id === team.id)
+            m.status === 'termine' && (m.equipe_a_id === team.id || m.equipe_b_id === team.id) && m.type !== 'bye'
           )
 
           teamMatches.forEach((match: Match) => {
@@ -514,12 +521,14 @@ export default function TournamentDetailPage() {
               pointsFor += match.score_a || 0
               pointsAgainst += match.score_b || 0
               if (match.score_a > match.score_b) victories++
-              else defeats++
+              else if (match.score_a < match.score_b) defeats++
+              else draws++  // Égalité
             } else {
               pointsFor += match.score_b || 0
               pointsAgainst += match.score_a || 0
               if (match.score_b > match.score_a) victories++
-              else defeats++
+              else if (match.score_b < match.score_a) defeats++
+              else draws++  // Égalité
             }
           })
         })
@@ -528,6 +537,7 @@ export default function TournamentDetailPage() {
           ...joueur,
           victories,
           defeats,
+          draws,
           difference: pointsFor - pointsAgainst,
           points: pointsFor
         }
