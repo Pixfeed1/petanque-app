@@ -79,9 +79,12 @@ interface Team {
 }
 
 interface PlayerWithStats extends Joueur {
+  played: number
   victories: number
   defeats: number
   draws: number
+  pointsFor: number
+  pointsAgainst: number
   difference: number
   points: number
 }
@@ -138,7 +141,7 @@ export default function TournamentDetailPage() {
 
   // État pour la mêlée tournante
   const [currentRotation, setCurrentRotation] = useState(1)
-  const [individualRankings, setIndividualRankings] = useState<any[]>([])
+  const [individualRankings, setIndividualRankings] = useState<PlayerWithStats[]>([])
 
   // Récupérer le plan de l'utilisateur
   useEffect(() => {
@@ -305,6 +308,24 @@ export default function TournamentDetailPage() {
     return poules
   }, [teamsWithStats, matches])
 
+  // Calculer si la rotation est disponible (pour désactiver le bouton si nécessaire)
+  const isRotationAvailable = useMemo(() => {
+    if (tournament?.mode !== 'melee_tournante') return false
+
+    const rotationType = tournament.settings.meleeRotation || 'par_tour'
+    const currentRotationMatches = matches.filter(m => m.tour === currentRotation)
+
+    if (currentRotationMatches.length === 0) return false
+
+    if (rotationType === 'par_match') {
+      // Mode par_match : besoin d'au moins 1 match terminé
+      return currentRotationMatches.some(m => m.status === 'termine')
+    } else {
+      // Mode par_tour : besoin que TOUS les matchs soient terminés
+      return currentRotationMatches.every(m => m.status === 'termine')
+    }
+  }, [tournament, matches, currentRotation])
+
   useEffect(() => {
     setMounted(true)
     if (user && params.id) {
@@ -470,56 +491,35 @@ export default function TournamentDetailPage() {
       const matchesData = await matchesResponse.json()
 
       // Calculer les stats de chaque joueur
+      // Utiliser StatsService pour calculer les stats de chaque joueur
       const playerStats = joueurs.map((joueur: Joueur): PlayerWithStats => {
-        let victories = 0
-        let defeats = 0
-        let draws = 0
-        let pointsFor = 0
-        let pointsAgainst = 0
-
-        // Trouver toutes les équipes où ce joueur a joué
-        const playerTeams = equipesData.filter((eq: Team) =>
-          eq.joueur_ids && eq.joueur_ids.includes(joueur.id)
+        const stats = StatsService.calculatePlayerStats(
+          joueur,
+          matchesData as unknown as MatchType[],
+          equipesData.map((eq: Team) => ({
+            id: eq.id,
+            joueur_ids: eq.joueur_ids || []
+          }))
         )
-
-        // Pour chaque équipe, compter les matchs terminés
-        playerTeams.forEach((team: Team) => {
-          const teamMatches = matchesData.filter((m: Match) =>
-            m.status === 'termine' && (m.equipe_a_id === team.id || m.equipe_b_id === team.id) && m.type !== 'bye'
-          )
-
-          teamMatches.forEach((match: Match) => {
-            if (match.equipe_a_id === team.id) {
-              pointsFor += match.score_a || 0
-              pointsAgainst += match.score_b || 0
-              if (match.score_a > match.score_b) victories++
-              else if (match.score_a < match.score_b) defeats++
-              else draws++  // Égalité
-            } else {
-              pointsFor += match.score_b || 0
-              pointsAgainst += match.score_a || 0
-              if (match.score_b > match.score_a) victories++
-              else if (match.score_b < match.score_a) defeats++
-              else draws++  // Égalité
-            }
-          })
-        })
 
         return {
           ...joueur,
-          victories,
-          defeats,
-          draws,
-          difference: pointsFor - pointsAgainst,
-          points: pointsFor
+          played: stats.played,
+          victories: stats.victories,
+          defeats: stats.defeats,
+          draws: stats.draws,
+          pointsFor: stats.pointsFor,
+          pointsAgainst: stats.pointsAgainst,
+          difference: stats.difference,
+          points: stats.points  // Calcul FIPJP correct : victoires × 3 + nuls
         }
       })
 
-      // Trier par nombre de victoires, puis différence, puis points totaux (règle FIPJP)
+      // Trier par règle FIPJP (le service retourne déjà les bonnes valeurs)
       playerStats.sort((a: PlayerWithStats, b: PlayerWithStats) => {
         if (b.victories !== a.victories) return b.victories - a.victories
         if (b.difference !== a.difference) return b.difference - a.difference
-        return b.points - a.points
+        return b.pointsFor - a.pointsFor
       })
 
       setIndividualRankings(playerStats)
@@ -943,21 +943,109 @@ export default function TournamentDetailPage() {
 
   const reformTeamsForRotation = async () => {
     if (tournament?.mode !== 'melee_tournante') return
+    if (!tournament?.settings.players) return
 
     const rotationType = tournament.settings.meleeRotation || 'par_tour'
-    
+
+    // Vérifier si les équipes pour le prochain tour existent déjà (éviter duplicatas)
+    const nextRotation = currentRotation + 1
+    const nextRotationTeams = teams.filter(t => t.name.startsWith(`R${nextRotation}-`))
+    if (nextRotationTeams.length > 0) {
+      alert(`⚠️ Les équipes pour la rotation ${nextRotation} existent déjà.\n\nImpossible de créer une nouvelle rotation.`)
+      return
+    }
+
     if (rotationType === 'par_match') {
-      // Reformer après chaque match
-      await createNewTeamsWithAlgorithm()
-    } else {
-      // Reformer après chaque tour
-      const allMatchesOfCurrentTour = matches.filter(m => m.tour === currentRotation)
-      const allFinished = allMatchesOfCurrentTour.every(m => m.status === 'termine')
-      
-      if (allFinished) {
-        await createNewTeamsWithAlgorithm()
-        setCurrentRotation(currentRotation + 1)
+      // Reformer après chaque match : vérifier qu'au moins 1 match est terminé depuis la dernière rotation
+      const currentRotationMatches = matches.filter(m => m.tour === currentRotation)
+
+      if (currentRotationMatches.length === 0) {
+        alert('⚠️ Aucun match trouvé pour le tour actuel.\n\nCréez d\'abord des matchs avant de faire une rotation.')
+        return
       }
+
+      const hasFinishedMatch = currentRotationMatches.some(m => m.status === 'termine')
+
+      if (!hasFinishedMatch) {
+        alert('⚠️ Mode rotation par match\n\nAu moins 1 match doit être terminé avant de pouvoir créer une nouvelle rotation.')
+        return
+      }
+    } else {
+      // Reformer après chaque tour : vérifier que TOUS les matchs du tour sont terminés
+      const allMatchesOfCurrentTour = matches.filter(m => m.tour === currentRotation)
+
+      if (allMatchesOfCurrentTour.length === 0) {
+        alert('⚠️ Aucun match trouvé pour le tour actuel.\n\nCréez d\'abord des matchs avant de faire une rotation.')
+        return
+      }
+
+      const allFinished = allMatchesOfCurrentTour.every(m => m.status === 'termine')
+
+      if (!allFinished) {
+        const remainingMatches = allMatchesOfCurrentTour.filter(m => m.status !== 'termine').length
+        alert(`⚠️ Mode rotation par tour\n\nTous les matchs du tour ${currentRotation} doivent être terminés.\n\nMatchs restants : ${remainingMatches}`)
+        return
+      }
+    }
+
+    // Validation mixité si obligatoire
+    if (tournament.settings.mixiteObligatoire) {
+      try {
+        const joueursResponse = await fetch(`/api/joueurs?org_id=${organization?.id}`, {
+          credentials: 'include'
+        })
+        if (!joueursResponse.ok) return
+
+        const allPlayers = await joueursResponse.json()
+        const players = allPlayers.filter((p: Joueur) =>
+          tournament.settings.players.includes(p.id)
+        )
+
+        const hommes = players.filter((p: Joueur) => p.gender === 'H')
+        const femmes = players.filter((p: Joueur) => p.gender === 'F')
+        const teamSize = tournament.format === 'doublette' ? 2 : 3
+
+        // Vérifier si la mixité est faisable
+        if (tournament.format === 'doublette') {
+          // Pour doublette : besoin de minimum 1H et 1F
+          if (hommes.length < 1 || femmes.length < 1) {
+            alert('❌ Mixité impossible\n\nLa doublette avec mixité obligatoire nécessite au minimum 1 homme et 1 femme.')
+            return
+          }
+        } else {
+          // Pour triplette : besoin de minimum 1H et 1F
+          if (hommes.length < 1 || femmes.length < 1) {
+            alert('❌ Mixité impossible\n\nLa triplette avec mixité obligatoire nécessite au minimum 1 homme et 1 femme.')
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Erreur validation mixité:', error)
+        alert('❌ Erreur lors de la validation de la mixité')
+        return
+      }
+    }
+
+    try {
+      // Incrémenter AVANT création pour éviter désynchronisation
+      const newRotation = currentRotation + 1
+      setCurrentRotation(newRotation)
+
+      // Créer les nouvelles équipes
+      await createNewTeamsWithAlgorithm()
+
+      // Attendre un peu pour que les équipes soient créées en BD
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Créer les matchs pour cette rotation
+      await createMatchesForRotation(newRotation)
+
+      alert(`✅ Rotation ${newRotation} créée avec succès !\n\nLes nouvelles équipes et leurs matchs sont prêts.`)
+    } catch (error) {
+      console.error('Erreur rotation:', error)
+      // Rollback en cas d'erreur
+      setCurrentRotation(currentRotation)
+      alert('❌ Erreur lors de la création de la rotation')
     }
   }
 
@@ -1074,6 +1162,55 @@ export default function TournamentDetailPage() {
       await loadTournamentData()
     } catch (error) {
       console.error('Erreur création équipes:', error)
+    }
+  }
+
+  /**
+   * Crée les matchs round-robin pour les équipes du tour de rotation actuel
+   * Appelée après createNewTeamsWithAlgorithm pour générer les matchs de rotation
+   */
+  const createMatchesForRotation = async (rotationNumber: number) => {
+    if (!tournament) return
+
+    try {
+      // Récupérer toutes les équipes du tour actuel (préfixe R{rotationNumber}-)
+      const rotationTeams = teams.filter(t =>
+        t.name.startsWith(`R${rotationNumber}-`)
+      )
+
+      if (rotationTeams.length === 0) {
+        console.warn(`Aucune équipe trouvée pour rotation ${rotationNumber}`)
+        return
+      }
+
+      // Générer matchs round-robin (tous contre tous)
+      for (let i = 0; i < rotationTeams.length; i++) {
+        for (let j = i + 1; j < rotationTeams.length; j++) {
+          await fetch('/api/matches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              tournoi_id: tournament.id,
+              equipe_a_id: rotationTeams[i].id,
+              equipe_b_id: rotationTeams[j].id,
+              tour: rotationNumber,
+              terrain: null,
+              type: 'poule',  // Type 'poule' pour mêlée tournante
+              poule: null,    // Pas de poule en mêlée tournante
+              status: 'a_jouer'
+            })
+          })
+        }
+      }
+
+      console.log(`✅ ${(rotationTeams.length * (rotationTeams.length - 1)) / 2} matchs créés pour rotation ${rotationNumber}`)
+
+      // Recharger les données pour afficher les nouveaux matchs
+      await loadTournamentData()
+    } catch (error) {
+      console.error('Erreur création matchs rotation:', error)
+      alert('❌ Erreur lors de la création des matchs de rotation')
     }
   }
 
@@ -1298,7 +1435,13 @@ export default function TournamentDetailPage() {
               {tournament.mode === 'melee_tournante' && tournament.status === 'en_cours' && isOrganizer && (
                 <button
                   onClick={reformTeamsForRotation}
-                  className="px-2 sm:px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base"
+                  disabled={!isRotationAvailable}
+                  className={`px-2 sm:px-4 py-2 rounded-xl font-bold shadow-lg transition-all flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base ${
+                    isRotationAvailable
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:shadow-xl cursor-pointer'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                  }`}
+                  title={!isRotationAvailable ? 'Terminez les matchs du tour actuel pour effectuer une rotation' : 'Créer une nouvelle rotation avec de nouvelles équipes'}
                 >
                   {Icons.shuffle}
                   <span className="hidden sm:inline">Rotation équipes</span>
@@ -1307,6 +1450,7 @@ export default function TournamentDetailPage() {
               )}
 
               {tournament.status === 'en_cours' && isOrganizer &&
+               tournament.mode !== 'melee_tournante' &&
                matches.some(m => m.type === 'poule' && m.status === 'termine') &&
                !matches.some(m => ['huitieme', 'quart', 'demi', 'finale'].includes(m.type || '')) && (
                 <button
