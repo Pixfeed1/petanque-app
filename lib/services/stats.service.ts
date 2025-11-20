@@ -186,10 +186,19 @@ export function calculatePlayerStats(
  * Trie les équipes selon les règles FIPJP officielles
  * 1. Nombre de points (victoires × 3 + nuls × 1)
  * 2. Différence de points (moyenne générale)
- * 3. Points marqués
- * 4. Ordre alphabétique (en cas d'égalité parfaite)
+ * 3. Confrontation directe (si matchs et poule fournis)
+ * 4. Points marqués
+ * 5. Ordre alphabétique (en cas d'égalité parfaite)
+ *
+ * @param teams - Les équipes à trier
+ * @param matches - Optionnel : les matchs pour gérer la confrontation directe
+ * @param poule - Optionnel : le nom de la poule pour filtrer les confrontations directes
  */
-export function sortTeamsByFIPJPRules(teams: TeamStats[]): TeamStats[] {
+export function sortTeamsByFIPJPRules(
+  teams: TeamStats[],
+  matches?: Match[],
+  poule?: string
+): TeamStats[] {
   return [...teams].sort((a, b) => {
     // 1. Nombre de points (victoires × 3 + nuls × 1)
     if (b.points !== a.points) return b.points - a.points
@@ -197,10 +206,26 @@ export function sortTeamsByFIPJPRules(teams: TeamStats[]): TeamStats[] {
     // 2. Différence de points (moyenne générale)
     if (b.difference !== a.difference) return b.difference - a.difference
 
-    // 3. Points marqués
+    // 3. Confrontation directe (règle FIPJP)
+    if (matches && poule) {
+      const directMatch = matches.find((m: Match) =>
+        m.status === 'termine' && m.poule === poule &&
+        ((m.equipe_a_id === a.id && m.equipe_b_id === b.id) ||
+         (m.equipe_a_id === b.id && m.equipe_b_id === a.id))
+      )
+
+      if (directMatch) {
+        const aWon = (directMatch.equipe_a_id === a.id && (directMatch.score_a ?? 0) > (directMatch.score_b ?? 0)) ||
+                     (directMatch.equipe_b_id === a.id && (directMatch.score_b ?? 0) > (directMatch.score_a ?? 0))
+        if (aWon) return -1 // a gagne
+        else return 1 // b gagne
+      }
+    }
+
+    // 4. Points marqués
     if (b.pointsFor !== a.pointsFor) return b.pointsFor - a.pointsFor
 
-    // 4. Ordre alphabétique
+    // 5. Ordre alphabétique
     return a.name.localeCompare(b.name)
   })
 }

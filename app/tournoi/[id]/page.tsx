@@ -265,7 +265,7 @@ export default function TournamentDetailPage() {
 
   // Classement par poule optimisé
   const teamsByPoule = useMemo(() => {
-    const poules: { [key: string]: Team[] } = {}
+    const poules: { [key: string]: any[] } = {}
 
     teamsWithStats.forEach(team => {
       // Trouver la poule de cette équipe
@@ -278,31 +278,31 @@ export default function TournamentDetailPage() {
       poules[poule].push(team)
     })
 
-    // Trier chaque poule
+    // Trier chaque poule avec StatsService (inclut confrontation directe)
     Object.keys(poules).forEach(poule => {
-      poules[poule].sort((a, b) => {
-        // 1. Nombre de victoires (règle FIPJP)
-        if ((b.victories ?? 0) !== (a.victories ?? 0)) return (b.victories ?? 0) - (a.victories ?? 0)
+      // Convertir en TeamStats avec points FIPJP (victoires × 3 + nuls)
+      const teamsStats = poules[poule].map(team => ({
+        id: team.id,
+        name: team.name,
+        played: team.played ?? 0,
+        victories: team.victories ?? 0,
+        defeats: team.defeats ?? 0,
+        draws: team.draws ?? 0,
+        pointsFor: team.pointsFor ?? 0,
+        pointsAgainst: team.pointsAgainst ?? 0,
+        difference: team.difference ?? 0,
+        points: (team.victories ?? 0) * 3 + (team.draws ?? 0) // Calcul FIPJP
+      }))
 
-        // 2. Différence de points - Moyenne générale (règle FIPJP)
-        if ((b.difference ?? 0) !== (a.difference ?? 0)) return (b.difference ?? 0) - (a.difference ?? 0)
+      // Utiliser le service avec confrontation directe
+      const sorted = StatsService.sortTeamsByFIPJPRules(
+        teamsStats,
+        matches as unknown as MatchType[],
+        poule
+      )
 
-        // 3. Confrontation directe (règle FIPJP)
-        const directMatch = matches.find((m: Match) =>
-          m.status === 'termine' && m.poule === poule &&
-          ((m.equipe_a?.id === a.id && m.equipe_b?.id === b.id) ||
-           (m.equipe_a?.id === b.id && m.equipe_b?.id === a.id))
-        )
-        if (directMatch) {
-          const aWon = (directMatch.equipe_a?.id === a.id && directMatch.score_a > directMatch.score_b) ||
-                       (directMatch.equipe_b?.id === a.id && directMatch.score_b > directMatch.score_a)
-          if (aWon) return -1 // a gagne
-          else return 1 // b gagne
-        }
-
-        // 4. Nombre de points marqués (règle FIPJP complète)
-        return (b.pointsFor ?? 0) - (a.pointsFor ?? 0)
-      })
+      // Remplacer la poule triée
+      poules[poule] = sorted as any[]
     })
 
     return poules
@@ -567,6 +567,40 @@ export default function TournamentDetailPage() {
     return distribution
   }
 
+  /**
+   * Crée des matchs round-robin (tous contre tous) pour un groupe d'équipes
+   * @param teams - Les équipes qui doivent s'affronter
+   * @param tour - Le numéro du tour
+   * @param poule - Le nom de la poule (ou null pour mêlée tournante)
+   */
+  const createRoundRobinMatches = async (
+    teams: Team[],
+    tour: number,
+    poule: string | null
+  ): Promise<void> => {
+    if (!tournament) return
+
+    for (let i = 0; i < teams.length; i++) {
+      for (let j = i + 1; j < teams.length; j++) {
+        await fetch('/api/matches', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            tournoi_id: tournament.id,
+            equipe_a_id: teams[i].id,
+            equipe_b_id: teams[j].id,
+            tour,
+            terrain: null,
+            type: 'poule',
+            poule,
+            status: 'a_jouer'
+          })
+        })
+      }
+    }
+  }
+
   const generatePoules = async () => {
     if (!tournament || teams.length === 0) return
 
@@ -587,28 +621,10 @@ export default function TournamentDetailPage() {
       poules[pouleName] = teams.slice(i * pouleSize, (i + 1) * pouleSize)
     }
 
-    // Générer les matchs de poule (round-robin)
+    // Générer les matchs de poule (round-robin) en utilisant la fonction réutilisable
     try {
       for (const [pouleName, pouleTeams] of Object.entries(poules)) {
-        for (let i = 0; i < pouleTeams.length; i++) {
-          for (let j = i + 1; j < pouleTeams.length; j++) {
-            await fetch('/api/matches', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                tournoi_id: tournament.id,
-                equipe_a_id: pouleTeams[i].id,
-                equipe_b_id: pouleTeams[j].id,
-                tour: 1,
-                terrain: null,
-                type: 'poule',
-                poule: pouleName,
-                status: 'a_jouer'
-              })
-            })
-          }
-        }
+        await createRoundRobinMatches(pouleTeams, 1, pouleName)
       }
 
       // Recharger les données
@@ -1183,26 +1199,8 @@ export default function TournamentDetailPage() {
         return
       }
 
-      // Générer matchs round-robin (tous contre tous)
-      for (let i = 0; i < rotationTeams.length; i++) {
-        for (let j = i + 1; j < rotationTeams.length; j++) {
-          await fetch('/api/matches', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              tournoi_id: tournament.id,
-              equipe_a_id: rotationTeams[i].id,
-              equipe_b_id: rotationTeams[j].id,
-              tour: rotationNumber,
-              terrain: null,
-              type: 'poule',  // Type 'poule' pour mêlée tournante
-              poule: null,    // Pas de poule en mêlée tournante
-              status: 'a_jouer'
-            })
-          })
-        }
-      }
+      // Générer matchs round-robin (tous contre tous) en utilisant la fonction réutilisable
+      await createRoundRobinMatches(rotationTeams, rotationNumber, null)
 
       console.log(`✅ ${(rotationTeams.length * (rotationTeams.length - 1)) / 2} matchs créés pour rotation ${rotationNumber}`)
 
