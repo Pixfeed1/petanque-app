@@ -432,8 +432,8 @@ export default function CreateTournamentPage() {
     // Vérifier avec ValidationService qu'aucun joueur ne sera exclu
     const validation = ValidationService.validatePlayerCount(
       allPlayerIds.length,
-      formData.format,
-      formData.mode
+      formData.format as 'tete_a_tete' | 'doublette' | 'triplette',
+      formData.mode as 'choisi' | 'melee_fixe' | 'melee_tournante'
     )
 
     if (!validation.valid) {

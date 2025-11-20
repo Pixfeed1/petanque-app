@@ -646,6 +646,8 @@ export default function TournamentDetailPage() {
     const qualified: Array<{ team: Team; poule: string }> = []
 
     for (const pouleName of pouleNames) {
+      if (!pouleName) continue // Skip null/undefined poule names
+
       // Équipes de cette poule
       const pouleTeamIds = new Set<string>()
       pouleMatches
@@ -667,27 +669,34 @@ export default function TournamentDetailPage() {
         )
 
         // Convertir en format MatchType pour le service
-        const matchesForService: MatchType[] = teamPouleMatches.map(m => ({
-          ...m,
+        const matchesForService = teamPouleMatches.map(m => ({
+          id: m.id,
           tournoi_id: tournament?.id || '',
-          equipe_a: m.equipe_a || { id: m.equipe_a_id || '', name: '', joueur_ids: [] },
-          equipe_b: m.equipe_b || { id: m.equipe_b_id || '', name: '', joueur_ids: [] },
+          equipe_a_id: m.equipe_a_id || null,
+          equipe_b_id: m.equipe_b_id || null,
+          equipe_a: (m.equipe_a || { id: m.equipe_a_id || '', tournoi_id: tournament?.id || '', name: '', joueur_ids: [] }) as any,
+          equipe_b: (m.equipe_b || { id: m.equipe_b_id || '', tournoi_id: tournament?.id || '', name: '', joueur_ids: [] }) as any,
           score_a: m.score_a ?? null,
           score_b: m.score_b ?? null,
+          tour: m.tour || 0,
           terrain: m.terrain ?? null,
           status: m.status as any,
           type: m.type as any,
+          poule: m.poule || null,
           round: null,
           manches_json: m.manches_json || null,
           started_at: m.started_at || null,
           ended_at: m.ended_at || null,
           validated_at: m.validated_at || null,
-          validated_by: m.validated_by || null,
+          played_at: (m as any).played_at || null,
           proposed_by: null,
-          proposed_at: null
+          proposed_at: null,
+          winner_id: (m as any).winner_id || null,
+          created_at: (m as any).created_at || new Date().toISOString(),
+          updated_at: (m as any).updated_at || new Date().toISOString()
         }))
 
-        const stats = StatsService.calculateTeamStats(team.id, team.name, matchesForService)
+        const stats = StatsService.calculateTeamStats(team.id, team.name, matchesForService as MatchType[])
 
         return {
           team,
@@ -711,9 +720,7 @@ export default function TournamentDetailPage() {
           pointsAgainst: t.stats.pointsAgainst,
           difference: t.stats.difference,
           points: t.stats.points
-        })),
-        pouleMatches.filter(m => m.poule === pouleName && m.status === 'termine') as unknown as MatchType[],
-        pouleName
+        }))
       ).map(stats => {
         // Retrouver l'équipe correspondante
         const teamStat = teamStatsForPoule.find(t => t.team.id === stats.id)
@@ -1634,7 +1641,8 @@ export default function TournamentDetailPage() {
                           draws: player.draws || 0,
                           pointsFor: player.pointsFor || 0,
                           pointsAgainst: player.pointsAgainst || 0,
-                          difference: player.difference || 0
+                          difference: player.difference || 0,
+                          points: player.points || 0
                         }))}
                       />
                     </div>
@@ -1645,18 +1653,21 @@ export default function TournamentDetailPage() {
                     {/* Classement par poule avec composant StandingsTable */}
                     {Object.keys(teamsByPoule).sort().map(poule => {
                       // Convertir les équipes en format TeamStanding
-                      const teamsForPoule: TeamStanding[] = (teamsByPoule[poule] || []).map(team => ({
-                        id: team.id,
-                        name: team.name,
-                        played: team.played || 0,
-                        victories: team.victories || 0,
-                        defeats: team.defeats || 0,
-                        draws: team.draws || 0,
-                        pointsFor: team.pointsFor || 0,
-                        pointsAgainst: team.pointsAgainst || 0,
-                        difference: team.difference || 0,
-                        points: (team.victories || 0) * 3 + (team.draws || 0) // Points FIPJP
-                      }))
+                      const teamsForPoule: TeamStanding[] = (teamsByPoule[poule] || []).map(team => {
+                        const t = team as any
+                        return {
+                          id: t.id,
+                          name: t.name,
+                          played: t.played || 0,
+                          victories: t.victories || 0,
+                          defeats: t.defeats || 0,
+                          draws: t.draws || 0,
+                          pointsFor: t.pointsFor || 0,
+                          pointsAgainst: t.pointsAgainst || 0,
+                          difference: t.difference || 0,
+                          points: (t.victories || 0) * 3 + (t.draws || 0) // Points FIPJP
+                        }
+                      })
 
                       return (
                         <div key={poule} className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -1665,6 +1676,7 @@ export default function TournamentDetailPage() {
                           </div>
                           <div className="p-4">
                             <StandingsTable
+                              poule={poule}
                               teams={teamsForPoule}
                               qualifiedCount={tournament.settings.qualifiedPerPoule || 2}
                             />
