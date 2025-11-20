@@ -527,12 +527,28 @@ export default function CreateTournamentPage() {
       return 0
     }
     else if (formData.mode === 'melee_tournante') {
-      // Pour mêlée tournante, créer les équipes du premier tour
+      // Pour mêlée tournante, créer les équipes du premier tour (rotation 1)
       const shuffledPlayers = [...allPlayerIds].sort(() => Math.random() - 0.5)
-      
+
       for (let i = 0; i < nbEquipes; i++) {
         const teamPlayers = shuffledPlayers.slice(i * playersPerTeam, (i + 1) * playersPerTeam)
-        await createTeamWithPlayers(tournoi.id, i + 1, teamPlayers)
+        // Utiliser le format R1-Équipe X pour cohérence avec les rotations suivantes
+        await fetch('/api/equipes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            tournoi_id: tournoi.id,
+            name: `R1-Équipe ${i + 1}`,
+            joueur_ids: teamPlayers,
+            stats: {
+              victoires: 0,
+              defaites: 0,
+              points_pour: 0,
+              points_contre: 0
+            }
+          })
+        })
       }
       
       // Sauvegarder la configuration pour les rotations futures
@@ -572,9 +588,12 @@ export default function CreateTournamentPage() {
         throw new Error('Aucune équipe trouvée')
       }
 
+      // Mélanger les équipes pour fairplay (éviter clustering des équipes fortes)
+      const shuffledEquipes = [...equipes].sort(() => Math.random() - 0.5)
+
       // Diviser en poules
       const equipesParPoule = formData.pouleSize
-      const nbPoules = Math.ceil(equipes.length / equipesParPoule)
+      const nbPoules = Math.ceil(shuffledEquipes.length / equipesParPoule)
 
       let globalMatchNum = 0
       let matchesCreated = 0
@@ -591,8 +610,8 @@ export default function CreateTournamentPage() {
 
       for (let pouleNum = 0; pouleNum < nbPoules; pouleNum++) {
         const pouleStart = pouleNum * equipesParPoule
-        const pouleEnd = Math.min(pouleStart + equipesParPoule, equipes.length)
-        const equipesPoule = equipes.slice(pouleStart, pouleEnd)
+        const pouleEnd = Math.min(pouleStart + equipesParPoule, shuffledEquipes.length)
+        const equipesPoule = shuffledEquipes.slice(pouleStart, pouleEnd)
 
         // Créer tous les matchs de cette poule (round-robin)
         for (let i = 0; i < equipesPoule.length; i++) {

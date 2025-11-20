@@ -990,8 +990,8 @@ export default function TournamentDetailPage() {
       // Les nouvelles équipes seront créées en parallèle
       // Les anciennes équipes restent dans la BD avec leurs matchs terminés
 
-      // Utiliser un préfixe avec le nombre actuel de rotations pour noms uniques
-      const rotationNumber = Math.floor(teams.length / nbEquipes) + 1
+      // Utiliser le numéro de rotation actuel pour noms uniques (pas de calcul basé sur teams.length)
+      const rotationNumber = currentRotation
       let teamNumber = 1
       const newTeams = []
 
