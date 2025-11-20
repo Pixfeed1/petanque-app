@@ -151,11 +151,12 @@ export default function TournamentDetailPage() {
   }, [organization])
 
   // Charger les joueurs disponibles quand on ouvre le modal de composition d'équipes
+  // Recharger aussi quand les équipes changent (pour filtrer les joueurs déjà assignés)
   useEffect(() => {
     if (showTeamFormation && organization?.id) {
       loadAvailablePlayers()
     }
-  }, [showTeamFormation, organization])
+  }, [showTeamFormation, organization, teams])
 
   const loadAvailablePlayers = async () => {
     if (!organization?.id) return
@@ -166,8 +167,20 @@ export default function TournamentDetailPage() {
       })
 
       if (response.ok) {
-        const players = await response.json()
-        setAvailablePlayers(players)
+        const allPlayers = await response.json()
+
+        // Filtrer les joueurs déjà assignés à une équipe de ce tournoi
+        const assignedPlayerIds = new Set<string>()
+        teams.forEach(team => {
+          team.joueur_ids?.forEach(playerId => assignedPlayerIds.add(playerId))
+        })
+
+        // Ne garder que les joueurs non assignés
+        const availablePlayers = allPlayers.filter((player: Joueur) =>
+          !assignedPlayerIds.has(player.id)
+        )
+
+        setAvailablePlayers(availablePlayers)
       }
     } catch (error) {
       console.error('Erreur chargement joueurs:', error)
@@ -182,14 +195,26 @@ export default function TournamentDetailPage() {
     )
   }
 
+  // Helper: Calculer le nombre de joueurs requis par équipe selon le format
+  const getPlayersPerTeam = (format: string): number => {
+    return format === 'tete_a_tete' ? 1 : format === 'doublette' ? 2 : 3
+  }
+
   const createTeamWithPlayers = async () => {
     if (!tournament || !newTeamNameForCreation.trim()) {
       alert('Veuillez entrer un nom d\'équipe')
       return
     }
 
-    const playersPerTeam = tournament.format === 'tete_a_tete' ? 1 :
-                          (tournament.format === 'doublette' ? 2 : 3)
+    // Vérifier l'unicité du nom d'équipe
+    const teamName = newTeamNameForCreation.trim()
+    const existingTeam = teams.find(t => t.name.toLowerCase() === teamName.toLowerCase())
+    if (existingTeam) {
+      alert(`❌ Une équipe nommée "${teamName}" existe déjà.\n\nVeuillez choisir un autre nom.`)
+      return
+    }
+
+    const playersPerTeam = getPlayersPerTeam(tournament.format)
 
     if (selectedPlayerIds.length !== playersPerTeam) {
       alert(`Vous devez sélectionner exactement ${playersPerTeam} joueur(s) pour une ${tournament.format}`)
@@ -1221,6 +1246,39 @@ export default function TournamentDetailPage() {
       return
     }
 
+    // Validation MODE CHOISI : Vérifier que toutes les équipes ont le bon nombre de joueurs
+    if (tournament.mode === 'choisi') {
+      const playersPerTeam = getPlayersPerTeam(tournament.format)
+
+      // Vérifier que chaque équipe a le bon nombre de joueurs
+      const invalidTeams = teams.filter(team =>
+        !team.joueur_ids || team.joueur_ids.length !== playersPerTeam
+      )
+
+      if (invalidTeams.length > 0) {
+        const teamNames = invalidTeams.map(t => t.name).join(', ')
+        alert(`❌ Équipes incomplètes\n\nLes équipes suivantes n'ont pas ${playersPerTeam} joueur(s) :\n${teamNames}\n\nVeuillez compléter toutes les équipes avant de démarrer.`)
+        return
+      }
+
+      // Vérifier que tous les joueurs inscrits sont assignés (si des joueurs ont été sélectionnés)
+      if (tournament.settings.players && tournament.settings.players.length > 0) {
+        const assignedPlayerIds = new Set<string>()
+        teams.forEach(team => {
+          team.joueur_ids?.forEach(playerId => assignedPlayerIds.add(playerId))
+        })
+
+        const totalPlayers = tournament.settings.players.length
+        const assignedPlayers = assignedPlayerIds.size
+
+        if (assignedPlayers < totalPlayers) {
+          const unassignedCount = totalPlayers - assignedPlayers
+          alert(`❌ Joueurs non assignés\n\n${unassignedCount} joueur(s) inscrit(s) ne sont pas assignés à une équipe.\n\nTotal inscrits: ${totalPlayers}\nAssignés: ${assignedPlayers}\n\nVeuillez créer des équipes pour tous les joueurs ou retirer les joueurs en trop.`)
+          return
+        }
+      }
+    }
+
     // Validation : Configuration des poules doit être valide
     const pouleSize = tournament.settings.pouleSize || 4
     if (!isValidPoolConfiguration(teams.length, pouleSize)) {
@@ -2162,22 +2220,31 @@ export default function TournamentDetailPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Sélectionner les joueurs *
                   <span className="ml-2 text-blue-600">
-                    ({selectedPlayerIds.length}/
-                    {tournament.format === 'tete_a_tete' ? 1 : tournament.format === 'doublette' ? 2 : 3})
+                    ({selectedPlayerIds.length}/{getPlayersPerTeam(tournament.format)})
                   </span>
                 </label>
 
                 {availablePlayers.length === 0 ? (
-                  <div className="text-center py-8 bg-gray-50 rounded-xl">
-                    <p className="text-gray-500 mb-2">Aucun joueur disponible</p>
-                    <p className="text-sm text-gray-400">Ajoutez des joueurs dans l'onglet "Joueurs" d'abord</p>
+                  <div className="text-center py-8 bg-gray-50 rounded-xl border-2 border-gray-200">
+                    <div className="text-4xl mb-3">
+                      {teams.length > 0 ? '✅' : '👥'}
+                    </div>
+                    <p className="text-gray-700 font-medium mb-2">
+                      {teams.length > 0
+                        ? 'Tous les joueurs sont déjà assignés'
+                        : 'Aucun joueur disponible'}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {teams.length > 0
+                        ? 'Tous les joueurs de l\'organisation sont déjà dans des équipes.'
+                        : 'Ajoutez des joueurs dans l\'onglet "Joueurs" d\'abord'}
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
                     {availablePlayers.map((player) => {
                       const isSelected = selectedPlayerIds.includes(player.id)
-                      const playersPerTeam = tournament.format === 'tete_a_tete' ? 1 :
-                                            tournament.format === 'doublette' ? 2 : 3
+                      const playersPerTeam = getPlayersPerTeam(tournament.format)
                       const isDisabled = !isSelected && selectedPlayerIds.length >= playersPerTeam
 
                       return (
@@ -2253,7 +2320,7 @@ export default function TournamentDetailPage() {
                 </button>
                 <button
                   onClick={createTeamWithPlayers}
-                  disabled={creatingTeam || !newTeamNameForCreation.trim() || selectedPlayerIds.length !== (tournament.format === 'tete_a_tete' ? 1 : tournament.format === 'doublette' ? 2 : 3)}
+                  disabled={creatingTeam || !newTeamNameForCreation.trim() || selectedPlayerIds.length !== getPlayersPerTeam(tournament.format)}
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {creatingTeam ? (
