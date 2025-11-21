@@ -79,7 +79,7 @@ export default function LoginPage() {
     setAcceptTerms(false)
   }, [activeTab])
 
-  // Traduction des erreurs Supabase
+  // Traduction des erreurs API
   const getErrorMessage = (error: unknown) => {
     const message = error instanceof Error ? error.message : ''
     if (message.includes('Invalid login')) return 'Email ou mot de passe incorrect'

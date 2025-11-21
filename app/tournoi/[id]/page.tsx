@@ -443,7 +443,7 @@ export default function TournamentDetailPage() {
               })
               if (joueursResponse.ok) {
                 const enrichedTeam = await joueursResponse.json()
-                // Adapter la structure pour correspondre à l'ancienne structure Supabase
+                // Adapter la structure pour correspondre à l'ancienne structure API
                 if (enrichedTeam.joueurs) {
                   team.equipes_joueurs = enrichedTeam.joueurs.map((joueur: Joueur) => ({
                     joueur: joueur,
