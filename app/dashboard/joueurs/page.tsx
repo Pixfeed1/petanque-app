@@ -492,10 +492,12 @@ function PlayerRow({ player, index, isSelected, onToggle, onEdit, onDelete }: Pl
   )
 }
 
+type PlayerFormData = { name: string; gender: 'H' | 'F'; email: string; phone: string }
+
 interface PlayerModalProps {
   editingPlayer: Joueur | null
-  formData: { name: string; gender: 'H' | 'F'; email: string; phone: string }
-  onUpdateForm: (data: Partial<typeof formData>) => void
+  formData: PlayerFormData
+  onUpdateForm: (data: Partial<PlayerFormData>) => void
   onSave: () => void
   onClose: () => void
 }
