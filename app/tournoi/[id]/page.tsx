@@ -599,7 +599,7 @@ export default function TournamentDetailPage() {
                   </div>
                   <p className="text-3xl font-bold text-gray-900">
                     {matches.filter(m => m.status === 'termine').length > 0
-                      ? Math.round(matches.filter(m => m.status === 'termine').reduce((acc, m) => acc + m.score_a + m.score_b, 0) / matches.filter(m => m.status === 'termine').length)
+                      ? Math.round(matches.filter(m => m.status === 'termine').reduce((acc, m) => acc + (m.score_a ?? 0) + (m.score_b ?? 0), 0) / matches.filter(m => m.status === 'termine').length)
                       : 0}
                   </p>
                 </div>

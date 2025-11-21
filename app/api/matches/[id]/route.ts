@@ -195,8 +195,14 @@ export async function PUT(
     if (body.status !== undefined) {
       // Validation des règles de pétanque si le statut devient "termine"
       if (body.status === 'termine') {
-        const scoreA = body.score_a !== undefined ? body.score_a : existingMatch.score_a
-        const scoreB = body.score_b !== undefined ? body.score_b : existingMatch.score_b
+        // 🔧 FIX: Scores peuvent être null en DB, utiliser 0 par défaut pour éviter NaN
+        const scoreA = body.score_a !== undefined ? body.score_a : (existingMatch.score_a ?? 0)
+        const scoreB = body.score_b !== undefined ? body.score_b : (existingMatch.score_b ?? 0)
+
+        // Vérifier que les scores sont définis avant de terminer
+        if (scoreA === 0 && scoreB === 0 && body.score_a === undefined && body.score_b === undefined) {
+          return apiError('Impossible de terminer un match sans scores', 400)
+        }
 
         // 🔧 FIX: Permettre les égalités SEULEMENT pour les matchs BYE (équipe_b null)
         const isByeMatch = existingMatch.type === 'bye' || !existingMatch.equipe_b_id

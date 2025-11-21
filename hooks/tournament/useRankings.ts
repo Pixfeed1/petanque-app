@@ -132,10 +132,10 @@ export function useRankings({
       )
 
       // Remplacer la poule triée en gardant les propriétés complètes
-      poules[poule] = sorted.map(stats => {
-        const fullTeam = poules[poule].find(t => t.id === stats.id)
-        return fullTeam!
-      })
+      const originalPouleTeams = poules[poule]
+      poules[poule] = sorted
+        .map(stats => originalPouleTeams.find(t => t.id === stats.id))
+        .filter((team): team is TeamWithStats => team !== undefined)
     })
 
     return poules

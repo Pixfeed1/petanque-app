@@ -270,10 +270,8 @@ export function useMatchActions({
           difference: t.stats.difference,
           points: t.stats.points
         }))
-      ).map(stats => {
-        const teamStat = teamStatsForPoule.find(t => t.team.id === stats.id)
-        return teamStat!
-      })
+      ).map(stats => teamStatsForPoule.find(t => t.team.id === stats.id))
+        .filter((teamStat): teamStat is typeof teamStatsForPoule[number] => teamStat !== undefined)
 
       // Prendre les N premiers qualifiés
       qualified.push(...rankings.slice(0, qualifiedPerPoule).map(r => ({
@@ -300,10 +298,9 @@ export function useMatchActions({
       pouleNames.length
     )
 
-    const reorderedQualified: Team[] = reorderedTeamsData.map(data => {
-      const qualifiedEntry = qualified.find(q => q.team.id === data.id)
-      return qualifiedEntry!.team
-    })
+    const reorderedQualified: Team[] = reorderedTeamsData
+      .map(data => qualified.find(q => q.team.id === data.id)?.team)
+      .filter((team): team is Team => team !== undefined)
 
     try {
       // Déterminer le nombre de matchs selon les qualifiés
@@ -425,29 +422,30 @@ export function useMatchActions({
       const winners: string[] = []
       const losers: string[] = []
 
-      demiMatches.forEach(match => {
+      // Utiliser for...of pour permettre un early return propre
+      for (const match of demiMatches) {
         if (match.score_a === match.score_b) {
           alert(`⚠️ Égalité détectée dans ${match.equipe_a?.name} vs ${match.equipe_b?.name}. Impossible de créer la finale.`)
-          throw new Error('Égalité en demi-finale')
+          return // Early exit propre
         }
 
         if (!match.equipe_a_id || !match.equipe_b_id) {
           console.warn('⚠️ Match de demi avec équipe manquante, ignoré:', match)
-          return
+          continue
         }
 
-        if (match.score_a > match.score_b) {
+        if ((match.score_a ?? 0) > (match.score_b ?? 0)) {
           winners.push(match.equipe_a_id)
           losers.push(match.equipe_b_id)
         } else {
           winners.push(match.equipe_b_id)
           losers.push(match.equipe_a_id)
         }
-      })
+      }
 
       // Créer la finale
       if (!finaleExists && winners.length === 2) {
-        await fetch('/api/matches', {
+        const finaleResponse = await fetch('/api/matches', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -461,11 +459,15 @@ export function useMatchActions({
             status: 'a_jouer'
           })
         })
+        if (!finaleResponse.ok) {
+          const error = await finaleResponse.json().catch(() => ({ error: 'Erreur serveur' }))
+          throw new Error(`Échec création finale: ${error.error}`)
+        }
       }
 
       // Créer la petite finale seulement si consolante est activée
       if (!petiteFinaleExists && losers.length === 2 && tournament.settings.consolante) {
-        await fetch('/api/matches', {
+        const petiteFinaleResponse = await fetch('/api/matches', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -479,6 +481,10 @@ export function useMatchActions({
             status: 'a_jouer'
           })
         })
+        if (!petiteFinaleResponse.ok) {
+          const error = await petiteFinaleResponse.json().catch(() => ({ error: 'Erreur serveur' }))
+          throw new Error(`Échec création petite finale: ${error.error}`)
+        }
       }
 
       alert('Finale et petite finale générées avec succès !')
