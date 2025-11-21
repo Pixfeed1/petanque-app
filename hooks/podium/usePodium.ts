@@ -124,17 +124,21 @@ export function usePodium({ tournoiId }: UsePodiumProps): UsePodiumReturn {
         ? finaleData.equipe_b
         : finaleData.equipe_a
 
-      podiumData.push({
-        position: 1,
-        team: champion,
-        score: Math.max(scoreA, scoreB)
-      })
+      if (champion) {
+        podiumData.push({
+          position: 1,
+          team: champion,
+          score: Math.max(scoreA, scoreB)
+        })
+      }
 
-      podiumData.push({
-        position: 2,
-        team: finaliste,
-        score: Math.min(scoreA, scoreB)
-      })
+      if (finaliste) {
+        podiumData.push({
+          position: 2,
+          team: finaliste,
+          score: Math.min(scoreA, scoreB)
+        })
+      }
     } else {
       // Fallback: Utiliser le classement general des poules
       await buildPodiumFromPoules(podiumData, allMatches, tournoiId)
@@ -147,14 +151,17 @@ export function usePodium({ tournoiId }: UsePodiumProps): UsePodiumReturn {
       const troisieme = pScoreA > pScoreB
         ? petiteFinaleData.equipe_a
         : petiteFinaleData.equipe_b
-      const idx = podiumData.findIndex(p => p.position === 3)
-      const newThird = {
-        position: 3,
-        team: troisieme,
-        score: Math.max(pScoreA, pScoreB)
+
+      if (troisieme) {
+        const idx = podiumData.findIndex(p => p.position === 3)
+        const newThird = {
+          position: 3,
+          team: troisieme,
+          score: Math.max(pScoreA, pScoreB)
+        }
+        if (idx >= 0) podiumData[idx] = newThird
+        else podiumData.push(newThird)
       }
-      if (idx >= 0) podiumData[idx] = newThird
-      else podiumData.push(newThird)
     }
 
     return podiumData
