@@ -126,10 +126,24 @@ export function useTournamentCreation({
     )
 
     const prefix = formData.mode === 'melee_tournante' ? 'R1-' : ''
-    let teamNumber = 1
 
-    for (const team of mixiteResult.teams) {
-      await createTeamWithPlayers(tournoi.id, teamNumber++, team.joueur_ids, prefix)
+    // Créer toutes les équipes en batch (1 seule requête au lieu de N)
+    const teamsToCreate = mixiteResult.teams.map((team, index) => ({
+      tournoi_id: tournoi.id,
+      name: prefix ? `${prefix}Équipe ${index + 1}` : `Équipe ${index + 1}`,
+      joueur_ids: team.joueur_ids,
+      stats: { victoires: 0, defaites: 0, points_pour: 0, points_contre: 0 }
+    }))
+
+    const teamsBatchResponse = await fetch('/api/equipes/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ teams: teamsToCreate })
+    })
+
+    if (!teamsBatchResponse.ok) {
+      throw new Error('Erreur lors de la création des équipes en batch')
     }
 
     // Config mêlée tournante
@@ -193,20 +207,22 @@ export function useTournamentCreation({
       }
     }
 
-    // Créer tous les matchs
-    let created = 0
-    for (const match of matchesToCreate) {
-      const res = await fetch('/api/matches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(match)
-      })
-      if (res.ok) created++
+    // Créer tous les matchs en batch (1 seule requête au lieu de N)
+    const matchesBatchResponse = await fetch('/api/matches/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ matches: matchesToCreate })
+    })
+
+    if (!matchesBatchResponse.ok) {
+      const error = await matchesBatchResponse.json()
+      throw new Error(error.error || 'Erreur lors de la création des matchs en batch')
     }
 
-    if (created !== matchesToCreate.length) {
-      throw new Error(`Seulement ${created}/${matchesToCreate.length} matchs créés`)
+    const matchesResult = await matchesBatchResponse.json()
+    if (matchesResult.created !== matchesToCreate.length) {
+      throw new Error(`Seulement ${matchesResult.created}/${matchesToCreate.length} matchs créés`)
     }
   }, [formData])
 

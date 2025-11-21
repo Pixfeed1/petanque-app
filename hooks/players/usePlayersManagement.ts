@@ -251,20 +251,39 @@ export function usePlayersManagement(props?: UsePlayersManagementProps): UsePlay
     if (!confirmed) return
 
     try {
+      let successCount = 0
+      let failedCount = 0
+      const errors: string[] = []
+
       for (const playerId of selectedPlayers) {
-        const response = await fetch(`/api/joueurs/${playerId}`, {
-          method: 'DELETE',
-          credentials: 'include'
-        })
-        if (!response.ok) {
-          const error = await response.json()
-          console.error(`Erreur suppression ${playerId}:`, error)
+        try {
+          const response = await fetch(`/api/joueurs/${playerId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          })
+          if (response.ok) {
+            successCount++
+          } else {
+            failedCount++
+            const error = await response.json()
+            errors.push(error.error || 'Erreur inconnue')
+          }
+        } catch (err) {
+          failedCount++
+          errors.push('Erreur réseau')
         }
       }
 
       setSelectedPlayers([])
       await loadPlayers()
-      notify.success(`${selectedPlayers.length} joueur(s) supprimé(s)`)
+
+      if (failedCount === 0) {
+        notify.success(`${successCount} joueur(s) supprimé(s)`)
+      } else if (successCount === 0) {
+        notify.error(`Échec de la suppression de ${failedCount} joueur(s)`)
+      } else {
+        notify.warning(`${successCount} joueur(s) supprimé(s), ${failedCount} échec(s)`)
+      }
     } catch (error) {
       console.error('Erreur bulk delete:', error)
       notify.error('Erreur lors de la suppression')

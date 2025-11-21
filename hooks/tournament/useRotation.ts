@@ -118,34 +118,29 @@ export function useRotation({
         console.warn(`${mixiteResult.unassignedPlayerIds.length} joueur(s) non assigné(s) pour la rotation ${rotationNumber}:`, mixiteResult.warnings)
       }
 
-      // Créer les équipes avec vérification
-      const teamErrors: string[] = []
-      for (const team of newTeams) {
-        const teamResponse = await fetch('/api/equipes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            tournoi_id: tournament.id,
-            name: team.name,
-            joueur_ids: team.joueur_ids,
-            stats: {
-              victoires: 0,
-              defaites: 0,
-              points_pour: 0,
-              points_contre: 0
-            }
-          })
-        })
-
-        if (!teamResponse.ok) {
-          const error = await teamResponse.json().catch(() => ({ error: 'Erreur serveur' }))
-          teamErrors.push(`${team.name}: ${error.error}`)
+      // Créer les équipes en batch (1 seule requête au lieu de N)
+      const teamsToCreate = newTeams.map(team => ({
+        tournoi_id: tournament.id,
+        name: team.name,
+        joueur_ids: team.joueur_ids,
+        stats: {
+          victoires: 0,
+          defaites: 0,
+          points_pour: 0,
+          points_contre: 0
         }
-      }
+      }))
 
-      if (teamErrors.length > 0) {
-        throw new Error(`Échec création équipes:\n${teamErrors.join('\n')}`)
+      const teamsBatchResponse = await fetch('/api/equipes/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ teams: teamsToCreate })
+      })
+
+      if (!teamsBatchResponse.ok) {
+        const error = await teamsBatchResponse.json()
+        throw new Error(`Échec création équipes: ${error.error || 'Erreur inconnue'}`)
       }
 
       // Recharger les données
@@ -183,33 +178,38 @@ export function useRotation({
         return
       }
 
-      // Générer matchs round-robin (tous contre tous)
+      // Générer matchs round-robin (tous contre tous) en batch
+      const matchesToCreate = []
       for (let i = 0; i < rotationTeams.length; i++) {
         for (let j = i + 1; j < rotationTeams.length; j++) {
-          const response = await fetch('/api/matches', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              tournoi_id: tournament.id,
-              equipe_a_id: rotationTeams[i].id,
-              equipe_b_id: rotationTeams[j].id,
-              tour: rotationNumber,
-              terrain: null,
-              type: 'poule',
-              poule: null,
-              status: 'a_jouer'
-            })
+          matchesToCreate.push({
+            tournoi_id: tournament.id,
+            equipe_a_id: rotationTeams[i].id,
+            equipe_b_id: rotationTeams[j].id,
+            tour: rotationNumber,
+            terrain: null,
+            type: 'poule',
+            poule: null,
+            status: 'a_jouer'
           })
-
-          if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
-            throw new Error(error.error || `Échec création match`)
-          }
         }
       }
 
-      console.log(`✅ ${(rotationTeams.length * (rotationTeams.length - 1)) / 2} matchs créés pour rotation ${rotationNumber}`)
+      // Créer tous les matchs en batch (1 seule requête au lieu de N²)
+      const matchesBatchResponse = await fetch('/api/matches/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ matches: matchesToCreate })
+      })
+
+      if (!matchesBatchResponse.ok) {
+        const error = await matchesBatchResponse.json()
+        throw new Error(error.error || `Échec création matchs`)
+      }
+
+      const matchesResult = await matchesBatchResponse.json()
+      console.log(`✅ ${matchesResult.created} matchs créés pour rotation ${rotationNumber}`)
 
       // Recharger les données
       await loadTournamentData()
