@@ -265,7 +265,8 @@ export default function CreateTournamentPage() {
 
     switch(currentStep) {
       case 1:
-        canGo = formData.name.trim().length > 0 &&
+        // 🔧 FIX P3 #5 : Nom du tournoi minimum 3 caractères (au lieu de 1)
+        canGo = formData.name.trim().length >= 3 &&
                formData.name.trim().length <= 100 &&
                formData.terrains > 0
         break
@@ -779,6 +780,38 @@ export default function CreateTournamentPage() {
         return
       }
 
+      // 🔧 FIX P2 #1 : Valider que la date n'est pas dans le passé
+      if (formData.date) {
+        const selectedDate = new Date(formData.date)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0) // Comparer juste la date
+        if (selectedDate < today) {
+          alert('❌ Date invalide\n\nLa date du tournoi doit être ultérieure ou égale à aujourd\'hui.')
+          return
+        }
+      }
+
+      // 🔧 FIX P2 #2 : Valider que qualifiedPerPoule < pouleSize
+      if (formData.qualifiedPerPoule >= formData.pouleSize) {
+        alert('❌ Configuration invalide\n\nLe nombre de qualifiés par poule (' + formData.qualifiedPerPoule + ') doit être inférieur à la taille de poule (' + formData.pouleSize + ').\n\nAjustez ces paramètres.')
+        return
+      }
+
+      // 🔧 FIX P2 #3 : Valider format de l'heure
+      if (formData.time) {
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+        if (!timeRegex.test(formData.time)) {
+          alert('❌ Heure invalide\n\nFormat attendu : HH:MM (ex: 09:00, 14:30)')
+          return
+        }
+      }
+
+      // 🔧 FIX P3 #10 : Valider longueur max du lieu
+      if (formData.location && formData.location.trim().length > 100) {
+        alert('❌ Lieu trop long\n\nLe lieu ne peut pas dépasser 100 caractères.')
+        return
+      }
+
       const tournoiData = {
         org_id: organization.id,
         name: formData.name.trim(),
@@ -793,7 +826,8 @@ export default function CreateTournamentPage() {
           terrains: formData.terrains,
           maxPoints: formData.maxPoints,
           timeLimit: formData.timeLimit,
-          timeLimitMinutes: formData.timeLimitMinutes,
+          // 🔧 FIX P2 #4 : Reset timeLimitMinutes si timeLimit désactivé
+          timeLimitMinutes: formData.timeLimit ? formData.timeLimitMinutes : 60,
           pouleSize: formData.pouleSize,
           eliminationFormat: formData.eliminationFormat,
           meleeRotation: formData.mode === 'melee_tournante' ? formData.meleeRotation : null,
@@ -1853,10 +1887,21 @@ export default function CreateTournamentPage() {
                       <div>
                         <p className="text-sm text-gray-600">Durée estimée</p>
                         <p className="text-lg font-bold text-gray-900">
-                          {formData.timeLimit 
-                            ? `${Math.ceil((formData.pouleSize - 1 + 3) * formData.timeLimitMinutes / 60)}h`
-                            : '3-5h'
-                          }
+                          {/* 🔧 FIX P3 #6 : Estimation durée plus précise basée sur matchs réels */}
+                          {(() => {
+                            const nbPoules = getEstimatedPools()
+                            const matchsPouleParEquipe = formData.pouleSize - 1
+                            const equipesFinales = nbPoules * formData.qualifiedPerPoule
+                            // Matchs finales: élim simple = n-1 matchs, élim double ≈ 2n-1 matchs
+                            const matchsFinales = formData.eliminationFormat === 'simple'
+                              ? Math.max(0, equipesFinales - 1)
+                              : Math.max(0, equipesFinales * 2 - 1)
+                            const totalMatchsEstimes = (matchsPouleParEquipe + Math.ceil(matchsFinales / nbPoules || 0))
+                            const dureeParMatch = formData.timeLimit ? formData.timeLimitMinutes : 45 // 45 min moyenne sans limit
+                            const matchsParalleles = Math.max(1, formData.terrains)
+                            const dureeEstimeeMin = Math.ceil(totalMatchsEstimes * dureeParMatch / matchsParalleles / 60)
+                            return dureeEstimeeMin <= 1 ? '~1h' : dureeEstimeeMin <= 2 ? '1-2h' : dureeEstimeeMin <= 4 ? '2-4h' : '4h+'
+                          })()}
                         </p>
                       </div>
                     </div>
