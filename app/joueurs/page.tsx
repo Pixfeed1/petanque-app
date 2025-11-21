@@ -46,7 +46,8 @@ export default function JoueursPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setJoueurs(data)
+        // Support ancien format (array) et nouveau format (objet avec pagination)
+        setJoueurs(Array.isArray(data) ? data : data.joueurs || [])
       }
     } catch (error) {
       console.error('Erreur chargement joueurs:', error)

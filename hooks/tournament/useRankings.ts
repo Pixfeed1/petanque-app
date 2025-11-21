@@ -154,7 +154,8 @@ export function useRankings({
       })
 
       if (!joueursResponse.ok) return
-      const joueurs = await joueursResponse.json()
+      const joueursData = await joueursResponse.json()
+      const joueurs = Array.isArray(joueursData) ? joueursData : joueursData.joueurs || []
 
       // Charger toutes les équipes et matchs du tournoi
       const equipesResponse = await fetch(`/api/equipes?tournoi_id=${tournament.id}`, {

@@ -104,7 +104,8 @@ export function useDashboardData(organizationId: number | undefined) {
       })
 
       if (joueursRes.ok) {
-        const joueursData = await joueursRes.json()
+        const data = await joueursRes.json()
+        const joueursData: Joueur[] = Array.isArray(data) ? data : data.joueurs || []
         const lastMonth = getLastMonthDate()
         const recentPlayers = joueursData.filter(
           (j: Joueur) => j.created_at && new Date(j.created_at) > lastMonth

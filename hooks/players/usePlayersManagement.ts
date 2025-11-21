@@ -107,7 +107,8 @@ export function usePlayersManagement(): UsePlayersManagementReturn {
       })
 
       if (!response.ok) throw new Error('Erreur chargement joueurs')
-      let playersData: Joueur[] = await response.json()
+      const data = await response.json()
+      let playersData: Joueur[] = Array.isArray(data) ? data : data.joueurs || []
 
       // Trier par nom
       playersData = playersData.sort((a, b) => a.name.localeCompare(b.name))

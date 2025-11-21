@@ -73,7 +73,8 @@ export function useRotation({
       })
 
       if (!joueursResponse.ok) return
-      const allPlayers = await joueursResponse.json()
+      const data = await joueursResponse.json()
+      const allPlayers = Array.isArray(data) ? data : data.joueurs || []
 
       // Filtrer pour obtenir seulement les joueurs du tournoi
       const players = allPlayers.filter((p: Joueur) =>
@@ -263,7 +264,8 @@ export function useRotation({
         })
         if (!joueursResponse.ok) return
 
-        const allPlayers = await joueursResponse.json()
+        const joueursData = await joueursResponse.json()
+        const allPlayers = Array.isArray(joueursData) ? joueursData : joueursData.joueurs || []
         const players = allPlayers.filter((p: Joueur) =>
           tournament.settings.players.includes(p.id)
         )

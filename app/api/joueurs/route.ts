@@ -36,19 +36,37 @@ export async function GET(request: NextRequest) {
 
     // Build query with optional search
     let query_text = 'SELECT * FROM joueurs WHERE org_id = $1'
+    let count_query = 'SELECT COUNT(*) as total FROM joueurs WHERE org_id = $1'
     const params: SQLValue[] = [orgId]
+    const countParams: SQLValue[] = [orgId]
 
     if (search) {
       query_text += ' AND (name ILIKE $2 OR email ILIKE $2)'
+      count_query += ' AND (name ILIKE $2 OR email ILIKE $2)'
       params.push(`%${search}%`)
+      countParams.push(`%${search}%`)
     }
 
     query_text += ' ORDER BY name LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2)
     params.push(limit, offset)
 
-    const joueurs = await queryMany(query_text, params)
+    // Exécuter les deux requêtes en parallèle
+    const [joueurs, countResult] = await Promise.all([
+      queryMany(query_text, params),
+      queryMany<{ total: string }>(count_query, countParams)
+    ])
 
-    return apiSuccess(joueurs)
+    const total = parseInt(countResult[0]?.total || '0')
+
+    return apiSuccess({
+      joueurs,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + joueurs.length < total
+      }
+    })
   } catch (error) {
     console.error('❌ Erreur GET /api/joueurs:', error)
     return apiError('Erreur lors de la récupération des joueurs', 500)

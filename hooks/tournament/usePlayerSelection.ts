@@ -72,7 +72,8 @@ export function usePlayerSelection({
 
       if (!response.ok) throw new Error('Erreur chargement joueurs')
 
-      const playersData = await response.json()
+      const data = await response.json()
+      const playersData = Array.isArray(data) ? data : data.joueurs || []
       setAvailablePlayers(playersData)
     } catch (error) {
       console.error('Erreur chargement joueurs:', error)

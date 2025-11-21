@@ -87,7 +87,8 @@ export function useTeamManagement({
       })
 
       if (response.ok) {
-        const allPlayers = await response.json()
+        const data = await response.json()
+        const allPlayers = Array.isArray(data) ? data : data.joueurs || []
 
         // Filtrer les joueurs déjà assignés à une équipe de ce tournoi
         const assignedPlayerIds = new Set<string>()
