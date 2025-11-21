@@ -2,14 +2,19 @@
  * Export centralisé des hooks de tournoi
  */
 
-// Hooks
+// Hooks - Page détail tournoi
 export { useTournamentData } from './useTournamentData'
 export { useTeamManagement } from './useTeamManagement'
 export { useMatchActions } from './useMatchActions'
 export { useRotation } from './useRotation'
 export { useRankings } from './useRankings'
 
-// Types
+// Hooks - Création tournoi
+export { useCreateTournament } from './useCreateTournament'
+export { usePlayerSelection } from './usePlayerSelection'
+export { useTournamentCreation } from './useTournamentCreation'
+
+// Types - Détail tournoi
 export type {
   Tournament,
   TournamentSettings,
@@ -23,3 +28,10 @@ export type {
   PlayerWithStats,
   TeamWithStats
 } from './useRankings'
+
+// Types - Création tournoi
+export type {
+  TournamentFormData,
+  NewPlayer,
+  StepConfig
+} from './useCreateTournament'
