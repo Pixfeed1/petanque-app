@@ -78,31 +78,37 @@ export default function PodiumPage() {
       <div className="max-w-6xl mx-auto px-4 pb-20">
         <div className="flex items-end justify-center space-x-4 md:space-x-8">
           {/* 2eme place */}
-          <PodiumPlace
-            position={2}
-            team={podium[1]}
-            animationStep={animationStep}
-            generatingCertificate={generatingCertificate}
-            onGenerateCertificate={() => generatePremiumCertificate(2, podium[1])}
-          />
+          {podium[1] && (
+            <PodiumPlace
+              position={2}
+              team={podium[1]}
+              animationStep={animationStep}
+              generatingCertificate={generatingCertificate}
+              onGenerateCertificate={() => generatePremiumCertificate(2, podium[1])}
+            />
+          )}
 
           {/* 1ere place */}
-          <PodiumPlace
-            position={1}
-            team={podium[0]}
-            animationStep={animationStep}
-            generatingCertificate={generatingCertificate}
-            onGenerateCertificate={() => generatePremiumCertificate(1, podium[0])}
-          />
+          {podium[0] && (
+            <PodiumPlace
+              position={1}
+              team={podium[0]}
+              animationStep={animationStep}
+              generatingCertificate={generatingCertificate}
+              onGenerateCertificate={() => generatePremiumCertificate(1, podium[0])}
+            />
+          )}
 
           {/* 3eme place */}
-          <PodiumPlace
-            position={3}
-            team={podium[2]}
-            animationStep={animationStep}
-            generatingCertificate={generatingCertificate}
-            onGenerateCertificate={() => generatePremiumCertificate(3, podium[2])}
-          />
+          {podium[2] && (
+            <PodiumPlace
+              position={3}
+              team={podium[2]}
+              animationStep={animationStep}
+              generatingCertificate={generatingCertificate}
+              onGenerateCertificate={() => generatePremiumCertificate(3, podium[2])}
+            />
+          )}
         </div>
 
         {/* Base du podium */}

@@ -145,6 +145,27 @@ export default function TournamentDetailPage() {
     setMounted(true)
   }, [])
 
+  // Mettre a jour la phase actuelle en fonction des matchs
+  useEffect(() => {
+    if (!matches || matches.length === 0) {
+      setCurrentPhase('poules')
+      return
+    }
+
+    const hasFinale = matches.some(m => m.type === 'finale' || m.type === 'petite_finale')
+    const hasElimination = matches.some(m =>
+      m.type === 'huitieme' || m.type === 'quart' || m.type === 'demi'
+    )
+
+    if (hasFinale) {
+      setCurrentPhase('finale')
+    } else if (hasElimination) {
+      setCurrentPhase('elimination')
+    } else {
+      setCurrentPhase('poules')
+    }
+  }, [matches])
+
   // Démarrer le tournoi
   const handleStartTournament = async () => {
     if (!tournament) return

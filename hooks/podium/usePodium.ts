@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import confetti from 'canvas-confetti'
 import type { Match, Equipe, Joueur } from '@/lib/types'
 
@@ -60,6 +60,22 @@ export function usePodium({ tournoiId }: UsePodiumProps): UsePodiumReturn {
   const [showAnimation, setShowAnimation] = useState(false)
   const [animationStep, setAnimationStep] = useState(0)
   const [generatingCertificate, setGeneratingCertificate] = useState(false)
+
+  // Refs pour cleanup des timers
+  const confettiIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const animationTimeoutsRef = useRef<NodeJS.Timeout[]>([])
+
+  // Cleanup au demontage du composant
+  useEffect(() => {
+    return () => {
+      // Nettoyer l'interval des confettis
+      if (confettiIntervalRef.current) {
+        clearInterval(confettiIntervalRef.current)
+      }
+      // Nettoyer tous les timeouts d'animation
+      animationTimeoutsRef.current.forEach(timeout => clearTimeout(timeout))
+    }
+  }, [])
 
   // Chargement des donnees du podium
   useEffect(() => {
@@ -261,10 +277,13 @@ export function usePodium({ tournoiId }: UsePodiumProps): UsePodiumReturn {
   }
 
   const animatePodium = () => {
-    setTimeout(() => setAnimationStep(3), 300)  // 3eme
-    setTimeout(() => setAnimationStep(2), 600)  // 2eme
-    setTimeout(() => setAnimationStep(1), 900)  // 1er
-    setTimeout(() => fireConfetti(), 1200)
+    // Stocker les timeouts pour cleanup
+    animationTimeoutsRef.current = [
+      setTimeout(() => setAnimationStep(3), 300),  // 3eme
+      setTimeout(() => setAnimationStep(2), 600),  // 2eme
+      setTimeout(() => setAnimationStep(1), 900),  // 1er
+      setTimeout(() => fireConfetti(), 1200)
+    ]
   }
 
   const fireConfetti = useCallback(() => {
@@ -276,11 +295,16 @@ export function usePodium({ tournoiId }: UsePodiumProps): UsePodiumReturn {
       return Math.random() * (max - min) + min
     }
 
-    const interval: NodeJS.Timeout = setInterval(function() {
+    // Stocker l'interval pour cleanup
+    confettiIntervalRef.current = setInterval(function() {
       const timeLeft = animationEnd - Date.now()
 
       if (timeLeft <= 0) {
-        return clearInterval(interval)
+        if (confettiIntervalRef.current) {
+          clearInterval(confettiIntervalRef.current)
+          confettiIntervalRef.current = null
+        }
+        return
       }
 
       const particleCount = 50 * (timeLeft / duration)
