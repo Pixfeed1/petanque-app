@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       return apiError('Tournoi non trouvé', 404)
     }
 
-    const hasAccess = await checkOrgAccess(user.id, tournoi.org_id)
+    const hasAccess = await checkOrgAccess(user.id, String(tournoi.org_id))
     if (!hasAccess) {
       return apiError('Accès non autorisé à ce tournoi', 403)
     }
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       return apiError('Tournoi non trouvé', 404)
     }
 
-    const hasAccess = await checkOrgAccess(user.id, tournoi.org_id)
+    const hasAccess = await checkOrgAccess(user.id, String(tournoi.org_id))
     if (!hasAccess) {
       return apiError('Accès non autorisé à ce tournoi', 403)
     }
