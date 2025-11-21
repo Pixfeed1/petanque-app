@@ -52,13 +52,16 @@ export default function Parametres() {
       const dataStr = JSON.stringify(tournois, null, 2)
       const dataBlob = new Blob([dataStr], { type: 'application/json' })
 
-      // Télécharger
+      // Télécharger avec cleanup garanti
       const url = URL.createObjectURL(dataBlob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `tournois-${new Date().toISOString().split('T')[0]}.json`
-      link.click()
-      URL.revokeObjectURL(url)
+      try {
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `tournois-${new Date().toISOString().split('T')[0]}.json`
+        link.click()
+      } finally {
+        URL.revokeObjectURL(url)
+      }
     } catch (error) {
       console.error('Erreur export:', error)
       alert('Erreur lors de l\'export')
@@ -95,13 +98,16 @@ export default function Parametres() {
       const dataStr = JSON.stringify(allData, null, 2)
       const dataBlob = new Blob([dataStr], { type: 'application/json' })
 
-      // Télécharger
+      // Télécharger avec cleanup garanti
       const url = URL.createObjectURL(dataBlob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `mes-donnees-${new Date().toISOString().split('T')[0]}.json`
-      link.click()
-      URL.revokeObjectURL(url)
+      try {
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `mes-donnees-${new Date().toISOString().split('T')[0]}.json`
+        link.click()
+      } finally {
+        URL.revokeObjectURL(url)
+      }
     } catch (error) {
       console.error('Erreur export RGPD:', error)
       alert('Erreur lors de l\'export')

@@ -161,11 +161,10 @@ export async function POST(request: NextRequest) {
      }
    })
 
-   // Logger la création de session pour debug
+   // Logger la création de session pour debug (sans données sensibles)
    console.log('Session Checkout créée:', {
-     sessionId: session.id,
+     sessionId: session.id.slice(0, 8) + '...',  // Masquer partiellement
      userId,
-     userEmail,
      priceId: finalPriceId
    })
 

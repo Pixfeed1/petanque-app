@@ -139,8 +139,8 @@ export async function PUT(
     const values: SQLValue[] = []
     let paramIndex = 1
 
-    // Validation des scores
-    if (body.score_a !== undefined) {
+    // Validation des scores (rejette null explicite et undefined)
+    if (body.score_a !== undefined && body.score_a !== null) {
       if (!Number.isInteger(body.score_a) || body.score_a < 0) {
         return apiError('Le score de l\'équipe A doit être un nombre entier positif ou zéro', 400)
       }
@@ -151,7 +151,7 @@ export async function PUT(
       values.push(body.score_a)
     }
 
-    if (body.score_b !== undefined) {
+    if (body.score_b !== undefined && body.score_b !== null) {
       if (!Number.isInteger(body.score_b) || body.score_b < 0) {
         return apiError('Le score de l\'équipe B doit être un nombre entier positif ou zéro', 400)
       }

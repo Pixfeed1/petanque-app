@@ -33,23 +33,20 @@ export async function POST(request: NextRequest) {
       return apiError('Le commentaire ne doit pas dépasser 500 caractères', 400)
     }
 
-    // Vérifier si l'utilisateur a déjà soumis un avis
-    const existingReview = await query(
-      `SELECT id FROM reviews WHERE user_id = $1`,
-      [user.id]
-    )
-
-    if (existingReview.rows.length > 0) {
-      return apiError('Vous avez déjà soumis un avis', 409)
-    }
-
-    // Créer l'avis (approved = false par défaut, nécessite modération)
+    // Créer l'avis avec ON CONFLICT pour éviter race condition
+    // Utilise INSERT ... ON CONFLICT pour atomicité (évite TOCTOU)
     const result = await query(
       `INSERT INTO reviews (user_id, rating, content, name, role, source, approved, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, 'web', false, NOW(), NOW())
+       ON CONFLICT (user_id) DO NOTHING
        RETURNING *`,
       [user.id, rating, content, name, role || null]
     )
+
+    // Si aucune ligne retournée, l'utilisateur a déjà un avis
+    if (result.rows.length === 0) {
+      return apiError('Vous avez déjà soumis un avis', 409)
+    }
 
     const review = result.rows[0]
 
