@@ -29,7 +29,7 @@ import {
 export default function CreateTournamentPage() {
   const router = useRouter()
   const { user, organization, loading: authLoading } = useAuth()
-  const { showError } = useToast()
+  const { showError, showWarning } = useToast()
   const [mounted, setMounted] = useState(false)
 
   // Hook formulaire
@@ -79,7 +79,9 @@ export default function CreateTournamentPage() {
   } = useTournamentCreation({
     formData,
     availablePlayers,
-    getEstimatedTeams
+    getEstimatedTeams,
+    onError: showError,
+    onWarning: showWarning
   })
 
   // Effets

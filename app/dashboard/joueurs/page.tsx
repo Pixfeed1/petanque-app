@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { usePlayersManagement } from '@/hooks/players'
+import { useToast } from '@/components/ui/Toast'
+import { useConfirm } from '@/components/ui/ConfirmModal'
 import type { Joueur } from '@/lib/types'
 import {
   Users, Plus, Search, Edit, Trash, Email, Trophy,
@@ -21,6 +23,8 @@ export default function PlayersManagementPage() {
   const router = useRouter()
   const { user, organization } = useAuth()
   const [mounted, setMounted] = useState(false)
+  const { showSuccess, showError } = useToast()
+  const { confirm, ConfirmModal } = useConfirm()
 
   const {
     players,
@@ -44,7 +48,11 @@ export default function PlayersManagementPage() {
     deletePlayer,
     bulkDelete,
     exportPlayers
-  } = usePlayersManagement()
+  } = usePlayersManagement({
+    onSuccess: showSuccess,
+    onError: showError,
+    onConfirm: confirm
+  })
 
   useEffect(() => {
     setMounted(true)
@@ -136,6 +144,8 @@ export default function PlayersManagementPage() {
         .animate-slideUp { animation: slideUp 0.6s ease-out both; }
         .animate-slideIn { animation: slideIn 0.4s ease-out both; }
       `}</style>
+
+      <ConfirmModal />
     </div>
   )
 }

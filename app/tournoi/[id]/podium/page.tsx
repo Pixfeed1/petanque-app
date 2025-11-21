@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { usePodium, PodiumTeam } from '@/hooks/podium'
+import { useToast } from '@/components/ui/Toast'
 import { Trophy, Crown, Medal, Star, Sparkles, Petanque, Download, Loader } from '@/components/Icons'
 
 // Icones premium
@@ -27,6 +28,7 @@ const Icons = {
 export default function PodiumPage() {
   const params = useParams()
   const router = useRouter()
+  const { showSuccess } = useToast()
 
   const {
     loading,
@@ -37,7 +39,10 @@ export default function PodiumPage() {
     generatingCertificate,
     handleShare,
     generatePremiumCertificate
-  } = usePodium({ tournoiId: params.id })
+  } = usePodium({
+    tournoiId: params.id,
+    onSuccess: showSuccess
+  })
 
   if (loading) {
     return (

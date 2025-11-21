@@ -91,7 +91,10 @@ export default function TournamentDetailPage() {
   } = useTeamManagement({
     tournament,
     teams,
-    loadTournamentData
+    loadTournamentData,
+    onSuccess: showSuccess,
+    onError: showError,
+    onWarning: showWarning
   })
 
   // Callback pour confirmation de conflit terrain
@@ -134,7 +137,10 @@ export default function TournamentDetailPage() {
     tournament,
     teams,
     matches,
-    loadTournamentData
+    loadTournamentData,
+    onSuccess: showSuccess,
+    onError: showError,
+    onWarning: showWarning
   })
 
   // Hook classements

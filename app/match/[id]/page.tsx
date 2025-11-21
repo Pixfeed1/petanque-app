@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useMatchScore } from '@/hooks/match'
+import { useToast } from '@/components/ui/Toast'
+import { useConfirm } from '@/components/ui/ConfirmModal'
 import {
   Trophy, Plus, Minus, Check, Clock, ArrowLeft,
   Undo, Loader, Save, Petanque
@@ -19,6 +21,8 @@ export default function MatchScorePage() {
   const router = useRouter()
   const params = useParams()
   const [mounted, setMounted] = useState(false)
+  const { showSuccess, showError, showWarning } = useToast()
+  const { confirm, ConfirmModal } = useConfirm()
 
   // Hook principal pour la gestion du match
   const {
@@ -40,7 +44,13 @@ export default function MatchScorePage() {
     undoLastManche,
     saveProgress,
     formatTime
-  } = useMatchScore({ matchId: params.id })
+  } = useMatchScore({
+    matchId: params.id,
+    onSuccess: showSuccess,
+    onError: showError,
+    onWarning: showWarning,
+    onConfirm: confirm
+  })
 
   useEffect(() => {
     setMounted(true)
@@ -169,6 +179,8 @@ export default function MatchScorePage() {
         .animation-delay-2000 { animation-delay: 2s; }
         .animation-delay-4000 { animation-delay: 4s; }
       `}</style>
+
+      <ConfirmModal />
     </div>
   )
 }
