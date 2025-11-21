@@ -4,6 +4,13 @@
 import { useState, useEffect } from 'react'
 import type { Joueur } from '@/lib/types'
 
+// Helper pour calculer la date du mois dernier (evite la duplication)
+const getLastMonthDate = () => {
+  const lastMonth = new Date()
+  lastMonth.setMonth(lastMonth.getMonth() - 1)
+  return lastMonth
+}
+
 export interface DashboardStats {
   totalTournois: number
   tournoiEnCours: number
@@ -78,8 +85,7 @@ export function useDashboardData(organizationId: number | undefined) {
 
         // Calculer les stats des tournois
         const enCours = tournoiData.filter(t => t.status === 'en_cours').length
-        const lastMonth = new Date()
-        lastMonth.setMonth(lastMonth.getMonth() - 1)
+        const lastMonth = getLastMonthDate()
         const recentTournois = tournoiData.filter(
           t => new Date(t.created_at) > lastMonth
         ).length
@@ -99,8 +105,7 @@ export function useDashboardData(organizationId: number | undefined) {
 
       if (joueursRes.ok) {
         const joueursData = await joueursRes.json()
-        const lastMonth = new Date()
-        lastMonth.setMonth(lastMonth.getMonth() - 1)
+        const lastMonth = getLastMonthDate()
         const recentPlayers = joueursData.filter(
           (j: Joueur) => j.created_at && new Date(j.created_at) > lastMonth
         ).length
@@ -112,21 +117,17 @@ export function useDashboardData(organizationId: number | undefined) {
         }))
       }
 
-      // Charger tous les matchs de l'organisation (reutilise tournoiData)
-      const allMatches: Match[] = []
-      for (const tournoi of tournoiData) {
-        const matchRes = await fetch(`/api/matches?tournoi_id=${tournoi.id}`, {
-          credentials: 'include'
-        })
-        if (matchRes.ok) {
-          const matches = await matchRes.json()
-          allMatches.push(...matches)
-        }
-      }
+      // Charger tous les matchs de l'organisation en parallele (evite N+1 queries)
+      const matchPromises = tournoiData.map(tournoi =>
+        fetch(`/api/matches?tournoi_id=${tournoi.id}`, { credentials: 'include' })
+          .then(res => res.ok ? res.json() : [])
+          .catch(() => [])
+      )
+      const matchResults = await Promise.all(matchPromises)
+      const allMatches: Match[] = matchResults.flat()
 
       if (allMatches.length > 0) {
-        const lastMonth = new Date()
-        lastMonth.setMonth(lastMonth.getMonth() - 1)
+        const lastMonth = getLastMonthDate()
         const recentMatchs = allMatches.filter(
           m => new Date(m.created_at) > lastMonth
         ).length

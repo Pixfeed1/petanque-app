@@ -5,7 +5,7 @@
  * - Classement par poule
  */
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { StatsService } from '@/lib/services'
 import type { Match as MatchType, Joueur } from '@/lib/types'
@@ -61,6 +61,16 @@ export function useRankings({
 
   const [individualRankings, setIndividualRankings] = useState<PlayerWithStats[]>([])
   const [refreshingClassement, setRefreshingClassement] = useState(false)
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current)
+      }
+    }
+  }, [])
 
   /**
    * Calcul optimisé du classement des équipes avec useMemo + StatsService
@@ -202,10 +212,16 @@ export function useRankings({
   const refreshClassement = useCallback(async (loadTournamentData: () => Promise<void>) => {
     setRefreshingClassement(true)
 
+    // Clear previous timeout if any
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current)
+    }
+
     // Attendre un peu puis recharger
-    setTimeout(async () => {
+    refreshTimeoutRef.current = setTimeout(async () => {
       await loadTournamentData()
       setRefreshingClassement(false)
+      refreshTimeoutRef.current = null
     }, 100)
   }, [])
 
