@@ -169,29 +169,30 @@ export function useRankings({
       const equipesData = await equipesResponse.json()
       const matchesData = await matchesResponse.json()
 
-      // Calculer les stats de chaque joueur avec StatsService
-      const playerStats = joueurs.map((joueur: Joueur): PlayerWithStats => {
-        const stats = StatsService.calculatePlayerStats(
-          joueur,
-          matchesData as unknown as MatchType[],
-          equipesData.map((eq: Team) => ({
-            id: eq.id,
-            joueur_ids: eq.joueur_ids || []
-          }))
-        )
+      // Calculer les stats de tous les joueurs en batch (optimisé O(n) vs O(n*m))
+      const teamsForStats = equipesData.map((eq: Team) => ({
+        id: eq.id,
+        joueur_ids: eq.joueur_ids || []
+      }))
 
-        return {
-          ...joueur,
-          played: stats.played,
-          victories: stats.victories,
-          defeats: stats.defeats,
-          draws: stats.draws,
-          pointsFor: stats.pointsFor,
-          pointsAgainst: stats.pointsAgainst,
-          difference: stats.difference,
-          points: stats.points
-        }
-      })
+      const statsArray = StatsService.calculateAllPlayersStats(
+        joueurs,
+        matchesData as unknown as MatchType[],
+        teamsForStats
+      )
+
+      // Fusionner les stats avec les données joueurs
+      const playerStats: PlayerWithStats[] = joueurs.map((joueur: Joueur, index: number) => ({
+        ...joueur,
+        played: statsArray[index].played,
+        victories: statsArray[index].victories,
+        defeats: statsArray[index].defeats,
+        draws: statsArray[index].draws,
+        pointsFor: statsArray[index].pointsFor,
+        pointsAgainst: statsArray[index].pointsAgainst,
+        difference: statsArray[index].difference,
+        points: statsArray[index].points
+      }))
 
       // Trier par règle FIPJP
       playerStats.sort((a: PlayerWithStats, b: PlayerWithStats) => {

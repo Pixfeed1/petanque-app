@@ -183,6 +183,86 @@ export function calculatePlayerStats(
 }
 
 /**
+ * Version batch optimisée pour calculer les stats de plusieurs joueurs
+ * Évite le N+1 en construisant un index Map une seule fois
+ */
+export function calculateAllPlayersStats(
+  players: Joueur[],
+  matches: Match[],
+  teams: Array<{ id: string; joueur_ids?: string[] }>
+): PlayerStats[] {
+  // Construire index joueur -> équipes une seule fois (O(n) au lieu de O(n*m))
+  const playerToTeams = new Map<string, string[]>()
+  teams.forEach(team => {
+    team.joueur_ids?.forEach(playerId => {
+      if (!playerToTeams.has(playerId)) {
+        playerToTeams.set(playerId, [])
+      }
+      playerToTeams.get(playerId)!.push(team.id)
+    })
+  })
+
+  // Filtrer les matchs terminés une seule fois
+  const completedMatches = matches.filter(m =>
+    m.status === 'termine' && m.type !== 'bye'
+  )
+
+  // Calculer stats pour chaque joueur avec lookup O(1)
+  return players.map(player => {
+    const playerTeamIds = playerToTeams.get(player.id) || []
+
+    const playerMatches = completedMatches.filter(m =>
+      playerTeamIds.includes(m.equipe_a?.id || '') ||
+      playerTeamIds.includes(m.equipe_b?.id || '')
+    )
+
+    let victories = 0
+    let defeats = 0
+    let draws = 0
+    let pointsFor = 0
+    let pointsAgainst = 0
+
+    playerMatches.forEach(match => {
+      if (match.score_a === null || match.score_b === null) return
+
+      const isTeamA = playerTeamIds.includes(match.equipe_a?.id || '')
+
+      if (match.score_a > match.score_b) {
+        if (isTeamA) victories++
+        else defeats++
+      } else if (match.score_a < match.score_b) {
+        if (isTeamA) defeats++
+        else victories++
+      } else {
+        draws++
+      }
+
+      if (isTeamA) {
+        pointsFor += match.score_a
+        pointsAgainst += match.score_b
+      } else {
+        pointsFor += match.score_b
+        pointsAgainst += match.score_a
+      }
+    })
+
+    return {
+      id: player.id,
+      name: player.name,
+      email: player.email,
+      played: playerMatches.length,
+      victories,
+      defeats,
+      draws,
+      pointsFor,
+      pointsAgainst,
+      difference: pointsFor - pointsAgainst,
+      points: victories * 3 + draws
+    }
+  })
+}
+
+/**
  * Trie les équipes selon les règles FIPJP officielles
  * 1. Nombre de points (victoires × 3 + nuls × 1)
  * 2. Différence de points (moyenne générale)

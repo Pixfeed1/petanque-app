@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
 import { User, Users, Plus, Search, Eye, Loader } from '@/components/Icons'
@@ -36,16 +36,11 @@ export default function JoueursPage() {
   const [genderFilter, setGenderFilter] = useState<'all' | 'H' | 'F'>('all')
   const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    setMounted(true)
-    if (organization?.id) {
-      fetchJoueurs()
-    }
-  }, [organization])
+  const fetchJoueurs = useCallback(async () => {
+    if (!organization?.id) return
 
-  const fetchJoueurs = async () => {
     try {
-      const response = await fetch(`/api/joueurs?org_id=${organization?.id}`, {
+      const response = await fetch(`/api/joueurs?org_id=${organization.id}`, {
         credentials: 'include'
       })
 
@@ -58,7 +53,12 @@ export default function JoueursPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [organization?.id])
+
+  useEffect(() => {
+    setMounted(true)
+    fetchJoueurs()
+  }, [fetchJoueurs])
 
   const filteredJoueurs = joueurs.filter(joueur => {
     const matchesSearch = searchQuery === '' ||

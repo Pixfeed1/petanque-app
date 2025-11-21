@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
+import { StarRating } from '@/components/StarRating'
 
 // Icônes
 const Icons = {
@@ -128,19 +129,6 @@ export default function AdminReviews() {
     } finally {
       setModerating(null)
     }
-  }
-
-  // Affichage des étoiles
-  const renderStars = (rating: number) => {
-    return (
-      <div className="flex">
-        {[...Array(5)].map((_, i) => (
-          <span key={i} className={i < rating ? 'text-yellow-400' : 'text-gray-300'}>
-            {Icons.star}
-          </span>
-        ))}
-      </div>
-    )
   }
 
   // Badge source
@@ -266,7 +254,7 @@ export default function AdminReviews() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-3">
-                      {renderStars(review.rating)}
+                      <StarRating rating={review.rating} />
                       {renderSourceBadge(review.source)}
                       {review.approved && (
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
