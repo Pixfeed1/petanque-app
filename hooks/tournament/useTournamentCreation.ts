@@ -8,7 +8,8 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
-import { ValidationService, MixiteService } from '@/lib/services'
+import { ValidationService } from '@/lib/services'
+import { MixiteService } from '@/lib/services/mixite.service'
 import type { Joueur, Tournoi } from '@/lib/types'
 import type { TournamentFormData, NewPlayer } from './useCreateTournament'
 
