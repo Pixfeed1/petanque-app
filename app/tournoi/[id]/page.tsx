@@ -863,8 +863,8 @@ export default function TournamentDetailPage() {
 
         // Si pas d'équipe B, l'équipe A a un "bye" et avance automatiquement
         if (!equipe_b) {
-          // Match BYE - Qualification automatique sans jouer
-          await fetch('/api/matches', {
+          // 🔧 FIX: Match BYE avec vérification response.ok
+          const byeResponse = await fetch('/api/matches', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -874,15 +874,19 @@ export default function TournamentDetailPage() {
               equipe_b_id: null,
               tour: 1,
               terrain: null,
-              type: 'bye',  // Type spécial pour les byes
+              type: 'bye',
               status: 'termine',
-              score_a: 0,  // Pas de score pour un bye
+              score_a: 0,
               score_b: 0
             })
           })
+          if (!byeResponse.ok) {
+            const error = await byeResponse.json().catch(() => ({ error: 'Erreur serveur' }))
+            throw new Error(`Échec création match BYE: ${error.error}`)
+          }
         } else {
-          // Match normal avec deux équipes
-          await fetch('/api/matches', {
+          // 🔧 FIX: Match normal avec vérification response.ok
+          const matchResponse = await fetch('/api/matches', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -896,6 +900,10 @@ export default function TournamentDetailPage() {
               status: 'a_jouer'
             })
           })
+          if (!matchResponse.ok) {
+            const error = await matchResponse.json().catch(() => ({ error: 'Erreur serveur' }))
+            throw new Error(`Échec création match ${equipe_a.name} vs ${equipe_b.name}: ${error.error}`)
+          }
         }
       }
 
@@ -1084,25 +1092,42 @@ export default function TournamentDetailPage() {
     }
 
     try {
-      // Incrémenter AVANT création pour éviter désynchronisation
       const newRotation = currentRotation + 1
-      setCurrentRotation(newRotation)
 
-      // Créer les nouvelles équipes
+      // 🔧 FIX: Vérifier que les matchs n'existent pas déjà pour cette rotation
+      const existingMatches = matches.filter(m => m.tour === newRotation)
+      if (existingMatches.length > 0) {
+        alert(`⚠️ Les matchs pour la rotation ${newRotation} existent déjà.`)
+        return
+      }
+
+      // Créer les nouvelles équipes d'abord
       await createNewTeamsWithAlgorithm()
 
-      // Attendre un peu pour que les équipes soient créées en BD
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // 🔧 FIX: Vérifier que les équipes ont bien été créées avant d'incrémenter
+      const verifyResponse = await fetch(`/api/equipes?tournoi_id=${tournament.id}`, {
+        credentials: 'include'
+      })
+      if (!verifyResponse.ok) {
+        throw new Error('Échec vérification création équipes')
+      }
+      const allTeams = await verifyResponse.json()
+      const newTeams = allTeams.filter((t: Team) => t.name.startsWith(`R${newRotation}-`))
+
+      if (newTeams.length === 0) {
+        throw new Error('Aucune équipe créée pour la nouvelle rotation')
+      }
+
+      // Seulement maintenant incrémenter le state
+      setCurrentRotation(newRotation)
 
       // Créer les matchs pour cette rotation
       await createMatchesForRotation(newRotation)
 
-      alert(`✅ Rotation ${newRotation} créée avec succès !\n\nLes nouvelles équipes et leurs matchs sont prêts.`)
+      alert(`✅ Rotation ${newRotation} créée avec succès !\n\n${newTeams.length} équipes et leurs matchs sont prêts.`)
     } catch (error) {
       console.error('Erreur rotation:', error)
-      // Rollback en cas d'erreur
-      setCurrentRotation(currentRotation)
-      alert('❌ Erreur lors de la création de la rotation')
+      alert(`❌ Erreur lors de la création de la rotation:\n${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
   }
 
@@ -1159,9 +1184,10 @@ export default function TournamentDetailPage() {
         console.warn(`${mixiteResult.unassignedPlayerIds.length} joueur(s) non assigné(s) pour la rotation ${rotationNumber}:`, mixiteResult.warnings)
       }
 
-      // Créer les équipes en base
+      // 🔧 FIX: Créer les équipes avec vérification response.ok
+      const teamErrors: string[] = []
       for (const team of newTeams) {
-        await fetch('/api/equipes', {
+        const teamResponse = await fetch('/api/equipes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -1177,6 +1203,15 @@ export default function TournamentDetailPage() {
             }
           })
         })
+
+        if (!teamResponse.ok) {
+          const error = await teamResponse.json().catch(() => ({ error: 'Erreur serveur' }))
+          teamErrors.push(`${team.name}: ${error.error}`)
+        }
+      }
+
+      if (teamErrors.length > 0) {
+        throw new Error(`Échec création équipes:\n${teamErrors.join('\n')}`)
       }
 
       // Recharger les données

@@ -198,8 +198,10 @@ export async function PUT(
         const scoreA = body.score_a !== undefined ? body.score_a : existingMatch.score_a
         const scoreB = body.score_b !== undefined ? body.score_b : existingMatch.score_b
 
-        // Vérifier qu'il n'y a pas d'égalité
-        if (scoreA === scoreB) {
+        // 🔧 FIX: Permettre les égalités SEULEMENT pour les matchs BYE (équipe_b null)
+        const isByeMatch = existingMatch.type === 'bye' || !existingMatch.equipe_b_id
+
+        if (!isByeMatch && scoreA === scoreB) {
           return apiError('Un match de pétanque ne peut pas se terminer sur une égalité', 400)
         }
 
@@ -212,17 +214,18 @@ export async function PUT(
         const maxPoints = settings.maxPoints || 13
         const timeLimit = settings.timeLimit || false
 
-        // 🔧 FIX Bug #6 : Si timeLimit activé, permettre de terminer sans atteindre maxPoints
-        // Sinon, vérifier qu'au moins une équipe a atteint le score maximum
-        if (!timeLimit && scoreA < maxPoints && scoreB < maxPoints) {
+        // 🔧 FIX Bug #6 : Si timeLimit activé OU match BYE, permettre de terminer sans atteindre maxPoints
+        if (!isByeMatch && !timeLimit && scoreA < maxPoints && scoreB < maxPoints) {
           return apiError(
             `Le match doit se terminer quand une équipe atteint ${maxPoints} points. Score actuel: ${scoreA}-${scoreB}`,
             400
           )
         }
 
-        // Calculer automatiquement le winner_id basé sur les scores
-        const calculatedWinnerId = scoreA > scoreB ? existingMatch.equipe_a_id : existingMatch.equipe_b_id
+        // Calculer automatiquement le winner_id basé sur les scores (ou équipe_a pour BYE)
+        const calculatedWinnerId = isByeMatch
+          ? existingMatch.equipe_a_id
+          : (scoreA > scoreB ? existingMatch.equipe_a_id : existingMatch.equipe_b_id)
         if (!body.winner_id) {
           body.winner_id = calculatedWinnerId
         } else if (body.winner_id !== calculatedWinnerId) {
@@ -300,13 +303,32 @@ export async function DELETE(
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
+    const { user } = authResult
 
     const { id } = await params
 
-    const match = await queryOne('SELECT id FROM matches WHERE id = $1', [id])
+    // 🔧 FIX: Vérifier accès organisation avant suppression
+    const match = await queryOne(
+      `SELECT m.id, t.org_id as tournoi_org_id
+       FROM matches m
+       LEFT JOIN tournois t ON m.tournoi_id = t.id
+       WHERE m.id = $1`,
+      [id]
+    )
 
     if (!match) {
       return apiError('Match introuvable', 404)
+    }
+
+    // Vérifier que l'utilisateur a accès à l'organisation
+    if (match.tournoi_org_id) {
+      const hasAccess = await queryOne(
+        'SELECT 1 FROM org_users WHERE user_id = $1 AND org_id = $2',
+        [user.id, match.tournoi_org_id]
+      )
+      if (!hasAccess) {
+        return apiError('Accès refusé à ce tournoi', 403)
+      }
     }
 
     await query('DELETE FROM matches WHERE id = $1', [id])

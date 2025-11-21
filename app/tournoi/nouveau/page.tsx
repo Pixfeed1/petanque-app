@@ -493,10 +493,13 @@ export default function CreateTournamentPage() {
         formData.mixiteObligatoire
       )
 
-      // Créer les équipes en base de données
+      // 🔧 FIX: Créer les équipes avec vérification response.ok
       let teamNumber = 1
+      let teamsCreated = 0
+      const teamErrors: string[] = []
+
       for (const team of mixiteResult.teams) {
-        await fetch('/api/equipes', {
+        const teamResponse = await fetch('/api/equipes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -512,16 +515,28 @@ export default function CreateTournamentPage() {
             }
           })
         })
+
+        if (!teamResponse.ok) {
+          const error = await teamResponse.json().catch(() => ({ error: 'Erreur serveur' }))
+          teamErrors.push(`R1-Équipe ${teamNumber}: ${error.error}`)
+        } else {
+          teamsCreated++
+        }
         teamNumber++
+      }
+
+      // Vérifier si toutes les équipes ont été créées
+      if (teamErrors.length > 0) {
+        throw new Error(`${teamErrors.length} équipe(s) non créée(s):\n${teamErrors.join('\n')}`)
       }
 
       // Alerter si des joueurs ne peuvent pas être assignés
       if (mixiteResult.unassignedPlayerIds.length > 0) {
         console.warn(`${mixiteResult.unassignedPlayerIds.length} joueur(s) non assigné(s) en rotation 1:`, mixiteResult.warnings)
       }
-      
-      // Sauvegarder la configuration pour les rotations futures
-      await fetch(`/api/tournois/${tournoi.id}`, {
+
+      // 🔧 FIX: Sauvegarder config avec vérification response.ok
+      const configResponse = await fetch(`/api/tournois/${tournoi.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -534,6 +549,11 @@ export default function CreateTournamentPage() {
           }
         })
       })
+
+      if (!configResponse.ok) {
+        throw new Error('Échec sauvegarde configuration mêlée tournante')
+      }
+
       return 0
     }
     return 0
@@ -697,10 +717,12 @@ export default function CreateTournamentPage() {
         formData.selectedPlayers.includes(p.id)
       )
 
+      // 🔧 FIX: Utiliser Date.now() + index au lieu de Math.random() pour éviter collisions
+      const tempIdBase = Date.now()
       const newPlayersToCreate = formData.newPlayers
         .filter(np => np.name.trim())
-        .map(np => ({
-          id: 'temp-' + Math.random(), // ID temporaire pour validation
+        .map((np, index) => ({
+          id: `temp-${tempIdBase}-${index}`,
           name: np.name,
           gender: np.gender as 'H' | 'F' | undefined,
           stats: { gender: np.gender || 'H' }
