@@ -23,6 +23,8 @@ interface UseTournamentCreationProps {
   formData: TournamentFormData
   availablePlayers: Joueur[]
   getEstimatedTeams: () => number
+  onError?: (message: string) => void
+  onWarning?: (message: string) => void
 }
 
 interface UseTournamentCreationReturn {
@@ -37,13 +39,21 @@ interface UseTournamentCreationReturn {
 export function useTournamentCreation({
   formData,
   availablePlayers,
-  getEstimatedTeams
+  getEstimatedTeams,
+  onError,
+  onWarning
 }: UseTournamentCreationProps): UseTournamentCreationReturn {
   const router = useRouter()
   const { user, organization, refreshOrganization } = useAuth()
 
   const [savingTournament, setSavingTournament] = useState(false)
   const [successAnimation, setSuccessAnimation] = useState(false)
+
+  // Système de notification avec fallback
+  const notify = {
+    error: (msg: string) => onError ? onError(msg) : console.error(msg),
+    warning: (msg: string) => onWarning ? onWarning(msg) : console.warn(msg)
+  }
 
   /**
    * Crée une équipe avec ses joueurs
@@ -205,17 +215,17 @@ export function useTournamentCreation({
    */
   const handleSubmit = useCallback(async () => {
     if (!user) {
-      alert('Vous devez être connecté')
+      notify.error('Vous devez être connecté')
       router.push('/login')
       return
     }
 
     if (!organization?.id || organization.id.startsWith('temp-')) {
-      alert('Erreur : Organisation invalide. Veuillez vous reconnecter.')
+      notify.error('Organisation invalide. Veuillez vous reconnecter.')
       if (refreshOrganization) {
         try {
           await refreshOrganization()
-          alert('Organisation rechargée. Réessayez.')
+          notify.warning('Organisation rechargée. Réessayez.')
           return
         } catch {
           router.push('/login')
@@ -229,7 +239,7 @@ export function useTournamentCreation({
     // Validations préalables
     const formatValidation = MixiteService.validateFormatMixite(formData.format, formData.mixiteObligatoire)
     if (!formatValidation.valid) {
-      alert(formatValidation.error)
+      notify.error(formatValidation.error || 'Format invalide')
       return
     }
 
@@ -246,7 +256,7 @@ export function useTournamentCreation({
         true
       )
       if (!genderValidation.valid) {
-        alert(genderValidation.error)
+        notify.error(genderValidation.error || 'Configuration mixité invalide')
         return
       }
     }
@@ -254,7 +264,7 @@ export function useTournamentCreation({
     // Validation poules
     const pouleValidation = ValidationService.validatePouleSize(formData.pouleSize, getEstimatedTeams())
     if (!pouleValidation.valid) {
-      alert(`❌ Configuration invalide\n\n${pouleValidation.error || pouleValidation.warning}`)
+      notify.error(`Configuration invalide: ${pouleValidation.error || pouleValidation.warning}`)
       return
     }
 
@@ -263,13 +273,13 @@ export function useTournamentCreation({
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     if (selectedDate < today) {
-      alert('❌ La date doit être ultérieure ou égale à aujourd\'hui.')
+      notify.error('La date doit être ultérieure ou égale à aujourd\'hui.')
       return
     }
 
     // Validation qualifiés < taille poule
     if (formData.qualifiedPerPoule >= formData.pouleSize) {
-      alert(`❌ Le nombre de qualifiés (${formData.qualifiedPerPoule}) doit être < taille poule (${formData.pouleSize})`)
+      notify.error(`Le nombre de qualifiés (${formData.qualifiedPerPoule}) doit être < taille poule (${formData.pouleSize})`)
       return
     }
 
@@ -361,7 +371,7 @@ export function useTournamentCreation({
         const unassigned = await createTeamsWithMixity(tournoi, allPlayerIds, allPlayersUpdated)
 
         if (unassigned > 0) {
-          alert(`⚠️ ${unassigned} joueur(s) non assigné(s) en raison de la mixité`)
+          notify.warning(`${unassigned} joueur(s) non assigné(s) en raison de la mixité`)
         }
 
         await createPoolMatches(tournoi)
@@ -385,7 +395,7 @@ export function useTournamentCreation({
 
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Erreur lors de la création'
-      alert(`${msg}\n\nDes données partielles peuvent avoir été créées.`)
+      notify.error(`${msg}. Des données partielles peuvent avoir été créées.`)
       console.error('Erreur création:', error)
     } finally {
       setSavingTournament(false)

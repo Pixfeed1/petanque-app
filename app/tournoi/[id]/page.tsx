@@ -428,6 +428,7 @@ export default function TournamentDetailPage() {
                           getTeamPlayers={getTeamPlayers}
                           onAssignTerrain={assignTerrain}
                           availableTerrains={tournament.settings.terrains}
+                          onWarning={showWarning}
                         />
                       ))}
                     </div>
@@ -587,6 +588,7 @@ export default function TournamentDetailPage() {
                       getTeamPlayers={getTeamPlayers}
                       onAssignTerrain={assignTerrain}
                       availableTerrains={tournament.settings.terrains}
+                      onWarning={showWarning}
                     />
                   ))}
                 </div>

@@ -25,6 +25,12 @@ interface PlayerStats {
   actifs: number
 }
 
+interface UsePlayersManagementProps {
+  onSuccess?: (message: string) => void
+  onError?: (message: string) => void
+  onConfirm?: (message: string) => Promise<boolean>
+}
+
 interface UsePlayersManagementReturn {
   // State
   players: Joueur[]
@@ -57,8 +63,15 @@ interface UsePlayersManagementReturn {
   updateFormData: (data: Partial<PlayerFormData>) => void
 }
 
-export function usePlayersManagement(): UsePlayersManagementReturn {
+export function usePlayersManagement(props?: UsePlayersManagementProps): UsePlayersManagementReturn {
   const { organization } = useAuth()
+  const { onSuccess, onError, onConfirm } = props || {}
+
+  // Système de notification avec fallback
+  const notify = {
+    success: (msg: string) => onSuccess ? onSuccess(msg) : console.log(msg),
+    error: (msg: string) => onError ? onError(msg) : console.error(msg)
+  }
 
   // State
   const [players, setPlayers] = useState<Joueur[]>([])
@@ -164,9 +177,10 @@ export function usePlayersManagement(): UsePlayersManagementReturn {
         if (response.ok) {
           await loadPlayers()
           closeModal()
+          notify.success('Joueur modifié avec succès')
         } else {
           const error = await response.json()
-          alert(error.error || 'Erreur lors de la modification')
+          notify.error(error.error || 'Erreur lors de la modification')
         }
       } else {
         // Création
@@ -186,9 +200,10 @@ export function usePlayersManagement(): UsePlayersManagementReturn {
         if (response.ok) {
           await loadPlayers()
           closeModal()
+          notify.success('Joueur créé avec succès')
         } else {
           const error = await response.json()
-          alert(error.error || 'Erreur lors de la création')
+          notify.error(error.error || 'Erreur lors de la création')
         }
       }
     } catch (error) {
@@ -200,7 +215,11 @@ export function usePlayersManagement(): UsePlayersManagementReturn {
    * Supprime un joueur
    */
   const deletePlayer = useCallback(async (playerId: string) => {
-    if (!confirm('Etes-vous sur de vouloir supprimer ce joueur ?')) return
+    const confirmed = onConfirm
+      ? await onConfirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')
+      : window.confirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')
+
+    if (!confirmed) return
 
     try {
       const response = await fetch(`/api/joueurs/${playerId}`, {
@@ -210,21 +229,26 @@ export function usePlayersManagement(): UsePlayersManagementReturn {
 
       if (response.ok) {
         await loadPlayers()
+        notify.success('Joueur supprimé')
       } else {
         const error = await response.json()
-        alert(error.error || 'Erreur lors de la suppression')
+        notify.error(error.error || 'Erreur lors de la suppression')
       }
     } catch (error) {
       console.error('Erreur suppression joueur:', error)
-      alert('Erreur lors de la suppression du joueur')
+      notify.error('Erreur lors de la suppression du joueur')
     }
-  }, [loadPlayers])
+  }, [loadPlayers, onConfirm])
 
   /**
    * Suppression en masse
    */
   const bulkDelete = useCallback(async () => {
-    if (!confirm(`Supprimer ${selectedPlayers.length} joueur(s) ?`)) return
+    const confirmed = onConfirm
+      ? await onConfirm(`Supprimer ${selectedPlayers.length} joueur(s) ?`)
+      : window.confirm(`Supprimer ${selectedPlayers.length} joueur(s) ?`)
+
+    if (!confirmed) return
 
     try {
       for (const playerId of selectedPlayers) {
@@ -240,10 +264,12 @@ export function usePlayersManagement(): UsePlayersManagementReturn {
 
       setSelectedPlayers([])
       await loadPlayers()
+      notify.success(`${selectedPlayers.length} joueur(s) supprimé(s)`)
     } catch (error) {
       console.error('Erreur bulk delete:', error)
+      notify.error('Erreur lors de la suppression')
     }
-  }, [selectedPlayers, loadPlayers])
+  }, [selectedPlayers, loadPlayers, onConfirm])
 
   /**
    * Export CSV

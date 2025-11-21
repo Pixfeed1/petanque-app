@@ -35,6 +35,7 @@ interface TeamClassement {
 
 interface UsePodiumProps {
   tournoiId: string | string[] | undefined
+  onSuccess?: (message: string) => void
 }
 
 interface UsePodiumReturn {
@@ -53,7 +54,7 @@ interface UsePodiumReturn {
 // Hook principal
 // ============================================================================
 
-export function usePodium({ tournoiId }: UsePodiumProps): UsePodiumReturn {
+export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumReturn {
   const [loading, setLoading] = useState(true)
   const [tournament, setTournament] = useState<any>(null)
   const [podium, setPodium] = useState<PodiumTeam[]>([])
@@ -337,7 +338,9 @@ export function usePodium({ tournoiId }: UsePodiumProps): UsePodiumReturn {
         await navigator.share(shareData)
       } else {
         await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`)
-        alert('Lien copie dans le presse-papier !')
+        if (onSuccess) {
+          onSuccess('Lien copié dans le presse-papier !')
+        }
       }
     } catch (error) {
       console.error('Erreur partage:', error)

@@ -35,6 +35,10 @@ interface Match {
 
 interface UseMatchScoreProps {
   matchId: string | string[] | undefined
+  onSuccess?: (message: string) => void
+  onError?: (message: string) => void
+  onWarning?: (message: string) => void
+  onConfirm?: (message: string) => Promise<boolean>
 }
 
 interface UseMatchScoreReturn {
@@ -65,8 +69,21 @@ interface UseMatchScoreReturn {
   formatTime: (seconds: number) => string
 }
 
-export function useMatchScore({ matchId }: UseMatchScoreProps): UseMatchScoreReturn {
+export function useMatchScore({
+  matchId,
+  onSuccess,
+  onError,
+  onWarning,
+  onConfirm
+}: UseMatchScoreProps): UseMatchScoreReturn {
   const router = useRouter()
+
+  // Système de notification avec fallback
+  const notify = {
+    success: (msg: string) => onSuccess ? onSuccess(msg) : console.log(msg),
+    error: (msg: string) => onError ? onError(msg) : console.error(msg),
+    warning: (msg: string) => onWarning ? onWarning(msg) : console.warn(msg)
+  }
 
   // State
   const [match, setMatch] = useState<Match | null>(null)
@@ -202,12 +219,12 @@ export function useMatchScore({ matchId }: UseMatchScoreProps): UseMatchScoreRet
     setSaving(true)
     try {
       if (finalScoreA === finalScoreB) {
-        alert('❌ Le match ne peut pas se terminer sur une égalité.')
+        notify.error('Le match ne peut pas se terminer sur une égalité.')
         return
       }
 
       if (finalScoreA < maxPoints && finalScoreB < maxPoints) {
-        alert(`❌ Le match doit se terminer quand une équipe atteint ${maxPoints} points.`)
+        notify.error(`Le match doit se terminer quand une équipe atteint ${maxPoints} points.`)
         return
       }
 
@@ -229,14 +246,14 @@ export function useMatchScore({ matchId }: UseMatchScoreProps): UseMatchScoreRet
       })
 
       if (response.ok) {
-        alert('Match terminé !')
+        notify.success('Match terminé !')
         if (match?.tournoi?.id) {
           router.push(`/tournoi/${match.tournoi.id}`)
         }
       }
     } catch (error) {
       console.error('Erreur finale:', error)
-      alert('Erreur lors de la sauvegarde')
+      notify.error('Erreur lors de la sauvegarde')
     } finally {
       setSaving(false)
     }
@@ -245,12 +262,12 @@ export function useMatchScore({ matchId }: UseMatchScoreProps): UseMatchScoreRet
   // Finish manche
   const finishManche = useCallback(async () => {
     if (mancheScoreA === 0 && mancheScoreB === 0) {
-      alert('⚠️ Vous devez saisir le score de la mène.')
+      notify.warning('Vous devez saisir le score de la mène.')
       return
     }
 
     if (mancheScoreA > 0 && mancheScoreB > 0) {
-      alert('❌ En pétanque, une seule équipe marque par mène.')
+      notify.error('En pétanque, une seule équipe marque par mène.')
       return
     }
 
@@ -265,7 +282,11 @@ export function useMatchScore({ matchId }: UseMatchScoreProps): UseMatchScoreRet
 
     if (totalA >= maxPoints || totalB >= maxPoints) {
       const winnerName = totalA >= maxPoints ? match?.equipe_a?.name : match?.equipe_b?.name
-      if (confirm(`Terminer et déclarer ${winnerName} vainqueur ?`)) {
+      const confirmed = onConfirm
+        ? await onConfirm(`Terminer et déclarer ${winnerName} vainqueur ?`)
+        : window.confirm(`Terminer et déclarer ${winnerName} vainqueur ?`)
+
+      if (confirmed) {
         setWinner(totalA >= maxPoints ? 'A' : 'B')
         await finishMatch(totalA, totalB, newManches)
       } else {
@@ -279,7 +300,7 @@ export function useMatchScore({ matchId }: UseMatchScoreProps): UseMatchScoreRet
       setMancheScoreA(0)
       setMancheScoreB(0)
     }
-  }, [mancheScoreA, mancheScoreB, manches, scoreA, scoreB, maxPoints, match, finishMatch, saveProgress])
+  }, [mancheScoreA, mancheScoreB, manches, scoreA, scoreB, maxPoints, match, finishMatch, saveProgress, onConfirm])
 
   // Undo last manche
   const undoLastManche = useCallback(() => {

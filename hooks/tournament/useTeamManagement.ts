@@ -14,6 +14,9 @@ interface UseTeamManagementProps {
   tournament: Tournament | null
   teams: Team[]
   loadTournamentData: () => Promise<void>
+  onSuccess?: (message: string) => void
+  onError?: (message: string) => void
+  onWarning?: (message: string) => void
 }
 
 interface UseTeamManagementReturn {
@@ -43,9 +46,19 @@ interface UseTeamManagementReturn {
 export function useTeamManagement({
   tournament,
   teams,
-  loadTournamentData
+  loadTournamentData,
+  onSuccess,
+  onError,
+  onWarning
 }: UseTeamManagementProps): UseTeamManagementReturn {
   const { organization } = useAuth()
+
+  // Système de notification avec fallback
+  const notify = {
+    success: (msg: string) => onSuccess ? onSuccess(msg) : console.log(msg),
+    error: (msg: string) => onError ? onError(msg) : console.error(msg),
+    warning: (msg: string) => onWarning ? onWarning(msg) : console.warn(msg)
+  }
 
   // States pour composer les équipes (mode choisi)
   const [availablePlayers, setAvailablePlayers] = useState<Joueur[]>([])
@@ -140,7 +153,7 @@ export function useTeamManagement({
    */
   const createTeamWithPlayers = useCallback(async () => {
     if (!tournament || !newTeamNameForCreation.trim()) {
-      alert('Veuillez entrer un nom d\'équipe')
+      notify.warning('Veuillez entrer un nom d\'équipe')
       return
     }
 
@@ -148,14 +161,14 @@ export function useTeamManagement({
     const teamName = newTeamNameForCreation.trim()
     const existingTeam = teams.find(t => t.name.toLowerCase() === teamName.toLowerCase())
     if (existingTeam) {
-      alert(`❌ Une équipe nommée "${teamName}" existe déjà.\n\nVeuillez choisir un autre nom.`)
+      notify.error(`Une équipe nommée "${teamName}" existe déjà. Veuillez choisir un autre nom.`)
       return
     }
 
     const playersPerTeam = getPlayersPerTeam(tournament.format)
 
     if (selectedPlayerIds.length !== playersPerTeam) {
-      alert(`Vous devez sélectionner exactement ${playersPerTeam} joueur(s) pour une ${tournament.format}`)
+      notify.warning(`Vous devez sélectionner exactement ${playersPerTeam} joueur(s) pour une ${tournament.format}`)
       return
     }
 
@@ -187,14 +200,14 @@ export function useTeamManagement({
         // Recharger les données
         await loadTournamentData()
 
-        alert('✅ Équipe créée avec succès !')
+        notify.success('Équipe créée avec succès !')
       } else {
         const error = await response.json()
-        alert(`Erreur : ${error.error || 'Impossible de créer l\'équipe'}`)
+        notify.error(error.error || 'Impossible de créer l\'équipe')
       }
     } catch (error) {
       console.error('Erreur création équipe:', error)
-      alert('Erreur lors de la création de l\'équipe')
+      notify.error('Erreur lors de la création de l\'équipe')
     } finally {
       setCreatingTeam(false)
     }
@@ -213,7 +226,7 @@ export function useTeamManagement({
     )
 
     if (existingTeam) {
-      alert(`❌ Une équipe nommée "${trimmedName}" existe déjà.\n\nVeuillez choisir un autre nom.`)
+      notify.error(`Une équipe nommée "${trimmedName}" existe déjà. Veuillez choisir un autre nom.`)
       return
     }
 
@@ -229,13 +242,14 @@ export function useTeamManagement({
         await loadTournamentData()
         setEditingTeam(null)
         setNewTeamName('')
+        notify.success('Équipe renommée avec succès')
       } else {
         const error = await response.json()
-        alert(error.error || 'Erreur lors du renommage de l\'équipe')
+        notify.error(error.error || 'Erreur lors du renommage de l\'équipe')
       }
     } catch (error) {
       console.error('Erreur renommage équipe:', error)
-      alert('Erreur lors du renommage de l\'équipe')
+      notify.error('Erreur lors du renommage de l\'équipe')
     }
   }, [editingTeam, newTeamName, teams, loadTournamentData])
 

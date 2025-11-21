@@ -260,12 +260,7 @@ export function useLoginForm(): UseLoginFormReturn {
         throw new Error(data.error || "Erreur lors de l'envoi")
       }
 
-      alert(
-        '✅ Email envoye !\n\n' +
-        data.message +
-        '\n\n' +
-        (data.resetUrl ? `En developpement, utilisez ce lien :\n${data.resetUrl}` : '')
-      )
+      setSuccess(data.message || 'Email envoyé ! Vérifiez votre boîte de réception.')
 
       setActiveTab('login')
       setEmail('')

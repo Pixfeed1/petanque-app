@@ -30,6 +30,7 @@ interface MatchCardProps {
   getTeamPlayers: (teamId: string) => string[]
   onAssignTerrain?: (matchId: string, terrain: number) => void
   availableTerrains: number
+  onWarning?: (message: string) => void
 }
 
 export default function MatchCard({
@@ -38,7 +39,8 @@ export default function MatchCard({
   isOrganizer,
   getTeamPlayers,
   onAssignTerrain,
-  availableTerrains
+  availableTerrains,
+  onWarning
 }: MatchCardProps) {
   const router = useRouter()
 
@@ -154,7 +156,9 @@ export default function MatchCard({
           <button
             onClick={() => {
               if (!match.terrain) {
-                alert('⚠️ Veuillez d\'abord assigner un terrain au match avant de le démarrer.')
+                if (onWarning) {
+                  onWarning('Veuillez d\'abord assigner un terrain au match avant de le démarrer')
+                }
                 return
               }
               router.push(`/match/${match.id}`)

@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
+import { useToast } from '@/components/ui/Toast'
 
 // Hooks
 import {
@@ -28,6 +29,7 @@ import {
 export default function CreateTournamentPage() {
   const router = useRouter()
   const { user, organization, loading: authLoading } = useAuth()
+  const { showError } = useToast()
   const [mounted, setMounted] = useState(false)
 
   // Hook formulaire
@@ -87,10 +89,10 @@ export default function CreateTournamentPage() {
 
   useEffect(() => {
     if (!authLoading && !organization && user) {
-      alert('Erreur: Aucune organisation trouvée.')
+      showError('Erreur: Aucune organisation trouvée')
       router.push('/dashboard')
     }
-  }, [organization, user, authLoading, router])
+  }, [organization, user, authLoading, router, showError])
 
   useEffect(() => {
     if (authLoading) return

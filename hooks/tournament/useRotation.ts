@@ -16,6 +16,9 @@ interface UseRotationProps {
   teams: Team[]
   matches: Match[]
   loadTournamentData: () => Promise<void>
+  onSuccess?: (message: string) => void
+  onError?: (message: string) => void
+  onWarning?: (message: string) => void
 }
 
 interface UseRotationReturn {
@@ -34,9 +37,19 @@ export function useRotation({
   tournament,
   teams,
   matches,
-  loadTournamentData
+  loadTournamentData,
+  onSuccess,
+  onError,
+  onWarning
 }: UseRotationProps): UseRotationReturn {
   const { organization } = useAuth()
+
+  // Système de notification avec fallback
+  const notify = {
+    success: (msg: string) => onSuccess ? onSuccess(msg) : console.log(msg),
+    error: (msg: string) => onError ? onError(msg) : console.error(msg),
+    warning: (msg: string) => onWarning ? onWarning(msg) : console.warn(msg)
+  }
 
   const [currentRotation, setCurrentRotation] = useState(1)
 
@@ -202,7 +215,7 @@ export function useRotation({
       await loadTournamentData()
     } catch (error) {
       console.error('Erreur création matchs rotation:', error)
-      alert('❌ Erreur lors de la création des matchs de rotation')
+      notify.error('Erreur lors de la création des matchs de rotation')
     }
   }, [tournament, loadTournamentData])
 
@@ -219,7 +232,7 @@ export function useRotation({
     const nextRotation = currentRotation + 1
     const nextRotationTeams = teams.filter(t => t.name.startsWith(`R${nextRotation}-`))
     if (nextRotationTeams.length > 0) {
-      alert(`⚠️ Les équipes pour la rotation ${nextRotation} existent déjà.\n\nImpossible de créer une nouvelle rotation.`)
+      notify.warning(`Les équipes pour la rotation ${nextRotation} existent déjà. Impossible de créer une nouvelle rotation.`)
       return
     }
 
@@ -228,14 +241,14 @@ export function useRotation({
       const currentRotationMatches = matches.filter(m => m.tour === currentRotation)
 
       if (currentRotationMatches.length === 0) {
-        alert('⚠️ Aucun match trouvé pour le tour actuel.\n\nCréez d\'abord des matchs avant de faire une rotation.')
+        notify.warning('Aucun match trouvé pour le tour actuel. Créez d\'abord des matchs avant de faire une rotation.')
         return
       }
 
       const hasFinishedMatch = currentRotationMatches.some(m => m.status === 'termine')
 
       if (!hasFinishedMatch) {
-        alert('⚠️ Mode rotation par match\n\nAu moins 1 match doit être terminé avant de pouvoir créer une nouvelle rotation.')
+        notify.warning('Mode rotation par match: Au moins 1 match doit être terminé avant de pouvoir créer une nouvelle rotation.')
         return
       }
     } else {
@@ -243,7 +256,7 @@ export function useRotation({
       const allMatchesOfCurrentTour = matches.filter(m => m.tour === currentRotation)
 
       if (allMatchesOfCurrentTour.length === 0) {
-        alert('⚠️ Aucun match trouvé pour le tour actuel.\n\nCréez d\'abord des matchs avant de faire une rotation.')
+        notify.warning('Aucun match trouvé pour le tour actuel. Créez d\'abord des matchs avant de faire une rotation.')
         return
       }
 
@@ -251,7 +264,7 @@ export function useRotation({
 
       if (!allFinished) {
         const remainingMatches = allMatchesOfCurrentTour.filter(m => m.status !== 'termine').length
-        alert(`⚠️ Mode rotation par tour\n\nTous les matchs du tour ${currentRotation} doivent être terminés.\n\nMatchs restants : ${remainingMatches}`)
+        notify.warning(`Mode rotation par tour: Tous les matchs du tour ${currentRotation} doivent être terminés. Matchs restants: ${remainingMatches}`)
         return
       }
     }
@@ -276,18 +289,18 @@ export function useRotation({
         // Vérifier si la mixité est faisable
         if (tournament.format === 'doublette') {
           if (hommes.length < 1 || femmes.length < 1) {
-            alert('❌ Mixité impossible\n\nLa doublette avec mixité obligatoire nécessite au minimum 1 homme et 1 femme.')
+            notify.error('Mixité impossible: La doublette avec mixité obligatoire nécessite au minimum 1 homme et 1 femme.')
             return
           }
         } else {
           if (hommes.length < 1 || femmes.length < 1) {
-            alert('❌ Mixité impossible\n\nLa triplette avec mixité obligatoire nécessite au minimum 1 homme et 1 femme.')
+            notify.error('Mixité impossible: La triplette avec mixité obligatoire nécessite au minimum 1 homme et 1 femme.')
             return
           }
         }
       } catch (error) {
         console.error('Erreur validation mixité:', error)
-        alert('❌ Erreur lors de la validation de la mixité')
+        notify.error('Erreur lors de la validation de la mixité')
         return
       }
     }
@@ -298,7 +311,7 @@ export function useRotation({
       // Vérifier que les matchs n'existent pas déjà
       const existingMatches = matches.filter(m => m.tour === newRotation)
       if (existingMatches.length > 0) {
-        alert(`⚠️ Les matchs pour la rotation ${newRotation} existent déjà.`)
+        notify.warning(`Les matchs pour la rotation ${newRotation} existent déjà.`)
         return
       }
 
@@ -325,10 +338,10 @@ export function useRotation({
       // Créer les matchs pour cette rotation
       await createMatchesForRotation(newRotation)
 
-      alert(`✅ Rotation ${newRotation} créée avec succès !\n\n${newTeams.length} équipes et leurs matchs sont prêts.`)
+      notify.success(`Rotation ${newRotation} créée avec succès ! ${newTeams.length} équipes et leurs matchs sont prêts.`)
     } catch (error) {
       console.error('Erreur rotation:', error)
-      alert(`❌ Erreur lors de la création de la rotation:\n${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+      notify.error(`Erreur lors de la création de la rotation: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
   }, [tournament, teams, matches, currentRotation, organization, createNewTeamsWithAlgorithm, createMatchesForRotation])
 
