@@ -185,6 +185,7 @@ export default function TournamentDetailPage() {
       }
     } catch (error) {
       console.error('Erreur chargement joueurs:', error)
+      // Erreur silencieuse - pas critique pour l'UX
     }
   }
 
@@ -486,6 +487,7 @@ export default function TournamentDetailPage() {
       }
     } catch (error) {
       console.error('Erreur chargement tournoi:', error)
+      alert('❌ Erreur de chargement du tournoi. Actualisez la page.')
     } finally {
       setLoading(false)
     }

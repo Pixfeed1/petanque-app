@@ -142,6 +142,7 @@ export default function CreateTournamentPage() {
       setAvailablePlayers(playersData)
     } catch (error) {
       console.error('Erreur chargement joueurs:', error)
+      setValidationError('Impossible de charger les joueurs. Vérifiez votre connexion.')
     } finally {
       setLoadingPlayers(false)
     }
@@ -414,14 +415,15 @@ export default function CreateTournamentPage() {
       })
 
       if (!response.ok) {
-        console.error('Erreur création équipe')
-        return null
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.error || 'Erreur création équipe')
       }
 
       const equipe = await response.json()
       return equipe
     } catch (error) {
       console.error('Erreur création équipe:', error)
+      alert(`❌ Erreur création équipe: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
       return null
     }
   }
