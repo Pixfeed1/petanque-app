@@ -208,8 +208,10 @@ export function usePodium({ tournoiId }: UsePodiumProps): UsePodiumReturn {
          (m.equipe_a_id === b.team.id && m.equipe_b_id === a.team.id))
       )
       if (directMatch) {
-        const aWon = (directMatch.equipe_a?.id === a.team.id && directMatch.score_a > directMatch.score_b) ||
-                     (directMatch.equipe_b?.id === a.team.id && directMatch.score_b > directMatch.score_a)
+        const dmScoreA = directMatch.score_a ?? 0
+        const dmScoreB = directMatch.score_b ?? 0
+        const aWon = (directMatch.equipe_a?.id === a.team.id && dmScoreA > dmScoreB) ||
+                     (directMatch.equipe_b?.id === a.team.id && dmScoreB > dmScoreA)
         if (aWon) return -1
         else return 1
       }
