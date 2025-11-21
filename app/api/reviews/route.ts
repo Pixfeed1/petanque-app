@@ -4,9 +4,14 @@
 import { NextRequest } from 'next/server'
 import { apiSuccess, apiError } from '@/lib/middleware'
 import { queryMany, query } from '@/lib/db'
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 // GET - Récupérer les avis (publics ou admin)
 export async function GET(request: NextRequest) {
+  // Rate limiting pour route publique
+  const rateLimitResponse = applyRateLimit(request, 'reviews-get', RATE_LIMITS.api)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const { searchParams } = new URL(request.url)
 
