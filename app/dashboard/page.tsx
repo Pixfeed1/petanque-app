@@ -10,6 +10,8 @@ import { loadStripe } from '@stripe/stripe-js'
 import { useDashboardData } from './hooks/useDashboardData'
 import AdBanner from '@/components/AdBanner'
 import { Petanque, Trophy, Users, Play, Chart, Plus, Logout, Settings } from '@/components/Icons'
+import { useToast } from '@/components/ui/Toast'
+import { useConfirm } from '@/components/ui/ConfirmModal'
 import type { ActionItem } from '@/lib/types'
 
 const stripePromise = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
@@ -33,6 +35,8 @@ export default function Dashboard() {
   const searchParams = useSearchParams()
   const { user, organization, loading: authLoading, signOut } = useAuth()
   const { loading, stats, tournois, recentMatches, refetch } = useDashboardData(organization?.id ? Number(organization.id) : undefined)
+  const { showError } = useToast()
+  const { confirm, ConfirmModal } = useConfirm()
 
   const [userPlan, setUserPlan] = useState('free')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -133,15 +137,20 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Erreur lors de la création de la session:', error)
-      alert('Une erreur est survenue. Veuillez réessayer.')
+      showError('Une erreur est survenue. Veuillez réessayer.')
       setProcessingPayment(false)
     }
   }
 
   const handleDeleteTournament = async (tournoiId: number | string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce tournoi ? Cette action est irréversible.')) {
-      return
-    }
+    const confirmed = await confirm({
+      title: 'Supprimer le tournoi',
+      message: 'Êtes-vous sûr de vouloir supprimer ce tournoi ? Cette action est irréversible.',
+      confirmText: 'Supprimer',
+      variant: 'danger'
+    })
+
+    if (!confirmed) return
 
     try {
       const response = await fetch(`/api/tournois/${tournoiId}`, {
@@ -150,14 +159,13 @@ export default function Dashboard() {
       })
 
       if (response.ok) {
-        // Recharger les données du dashboard
         refetch()
       } else {
-        alert('Erreur lors de la suppression du tournoi')
+        showError('Erreur lors de la suppression du tournoi')
       }
     } catch (error) {
       console.error('Erreur lors de la suppression:', error)
-      alert('Une erreur est survenue')
+      showError('Une erreur est survenue')
     }
   }
 
@@ -653,6 +661,9 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmation */}
+      {ConfirmModal}
     </div>
   )
 }

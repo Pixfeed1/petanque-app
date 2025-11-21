@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { StarRating } from '@/components/StarRating'
+import { useToast } from '@/components/ui/Toast'
+import { useConfirm } from '@/components/ui/ConfirmModal'
 
 // Icônes
 const Icons = {
@@ -58,6 +60,8 @@ interface Stats {
 export default function AdminReviews() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { showError, showSuccess } = useToast()
+  const { confirm, ConfirmModal } = useConfirm()
 
   const [reviews, setReviews] = useState<Review[]>([])
   const [stats, setStats] = useState<Stats>({ pending: 0, approved: 0, total: 0 })
@@ -74,7 +78,7 @@ export default function AdminReviews() {
       })
 
       if (response.status === 403) {
-        alert('Accès refusé - Vous n\'êtes pas administrateur')
+        showError('Accès refusé - Vous n\'êtes pas administrateur')
         router.push('/dashboard')
         return
       }
@@ -86,7 +90,7 @@ export default function AdminReviews() {
       setStats(data.stats)
     } catch (error) {
       console.error('Erreur:', error)
-      alert('Erreur lors du chargement des avis')
+      showError('Erreur lors du chargement des avis')
     } finally {
       setLoading(false)
     }
@@ -102,9 +106,14 @@ export default function AdminReviews() {
 
   // Modérer un avis
   const handleModerate = async (reviewId: number, action: 'approve' | 'reject') => {
-    if (!confirm(`Êtes-vous sûr de vouloir ${action === 'approve' ? 'approuver' : 'refuser'} cet avis ?`)) {
-      return
-    }
+    const confirmed = await confirm({
+      title: action === 'approve' ? 'Approuver cet avis' : 'Refuser cet avis',
+      message: `Êtes-vous sûr de vouloir ${action === 'approve' ? 'approuver' : 'refuser'} cet avis ?`,
+      confirmText: action === 'approve' ? 'Approuver' : 'Refuser',
+      variant: action === 'approve' ? 'default' : 'danger'
+    })
+
+    if (!confirmed) return
 
     try {
       setModerating(reviewId)
@@ -118,14 +127,11 @@ export default function AdminReviews() {
 
       if (!response.ok) throw new Error('Erreur modération')
 
-      const data = await response.json()
-      alert(data.message)
-
-      // Recharger les avis
+      showSuccess(action === 'approve' ? 'Avis approuvé' : 'Avis refusé')
       fetchReviews()
     } catch (error) {
       console.error('Erreur:', error)
-      alert('Erreur lors de la modération')
+      showError('Erreur lors de la modération')
     } finally {
       setModerating(null)
     }
@@ -299,6 +305,9 @@ export default function AdminReviews() {
           </div>
         )}
       </div>
+
+      {/* Modal de confirmation */}
+      {ConfirmModal}
     </div>
   )
 }

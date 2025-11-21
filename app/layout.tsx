@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 // import { Inter } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "./providers/AuthProvider"
+import { ToastProvider } from "@/components/ui/Toast"
 
 // Utiliser une police système au lieu de Google Fonts
 // const inter = Inter({
@@ -43,7 +44,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased bg-gray-50 text-gray-900 font-sans overflow-x-hidden">
         <AuthProvider>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

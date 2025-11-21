@@ -3,17 +3,18 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Info, Warning, Check } from '@/components/Icons'
+import { useToast } from '@/components/ui/Toast'
 
 export default function CheckoutPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { showError } = useToast()
   const [loading, setLoading] = useState(false)
   const paymentStatus = searchParams.get('payment')
 
   const handleRetry = async () => {
     setLoading(true)
     try {
-      // Récupérer les infos utilisateur
       const userResponse = await fetch('/api/auth/me', {
         credentials: 'include'
       })
@@ -25,7 +26,6 @@ export default function CheckoutPage() {
 
       const userData = await userResponse.json()
 
-      // Créer une nouvelle session Stripe
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -38,15 +38,14 @@ export default function CheckoutPage() {
 
       if (response.ok) {
         const data = await response.json()
-        // Rediriger vers Stripe Checkout
         window.location.href = data.url
       } else {
-        alert('Erreur lors de la création de la session de paiement')
+        showError('Erreur lors de la création de la session de paiement')
         setLoading(false)
       }
     } catch (error) {
       console.error('Erreur:', error)
-      alert('Une erreur est survenue')
+      showError('Une erreur est survenue')
       setLoading(false)
     }
   }

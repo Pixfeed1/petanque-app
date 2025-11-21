@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useToast } from '@/components/ui/Toast'
 
 interface ReviewPromptProps {
   userName: string
@@ -34,6 +35,7 @@ const Icons = {
 }
 
 export default function ReviewPrompt({ userName, tournoisCount, onClose }: ReviewPromptProps) {
+  const { showWarning, showError } = useToast()
   const [step, setStep] = useState<'rating' | 'comment' | 'success'>('rating')
   const [rating, setRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
@@ -52,12 +54,12 @@ export default function ReviewPrompt({ userName, tournoisCount, onClose }: Revie
 
   const handleSubmit = async () => {
     if (!rating || !comment || !name) {
-      alert('Veuillez remplir tous les champs obligatoires')
+      showWarning('Veuillez remplir tous les champs obligatoires')
       return
     }
 
     if (comment.length < 10) {
-      alert('Le commentaire doit contenir au moins 10 caractères')
+      showWarning('Le commentaire doit contenir au moins 10 caractères')
       return
     }
 
@@ -72,17 +74,15 @@ export default function ReviewPrompt({ userName, tournoisCount, onClose }: Revie
       })
 
       if (!response.ok) {
-        const error = await response.json()
+        const error = await response.json().catch(() => ({}))
         throw new Error(error.error || 'Erreur lors de l\'envoi')
       }
 
-      // Marquer comme ayant déjà donné un avis
       localStorage.setItem('petanque_reviewed', 'true')
-
       setStep('success')
     } catch (error: any) {
       console.error('Erreur:', error)
-      alert(error.message || 'Erreur lors de l\'envoi de votre avis')
+      showError('Erreur lors de l\'envoi de votre avis')
     } finally {
       setSubmitting(false)
     }

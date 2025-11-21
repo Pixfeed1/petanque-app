@@ -5,10 +5,12 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import AdBanner from '@/components/AdBanner'
+import { useToast } from '@/components/ui/Toast'
+import { useConfirm } from '@/components/ui/ConfirmModal'
 
 // Hooks
 import {
@@ -43,6 +45,8 @@ export default function TournamentDetailPage() {
   const router = useRouter()
   const params = useParams()
   const { user } = useAuth()
+  const { showSuccess, showError, showWarning } = useToast()
+  const { confirm, ConfirmModal } = useConfirm()
 
   // UI state
   const [mounted, setMounted] = useState(false)
@@ -90,6 +94,16 @@ export default function TournamentDetailPage() {
     loadTournamentData
   })
 
+  // Callback pour confirmation de conflit terrain
+  const handleConfirmTerrainConflict = useCallback(async (message: string) => {
+    return await confirm({
+      title: 'Conflit de terrain',
+      message,
+      confirmText: 'Assigner quand même',
+      variant: 'warning'
+    })
+  }, [confirm])
+
   // Hook gestion des matchs
   const {
     isValidPoolConfiguration,
@@ -104,7 +118,11 @@ export default function TournamentDetailPage() {
     teams,
     matches,
     loadTournamentData,
-    getTeamPlayers
+    getTeamPlayers,
+    onSuccess: showSuccess,
+    onError: showError,
+    onWarning: showWarning,
+    onConfirmTerrainConflict: handleConfirmTerrainConflict
   })
 
   // Hook rotation (mêlée tournante)
@@ -172,7 +190,7 @@ export default function TournamentDetailPage() {
 
     // Validation
     if (teams.length < 4) {
-      alert(`❌ Minimum 4 équipes requises. Vous avez ${teams.length} équipe(s).`)
+      showError(`Minimum 4 équipes requises. Vous avez ${teams.length} équipe(s).`)
       return
     }
 
@@ -660,6 +678,9 @@ export default function TournamentDetailPage() {
           getPlayersPerTeam={getPlayersPerTeam}
         />
       )}
+
+      {/* Modal de confirmation */}
+      {ConfirmModal}
 
       <style jsx>{`
         @keyframes blob {

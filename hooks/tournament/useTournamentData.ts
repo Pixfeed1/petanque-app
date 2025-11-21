@@ -213,27 +213,41 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
         if (!teamsResponse.ok) throw new Error('Erreur chargement équipes')
         const teamsData = await teamsResponse.json()
 
-        // Enrichir chaque équipe avec les détails des joueurs
-        const enrichedTeams = await Promise.all(
-          teamsData.map(async (team: Team) => {
-            if (team.joueur_ids && Array.isArray(team.joueur_ids) && team.joueur_ids.length > 0) {
-              const joueursResponse = await fetch(`/api/equipes/${team.id}`, {
-                credentials: 'include'
-              })
-              if (joueursResponse.ok) {
-                const enrichedTeam = await joueursResponse.json()
-                // Adapter la structure pour correspondre à l'ancienne structure API
-                if (enrichedTeam.joueurs) {
-                  team.equipes_joueurs = enrichedTeam.joueurs.map((joueur: Joueur) => ({
-                    joueur: joueur,
-                    role: 'joueur'
-                  }))
-                }
-              }
+        // Optimisation: charger tous les joueurs de l'org en une seule requête
+        // puis les mapper aux équipes côté client (évite N+1 queries)
+        const allJoueurIds = new Set<string>()
+        teamsData.forEach((team: Team) => {
+          if (team.joueur_ids && Array.isArray(team.joueur_ids)) {
+            team.joueur_ids.forEach(id => allJoueurIds.add(id))
+          }
+        })
+
+        let joueursMap: Map<string, Joueur> = new Map()
+        if (allJoueurIds.size > 0 && organization?.id) {
+          try {
+            const joueursResponse = await fetch(`/api/joueurs?org_id=${organization.id}&limit=1000`, {
+              credentials: 'include'
+            })
+            if (joueursResponse.ok) {
+              const joueursData = await joueursResponse.json()
+              const joueurs = Array.isArray(joueursData) ? joueursData : joueursData.joueurs || []
+              joueurs.forEach((j: Joueur) => joueursMap.set(j.id, j))
             }
-            return team
-          })
-        )
+          } catch (e) {
+            console.warn('Erreur chargement joueurs:', e)
+          }
+        }
+
+        // Enrichir les équipes avec les joueurs du cache
+        const enrichedTeams = teamsData.map((team: Team) => {
+          if (team.joueur_ids && Array.isArray(team.joueur_ids) && team.joueur_ids.length > 0) {
+            team.equipes_joueurs = team.joueur_ids
+              .map(id => joueursMap.get(id))
+              .filter((j): j is Joueur => j !== undefined)
+              .map(joueur => ({ joueur, role: 'joueur' }))
+          }
+          return team
+        })
         setTeams(enrichedTeams)
 
         // Charger les matchs
@@ -259,7 +273,7 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
       }
     } catch (error) {
       console.error('Erreur chargement tournoi:', error)
-      alert('❌ Erreur de chargement du tournoi. Actualisez la page.')
+      // Erreur silencieuse côté hook - le composant affichera un état d'erreur via loading/tournament null
     } finally {
       setLoading(false)
     }

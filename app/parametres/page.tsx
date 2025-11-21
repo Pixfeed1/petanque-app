@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
 import { User, Organization, Calendar, Crown, Infinity, Download, Archive, Logout, Check, SparklesAlt, ArrowRight, Loader, X, Back } from '@/components/Icons'
+import { useToast } from '@/components/ui/Toast'
 
 // Icônes SVG élégantes
 const Icons = {
@@ -26,6 +27,7 @@ const Icons = {
 export default function Parametres() {
   const router = useRouter()
   const { user, organization, isPremium } = useAuth()
+  const { showError, showSuccess } = useToast()
   const [loading, setLoading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
@@ -64,7 +66,7 @@ export default function Parametres() {
       }
     } catch (error) {
       console.error('Erreur export:', error)
-      alert('Erreur lors de l\'export')
+      showError('Erreur lors de l\'export')
     } finally {
       setExportingData(false)
     }
@@ -110,7 +112,7 @@ export default function Parametres() {
       }
     } catch (error) {
       console.error('Erreur export RGPD:', error)
-      alert('Erreur lors de l\'export')
+      showError('Erreur lors de l\'export')
     } finally {
       setExportingData(false)
     }
@@ -122,18 +124,12 @@ export default function Parametres() {
     setLoading(true)
     try {
       // Note: La suppression de compte nécessite une API dédiée
-      // Pour l'instant, nous informons l'utilisateur de contacter le support
-      alert(
-        `Pour supprimer votre compte, veuillez contacter le support à support@petanquepro.fr\n\n` +
-        `Email du compte: ${user?.email}\n` +
-        `${isPremium ? 'Statut Premium: Oui (sera conservé avec votre email)' : 'Statut Premium: Non'}`
-      )
-
+      showSuccess('Pour supprimer votre compte, contactez support@petanquepro.fr')
       setShowDeleteModal(false)
       setDeleteConfirmation('')
     } catch (error) {
       console.error('Erreur suppression:', error)
-      alert('Erreur lors de la suppression du compte')
+      showError('Erreur lors de la suppression du compte')
     } finally {
       setLoading(false)
     }

@@ -18,6 +18,10 @@ interface UseMatchActionsProps {
   matches: Match[]
   loadTournamentData: () => Promise<void>
   getTeamPlayers: (teamId: string | null | undefined) => string[]
+  onSuccess?: (message: string) => void
+  onError?: (message: string) => void
+  onWarning?: (message: string) => void
+  onConfirmTerrainConflict?: (message: string) => Promise<boolean>
 }
 
 interface UseMatchActionsReturn {
@@ -39,9 +43,20 @@ export function useMatchActions({
   teams,
   matches,
   loadTournamentData,
-  getTeamPlayers
+  getTeamPlayers,
+  onSuccess,
+  onError,
+  onWarning,
+  onConfirmTerrainConflict
 }: UseMatchActionsProps): UseMatchActionsReturn {
   const { organization } = useAuth()
+
+  // Helpers pour notifications (fallback sur console si pas de callback)
+  const notify = {
+    success: (msg: string) => onSuccess ? onSuccess(msg) : console.log(msg),
+    error: (msg: string) => onError ? onError(msg) : console.error(msg),
+    warning: (msg: string) => onWarning ? onWarning(msg) : console.warn(msg)
+  }
 
   /**
    * Valide si une configuration de poules est viable
@@ -138,7 +153,7 @@ export function useMatchActions({
 
     // Validation de la configuration avant génération
     if (!isValidPoolConfiguration(teams.length, pouleSize)) {
-      alert(`❌ Configuration invalide\n\nLa répartition ${teams.length} équipes en poules de ${pouleSize} créerait des poules déséquilibrées.\n\nChaque poule doit avoir au minimum 3 équipes.`)
+      notify.error(`Configuration invalide: ${teams.length} équipes en poules de ${pouleSize} créerait des poules déséquilibrées`)
       return
     }
 
@@ -178,7 +193,7 @@ export function useMatchActions({
     const allPouleMatchesFinished = pouleMatches.every(m => m.status === 'termine')
 
     if (!allPouleMatchesFinished) {
-      alert('Tous les matchs de poule doivent être terminés avant de générer les phases finales.')
+      notify.warning('Tous les matchs de poule doivent être terminés avant de générer les phases finales')
       return
     }
 
@@ -190,7 +205,7 @@ export function useMatchActions({
     const pouleValidation = ValidationService.validatePouleNames(pouleNames as string[])
     if (!pouleValidation.valid) {
       console.error('❌ ERREUR : Poules sans nom détectées !', pouleNames.filter(p => !p))
-      alert(pouleValidation.error)
+      notify.error(pouleValidation.error || 'Erreur de validation des poules')
       return
     }
 
@@ -281,7 +296,7 @@ export function useMatchActions({
     }
 
     if (qualified.length === 0) {
-      alert('Aucune équipe qualifiée trouvée.')
+      notify.warning('Aucune équipe qualifiée trouvée')
       return
     }
 
@@ -388,13 +403,13 @@ export function useMatchActions({
         }
       }
 
-      alert(`Phases éliminatoires générées : ${nbMatches} match(s) de ${matchType}`)
+      notify.success(`Phases éliminatoires générées : ${nbMatches} match(s) de ${matchType}`)
       await loadTournamentData()
     } catch (error) {
       console.error('Erreur génération phases finales:', error)
-      alert('Erreur lors de la génération des phases finales')
+      notify.error('Erreur lors de la génération des phases finales')
     }
-  }, [tournament, teams, matches, loadTournamentData])
+  }, [tournament, teams, matches, loadTournamentData, notify])
 
   /**
    * Génère la finale et petite finale après les demi-finales
@@ -405,7 +420,7 @@ export function useMatchActions({
     const demiMatches = matches.filter(m => m.type === 'demi' && m.status === 'termine')
 
     if (demiMatches.length < 2) {
-      alert('Les deux demi-finales doivent être terminées.')
+      notify.warning('Les deux demi-finales doivent être terminées')
       return
     }
 
@@ -414,7 +429,7 @@ export function useMatchActions({
     const petiteFinaleExists = matches.some(m => m.type === 'petite_finale')
 
     if (finaleExists && petiteFinaleExists) {
-      alert('Les finales sont déjà créées.')
+      notify.warning('Les finales sont déjà créées')
       return
     }
 
@@ -425,7 +440,7 @@ export function useMatchActions({
       // Utiliser for...of pour permettre un early return propre
       for (const match of demiMatches) {
         if (match.score_a === match.score_b) {
-          alert(`⚠️ Égalité détectée dans ${match.equipe_a?.name} vs ${match.equipe_b?.name}. Impossible de créer la finale.`)
+          notify.error(`Égalité détectée dans ${match.equipe_a?.name} vs ${match.equipe_b?.name}. Impossible de créer la finale`)
           return // Early exit propre
         }
 
@@ -487,13 +502,13 @@ export function useMatchActions({
         }
       }
 
-      alert('Finale et petite finale générées avec succès !')
+      notify.success('Finale et petite finale générées avec succès !')
       await loadTournamentData()
     } catch (error) {
       console.error('Erreur génération finales:', error)
-      alert('Erreur lors de la génération des finales')
+      notify.error('Erreur lors de la génération des finales')
     }
-  }, [tournament, matches, loadTournamentData])
+  }, [tournament, matches, loadTournamentData, notify])
 
   /**
    * Assigne un terrain à un match
@@ -502,13 +517,13 @@ export function useMatchActions({
     try {
       // Vérifier que le numéro de terrain est valide
       if (!tournament?.settings.terrains) {
-        alert('❌ Erreur : Nombre de terrains non défini pour ce tournoi.')
+        notify.error('Nombre de terrains non défini pour ce tournoi')
         return
       }
 
       const validation = ValidationService.validateTerrainNumber(terrain, tournament.settings.terrains)
       if (!validation.valid) {
-        alert(validation.error)
+        notify.error(validation.error || 'Numéro de terrain invalide')
         return
       }
 
@@ -530,15 +545,15 @@ export function useMatchActions({
           const teamADisplay = playersA.length > 0 ? `${m.equipe_a?.name} (${playersA.join(', ')})` : m.equipe_a?.name
           const teamBDisplay = playersB.length > 0 ? `${m.equipe_b?.name} (${playersB.join(', ')})` : m.equipe_b?.name
           return `${teamADisplay} vs ${teamBDisplay}`
-        }).join('\n')
+        }).join(', ')
 
-        const confirm = window.confirm(
-          `⚠️ CONFLIT DE TERRAIN !\n\n` +
-          `Le terrain ${terrain} est déjà assigné à :\n${conflictNames}\n\n` +
-          `Voulez-vous quand même assigner ce terrain ?`
-        )
+        // Utiliser callback si disponible, sinon window.confirm en fallback
+        const message = `Le terrain ${terrain} est déjà assigné à : ${conflictNames}. Assigner quand même ?`
+        const confirmed = onConfirmTerrainConflict
+          ? await onConfirmTerrainConflict(message)
+          : window.confirm(message)
 
-        if (!confirm) return
+        if (!confirmed) return
       }
 
       const response = await fetch(`/api/matches/${matchId}`, {
