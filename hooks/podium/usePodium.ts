@@ -115,23 +115,25 @@ export function usePodium({ tournoiId }: UsePodiumProps): UsePodiumReturn {
 
     // Champion (1er) et Finaliste (2e)
     if (finaleData && finaleData.status === 'termine') {
-      const champion = finaleData.score_a > finaleData.score_b
+      const scoreA = finaleData.score_a ?? 0
+      const scoreB = finaleData.score_b ?? 0
+      const champion = scoreA > scoreB
         ? finaleData.equipe_a
         : finaleData.equipe_b
-      const finaliste = finaleData.score_a > finaleData.score_b
+      const finaliste = scoreA > scoreB
         ? finaleData.equipe_b
         : finaleData.equipe_a
 
       podiumData.push({
         position: 1,
         team: champion,
-        score: Math.max(finaleData.score_a, finaleData.score_b)
+        score: Math.max(scoreA, scoreB)
       })
 
       podiumData.push({
         position: 2,
         team: finaliste,
-        score: Math.min(finaleData.score_a, finaleData.score_b)
+        score: Math.min(scoreA, scoreB)
       })
     } else {
       // Fallback: Utiliser le classement general des poules
@@ -140,14 +142,16 @@ export function usePodium({ tournoiId }: UsePodiumProps): UsePodiumReturn {
 
     // 3eme place (ecrase le fallback si petite finale existe)
     if (petiteFinaleData && petiteFinaleData.status === 'termine') {
-      const troisieme = petiteFinaleData.score_a > petiteFinaleData.score_b
+      const pScoreA = petiteFinaleData.score_a ?? 0
+      const pScoreB = petiteFinaleData.score_b ?? 0
+      const troisieme = pScoreA > pScoreB
         ? petiteFinaleData.equipe_a
         : petiteFinaleData.equipe_b
       const idx = podiumData.findIndex(p => p.position === 3)
       const newThird = {
         position: 3,
         team: troisieme,
-        score: Math.max(petiteFinaleData.score_a, petiteFinaleData.score_b)
+        score: Math.max(pScoreA, pScoreB)
       }
       if (idx >= 0) podiumData[idx] = newThird
       else podiumData.push(newThird)
