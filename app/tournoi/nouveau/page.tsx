@@ -774,9 +774,11 @@ export default function CreateTournamentPage() {
         throw new Error('Aucun joueur sélectionné')
       }
 
-      // 🔧 FIX Bug #8 : Valider pouleSize avant création (minimum 3 équipes par poule)
-      if (formData.pouleSize < 3) {
-        alert('❌ Configuration invalide\n\nLa taille de poule doit être au minimum de 3 équipes.\n\nValeur actuelle : ' + formData.pouleSize)
+      // 🔧 FIX P3 #8 : Utiliser ValidationService pour pouleSize (centralisation)
+      const estimatedTeams = getEstimatedTeams()
+      const pouleValidation = ValidationService.validatePouleSize(formData.pouleSize, estimatedTeams)
+      if (!pouleValidation.valid) {
+        alert(`❌ Configuration de poules invalide\n\n${pouleValidation.error || pouleValidation.warning}`)
         return
       }
 
@@ -866,9 +868,16 @@ export default function CreateTournamentPage() {
       if (formData.mode !== 'choisi' || allPlayerIds.length > 0) {
         const unassignedPlayers = await createTeamsWithMixity(tournoi, allPlayerIds, allAvailablePlayersUpdated)
 
-        // Alerter si des joueurs n'ont pas pu être assignés
+        // 🔧 FIX P3 #7 : Message joueurs exclus plus clair avec solutions
         if (unassignedPlayers > 0) {
-          alert(`⚠️ Attention : ${unassignedPlayers} joueur(s) n'ont pas pu être assignés à une équipe complète en raison de la mixité obligatoire. Veuillez ajuster votre liste de joueurs ou désactiver la mixité obligatoire.`)
+          alert(
+            `⚠️ ${unassignedPlayers} joueur(s) non assigné(s)\n\n` +
+            `En raison des contraintes de mixité obligatoire, certains joueurs n'ont pas pu être placés dans une équipe.\n\n` +
+            `Solutions possibles :\n` +
+            `• Ajouter des joueurs du sexe manquant\n` +
+            `• Retirer ${unassignedPlayers} joueur(s) de la liste\n` +
+            `• Désactiver la mixité obligatoire dans les options`
+          )
         }
 
         // 4. Créer les matchs de poules

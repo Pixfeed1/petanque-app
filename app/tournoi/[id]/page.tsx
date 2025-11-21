@@ -1818,19 +1818,24 @@ export default function TournamentDetailPage() {
             {/* Matchs */}
             {activeTab === 'matchs' && (
               <div className="space-y-4">
+                {/* 🔧 FIX P3 #9 : Message adapté pour non-organisateurs */}
                 {matches.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
                       {Icons.flag}
                     </div>
-                    <p className="text-gray-500 mb-4">Aucun match généré</p>
-                    {isOrganizer && tournament.status === 'preparation' && (
+                    <p className="text-gray-500 mb-2">Aucun match généré</p>
+                    {isOrganizer && tournament.status === 'preparation' ? (
                       <button
                         onClick={generatePoules}
                         className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all"
                       >
                         Générer les poules
                       </button>
+                    ) : (
+                      <p className="text-sm text-gray-400">
+                        Le tournoi n&apos;a pas encore commencé. Les matchs seront visibles une fois générés par l&apos;organisateur.
+                      </p>
                     )}
                   </div>
                 ) : (
