@@ -66,13 +66,14 @@ export function useDashboardData(organizationId: number | undefined) {
     try {
       setLoading(true)
 
-      // Charger les tournois
+      // Charger les tournois (une seule fois)
       const tournoiRes = await fetch(`/api/tournois?org_id=${organizationId}`, {
         credentials: 'include'
       })
 
+      let tournoiData: Tournament[] = []
       if (tournoiRes.ok) {
-        const tournoiData: Tournament[] = await tournoiRes.json()
+        tournoiData = await tournoiRes.json()
         setTournois(tournoiData)
 
         // Calculer les stats des tournois
@@ -111,23 +112,15 @@ export function useDashboardData(organizationId: number | undefined) {
         }))
       }
 
-      // Charger tous les matchs de l'organisation
+      // Charger tous les matchs de l'organisation (reutilise tournoiData)
       const allMatches: Match[] = []
-      const tournoiRes2 = await fetch(`/api/tournois?org_id=${organizationId}`, {
-        credentials: 'include'
-      })
-
-      if (tournoiRes2.ok) {
-        const tournoisData = await tournoiRes2.json()
-
-        for (const tournoi of tournoisData) {
-          const matchRes = await fetch(`/api/matches?tournoi_id=${tournoi.id}`, {
-            credentials: 'include'
-          })
-          if (matchRes.ok) {
-            const matches = await matchRes.json()
-            allMatches.push(...matches)
-          }
+      for (const tournoi of tournoiData) {
+        const matchRes = await fetch(`/api/matches?tournoi_id=${tournoi.id}`, {
+          credentials: 'include'
+        })
+        if (matchRes.ok) {
+          const matches = await matchRes.json()
+          allMatches.push(...matches)
         }
       }
 
@@ -144,7 +137,7 @@ export function useDashboardData(organizationId: number | undefined) {
           nouveauxMatchs: recentMatchs
         }))
 
-        // Récupérer les 5 derniers matchs terminés
+        // Recuperer les 5 derniers matchs termines
         const recent = allMatches
           .filter(m => m.status === 'termine')
           .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
@@ -154,7 +147,7 @@ export function useDashboardData(organizationId: number | undefined) {
       }
 
     } catch (error) {
-      console.error('Erreur chargement données dashboard:', error)
+      console.error('Erreur chargement donnees dashboard:', error)
     } finally {
       setLoading(false)
     }

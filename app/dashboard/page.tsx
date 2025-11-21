@@ -38,7 +38,7 @@ export default function Dashboard() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [processingPayment, setProcessingPayment] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'preparation' | 'en_cours' | 'termine'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'preparation' | 'termine'>('all')
   const [showProfileMenu, setShowProfileMenu] = useState(false)
 
   useEffect(() => {
@@ -96,7 +96,10 @@ export default function Dashboard() {
     return actions
   }, [])
 
+  // Filtrer les tournois - EXCLURE ceux en cours (deja affiches dans section separee)
   const filteredTournois = tournois.filter(tournoi => {
+    // Exclure les tournois en cours car ils ont leur propre section
+    if (tournoi.status === 'en_cours') return false
     const matchesSearch = searchQuery === '' ||
       tournoi.name.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === 'all' || tournoi.status === statusFilter
@@ -421,16 +424,77 @@ export default function Dashboard() {
             />
           </div>
 
+          {/* Actions requises */}
+          {actionItems.length > 0 && (
+            <div className="mb-16">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                Actions requises
+              </h2>
+              <div className="space-y-3">
+                {actionItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => router.push(item.url)}
+                    className="w-full text-left bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl p-4 transition-all"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-red-800">{item.title}</p>
+                        <p className="text-sm text-red-600">{item.subtitle}</p>
+                      </div>
+                      <span className="px-3 py-1 bg-red-600 text-white text-sm rounded-full">
+                        {item.label}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Tournois */}
           <div id="tournois-section">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900">Tournois</h2>
-              <button
-                onClick={() => router.push('/tournoi/nouveau')}
-                className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full hover:shadow-lg transition-all hover:scale-105 font-medium"
-              >
-                Nouveau tournoi
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Barre de recherche */}
+                <div className="relative">
+                  <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Rechercher..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent w-48"
+                  />
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                {/* Filtres de statut */}
+                <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+                  {(['all', 'preparation', 'termine'] as const).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(status)}
+                      className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
+                        statusFilter === status
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      {status === 'all' ? 'Tous' : status === 'preparation' ? 'Prep.' : 'Finis'}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => router.push('/tournoi/nouveau')}
+                  className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full hover:shadow-lg transition-all hover:scale-105 font-medium"
+                >
+                  Nouveau tournoi
+                </button>
+              </div>
             </div>
 
 {filteredTournois.length === 0 ? (
