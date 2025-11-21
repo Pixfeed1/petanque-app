@@ -4,11 +4,17 @@
  * import { TournamentHeader, MatchCard, StandingsTable } from '@/components/tournament'
  */
 
+// Composants d'affichage
 export { default as TournamentHeader } from './TournamentHeader'
 export { default as TournamentInfoCards } from './TournamentInfoCards'
 export { default as MatchCard } from './MatchCard'
 export { default as StandingsTable } from './StandingsTable'
 export { default as PlayerRankingsTable } from './PlayerRankingsTable'
+
+// Modals
+export { default as StartTournamentModal } from './StartTournamentModal'
+export { default as RenameTeamModal } from './RenameTeamModal'
+export { default as TeamFormationModal } from './TeamFormationModal'
 
 // Re-export des types
 export type { TeamStanding } from './StandingsTable'
