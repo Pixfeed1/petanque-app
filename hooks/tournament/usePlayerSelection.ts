@@ -32,7 +32,7 @@ interface UsePlayerSelectionReturn {
   deselectAllPlayers: () => void
 
   // Refs
-  newPlayersRef: React.RefObject<HTMLDivElement>
+  newPlayersRef: React.RefObject<HTMLDivElement | null>
 }
 
 export function usePlayerSelection({
