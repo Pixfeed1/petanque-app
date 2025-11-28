@@ -227,8 +227,9 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
       if (directMatch) {
         const dmScoreA = directMatch.score_a ?? 0
         const dmScoreB = directMatch.score_b ?? 0
-        const aWon = (directMatch.equipe_a?.id === a.team.id && dmScoreA > dmScoreB) ||
-                     (directMatch.equipe_b?.id === a.team.id && dmScoreB > dmScoreA)
+        // 🔧 FIX: Utiliser equipe_a_id au lieu de equipe_a?.id pour cohérence
+        const aWon = (directMatch.equipe_a_id === a.team.id && dmScoreA > dmScoreB) ||
+                     (directMatch.equipe_b_id === a.team.id && dmScoreB > dmScoreA)
         if (aWon) return -1
         else return 1
       }
@@ -259,16 +260,21 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
         }
 
         matchesData.forEach((match: Match) => {
+          const scoreA = match.score_a ?? 0
+          const scoreB = match.score_b ?? 0
+
           if (match.equipe_a?.id === item.team.id) {
-            if ((match.score_a ?? 0) > (match.score_b ?? 0)) stats.victories++
-            else stats.defeats++
-            stats.pointsFor += match.score_a ?? 0
-            stats.pointsAgainst += match.score_b ?? 0
+            if (scoreA > scoreB) stats.victories++
+            else if (scoreA < scoreB) stats.defeats++
+            // 🔧 FIX: Égalité = ni victoire ni défaite (stats.draws si nécessaire)
+            stats.pointsFor += scoreA
+            stats.pointsAgainst += scoreB
           } else if (match.equipe_b?.id === item.team.id) {
-            if ((match.score_b ?? 0) > (match.score_a ?? 0)) stats.victories++
-            else stats.defeats++
-            stats.pointsFor += match.score_b ?? 0
-            stats.pointsAgainst += match.score_a ?? 0
+            if (scoreB > scoreA) stats.victories++
+            else if (scoreB < scoreA) stats.defeats++
+            // 🔧 FIX: Égalité = ni victoire ni défaite
+            stats.pointsFor += scoreB
+            stats.pointsAgainst += scoreA
           }
         })
 

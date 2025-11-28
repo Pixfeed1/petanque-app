@@ -93,8 +93,14 @@ export async function PUT(
         return apiError('joueur_ids doit être un tableau', 400)
       }
 
-      // Validation du nombre de joueurs selon le format
+      // 🔧 FIX: Validation du format du tournoi
       const format = existingEquipe.tournoi_format
+      const validFormats = ['tete_a_tete', 'doublette', 'triplette']
+      if (!format || !validFormats.includes(format)) {
+        return apiError(`Format de tournoi invalide ou manquant: ${format}`, 400)
+      }
+
+      // Validation du nombre de joueurs selon le format
       const playersPerTeam = format === 'tete_a_tete' ? 1 : format === 'doublette' ? 2 : 3
 
       if (body.joueur_ids.length !== playersPerTeam) {
@@ -108,6 +114,19 @@ export async function PUT(
       const uniqueIds = new Set(body.joueur_ids.map(String))
       if (uniqueIds.size !== body.joueur_ids.length) {
         return apiError('Un même joueur ne peut pas apparaître plusieurs fois dans la même équipe', 400)
+      }
+
+      // 🔧 FIX: Vérifier que tous les joueurs existent en base de données
+      if (body.joueur_ids.length > 0) {
+        const existingPlayers = await queryMany<{ id: string }>(
+          'SELECT id FROM joueurs WHERE id = ANY($1::bigint[])',
+          [body.joueur_ids]
+        )
+        if (existingPlayers.length !== body.joueur_ids.length) {
+          const existingIds = new Set(existingPlayers.map(p => String(p.id)))
+          const missingIds = body.joueur_ids.filter((pid: string | number) => !existingIds.has(String(pid)))
+          return apiError(`Joueur(s) introuvable(s): ${missingIds.join(', ')}`, 400)
+        }
       }
 
       // Vérifier que les joueurs ne sont pas déjà dans une autre équipe
@@ -185,8 +204,9 @@ export async function DELETE(
     }
 
     // Ne permettre la suppression que si le tournoi est en préparation
-    if (equipe.tournoi_status && equipe.tournoi_status !== 'preparation') {
-      return apiError('Impossible de supprimer une équipe une fois le tournoi démarré', 400)
+    // 🔧 FIX: Si statut est NULL ou différent de 'preparation', bloquer la suppression
+    if (!equipe.tournoi_status || equipe.tournoi_status !== 'preparation') {
+      return apiError('Impossible de supprimer une équipe : le tournoi doit être en préparation', 400)
     }
 
     // Vérifier si des matchs existent avec cette équipe

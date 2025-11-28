@@ -135,6 +135,37 @@ export async function PUT(
       }
     }
 
+    // 🔧 CRITIQUE: Bloquer les modifications des matchs terminés
+    // Exception: permettre uniquement le changement de terrain (pour correction d'erreur)
+    if (existingMatch.status === 'termine') {
+      const allowedFieldsForTerminatedMatch = ['terrain']
+      const requestedFields = Object.keys(body).filter(k => body[k] !== undefined)
+      const hasDisallowedChanges = requestedFields.some(f => !allowedFieldsForTerminatedMatch.includes(f))
+
+      if (hasDisallowedChanges) {
+        return apiError('Impossible de modifier un match terminé. Seul le terrain peut être corrigé.', 400)
+      }
+    }
+
+    // 🔧 CRITIQUE: Valider les transitions de statut
+    if (body.status !== undefined && body.status !== existingMatch.status) {
+      const validTransitions: Record<string, string[]> = {
+        'a_jouer': ['en_cours', 'termine'], // termine direct = forfait
+        'en_cours': ['termine'],
+        'termine': [] // Aucune transition depuis termine
+      }
+
+      const currentStatus = existingMatch.status || 'a_jouer'
+      const allowedNext = validTransitions[currentStatus] || []
+
+      if (!allowedNext.includes(body.status)) {
+        return apiError(
+          `Transition de statut invalide: ${currentStatus} → ${body.status}. Transitions autorisées: ${allowedNext.join(', ') || 'aucune'}`,
+          400
+        )
+      }
+    }
+
     const updates: string[] = []
     const values: SQLValue[] = []
     let paramIndex = 1
