@@ -33,6 +33,7 @@ interface UseMatchActionsReturn {
   // Actions
   generatePoules: () => Promise<void>
   generateEliminationPhases: () => Promise<void>
+  generateNextEliminationRound: () => Promise<void>
   generateFinales: () => Promise<void>
   assignTerrain: (matchId: string, terrain: number) => Promise<void>
   createRoundRobinMatches: (teams: Team[], tour: number, poule: string | null) => Promise<void>
@@ -522,6 +523,226 @@ export function useMatchActions({
   }, [tournament, teams, matches, loadTournamentData, notify])
 
   /**
+   * 🔧 FIX: Génère automatiquement le prochain tour d'élimination
+   * Détecte le tour actuel et crée les matchs du tour suivant
+   * huitièmes → quarts → demis → finale (+ petite finale)
+   */
+  const generateNextEliminationRound = useCallback(async () => {
+    if (!tournament) {
+      notify.error('Tournoi non trouvé')
+      return
+    }
+
+    // Identifier les types de matchs éliminatoires présents
+    const eliminationTypes = ['huitieme', 'quart', 'demi', 'finale', 'petite_finale'] as const
+    type EliminationType = typeof eliminationTypes[number]
+
+    // Trouver le tour d'élimination le plus avancé en cours ou terminé
+    const getActiveRound = (): EliminationType | null => {
+      // Chercher dans l'ordre inverse (finale → huitième)
+      for (const roundType of [...eliminationTypes].reverse()) {
+        const roundMatches = matches.filter(m => m.type === roundType)
+        if (roundMatches.length > 0) {
+          return roundType
+        }
+      }
+      return null
+    }
+
+    const currentRound = getActiveRound()
+
+    if (!currentRound) {
+      notify.warning('Aucune phase éliminatoire n\'a été générée. Utilisez d\'abord "Générer phases finales".')
+      return
+    }
+
+    // Exclure les types qui ne peuvent pas avoir de suite
+    if (currentRound === 'finale' || currentRound === 'petite_finale') {
+      notify.warning('Le tournoi est terminé. Il n\'y a plus de tour à générer.')
+      return
+    }
+
+    // Récupérer les matchs du tour actuel
+    const currentRoundMatches = matches.filter(m => m.type === currentRound)
+
+    // Valider avec BracketService que tous les matchs sont terminés et sans égalité
+    const validation = BracketService.validateBracketGeneration(
+      currentRoundMatches.map(m => ({
+        equipe_a: m.equipe_a || undefined,
+        equipe_b: m.equipe_b || undefined,
+        score_a: m.score_a ?? 0,
+        score_b: m.score_b ?? 0,
+        status: m.status
+      }))
+    )
+
+    if (!validation.valid) {
+      notify.error(validation.error || 'Impossible de générer le tour suivant')
+      return
+    }
+
+    // Déterminer le prochain tour
+    const nextRound = BracketService.getNextRound(currentRound as 'huitieme' | 'quart' | 'demi')
+
+    if (!nextRound) {
+      notify.warning('Pas de tour suivant disponible')
+      return
+    }
+
+    // Vérifier si le prochain tour existe déjà
+    const existingNextRoundMatches = matches.filter(m => m.type === nextRound)
+    if (existingNextRoundMatches.length > 0) {
+      notify.warning(`Les matchs de ${nextRound === 'quart' ? 'quarts' : nextRound === 'demi' ? 'demi-finales' : 'finale'} existent déjà`)
+      return
+    }
+
+    // Récupérer les gagnants du tour actuel
+    const winners = BracketService.getMatchWinners(
+      currentRoundMatches.map(m => ({
+        equipe_a_id: m.equipe_a_id || null,
+        equipe_b_id: m.equipe_b_id || null,
+        score_a: m.score_a ?? 0,
+        score_b: m.score_b ?? 0,
+        type: m.type as string | undefined,
+        equipe_a: m.equipe_a ? { id: m.equipe_a.id, name: m.equipe_a.name } : undefined,
+        equipe_b: m.equipe_b ? { id: m.equipe_b.id, name: m.equipe_b.name } : undefined
+      }))
+    ).filter((w): w is { id: string; name: string } => w !== null)
+
+    if (winners.length < 2) {
+      notify.error('Pas assez de gagnants pour créer le tour suivant')
+      return
+    }
+
+    try {
+      let createdMatches = 0
+
+      // Cas spécial: demi-finales → finale + petite finale
+      if (nextRound === 'finale') {
+        // Récupérer aussi les perdants pour la petite finale
+        const losers: { id: string; name: string }[] = []
+        for (const match of currentRoundMatches) {
+          if (!match.equipe_a_id || !match.equipe_b_id) continue
+          const isAWinner = (match.score_a ?? 0) > (match.score_b ?? 0)
+          const loser = isAWinner
+            ? (match.equipe_b ? { id: match.equipe_b.id, name: match.equipe_b.name } : null)
+            : (match.equipe_a ? { id: match.equipe_a.id, name: match.equipe_a.name } : null)
+          if (loser) losers.push(loser)
+        }
+
+        // Créer la finale
+        if (winners.length === 2) {
+          const finaleResponse = await fetch('/api/matches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              tournoi_id: tournament.id,
+              equipe_a_id: winners[0].id,
+              equipe_b_id: winners[1].id,
+              tour: 1,
+              terrain: null,
+              type: 'finale',
+              status: 'a_jouer'
+            })
+          })
+          if (!finaleResponse.ok) {
+            const error = await finaleResponse.json().catch(() => ({ error: 'Erreur serveur' }))
+            throw new Error(`Échec création finale: ${error.error}`)
+          }
+          createdMatches++
+        }
+
+        // Créer la petite finale si consolante activée
+        if (losers.length === 2 && tournament.settings.consolante) {
+          const petiteFinaleResponse = await fetch('/api/matches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              tournoi_id: tournament.id,
+              equipe_a_id: losers[0].id,
+              equipe_b_id: losers[1].id,
+              tour: 1,
+              terrain: null,
+              type: 'petite_finale',
+              status: 'a_jouer'
+            })
+          })
+          if (!petiteFinaleResponse.ok) {
+            const error = await petiteFinaleResponse.json().catch(() => ({ error: 'Erreur serveur' }))
+            throw new Error(`Échec création petite finale: ${error.error}`)
+          }
+          createdMatches++
+          notify.success(`Finale et petite finale générées !`)
+        } else {
+          notify.success(`Finale générée !`)
+        }
+      } else {
+        // Cas normal: créer les matchs du tour suivant
+        // Créer les matchs par paires de gagnants
+        for (let i = 0; i < winners.length; i += 2) {
+          const equipe_a = winners[i]
+          const equipe_b = winners[i + 1]
+
+          if (!equipe_b) {
+            // Nombre impair de gagnants - créer un BYE
+            const byeResponse = await fetch('/api/matches', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                tournoi_id: tournament.id,
+                equipe_a_id: equipe_a.id,
+                equipe_b_id: null,
+                tour: 1,
+                terrain: null,
+                type: 'bye',
+                status: 'termine',
+                score_a: 0,
+                score_b: 0
+              })
+            })
+            if (!byeResponse.ok) {
+              const error = await byeResponse.json().catch(() => ({ error: 'Erreur serveur' }))
+              throw new Error(`Échec création BYE: ${error.error}`)
+            }
+            createdMatches++
+          } else {
+            const matchResponse = await fetch('/api/matches', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                tournoi_id: tournament.id,
+                equipe_a_id: equipe_a.id,
+                equipe_b_id: equipe_b.id,
+                tour: 1,
+                terrain: null,
+                type: nextRound,
+                status: 'a_jouer'
+              })
+            })
+            if (!matchResponse.ok) {
+              const error = await matchResponse.json().catch(() => ({ error: 'Erreur serveur' }))
+              throw new Error(`Échec création match: ${error.error}`)
+            }
+            createdMatches++
+          }
+        }
+
+        const roundLabel = nextRound === 'quart' ? 'quarts de finale' : 'demi-finales'
+        notify.success(`${createdMatches} match(s) de ${roundLabel} généré(s) !`)
+      }
+
+      await loadTournamentData()
+    } catch (error) {
+      console.error('Erreur génération tour suivant:', error)
+      notify.error('Erreur lors de la génération du tour suivant')
+    }
+  }, [tournament, matches, loadTournamentData, notify])
+
+  /**
    * Génère la finale et petite finale après les demi-finales
    */
   const generateFinales = useCallback(async () => {
@@ -708,6 +929,7 @@ export function useMatchActions({
     // Actions
     generatePoules,
     generateEliminationPhases,
+    generateNextEliminationRound,
     generateFinales,
     assignTerrain,
     createRoundRobinMatches

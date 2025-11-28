@@ -70,14 +70,54 @@ export async function PUT(
       return apiError('Accès refusé', 403)
     }
 
+    const currentStatus = existingTournoi.status || 'preparation'
+
+    // 🔧 FIX: Valider les transitions de statut
+    if (body.status !== undefined && body.status !== currentStatus) {
+      const validTransitions: Record<string, string[]> = {
+        'preparation': ['en_cours', 'annule'],
+        'en_cours': ['termine', 'annule'],
+        'termine': [], // Aucune transition depuis termine
+        'annule': []   // Aucune transition depuis annule
+      }
+
+      const allowedNext = validTransitions[currentStatus] || []
+      if (!allowedNext.includes(body.status)) {
+        return apiError(
+          `Transition de statut invalide: ${currentStatus} → ${body.status}. Transitions autorisées: ${allowedNext.join(', ') || 'aucune'}`,
+          400
+        )
+      }
+    }
+
+    // 🔧 FIX: Bloquer les modifications critiques après démarrage
+    if (currentStatus !== 'preparation') {
+      // Seuls le statut et le nom peuvent être modifiés après démarrage
+      const restrictedFields = ['format', 'mode', 'settings']
+      const hasRestrictedChanges = restrictedFields.some(f => body[f] !== undefined)
+
+      if (hasRestrictedChanges) {
+        return apiError(
+          'Impossible de modifier le format, mode ou settings après le démarrage du tournoi',
+          400
+        )
+      }
+    }
+
     // Construire la requête de mise à jour
     const updates: string[] = []
     const values: SQLValue[] = []
     let paramIndex = 1
 
     if (body.name !== undefined) {
+      if (typeof body.name !== 'string' || body.name.trim().length === 0) {
+        return apiError('Le nom du tournoi ne peut pas être vide', 400)
+      }
+      if (body.name.trim().length > 200) {
+        return apiError('Le nom du tournoi est trop long (maximum 200 caractères)', 400)
+      }
       updates.push(`name = $${paramIndex++}`)
-      values.push(body.name)
+      values.push(body.name.trim())
     }
 
     if (body.status !== undefined) {
@@ -86,6 +126,18 @@ export async function PUT(
     }
 
     if (body.settings !== undefined) {
+      // Validation des settings (même logique que POST)
+      if (body.settings.maxPoints !== undefined && (typeof body.settings.maxPoints !== 'number' || body.settings.maxPoints < 1 || body.settings.maxPoints > 50)) {
+        return apiError('maxPoints doit être un nombre entre 1 et 50', 400)
+      }
+      if (body.settings.pouleSize !== undefined && (typeof body.settings.pouleSize !== 'number' || body.settings.pouleSize < 3)) {
+        return apiError('pouleSize doit être un nombre >= 3', 400)
+      }
+      if (body.settings.qualifiedPerPoule !== undefined && body.settings.pouleSize !== undefined) {
+        if (body.settings.qualifiedPerPoule >= body.settings.pouleSize) {
+          return apiError('qualifiedPerPoule doit être inférieur à pouleSize', 400)
+        }
+      }
       updates.push(`settings = $${paramIndex++}::jsonb`)
       values.push(body.settings)
     }

@@ -327,6 +327,47 @@ export async function PUT(
     }
 
     if (body.terrain !== undefined) {
+      // 🔧 FIX: Vérification côté serveur des conflits de terrain (race conditions)
+      // Vérifier si le terrain est déjà utilisé par un autre match en cours
+      if (body.terrain !== null && body.terrain > 0) {
+        const targetStatus = body.status || existingMatch.status
+
+        // Vérifier conflit seulement si le match va être 'en_cours' ou l'est déjà
+        if (targetStatus === 'en_cours' || (existingMatch.status === 'en_cours' && body.status !== 'termine')) {
+          const conflictingMatch = await queryOne<{ id: string; equipe_a_name: string; equipe_b_name: string }>(
+            `SELECT m.id, ea.name as equipe_a_name, eb.name as equipe_b_name
+             FROM matches m
+             LEFT JOIN equipes ea ON m.equipe_a_id = ea.id
+             LEFT JOIN equipes eb ON m.equipe_b_id = eb.id
+             WHERE m.tournoi_id = $1
+               AND m.terrain = $2
+               AND m.status = 'en_cours'
+               AND m.id != $3`,
+            [existingMatch.tournoi_id, body.terrain, id]
+          )
+
+          if (conflictingMatch) {
+            return apiError(
+              `Terrain ${body.terrain} déjà occupé par le match ${conflictingMatch.equipe_a_name || 'Équipe A'} vs ${conflictingMatch.equipe_b_name || 'Équipe B'}`,
+              409 // Conflict
+            )
+          }
+        }
+
+        // Vérifier que le terrain existe dans les settings du tournoi
+        const tournoiSettings = await queryOne<{ settings: { terrains?: number } }>(
+          'SELECT settings FROM tournois WHERE id = $1',
+          [existingMatch.tournoi_id]
+        )
+        const maxTerrains = tournoiSettings?.settings?.terrains || 10
+        if (body.terrain > maxTerrains) {
+          return apiError(
+            `Terrain ${body.terrain} invalide. Ce tournoi dispose de ${maxTerrains} terrain(s) (numérotés de 1 à ${maxTerrains}).`,
+            400
+          )
+        }
+      }
+
       updates.push(`terrain = $${paramIndex++}`)
       values.push(body.terrain)
     }
