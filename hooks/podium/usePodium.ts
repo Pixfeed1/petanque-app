@@ -29,6 +29,8 @@ export interface PodiumTeam {
 interface TeamClassement {
   team: Equipe
   victories: number
+  draws: number
+  points: number
   difference: number
   pointsFor: number
 }
