@@ -27,6 +27,7 @@ export interface TournamentSettings {
   allowPhotos?: boolean
   sendNotifications?: boolean
   players: string[]
+  poules_created?: boolean
 }
 
 export interface Tournament {
