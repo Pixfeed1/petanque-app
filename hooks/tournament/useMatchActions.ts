@@ -165,7 +165,46 @@ export function useMatchActions({
    * Génère les poules du tournoi
    */
   const generatePoules = useCallback(async () => {
-    if (!tournament || teams.length === 0) return
+    if (!tournament) {
+      notify.error('Tournoi non trouvé')
+      return
+    }
+
+    // Vérifier le nombre minimum d'équipes
+    if (teams.length < 4) {
+      notify.error(`Minimum 4 équipes requises pour créer des poules. Vous en avez ${teams.length}.`)
+      return
+    }
+
+    // Vérifier si les poules ont déjà été créées
+    if (tournament.settings.poules_created) {
+      notify.error('Les poules ont déjà été générées pour ce tournoi. Supprimez les matchs existants pour régénérer.')
+      return
+    }
+
+    // Vérifier qu'il n'y a pas déjà des matchs de poule
+    const existingPouleMatches = matches.filter(m => m.type === 'poule')
+    if (existingPouleMatches.length > 0) {
+      notify.error('Des matchs de poule existent déjà. Supprimez-les avant de régénérer les poules.')
+      return
+    }
+
+    // Vérifier que toutes les équipes ont des joueurs
+    const emptyTeams = teams.filter(t => !t.joueur_ids || t.joueur_ids.length === 0)
+    if (emptyTeams.length > 0) {
+      const names = emptyTeams.map(t => t.name).join(', ')
+      notify.error(`Les équipes suivantes n'ont pas de joueurs : ${names}`)
+      return
+    }
+
+    // Vérifier le nombre de joueurs par équipe selon le format
+    const playersPerTeam = tournament.format === 'tete_a_tete' ? 1 : tournament.format === 'doublette' ? 2 : 3
+    const wrongSizeTeams = teams.filter(t => (t.joueur_ids?.length || 0) !== playersPerTeam)
+    if (wrongSizeTeams.length > 0) {
+      const names = wrongSizeTeams.map(t => `${t.name} (${t.joueur_ids?.length || 0} joueurs)`).join(', ')
+      notify.error(`Format ${tournament.format} : chaque équipe doit avoir ${playersPerTeam} joueur(s). Équipes incorrectes : ${names}`)
+      return
+    }
 
     const pouleSize = tournament.settings.pouleSize || 4
 
@@ -193,12 +232,24 @@ export function useMatchActions({
         await createRoundRobinMatches(pouleTeams, 1, pouleName)
       }
 
+      // Mettre à jour le flag poules_created
+      await fetch(`/api/tournois/${tournament.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          settings: { ...tournament.settings, poules_created: true }
+        })
+      })
+
       // Recharger les données
       await loadTournamentData()
+      notify.success(`${Object.keys(poules).length} poule(s) générée(s) avec succès !`)
     } catch (error) {
       console.error('Erreur génération poules:', error)
+      notify.error('Erreur lors de la génération des poules')
     }
-  }, [tournament, teams, isValidPoolConfiguration, createRoundRobinMatches, loadTournamentData])
+  }, [tournament, teams, matches, isValidPoolConfiguration, createRoundRobinMatches, loadTournamentData])
 
   /**
    * Génère les phases éliminatoires après les poules
