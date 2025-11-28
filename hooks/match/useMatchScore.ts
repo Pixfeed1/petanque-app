@@ -233,6 +233,16 @@ export function useMatchScore({
   ) => {
     setSaving(true)
     try {
+      // Identifier les matchs BYE (pas d'équipe B)
+      const isByeMatch = !match?.equipe_b_id
+
+      // Les matchs BYE ne devraient pas être terminés manuellement
+      if (isByeMatch) {
+        notify.error('Les matchs BYE sont validés automatiquement.')
+        setSaving(false)
+        return
+      }
+
       // Vérifier les conditions de fin selon le mode
       if (finalScoreA === finalScoreB && !byTimeLimit) {
         notify.error('Le match ne peut pas se terminer sur une égalité.')

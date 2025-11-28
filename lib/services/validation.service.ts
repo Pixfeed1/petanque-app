@@ -140,13 +140,25 @@ export function validateQualifiedPerPoule(
 
 /**
  * Valide qu'un match peut être démarré
+ * Note: Les matchs BYE (equipe_b_id === null) doivent être validés automatiquement,
+ * pas démarrés manuellement
  */
 export function validateMatchStart(match: {
   terrain: number | null
   equipe_a_id: string | null
   equipe_b_id: string | null
   status: string
+  type?: string
 }): ValidationResult {
+  // Les matchs BYE ne peuvent pas être "démarrés" - ils sont auto-validés
+  const isByeMatch = match.type === 'bye' || match.equipe_b_id === null
+  if (isByeMatch) {
+    return {
+      valid: false,
+      error: 'Les matchs BYE sont validés automatiquement et ne nécessitent pas de démarrage manuel.'
+    }
+  }
+
   if (match.status === 'termine') {
     return {
       valid: false,
@@ -154,7 +166,7 @@ export function validateMatchStart(match: {
     }
   }
 
-  // 🔧 FIX Bug #15 : Empêcher de redémarrer un match déjà en cours
+  // Empêcher de redémarrer un match déjà en cours
   if (match.status === 'en_cours') {
     return {
       valid: false,
@@ -169,10 +181,10 @@ export function validateMatchStart(match: {
     }
   }
 
-  if (!match.equipe_a_id || !match.equipe_b_id) {
+  if (!match.equipe_a_id) {
     return {
       valid: false,
-      error: 'Match incomplet : équipe(s) manquante(s)'
+      error: 'Match incomplet : équipe A manquante'
     }
   }
 

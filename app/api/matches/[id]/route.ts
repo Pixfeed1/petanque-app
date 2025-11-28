@@ -204,14 +204,7 @@ export async function PUT(
           return apiError('Impossible de terminer un match sans scores', 400)
         }
 
-        // 🔧 FIX: Permettre les égalités SEULEMENT pour les matchs BYE (équipe_b null)
-        const isByeMatch = existingMatch.type === 'bye' || !existingMatch.equipe_b_id
-
-        if (!isByeMatch && scoreA === scoreB) {
-          return apiError('Un match de pétanque ne peut pas se terminer sur une égalité', 400)
-        }
-
-        // Récupérer les settings du tournoi
+        // Récupérer les settings du tournoi AVANT les validations
         const tournoiQuery = await query(
           'SELECT settings FROM tournois WHERE id = $1',
           [existingMatch.tournoi_id]
@@ -220,7 +213,15 @@ export async function PUT(
         const maxPoints = settings.maxPoints || 13
         const timeLimit = settings.timeLimit || false
 
-        // 🔧 FIX Bug #6 : Si timeLimit activé OU match BYE, permettre de terminer sans atteindre maxPoints
+        // Identifier les matchs BYE
+        const isByeMatch = existingMatch.type === 'bye' || !existingMatch.equipe_b_id
+
+        // Égalités autorisées SEULEMENT si timeLimit est activé ou match BYE
+        if (!isByeMatch && scoreA === scoreB && !timeLimit) {
+          return apiError('Un match de pétanque ne peut pas se terminer sur une égalité (sauf avec limite de temps)', 400)
+        }
+
+        // Si timeLimit activé OU match BYE, permettre de terminer sans atteindre maxPoints
         if (!isByeMatch && !timeLimit && scoreA < maxPoints && scoreB < maxPoints) {
           return apiError(
             `Le match doit se terminer quand une équipe atteint ${maxPoints} points. Score actuel: ${scoreA}-${scoreB}`,
@@ -228,10 +229,18 @@ export async function PUT(
           )
         }
 
-        // Calculer automatiquement le winner_id basé sur les scores (ou équipe_a pour BYE)
-        const calculatedWinnerId = isByeMatch
-          ? existingMatch.equipe_a_id
-          : (scoreA > scoreB ? existingMatch.equipe_a_id : existingMatch.equipe_b_id)
+        // Calculer automatiquement le winner_id basé sur les scores
+        // - Match BYE: toujours équipe_a
+        // - Égalité (timeLimit): null (match nul)
+        // - Sinon: équipe avec le meilleur score
+        let calculatedWinnerId: string | null
+        if (isByeMatch) {
+          calculatedWinnerId = existingMatch.equipe_a_id
+        } else if (scoreA === scoreB) {
+          calculatedWinnerId = null // Match nul en mode timeLimit
+        } else {
+          calculatedWinnerId = scoreA > scoreB ? existingMatch.equipe_a_id : existingMatch.equipe_b_id
+        }
         if (!body.winner_id) {
           body.winner_id = calculatedWinnerId
         } else if (body.winner_id !== calculatedWinnerId) {
@@ -273,6 +282,17 @@ export async function PUT(
     if (body.winner_id !== undefined && body.winner_id !== null) {
       updates.push(`winner_id = $${paramIndex++}`)
       values.push(body.winner_id)
+    }
+
+    // Gestion du forfait - stocker dans un champ metadata JSONB ou dédié
+    if (body.forfeit !== undefined) {
+      // Créer ou mettre à jour les métadonnées du match
+      const metadata = {
+        forfeit: body.forfeit === true,
+        forfeit_team: body.forfeit_team || null
+      }
+      updates.push(`metadata = COALESCE(metadata, '{}'::jsonb) || $${paramIndex++}::jsonb`)
+      values.push(JSON.stringify(metadata))
     }
 
     if (body.terrain !== undefined) {

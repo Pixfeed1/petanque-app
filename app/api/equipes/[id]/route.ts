@@ -54,9 +54,9 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
-    // Récupérer l'équipe avec le statut du tournoi
+    // Récupérer l'équipe avec le statut et format du tournoi
     const existingEquipe = await queryOne(
-      `SELECT e.*, t.status as tournoi_status
+      `SELECT e.*, t.status as tournoi_status, t.format as tournoi_format
        FROM equipes e
        LEFT JOIN tournois t ON e.tournoi_id = t.id
        WHERE e.id = $1`,
@@ -92,6 +92,44 @@ export async function PUT(
       if (!Array.isArray(body.joueur_ids)) {
         return apiError('joueur_ids doit être un tableau', 400)
       }
+
+      // Validation du nombre de joueurs selon le format
+      const format = existingEquipe.tournoi_format
+      const playersPerTeam = format === 'tete_a_tete' ? 1 : format === 'doublette' ? 2 : 3
+
+      if (body.joueur_ids.length !== playersPerTeam) {
+        return apiError(
+          `Le format ${format} nécessite exactement ${playersPerTeam} joueur(s) par équipe. Vous en avez fourni ${body.joueur_ids.length}.`,
+          400
+        )
+      }
+
+      // Vérifier qu'il n'y a pas de doublons
+      const uniqueIds = new Set(body.joueur_ids.map(String))
+      if (uniqueIds.size !== body.joueur_ids.length) {
+        return apiError('Un même joueur ne peut pas apparaître plusieurs fois dans la même équipe', 400)
+      }
+
+      // Vérifier que les joueurs ne sont pas déjà dans une autre équipe
+      const otherTeams = await queryMany(
+        `SELECT e.id, e.name, e.joueur_ids FROM equipes e WHERE e.tournoi_id = $1 AND e.id != $2`,
+        [existingEquipe.tournoi_id, id]
+      )
+
+      const conflicts: string[] = []
+      for (const team of otherTeams) {
+        const teamJoueurIds = (team.joueur_ids || []).map(String)
+        for (const playerId of body.joueur_ids) {
+          if (teamJoueurIds.includes(String(playerId))) {
+            conflicts.push(`Joueur ID ${playerId} est déjà dans l'équipe "${team.name}"`)
+          }
+        }
+      }
+
+      if (conflicts.length > 0) {
+        return apiError(`Conflit de joueurs : ${conflicts.join(', ')}`, 400)
+      }
+
       updates.push(`joueur_ids = $${paramIndex++}::bigint[]`)
       values.push(body.joueur_ids)
     }

@@ -78,9 +78,9 @@ export async function POST(request: NextRequest) {
       return apiError('Champs requis: tournoi_id, name', 400)
     }
 
-    // Vérifier accès au tournoi
-    const tournoi = await queryOne<{ org_id: number }>(
-      'SELECT org_id FROM tournois WHERE id = $1',
+    // Vérifier accès au tournoi et récupérer le format
+    const tournoi = await queryOne<{ org_id: number; format: string; mode: string }>(
+      'SELECT org_id, format, mode FROM tournois WHERE id = $1',
       [tournoi_id]
     )
 
@@ -91,6 +91,25 @@ export async function POST(request: NextRequest) {
     const hasAccess = await checkOrgAccess(user.id, String(tournoi.org_id))
     if (!hasAccess) {
       return apiError('Accès non autorisé à ce tournoi', 403)
+    }
+
+    // Validation du nombre de joueurs selon le format du tournoi
+    const playersPerTeam = tournoi.format === 'tete_a_tete' ? 1 : tournoi.format === 'doublette' ? 2 : 3
+    const playerCount = Array.isArray(joueur_ids) ? joueur_ids.length : 0
+
+    if (playerCount !== playersPerTeam) {
+      return apiError(
+        `Le format ${tournoi.format} nécessite exactement ${playersPerTeam} joueur(s) par équipe. Vous en avez fourni ${playerCount}.`,
+        400
+      )
+    }
+
+    // Vérifier qu'il n'y a pas de doublons dans la liste des joueurs
+    if (Array.isArray(joueur_ids) && joueur_ids.length > 0) {
+      const uniqueIds = new Set(joueur_ids.map(String))
+      if (uniqueIds.size !== joueur_ids.length) {
+        return apiError('Un même joueur ne peut pas apparaître plusieurs fois dans la même équipe', 400)
+      }
     }
 
     // Vérifier qu'aucun joueur n'est déjà dans une autre équipe de ce tournoi
