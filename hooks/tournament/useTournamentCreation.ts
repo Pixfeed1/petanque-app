@@ -110,7 +110,12 @@ export function useTournamentCreation({
 
     // Tête-à-tête : 1 joueur = 1 équipe
     if (formData.format === 'tete_a_tete') {
-      const shuffled = [...allPlayerIds].sort(() => Math.random() - 0.5)
+      // 🔧 FIX: Fisher-Yates shuffle pour distribution uniforme
+      const shuffled = [...allPlayerIds]
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+      }
       for (let i = 0; i < shuffled.length; i++) {
         await createTeamWithPlayers(tournoi.id, i + 1, [shuffled[i]])
       }
@@ -178,7 +183,12 @@ export function useTournamentCreation({
     const equipes = await response.json()
     if (!equipes?.length) throw new Error('Aucune équipe trouvée')
 
-    const shuffled = [...equipes].sort(() => Math.random() - 0.5)
+    // 🔧 FIX: Fisher-Yates shuffle pour distribution uniforme
+    const shuffled = [...equipes]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
     const nbPoules = Math.ceil(shuffled.length / formData.pouleSize)
 
     let globalMatchNum = 0

@@ -105,7 +105,14 @@ export function useRankings({
         (m.equipe_a_id === team.id || m.equipe_b_id === team.id ||
          m.equipe_a?.id === team.id || m.equipe_b?.id === team.id) && m.poule
       )
-      const poule = pouleMatch?.poule || 'A'
+
+      // 🔧 FIX: Ne pas assigner de poule par défaut aux équipes sans matchs
+      // L'ancien `|| 'A'` créait une poule fantôme corrompant les classements
+      if (!pouleMatch?.poule) {
+        // Équipe orpheline (pas encore de matchs) - ne pas l'inclure dans le classement par poule
+        return
+      }
+      const poule = pouleMatch.poule
 
       if (!poules[poule]) poules[poule] = []
       poules[poule].push(team)

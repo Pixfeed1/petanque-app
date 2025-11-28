@@ -217,8 +217,13 @@ export function useMatchActions({
 
     const nbPoules = Math.ceil(teams.length / pouleSize)
 
-    // Mélanger les équipes avant de les répartir en poules (fairness)
-    const shuffledTeams = [...teams].sort(() => Math.random() - 0.5)
+    // 🔧 FIX: Utiliser Fisher-Yates shuffle pour une distribution uniforme
+    // L'ancien .sort(() => Math.random() - 0.5) produit un biais statistique
+    const shuffledTeams = [...teams]
+    for (let i = shuffledTeams.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffledTeams[i], shuffledTeams[j]] = [shuffledTeams[j], shuffledTeams[i]]
+    }
 
     // Créer les poules
     const poules: { [key: string]: Team[] } = {}
