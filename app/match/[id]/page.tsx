@@ -50,7 +50,7 @@ export default function MatchScorePage() {
     onSuccess: showSuccess,
     onError: showError,
     onWarning: showWarning,
-    onConfirm: confirm
+    onConfirm: (message: string) => confirm({ title: 'Confirmation', message })
   })
 
   useEffect(() => {
@@ -182,7 +182,7 @@ export default function MatchScorePage() {
         .animation-delay-4000 { animation-delay: 4s; }
       `}</style>
 
-      <ConfirmModal />
+      {ConfirmModal}
     </div>
   )
 }
