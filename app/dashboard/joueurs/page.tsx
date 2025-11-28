@@ -146,7 +146,7 @@ export default function PlayersManagementPage() {
         .animate-slideIn { animation: slideIn 0.4s ease-out both; }
       `}</style>
 
-      <ConfirmModal />
+      {ConfirmModal}
     </div>
   )
 }
