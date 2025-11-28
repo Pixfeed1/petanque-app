@@ -104,6 +104,7 @@ export function useMatchActions({
 
   /**
    * Crée des matchs round-robin (tous contre tous) pour un groupe d'équipes
+   * Utilise l'API batch pour une création optimisée en une seule requête
    */
   const createRoundRobinMatches = useCallback(async (
     teamsToMatch: Team[],
@@ -112,33 +113,50 @@ export function useMatchActions({
   ): Promise<void> => {
     if (!tournament) return
 
+    // Construire la liste de tous les matchs à créer
+    const matchesToCreate: Array<{
+      tournoi_id: string
+      equipe_a_id: string
+      equipe_b_id: string
+      tour: number
+      terrain: null
+      type: string
+      poule: string | null
+      status: string
+    }> = []
+
     for (let i = 0; i < teamsToMatch.length; i++) {
       for (let j = i + 1; j < teamsToMatch.length; j++) {
-        try {
-          const response = await fetch('/api/matches', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              tournoi_id: tournament.id,
-              equipe_a_id: teamsToMatch[i].id,
-              equipe_b_id: teamsToMatch[j].id,
-              tour,
-              terrain: null,
-              type: 'poule',
-              poule,
-              status: 'a_jouer'
-            })
-          })
+        matchesToCreate.push({
+          tournoi_id: tournament.id,
+          equipe_a_id: teamsToMatch[i].id,
+          equipe_b_id: teamsToMatch[j].id,
+          tour,
+          terrain: null,
+          type: 'poule',
+          poule,
+          status: 'a_jouer'
+        })
+      }
+    }
 
-          if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
-            throw new Error(error.error || `Échec création match (${response.status})`)
-          }
-        } catch (error) {
-          console.error(`Erreur création match ${teamsToMatch[i].name} vs ${teamsToMatch[j].name}:`, error)
-          throw error
+    // Créer tous les matchs en une seule requête batch
+    if (matchesToCreate.length > 0) {
+      try {
+        const response = await fetch('/api/matches/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ matches: matchesToCreate })
+        })
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+          throw new Error(error.error || `Échec création matchs batch (${response.status})`)
         }
+      } catch (error) {
+        console.error(`Erreur création matchs batch pour poule ${poule}:`, error)
+        throw error
       }
     }
   }, [tournament])

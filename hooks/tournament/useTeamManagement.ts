@@ -26,6 +26,7 @@ interface UseTeamManagementReturn {
   newTeamNameForCreation: string
   setNewTeamNameForCreation: React.Dispatch<React.SetStateAction<string>>
   creatingTeam: boolean
+  deletingTeamId: string | null
   editingTeam: Team | null
   setEditingTeam: React.Dispatch<React.SetStateAction<Team | null>>
   newTeamName: string
@@ -38,6 +39,7 @@ interface UseTeamManagementReturn {
   togglePlayerSelection: (playerId: string) => void
   createTeamWithPlayers: () => Promise<void>
   renameTeam: () => Promise<void>
+  deleteTeam: (teamId: string) => Promise<void>
   getPlayersPerTeam: (format: string) => number
   getTeamPlayers: (teamId: string | null | undefined) => string[]
   resetTeamFormation: () => void
@@ -65,6 +67,7 @@ export function useTeamManagement({
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([])
   const [newTeamNameForCreation, setNewTeamNameForCreation] = useState('')
   const [creatingTeam, setCreatingTeam] = useState(false)
+  const [deletingTeamId, setDeletingTeamId] = useState<string | null>(null)
   const [showTeamFormation, setShowTeamFormation] = useState(false)
 
   // States pour renommer une équipe
@@ -253,6 +256,40 @@ export function useTeamManagement({
     }
   }, [editingTeam, newTeamName, teams, loadTournamentData])
 
+  /**
+   * Supprime une équipe existante
+   * Vérifie côté API que le tournoi est en préparation et qu'aucun match n'existe
+   */
+  const deleteTeam = useCallback(async (teamId: string) => {
+    const teamToDelete = teams.find(t => t.id === teamId)
+    if (!teamToDelete) {
+      notify.error('Équipe introuvable')
+      return
+    }
+
+    setDeletingTeamId(teamId)
+
+    try {
+      const response = await fetch(`/api/equipes/${teamId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        await loadTournamentData()
+        notify.success(`Équipe "${teamToDelete.name}" supprimée avec succès`)
+      } else {
+        const error = await response.json()
+        notify.error(error.error || 'Erreur lors de la suppression de l\'équipe')
+      }
+    } catch (error) {
+      console.error('Erreur suppression équipe:', error)
+      notify.error('Erreur lors de la suppression de l\'équipe')
+    } finally {
+      setDeletingTeamId(null)
+    }
+  }, [teams, loadTournamentData])
+
   return {
     // States
     availablePlayers,
@@ -260,6 +297,7 @@ export function useTeamManagement({
     newTeamNameForCreation,
     setNewTeamNameForCreation,
     creatingTeam,
+    deletingTeamId,
     editingTeam,
     setEditingTeam,
     newTeamName,
@@ -272,6 +310,7 @@ export function useTeamManagement({
     togglePlayerSelection,
     createTeamWithPlayers,
     renameTeam,
+    deleteTeam,
     getPlayersPerTeam,
     getTeamPlayers,
     resetTeamFormation

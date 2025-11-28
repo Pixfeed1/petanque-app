@@ -93,6 +93,33 @@ export async function POST(request: NextRequest) {
       return apiError('Accès non autorisé à ce tournoi', 403)
     }
 
+    // Vérifier qu'aucun joueur n'est déjà dans une autre équipe de ce tournoi
+    if (Array.isArray(joueur_ids) && joueur_ids.length > 0) {
+      const existingTeamsWithPlayers = await queryMany(
+        `SELECT e.id, e.name, e.joueur_ids
+         FROM equipes e
+         WHERE e.tournoi_id = $1`,
+        [tournoi_id]
+      )
+
+      const alreadyAssigned: { playerId: string; teamName: string }[] = []
+      for (const team of existingTeamsWithPlayers) {
+        const teamJoueurIds = team.joueur_ids || []
+        for (const playerId of joueur_ids) {
+          if (teamJoueurIds.includes(Number(playerId)) || teamJoueurIds.includes(String(playerId))) {
+            alreadyAssigned.push({ playerId: String(playerId), teamName: team.name })
+          }
+        }
+      }
+
+      if (alreadyAssigned.length > 0) {
+        const details = alreadyAssigned
+          .map(a => `Joueur ID ${a.playerId} est déjà dans l'équipe "${a.teamName}"`)
+          .join(', ')
+        return apiError(`Un ou plusieurs joueurs sont déjà assignés à une équipe : ${details}`, 400)
+      }
+    }
+
     const result = await query(
       `INSERT INTO equipes (tournoi_id, name, joueur_ids, stats, created_at)
        VALUES ($1, $2, $3::bigint[], $4::jsonb, NOW())

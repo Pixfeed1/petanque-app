@@ -29,6 +29,8 @@ interface Match {
     format: string
     settings?: {
       maxPoints?: number
+      timeLimit?: boolean
+      timeLimitMinutes?: number
     }
   }
 }
@@ -52,18 +54,22 @@ interface UseMatchScoreReturn {
   currentManche: number
   mancheScoreA: number
   mancheScoreB: number
-  winner: 'A' | 'B' | null
+  winner: 'A' | 'B' | 'draw' | null
   elapsedTime: number
 
   // Computed
   maxPoints: number
   maxPointsPerManche: number
+  timeLimit: boolean
+  timeLimitMinutes: number
+  isTimeLimitReached: boolean
 
   // Actions
   updateScore: (team: 'A' | 'B', delta: number) => void
   finishManche: () => Promise<void>
   undoLastManche: () => void
   saveProgress: (finalScoreA: number, finalScoreB: number, allManches: Manche[], isFinished: boolean) => Promise<void>
+  finishByTimeLimit: () => Promise<void>
 
   // Helpers
   formatTime: (seconds: number) => string
@@ -95,12 +101,15 @@ export function useMatchScore({
   const [currentManche, setCurrentManche] = useState(1)
   const [mancheScoreA, setMancheScoreA] = useState(0)
   const [mancheScoreB, setMancheScoreB] = useState(0)
-  const [winner, setWinner] = useState<'A' | 'B' | null>(null)
+  const [winner, setWinner] = useState<'A' | 'B' | 'draw' | null>(null)
   const [startTime, setStartTime] = useState<Date | null>(null)
   const [elapsedTime, setElapsedTime] = useState(0)
 
   // Computed
   const maxPoints = match?.tournoi?.settings?.maxPoints || 13
+  const timeLimit = match?.tournoi?.settings?.timeLimit || false
+  const timeLimitMinutes = match?.tournoi?.settings?.timeLimitMinutes || 60
+  const isTimeLimitReached = timeLimit && elapsedTime >= timeLimitMinutes * 60
 
   const maxPointsPerManche = (() => {
     const format = match?.tournoi?.format
@@ -214,21 +223,31 @@ export function useMatchScore({
     }
   }, [matchId, match?.started_at, startTime])
 
-  // Finish match
-  const finishMatch = useCallback(async (finalScoreA: number, finalScoreB: number, allManches: Manche[]) => {
+  // Finish match (avec ou sans égalité selon timeLimit)
+  const finishMatch = useCallback(async (
+    finalScoreA: number,
+    finalScoreB: number,
+    allManches: Manche[],
+    byTimeLimit: boolean = false
+  ) => {
     setSaving(true)
     try {
-      if (finalScoreA === finalScoreB) {
+      // Vérifier les conditions de fin selon le mode
+      if (finalScoreA === finalScoreB && !byTimeLimit) {
         notify.error('Le match ne peut pas se terminer sur une égalité.')
         return
       }
 
-      if (finalScoreA < maxPoints && finalScoreB < maxPoints) {
+      if (!byTimeLimit && finalScoreA < maxPoints && finalScoreB < maxPoints) {
         notify.error(`Le match doit se terminer quand une équipe atteint ${maxPoints} points.`)
         return
       }
 
-      const winnerId = finalScoreA > finalScoreB ? match?.equipe_a_id : match?.equipe_b_id
+      // Déterminer le gagnant (null si égalité en mode timeLimit)
+      let winnerId: string | null = null
+      if (finalScoreA !== finalScoreB) {
+        winnerId = finalScoreA > finalScoreB ? match?.equipe_a_id || null : match?.equipe_b_id || null
+      }
 
       const response = await fetch(`/api/matches/${matchId}`, {
         method: 'PUT',
@@ -246,10 +265,16 @@ export function useMatchScore({
       })
 
       if (response.ok) {
-        notify.success('Match terminé !')
+        const resultMessage = finalScoreA === finalScoreB
+          ? 'Match nul !'
+          : 'Match terminé !'
+        notify.success(resultMessage)
         if (match?.tournoi?.id) {
           router.push(`/tournoi/${match.tournoi.id}`)
         }
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+        notify.error(errorData.error || 'Erreur lors de la sauvegarde')
       }
     } catch (error) {
       console.error('Erreur finale:', error)
@@ -258,6 +283,31 @@ export function useMatchScore({
       setSaving(false)
     }
   }, [matchId, match, maxPoints, router])
+
+  // Finish match by time limit (permet égalité)
+  const finishByTimeLimit = useCallback(async () => {
+    if (!timeLimit) {
+      notify.error('La limite de temps n\'est pas activée pour ce tournoi')
+      return
+    }
+
+    const message = scoreA === scoreB
+      ? `Terminer le match en égalité (${scoreA}-${scoreB}) ?`
+      : `Terminer le match avec le score actuel (${scoreA}-${scoreB}) ?`
+
+    const confirmed = onConfirm
+      ? await onConfirm(message)
+      : window.confirm(message)
+
+    if (confirmed) {
+      if (scoreA === scoreB) {
+        setWinner('draw')
+      } else {
+        setWinner(scoreA > scoreB ? 'A' : 'B')
+      }
+      await finishMatch(scoreA, scoreB, manches, true)
+    }
+  }, [timeLimit, scoreA, scoreB, manches, finishMatch, onConfirm])
 
   // Finish manche
   const finishManche = useCallback(async () => {
@@ -335,10 +385,14 @@ export function useMatchScore({
     elapsedTime,
     maxPoints,
     maxPointsPerManche,
+    timeLimit,
+    timeLimitMinutes,
+    isTimeLimitReached,
     updateScore,
     finishManche,
     undoLastManche,
     saveProgress,
+    finishByTimeLimit,
     formatTime
   }
 }

@@ -133,10 +133,36 @@ export async function DELETE(
 
     const { id } = await params
 
-    const equipe = await queryOne('SELECT id FROM equipes WHERE id = $1', [id])
+    // Récupérer l'équipe avec le statut du tournoi
+    const equipe = await queryOne(
+      `SELECT e.*, t.status as tournoi_status
+       FROM equipes e
+       LEFT JOIN tournois t ON e.tournoi_id = t.id
+       WHERE e.id = $1`,
+      [id]
+    )
 
     if (!equipe) {
       return apiError('Équipe introuvable', 404)
+    }
+
+    // Ne permettre la suppression que si le tournoi est en préparation
+    if (equipe.tournoi_status && equipe.tournoi_status !== 'preparation') {
+      return apiError('Impossible de supprimer une équipe une fois le tournoi démarré', 400)
+    }
+
+    // Vérifier si des matchs existent avec cette équipe
+    const matchesWithTeam = await queryOne(
+      `SELECT COUNT(*) as count FROM matches
+       WHERE equipe_a_id = $1 OR equipe_b_id = $1`,
+      [id]
+    )
+
+    if (matchesWithTeam && parseInt(matchesWithTeam.count) > 0) {
+      return apiError(
+        `Impossible de supprimer cette équipe : ${matchesWithTeam.count} match(s) associé(s). Supprimez d'abord les matchs.`,
+        400
+      )
     }
 
     await query('DELETE FROM equipes WHERE id = $1', [id])
