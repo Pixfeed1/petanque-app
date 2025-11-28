@@ -44,18 +44,25 @@ export function calculateTeamStats(
   matches: Match[]
 ): TeamStats {
   // Filtrer les matchs de cette équipe (uniquement terminés, pas les BYE)
+  // Utiliser equipe_a_id/equipe_b_id en priorité (toujours présents)
+  // puis fallback sur equipe_a?.id (si relation jointe)
   const teamMatches = matches.filter(m =>
     m.status === 'termine' &&
     m.type !== 'bye' &&
-    (m.equipe_a?.id === teamId || m.equipe_b?.id === teamId)
+    (m.equipe_a_id === teamId || m.equipe_b_id === teamId ||
+     m.equipe_a?.id === teamId || m.equipe_b?.id === teamId)
   )
+
+  // Helper pour déterminer si l'équipe est A ou B dans un match
+  const isTeamA = (m: Match) => m.equipe_a_id === teamId || m.equipe_a?.id === teamId
+  const isTeamB = (m: Match) => m.equipe_b_id === teamId || m.equipe_b?.id === teamId
 
   // Calcul des victoires
   const victories = teamMatches.filter(m => {
     if (m.score_a === null || m.score_b === null) return false
     return (
-      (m.equipe_a?.id === teamId && m.score_a > m.score_b) ||
-      (m.equipe_b?.id === teamId && m.score_b > m.score_a)
+      (isTeamA(m) && m.score_a > m.score_b) ||
+      (isTeamB(m) && m.score_b > m.score_a)
     )
   }).length
 
@@ -63,8 +70,8 @@ export function calculateTeamStats(
   const defeats = teamMatches.filter(m => {
     if (m.score_a === null || m.score_b === null) return false
     return (
-      (m.equipe_a?.id === teamId && m.score_a < m.score_b) ||
-      (m.equipe_b?.id === teamId && m.score_b < m.score_a)
+      (isTeamA(m) && m.score_a < m.score_b) ||
+      (isTeamB(m) && m.score_b < m.score_a)
     )
   }).length
 
@@ -81,10 +88,10 @@ export function calculateTeamStats(
   teamMatches.forEach(m => {
     if (m.score_a === null || m.score_b === null) return
 
-    if (m.equipe_a?.id === teamId) {
+    if (isTeamA(m)) {
       pointsFor += m.score_a
       pointsAgainst += m.score_b
-    } else if (m.equipe_b?.id === teamId) {
+    } else if (isTeamB(m)) {
       pointsFor += m.score_b
       pointsAgainst += m.score_a
     }
@@ -125,10 +132,13 @@ export function calculatePlayerStats(
     .map(t => t.id)
 
   // Filtrer les matchs où le joueur a participé
+  // Utiliser equipe_a_id/equipe_b_id en priorité puis fallback sur equipe_a?.id
   const playerMatches = matches.filter(m =>
     m.status === 'termine' &&
     m.type !== 'bye' &&
-    (playerTeamIds.includes(m.equipe_a?.id || '') ||
+    (playerTeamIds.includes(m.equipe_a_id || '') ||
+     playerTeamIds.includes(m.equipe_b_id || '') ||
+     playerTeamIds.includes(m.equipe_a?.id || '') ||
      playerTeamIds.includes(m.equipe_b?.id || ''))
   )
 
@@ -141,7 +151,9 @@ export function calculatePlayerStats(
   playerMatches.forEach(match => {
     if (match.score_a === null || match.score_b === null) return
 
-    const isTeamA = playerTeamIds.includes(match.equipe_a?.id || '')
+    // Utiliser equipe_a_id en priorité puis fallback sur equipe_a?.id
+    const isTeamA = playerTeamIds.includes(match.equipe_a_id || '') ||
+                    playerTeamIds.includes(match.equipe_a?.id || '')
 
     // Comptabiliser résultat
     if (match.score_a > match.score_b) {
@@ -211,7 +223,10 @@ export function calculateAllPlayersStats(
   return players.map(player => {
     const playerTeamIds = playerToTeams.get(player.id) || []
 
+    // Utiliser equipe_a_id/equipe_b_id en priorité puis fallback sur equipe_a?.id
     const playerMatches = completedMatches.filter(m =>
+      playerTeamIds.includes(m.equipe_a_id || '') ||
+      playerTeamIds.includes(m.equipe_b_id || '') ||
       playerTeamIds.includes(m.equipe_a?.id || '') ||
       playerTeamIds.includes(m.equipe_b?.id || '')
     )
@@ -225,7 +240,9 @@ export function calculateAllPlayersStats(
     playerMatches.forEach(match => {
       if (match.score_a === null || match.score_b === null) return
 
-      const isTeamA = playerTeamIds.includes(match.equipe_a?.id || '')
+      // Utiliser equipe_a_id en priorité puis fallback sur equipe_a?.id
+      const isTeamA = playerTeamIds.includes(match.equipe_a_id || '') ||
+                      playerTeamIds.includes(match.equipe_a?.id || '')
 
       if (match.score_a > match.score_b) {
         if (isTeamA) victories++

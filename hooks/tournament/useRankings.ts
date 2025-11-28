@@ -99,8 +99,11 @@ export function useRankings({
 
     teamsWithStats.forEach(team => {
       // Trouver la poule de cette équipe
+      // Utiliser equipe_a_id/equipe_b_id en priorité (toujours présents)
+      // puis fallback sur equipe_a?.id (si relation jointe)
       const pouleMatch = matches.find(m =>
-        (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id) && m.poule
+        (m.equipe_a_id === team.id || m.equipe_b_id === team.id ||
+         m.equipe_a?.id === team.id || m.equipe_b?.id === team.id) && m.poule
       )
       const poule = pouleMatch?.poule || 'A'
 

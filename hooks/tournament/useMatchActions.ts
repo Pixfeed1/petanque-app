@@ -318,46 +318,71 @@ export function useMatchActions({
       .filter((team): team is Team => team !== undefined)
 
     try {
-      // Déterminer le nombre de matchs selon les qualifiés
+      // Utiliser BracketService pour déterminer la configuration du bracket
       const nbQualified = reorderedQualified.length
-      let matchType = 'finale'
-      let nbMatches = 1
 
-      if (nbQualified === 2) {
-        matchType = 'finale'
-        nbMatches = 1
-      } else if (nbQualified === 4) {
-        matchType = 'demi'
-        nbMatches = 2
-      } else if (nbQualified === 8) {
-        matchType = 'quart'
-        nbMatches = 4
-      } else if (nbQualified === 16) {
-        matchType = 'huitieme'
-        nbMatches = 8
-      } else {
-        const nextPower = Math.pow(2, Math.ceil(Math.log2(nbQualified)))
-        if (nextPower === 16) {
-          matchType = 'huitieme'
-          nbMatches = 8
-        } else if (nextPower === 8) {
-          matchType = 'quart'
-          nbMatches = 4
-        } else if (nextPower === 4) {
-          matchType = 'demi'
-          nbMatches = 2
+      // Validation minimum
+      if (nbQualified < 2) {
+        notify.error('Minimum 2 équipes qualifiées nécessaires pour les phases finales')
+        return
+      }
+
+      const bracketConfig = BracketService.calculateBracketMatches(nbQualified)
+      const { nbMatches, round: matchType, hasByes, nbByes } = bracketConfig
+
+      // Créer le tableau des équipes avec les BYE bien placés
+      // Les BYE sont attribués aux meilleures équipes (premiers indices après seeding)
+      // Pour un bracket équilibré, on place les BYE en positions impaires à la fin
+      const bracketSlots: (Team | null)[] = []
+      let teamIdx = 0
+
+      for (let i = 0; i < nbMatches * 2; i++) {
+        if (teamIdx < reorderedQualified.length) {
+          bracketSlots.push(reorderedQualified[teamIdx])
+          teamIdx++
         } else {
-          matchType = 'finale'
-          nbMatches = 1
+          // Plus d'équipes disponibles → BYE
+          bracketSlots.push(null)
         }
       }
 
-      // Créer les matchs d'élimination
-      for (let i = 0; i < nbMatches; i++) {
-        const equipe_a = reorderedQualified[i * 2]
-        const equipe_b = reorderedQualified[i * 2 + 1]
+      // Réorganiser pour placer les BYE contre les meilleures équipes
+      // Les BYE doivent être en position B (indices impairs) des premiers matchs
+      if (hasByes && nbByes > 0) {
+        // Déplacer les BYE (null) vers les positions B des premiers matchs
+        const teamsOnly = bracketSlots.filter(t => t !== null) as Team[]
+        const reorganized: (Team | null)[] = []
 
-        if (!equipe_a) break
+        for (let i = 0; i < nbMatches; i++) {
+          if (i < nbByes) {
+            // Ce match a un BYE - l'équipe la mieux classée (début de teamsOnly) reçoit le BYE
+            reorganized.push(teamsOnly.shift() || null)
+            reorganized.push(null) // BYE
+          } else {
+            // Match normal
+            reorganized.push(teamsOnly.shift() || null)
+            reorganized.push(teamsOnly.shift() || null)
+          }
+        }
+
+        // Remplacer bracketSlots par la version réorganisée
+        bracketSlots.length = 0
+        bracketSlots.push(...reorganized)
+      }
+
+      // Créer les matchs d'élimination
+      let createdMatches = 0
+      let createdByes = 0
+
+      for (let i = 0; i < nbMatches; i++) {
+        const equipe_a = bracketSlots[i * 2]
+        const equipe_b = bracketSlots[i * 2 + 1]
+
+        // Si pas d'équipe A, c'est une erreur de logique
+        if (!equipe_a) {
+          console.warn(`⚠️ Position ${i * 2} sans équipe - ignoré`)
+          continue
+        }
 
         // Match BYE si pas d'équipe B
         if (!equipe_b) {
@@ -381,6 +406,7 @@ export function useMatchActions({
             const error = await byeResponse.json().catch(() => ({ error: 'Erreur serveur' }))
             throw new Error(`Échec création match BYE: ${error.error}`)
           }
+          createdByes++
         } else {
           const matchResponse = await fetch('/api/matches', {
             method: 'POST',
@@ -400,10 +426,13 @@ export function useMatchActions({
             const error = await matchResponse.json().catch(() => ({ error: 'Erreur serveur' }))
             throw new Error(`Échec création match ${equipe_a.name} vs ${equipe_b.name}: ${error.error}`)
           }
+          createdMatches++
         }
       }
 
-      notify.success(`Phases éliminatoires générées : ${nbMatches} match(s) de ${matchType}`)
+      // Message de succès avec détails sur les BYE
+      const byeInfo = createdByes > 0 ? ` (${createdByes} BYE${createdByes > 1 ? 's' : ''})` : ''
+      notify.success(`Phases éliminatoires générées : ${createdMatches} match(s) de ${matchType}${byeInfo}`)
       await loadTournamentData()
     } catch (error) {
       console.error('Erreur génération phases finales:', error)
