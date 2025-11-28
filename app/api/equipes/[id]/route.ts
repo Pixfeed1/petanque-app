@@ -190,15 +190,16 @@ export async function DELETE(
     }
 
     // Vérifier si des matchs existent avec cette équipe
-    const matchesWithTeam = await queryOne(
+    const matchesWithTeam = await queryOne<{ count: string }>(
       `SELECT COUNT(*) as count FROM matches
        WHERE equipe_a_id = $1 OR equipe_b_id = $1`,
       [id]
     )
 
-    if (matchesWithTeam && parseInt(matchesWithTeam.count) > 0) {
+    const matchCount = parseInt(matchesWithTeam?.count ?? '0', 10)
+    if (matchCount > 0) {
       return apiError(
-        `Impossible de supprimer cette équipe : ${matchesWithTeam.count} match(s) associé(s). Supprimez d'abord les matchs.`,
+        `Impossible de supprimer cette équipe : ${matchCount} match(s) associé(s). Supprimez d'abord les matchs.`,
         400
       )
     }

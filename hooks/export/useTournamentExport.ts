@@ -599,10 +599,10 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
             m.type === 'poule' ? 'Poule' : m.type === 'finale' ? 'Finale' : 'Elimination',
             sanitizeForExcel(m.poule),
             sanitizeForExcel(m.equipe_a?.name),
-            m.score_a || '',
-            m.score_b || '',
+            m.score_a ?? '',
+            m.score_b ?? '',
             sanitizeForExcel(m.equipe_b?.name),
-            m.terrain || '',
+            m.terrain ?? '',
             m.status === 'termine' ? 'Termine' : m.status === 'en_cours' ? 'En cours' : 'A jouer'
           ])
         ]

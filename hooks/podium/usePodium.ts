@@ -204,12 +204,12 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
       teamMatches.forEach((m: Match) => {
         if (m.equipe_a_id === team.id) {
           if ((m.score_a ?? 0) > (m.score_b ?? 0)) victories++
-          pointsFor += m.score_a || 0
-          pointsAgainst += m.score_b || 0
+          pointsFor += m.score_a ?? 0
+          pointsAgainst += m.score_b ?? 0
         } else if (m.equipe_b_id === team.id) {
           if ((m.score_b ?? 0) > (m.score_a ?? 0)) victories++
-          pointsFor += m.score_b || 0
-          pointsAgainst += m.score_a || 0
+          pointsFor += m.score_b ?? 0
+          pointsAgainst += m.score_a ?? 0
         }
       })
       return { team, victories, difference: pointsFor - pointsAgainst, pointsFor }

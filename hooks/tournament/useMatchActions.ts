@@ -266,6 +266,18 @@ export function useMatchActions({
       return
     }
 
+    // Vérifier qu'il n'y a pas d'égalités (sauf si timeLimit activé)
+    const timeLimit = tournament.settings.timeLimit || false
+    const drawMatches = pouleMatches.filter(m => m.score_a === m.score_b && m.status === 'termine')
+
+    if (drawMatches.length > 0 && !timeLimit) {
+      const drawNames = drawMatches.map(m =>
+        `${m.equipe_a?.name || 'Équipe A'} vs ${m.equipe_b?.name || 'Équipe B'} (${m.score_a}-${m.score_b})`
+      ).join(', ')
+      notify.error(`Impossible de générer les phases finales : ${drawMatches.length} match(s) avec égalité détecté(s) : ${drawNames}`)
+      return
+    }
+
     // Calculer le classement de chaque poule
     const qualifiedPerPoule = tournament.settings.qualifiedPerPoule || 2
     const pouleNames = [...new Set(pouleMatches.map(m => m.poule))]
@@ -629,15 +641,33 @@ export function useMatchActions({
       const matchToAssign = matches.find(m => m.id === matchId)
       if (!matchToAssign) return
 
-      // Chercher des matchs en cours ou à jouer sur ce terrain
-      const conflicts = matches.filter(m =>
+      // Chercher des matchs EN COURS sur ce terrain (conflit bloquant)
+      const activeConflicts = matches.filter(m =>
         m.id !== matchId &&
         m.terrain === terrain &&
-        (m.status === 'en_cours' || m.status === 'a_jouer')
+        m.status === 'en_cours'
       )
 
-      if (conflicts.length > 0) {
-        const conflictNames = conflicts.map(m => {
+      if (activeConflicts.length > 0) {
+        const conflictNames = activeConflicts.map(m => {
+          const teamADisplay = m.equipe_a?.name || 'Équipe A'
+          const teamBDisplay = m.equipe_b?.name || 'Équipe B'
+          return `${teamADisplay} vs ${teamBDisplay}`
+        }).join(', ')
+
+        notify.error(`Impossible : le terrain ${terrain} est occupé par un match en cours (${conflictNames})`)
+        return
+      }
+
+      // Chercher des matchs À JOUER sur ce terrain (warning, pas bloquant)
+      const pendingConflicts = matches.filter(m =>
+        m.id !== matchId &&
+        m.terrain === terrain &&
+        m.status === 'a_jouer'
+      )
+
+      if (pendingConflicts.length > 0) {
+        const conflictNames = pendingConflicts.map(m => {
           const playersA = getTeamPlayers(m.equipe_a_id || m.equipe_a?.id)
           const playersB = getTeamPlayers(m.equipe_b_id || m.equipe_b?.id)
           const teamADisplay = playersA.length > 0 ? `${m.equipe_a?.name} (${playersA.join(', ')})` : m.equipe_a?.name
@@ -645,8 +675,8 @@ export function useMatchActions({
           return `${teamADisplay} vs ${teamBDisplay}`
         }).join(', ')
 
-        // Utiliser callback si disponible, sinon window.confirm en fallback
-        const message = `Le terrain ${terrain} est déjà assigné à : ${conflictNames}. Assigner quand même ?`
+        // Demander confirmation uniquement pour les matchs non commencés
+        const message = `Le terrain ${terrain} est déjà assigné à : ${conflictNames}. Réassigner quand même ?`
         const confirmed = onConfirmTerrainConflict
           ? await onConfirmTerrainConflict(message)
           : window.confirm(message)

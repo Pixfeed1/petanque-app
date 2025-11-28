@@ -78,9 +78,9 @@ export async function POST(request: NextRequest) {
       return apiError('Champs requis: tournoi_id, name', 400)
     }
 
-    // Vérifier accès au tournoi et récupérer le format
-    const tournoi = await queryOne<{ org_id: number; format: string; mode: string }>(
-      'SELECT org_id, format, mode FROM tournois WHERE id = $1',
+    // Vérifier accès au tournoi et récupérer le format + statut
+    const tournoi = await queryOne<{ org_id: number; format: string; mode: string; status: string }>(
+      'SELECT org_id, format, mode, status FROM tournois WHERE id = $1',
       [tournoi_id]
     )
 
@@ -91,6 +91,17 @@ export async function POST(request: NextRequest) {
     const hasAccess = await checkOrgAccess(user.id, String(tournoi.org_id))
     if (!hasAccess) {
       return apiError('Accès non autorisé à ce tournoi', 403)
+    }
+
+    // Vérifier que le tournoi est en préparation
+    if (tournoi.status !== 'preparation') {
+      return apiError('Impossible de créer une équipe après le démarrage du tournoi', 400)
+    }
+
+    // Validation du format du tournoi
+    const validFormats = ['tete_a_tete', 'doublette', 'triplette']
+    if (!validFormats.includes(tournoi.format)) {
+      return apiError(`Format de tournoi invalide: ${tournoi.format}`, 400)
     }
 
     // Validation du nombre de joueurs selon le format du tournoi
@@ -109,6 +120,17 @@ export async function POST(request: NextRequest) {
       const uniqueIds = new Set(joueur_ids.map(String))
       if (uniqueIds.size !== joueur_ids.length) {
         return apiError('Un même joueur ne peut pas apparaître plusieurs fois dans la même équipe', 400)
+      }
+
+      // Vérifier que tous les joueurs existent en base de données
+      const existingPlayers = await queryMany<{ id: string }>(
+        'SELECT id FROM joueurs WHERE id = ANY($1::bigint[])',
+        [joueur_ids]
+      )
+      if (existingPlayers.length !== joueur_ids.length) {
+        const existingIds = new Set(existingPlayers.map(p => String(p.id)))
+        const missingIds = joueur_ids.filter(id => !existingIds.has(String(id)))
+        return apiError(`Joueur(s) introuvable(s): ${missingIds.join(', ')}`, 400)
       }
     }
 

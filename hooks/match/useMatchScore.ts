@@ -150,8 +150,8 @@ export function useMatchScore({
 
       if (data) {
         setMatch(data)
-        setScoreA(data.score_a || 0)
-        setScoreB(data.score_b || 0)
+        setScoreA(data.score_a ?? 0)
+        setScoreB(data.score_b ?? 0)
         if (data.manches_json && Array.isArray(data.manches_json)) {
           setManches(data.manches_json)
           setCurrentManche(data.manches_json.length + 1)
