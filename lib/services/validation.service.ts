@@ -286,3 +286,92 @@ export function validateMixity(
 
   return { valid: true }
 }
+
+/**
+ * Valide que le nombre de terrains est suffisant pour les matchs simultanés
+ * Calcule le nombre max de matchs pouvant se jouer en même temps dans une poule
+ */
+export function validateTerrainsVsMatches(
+  nbTerrains: number,
+  nbTeams: number,
+  pouleSize: number
+): ValidationResult {
+  if (nbTerrains < 1) {
+    return {
+      valid: false,
+      error: 'Au moins 1 terrain est requis'
+    }
+  }
+
+  // Calcul du nombre de poules
+  const nbPoules = Math.ceil(nbTeams / pouleSize)
+
+  // Dans une poule de N équipes, on peut jouer max floor(N/2) matchs en même temps
+  // (car chaque équipe ne peut jouer qu'un match à la fois)
+  const maxSimultaneousPerPoule = Math.floor(pouleSize / 2)
+
+  // Si on joue toutes les poules en parallèle (pire cas)
+  const maxSimultaneousTotal = nbPoules * maxSimultaneousPerPoule
+
+  // Minimum recommandé : 1 terrain par poule pour avoir une progression raisonnable
+  const minRecommendedTerrains = Math.min(nbPoules, maxSimultaneousTotal)
+
+  // Si on a moins de terrains que de poules, le tournoi sera très long
+  if (nbTerrains < nbPoules) {
+    return {
+      valid: true,
+      warning: `⚠️ Attention : avec ${nbTerrains} terrain(s) pour ${nbPoules} poule(s), ` +
+        `le tournoi sera plus long. Recommandé : au moins ${nbPoules} terrain(s).`
+    }
+  }
+
+  // Si on a beaucoup moins de terrains que le max possible
+  if (nbTerrains < minRecommendedTerrains && maxSimultaneousTotal > nbTerrains * 2) {
+    return {
+      valid: true,
+      warning: `💡 Info : vous pourriez utiliser jusqu'à ${maxSimultaneousTotal} terrain(s) ` +
+        `pour jouer tous les matchs possibles en parallèle. ` +
+        `Avec ${nbTerrains} terrain(s), le tournoi prendra plus de temps.`
+    }
+  }
+
+  return { valid: true }
+}
+
+/**
+ * Calcule et retourne des informations sur l'organisation des terrains
+ */
+export function getTerrainInfo(
+  nbTerrains: number,
+  nbTeams: number,
+  pouleSize: number
+): {
+  nbPoules: number
+  maxSimultaneous: number
+  teamsPerTerrain: number
+  isOptimal: boolean
+  recommendation: string
+} {
+  const nbPoules = Math.ceil(nbTeams / pouleSize)
+  const maxSimultaneousPerPoule = Math.floor(pouleSize / 2)
+  const maxSimultaneous = nbPoules * maxSimultaneousPerPoule
+  const teamsPerTerrain = nbTerrains > 0 ? Math.ceil(nbTeams / nbTerrains) : nbTeams
+  const isOptimal = nbTerrains >= Math.min(nbPoules, maxSimultaneous)
+
+  let recommendation = ''
+  if (nbTerrains < nbPoules) {
+    recommendation = `Ajoutez ${nbPoules - nbTerrains} terrain(s) pour que chaque poule ait son terrain`
+  } else if (nbTerrains < maxSimultaneous && maxSimultaneous <= 8) {
+    recommendation = `Idéal : ${maxSimultaneous} terrain(s) pour jouer tous les matchs possibles en parallèle`
+  } else if (nbTerrains >= maxSimultaneous) {
+    recommendation = 'Configuration optimale'
+  }
+
+  return {
+    nbPoules,
+    maxSimultaneous,
+    teamsPerTerrain,
+    isOptimal,
+    recommendation
+  }
+}

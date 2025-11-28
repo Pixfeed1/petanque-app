@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/Toast'
 import { useConfirm } from '@/components/ui/ConfirmModal'
 import {
   Trophy, Plus, Minus, Check, Clock, ArrowLeft,
-  Undo, Loader, Save, Petanque
+  Undo, Loader, Save, Petanque, Flag
 } from '@/components/Icons'
 
 /**
@@ -43,6 +43,7 @@ export default function MatchScorePage() {
     finishManche,
     undoLastManche,
     saveProgress,
+    declareForfeit,
     formatTime
   } = useMatchScore({
     matchId: params.id,
@@ -103,6 +104,7 @@ export default function MatchScorePage() {
         currentManche={currentManche}
         winner={winner}
         onBack={() => match?.tournoi?.id && router.push(`/tournoi/${match.tournoi.id}`)}
+        onForfeit={declareForfeit}
       />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -204,11 +206,12 @@ interface MatchHeaderProps {
   elapsedTime: number
   formatTime: (s: number) => string
   currentManche: number
-  winner: 'A' | 'B' | null
+  winner: 'A' | 'B' | 'draw' | null
   onBack: () => void
+  onForfeit?: (team: 'A' | 'B') => Promise<void>
 }
 
-function MatchHeader({ match, elapsedTime, formatTime, currentManche, winner, onBack }: MatchHeaderProps) {
+function MatchHeader({ match, elapsedTime, formatTime, currentManche, winner, onBack, onForfeit }: MatchHeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-gray-200/50 shadow-sm">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
@@ -252,6 +255,14 @@ function MatchHeader({ match, elapsedTime, formatTime, currentManche, winner, on
                 <span className="text-xs sm:text-sm text-gray-600 hidden sm:inline">Mène </span>
                 <span className="sm:ml-2 font-bold text-sm sm:text-lg text-green-700">{currentManche}</span>
               </div>
+            )}
+
+            {/* Bouton Forfait */}
+            {!winner && onForfeit && (
+              <ForfeitDropdown
+                match={match}
+                onForfeit={onForfeit}
+              />
             )}
           </div>
         </div>
@@ -301,7 +312,7 @@ interface TeamsDisplayProps {
   match: any
   scoreA: number
   scoreB: number
-  winner: 'A' | 'B' | null
+  winner: 'A' | 'B' | 'draw' | null
 }
 
 function TeamsDisplay({ match, scoreA, scoreB, winner }: TeamsDisplayProps) {
@@ -484,7 +495,7 @@ function ScoreControls({ score, maxScore, colorScheme, onUpdate }: ScoreControls
 
 interface VictoryMessageProps {
   match: any
-  winner: 'A' | 'B'
+  winner: 'A' | 'B' | 'draw'
   scoreA: number
   scoreB: number
   elapsedTime: number
@@ -493,20 +504,25 @@ interface VictoryMessageProps {
 }
 
 function VictoryMessage({ match, winner, scoreA, scoreB, elapsedTime, formatTime, saving }: VictoryMessageProps) {
-  const winnerName = winner === 'A' ? match.equipe_a?.name : match.equipe_b?.name
+  const isDraw = winner === 'draw'
+  const winnerName = isDraw ? null : (winner === 'A' ? match.equipe_a?.name : match.equipe_b?.name)
 
   return (
     <div className="mt-6 sm:mt-8 text-center px-2">
-      <div className="inline-block bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl max-w-full">
-        <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">🎉</div>
+      <div className={`inline-block rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl max-w-full ${
+        isDraw
+          ? 'bg-gradient-to-r from-gray-400 to-gray-500'
+          : 'bg-gradient-to-r from-yellow-400 to-orange-500'
+      }`}>
+        <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">{isDraw ? '🤝' : '🎉'}</div>
         <h2 className="text-xl sm:text-3xl font-bold text-white mb-2 px-2">
-          Victoire de {winnerName} !
+          {isDraw ? 'Match nul !' : `Victoire de ${winnerName} !`}
         </h2>
         <p className="text-white/90 text-base sm:text-xl px-2">
           Score final : {scoreA} - {scoreB}
         </p>
         <p className="text-white/80 text-xs sm:text-sm mt-3 sm:mt-4">
-          Match termine en {formatTime(elapsedTime)}
+          Match terminé en {formatTime(elapsedTime)}
         </p>
         {saving && (
           <div className="mt-3 sm:mt-4 flex items-center justify-center text-white">
@@ -521,7 +537,7 @@ function VictoryMessage({ match, winner, scoreA, scoreB, elapsedTime, formatTime
 
 interface ManchesHistoryProps {
   manches: Array<{ scoreA: number; scoreB: number }>
-  winner: 'A' | 'B' | null
+  winner: 'A' | 'B' | 'draw' | null
   undoLastManche: () => void
 }
 
@@ -579,6 +595,65 @@ function FloatingSaveButton({ saving, onSave }: FloatingSaveButtonProps) {
           Sauvegarder la progression
         </span>
       </button>
+    </div>
+  )
+}
+
+interface ForfeitDropdownProps {
+  match: any
+  onForfeit: (team: 'A' | 'B') => Promise<void>
+}
+
+function ForfeitDropdown({ match, onForfeit }: ForfeitDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false)
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 sm:py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg sm:rounded-xl transition-all"
+        title="Déclarer un forfait"
+      >
+        <Flag className="w-4 h-4 sm:w-5 sm:h-5" />
+        <span className="text-xs sm:text-sm font-medium hidden sm:inline">Forfait</span>
+      </button>
+
+      {isOpen && (
+        <>
+          {/* Overlay pour fermer le dropdown */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setIsOpen(false)}
+          />
+
+          {/* Menu dropdown */}
+          <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+            <div className="p-2 border-b border-gray-100">
+              <p className="text-xs text-gray-500 text-center">Quelle équipe déclare forfait ?</p>
+            </div>
+            <button
+              onClick={() => {
+                setIsOpen(false)
+                onForfeit('A')
+              }}
+              className="w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center space-x-3"
+            >
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <span className="text-gray-700 font-medium truncate">{match.equipe_a?.name}</span>
+            </button>
+            <button
+              onClick={() => {
+                setIsOpen(false)
+                onForfeit('B')
+              }}
+              className="w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center space-x-3 border-t border-gray-50"
+            >
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span className="text-gray-700 font-medium truncate">{match.equipe_b?.name}</span>
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }

@@ -284,6 +284,19 @@ export function useTournamentCreation({
       return
     }
 
+    // Validation terrains vs matchs simultanés (warning seulement, non bloquant)
+    const estimatedTeams = getEstimatedTeams()
+    if (estimatedTeams > 0) {
+      const terrainValidation = ValidationService.validateTerrainsVsMatches(
+        formData.terrains,
+        estimatedTeams,
+        formData.pouleSize
+      )
+      if (terrainValidation.warning) {
+        notify.warning(terrainValidation.warning)
+      }
+    }
+
     // Validation date
     const selectedDate = new Date(formData.date)
     const today = new Date()

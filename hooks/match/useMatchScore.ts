@@ -70,6 +70,7 @@ interface UseMatchScoreReturn {
   undoLastManche: () => void
   saveProgress: (finalScoreA: number, finalScoreB: number, allManches: Manche[], isFinished: boolean) => Promise<void>
   finishByTimeLimit: () => Promise<void>
+  declareForfeit: (forfeitingTeam: 'A' | 'B') => Promise<void>
 
   // Helpers
   formatTime: (seconds: number) => string
@@ -309,6 +310,63 @@ export function useMatchScore({
     }
   }, [timeLimit, scoreA, scoreB, manches, finishMatch, onConfirm])
 
+  // Declare forfeit - l'équipe qui déclare forfait perd 0-13 (ou maxPoints)
+  const declareForfeit = useCallback(async (forfeitingTeam: 'A' | 'B') => {
+    const forfeitingName = forfeitingTeam === 'A' ? match?.equipe_a?.name : match?.equipe_b?.name
+    const winnerName = forfeitingTeam === 'A' ? match?.equipe_b?.name : match?.equipe_a?.name
+
+    const message = `Déclarer forfait pour ${forfeitingName} ? ${winnerName} gagnera ${maxPoints}-0.`
+
+    const confirmed = onConfirm
+      ? await onConfirm(message)
+      : window.confirm(message)
+
+    if (confirmed) {
+      setSaving(true)
+      try {
+        // Score: équipe qui forfait = 0, équipe gagnante = maxPoints
+        const finalScoreA = forfeitingTeam === 'A' ? 0 : maxPoints
+        const finalScoreB = forfeitingTeam === 'B' ? 0 : maxPoints
+        const winnerId = forfeitingTeam === 'A' ? match?.equipe_b_id : match?.equipe_a_id
+
+        const response = await fetch(`/api/matches/${matchId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            score_a: finalScoreA,
+            score_b: finalScoreB,
+            manches_json: [], // Forfait = pas de mènes jouées
+            status: 'termine',
+            winner_id: winnerId,
+            forfeit: true,
+            forfeit_team: forfeitingTeam,
+            ended_at: new Date().toISOString(),
+            validated_at: new Date().toISOString()
+          })
+        })
+
+        if (response.ok) {
+          setWinner(forfeitingTeam === 'A' ? 'B' : 'A')
+          setScoreA(finalScoreA)
+          setScoreB(finalScoreB)
+          notify.success(`Forfait déclaré. ${winnerName} remporte le match.`)
+          if (match?.tournoi?.id) {
+            router.push(`/tournoi/${match.tournoi.id}`)
+          }
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+          notify.error(errorData.error || 'Erreur lors de la déclaration du forfait')
+        }
+      } catch (error) {
+        console.error('Erreur forfait:', error)
+        notify.error('Erreur lors de la déclaration du forfait')
+      } finally {
+        setSaving(false)
+      }
+    }
+  }, [matchId, match, maxPoints, router, onConfirm])
+
   // Finish manche
   const finishManche = useCallback(async () => {
     if (mancheScoreA === 0 && mancheScoreB === 0) {
@@ -393,6 +451,7 @@ export function useMatchScore({
     undoLastManche,
     saveProgress,
     finishByTimeLimit,
+    declareForfeit,
     formatTime
   }
 }

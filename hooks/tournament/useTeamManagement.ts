@@ -33,9 +33,14 @@ interface UseTeamManagementReturn {
   setNewTeamName: React.Dispatch<React.SetStateAction<string>>
   showTeamFormation: boolean
   setShowTeamFormation: React.Dispatch<React.SetStateAction<boolean>>
+  editingTeamComposition: Team | null
+  setEditingTeamComposition: React.Dispatch<React.SetStateAction<Team | null>>
+  compositionPlayerIds: string[]
+  setCompositionPlayerIds: React.Dispatch<React.SetStateAction<string[]>>
+  updatingComposition: boolean
 
   // Actions
-  loadAvailablePlayers: () => Promise<void>
+  loadAvailablePlayers: (forTeamId?: string) => Promise<void>
   togglePlayerSelection: (playerId: string) => void
   createTeamWithPlayers: () => Promise<void>
   renameTeam: () => Promise<void>
@@ -43,6 +48,10 @@ interface UseTeamManagementReturn {
   getPlayersPerTeam: (format: string) => number
   getTeamPlayers: (teamId: string | null | undefined) => string[]
   resetTeamFormation: () => void
+  startEditingComposition: (team: Team) => void
+  toggleCompositionPlayer: (playerId: string) => void
+  updateTeamComposition: () => Promise<void>
+  cancelEditingComposition: () => void
 }
 
 export function useTeamManagement({
@@ -74,6 +83,11 @@ export function useTeamManagement({
   const [editingTeam, setEditingTeam] = useState<Team | null>(null)
   const [newTeamName, setNewTeamName] = useState('')
 
+  // States pour modifier la composition d'une équipe
+  const [editingTeamComposition, setEditingTeamComposition] = useState<Team | null>(null)
+  const [compositionPlayerIds, setCompositionPlayerIds] = useState<string[]>([])
+  const [updatingComposition, setUpdatingComposition] = useState(false)
+
   /**
    * Calcule le nombre de joueurs requis par équipe selon le format
    */
@@ -93,8 +107,9 @@ export function useTeamManagement({
 
   /**
    * Charge les joueurs disponibles (non assignés à une équipe)
+   * Si on édite la composition d'une équipe, inclut aussi les joueurs de cette équipe
    */
-  const loadAvailablePlayers = useCallback(async () => {
+  const loadAvailablePlayers = useCallback(async (forTeamId?: string) => {
     if (!organization?.id) return
 
     try {
@@ -107,12 +122,15 @@ export function useTeamManagement({
         const allPlayers = Array.isArray(data) ? data : data.joueurs || []
 
         // Filtrer les joueurs déjà assignés à une équipe de ce tournoi
+        // Sauf ceux de l'équipe qu'on édite (forTeamId)
         const assignedPlayerIds = new Set<string>()
         teams.forEach(team => {
+          // Si on édite une équipe, ne pas exclure ses joueurs actuels
+          if (forTeamId && team.id === forTeamId) return
           team.joueur_ids?.forEach(playerId => assignedPlayerIds.add(playerId))
         })
 
-        // Ne garder que les joueurs non assignés
+        // Ne garder que les joueurs non assignés (ou dans l'équipe éditée)
         const available = allPlayers.filter((player: Joueur) =>
           !assignedPlayerIds.has(player.id)
         )
@@ -290,6 +308,97 @@ export function useTeamManagement({
     }
   }, [teams, loadTournamentData])
 
+  /**
+   * Démarre l'édition de la composition d'une équipe
+   */
+  const startEditingComposition = useCallback((team: Team) => {
+    setEditingTeamComposition(team)
+    // Initialiser avec les joueurs actuels de l'équipe
+    setCompositionPlayerIds(team.joueur_ids || [])
+    // Charger les joueurs disponibles (inclut ceux de l'équipe qu'on édite)
+    loadAvailablePlayers(team.id)
+  }, [loadAvailablePlayers])
+
+  /**
+   * Toggle la sélection d'un joueur pour la composition
+   */
+  const toggleCompositionPlayer = useCallback((playerId: string) => {
+    setCompositionPlayerIds(prev =>
+      prev.includes(playerId)
+        ? prev.filter(id => id !== playerId)
+        : [...prev, playerId]
+    )
+  }, [])
+
+  /**
+   * Annule l'édition de la composition
+   */
+  const cancelEditingComposition = useCallback(() => {
+    setEditingTeamComposition(null)
+    setCompositionPlayerIds([])
+  }, [])
+
+  /**
+   * Met à jour la composition d'une équipe
+   */
+  const updateTeamComposition = useCallback(async () => {
+    if (!editingTeamComposition || !tournament) return
+
+    const playersPerTeam = getPlayersPerTeam(tournament.format)
+
+    if (compositionPlayerIds.length !== playersPerTeam) {
+      notify.warning(`Vous devez sélectionner exactement ${playersPerTeam} joueur(s) pour une ${tournament.format}`)
+      return
+    }
+
+    // Vérifier que les joueurs ne sont pas déjà dans une autre équipe
+    const otherTeams = teams.filter(t => t.id !== editingTeamComposition.id)
+    const conflictingPlayers: { playerId: string; teamName: string }[] = []
+
+    for (const team of otherTeams) {
+      const teamJoueurIds = team.joueur_ids || []
+      for (const playerId of compositionPlayerIds) {
+        if (teamJoueurIds.includes(playerId)) {
+          conflictingPlayers.push({ playerId, teamName: team.name })
+        }
+      }
+    }
+
+    if (conflictingPlayers.length > 0) {
+      const details = conflictingPlayers
+        .map(c => `Un joueur est déjà dans l'équipe "${c.teamName}"`)
+        .join(', ')
+      notify.error(details)
+      return
+    }
+
+    setUpdatingComposition(true)
+
+    try {
+      const response = await fetch(`/api/equipes/${editingTeamComposition.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ joueur_ids: compositionPlayerIds })
+      })
+
+      if (response.ok) {
+        await loadTournamentData()
+        setEditingTeamComposition(null)
+        setCompositionPlayerIds([])
+        notify.success('Composition de l\'équipe mise à jour')
+      } else {
+        const error = await response.json()
+        notify.error(error.error || 'Erreur lors de la mise à jour de la composition')
+      }
+    } catch (error) {
+      console.error('Erreur mise à jour composition:', error)
+      notify.error('Erreur lors de la mise à jour de la composition')
+    } finally {
+      setUpdatingComposition(false)
+    }
+  }, [editingTeamComposition, tournament, compositionPlayerIds, teams, getPlayersPerTeam, loadTournamentData])
+
   return {
     // States
     availablePlayers,
@@ -304,6 +413,11 @@ export function useTeamManagement({
     setNewTeamName,
     showTeamFormation,
     setShowTeamFormation,
+    editingTeamComposition,
+    setEditingTeamComposition,
+    compositionPlayerIds,
+    setCompositionPlayerIds,
+    updatingComposition,
 
     // Actions
     loadAvailablePlayers,
@@ -313,7 +427,11 @@ export function useTeamManagement({
     deleteTeam,
     getPlayersPerTeam,
     getTeamPlayers,
-    resetTeamFormation
+    resetTeamFormation,
+    startEditingComposition,
+    toggleCompositionPlayer,
+    updateTeamComposition,
+    cancelEditingComposition
   }
 }
 
