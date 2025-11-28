@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       'SELECT id FROM equipes WHERE tournoi_id = $1',
       [tournoiId]
     )
-    const validEquipeIds = new Set(equipesResult.rows.map((e: { id: string }) => e.id))
+    const validEquipeIds = new Set(equipesResult.rows.map((e) => String(e.id)))
 
     // Valider chaque match
     for (let i = 0; i < matches.length; i++) {
