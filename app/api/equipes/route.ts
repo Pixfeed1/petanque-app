@@ -98,6 +98,23 @@ export async function POST(request: NextRequest) {
       return apiError('Impossible de créer une équipe après le démarrage du tournoi', 400)
     }
 
+    // 🔧 FIX: Validation du nom (longueur)
+    if (typeof name !== 'string' || name.trim().length === 0) {
+      return apiError('Le nom de l\'équipe ne peut pas être vide', 400)
+    }
+    if (name.trim().length > 50) {
+      return apiError('Le nom de l\'équipe est trop long (maximum 50 caractères)', 400)
+    }
+
+    // 🔧 FIX: Vérifier unicité du nom dans le tournoi
+    const existingTeamWithName = await queryOne(
+      'SELECT id FROM equipes WHERE tournoi_id = $1 AND LOWER(name) = LOWER($2)',
+      [tournoi_id, name.trim()]
+    )
+    if (existingTeamWithName) {
+      return apiError(`Une équipe nommée "${name}" existe déjà dans ce tournoi`, 400)
+    }
+
     // Validation du format du tournoi
     const validFormats = ['tete_a_tete', 'doublette', 'triplette']
     if (!validFormats.includes(tournoi.format)) {

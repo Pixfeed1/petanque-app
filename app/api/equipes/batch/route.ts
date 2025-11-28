@@ -174,6 +174,20 @@ export async function POST(request: NextRequest) {
       teamNames.add(normalizedName)
     }
 
+    // 🔧 FIX: Vérifier les noms contre les équipes EXISTANTES dans le tournoi
+    const existingTeamNames = await queryMany<{ name: string }>(
+      'SELECT LOWER(name) as name FROM equipes WHERE tournoi_id = $1',
+      [tournoiId]
+    )
+    const existingNamesSet = new Set(existingTeamNames.map(t => t.name))
+
+    for (let i = 0; i < teams.length; i++) {
+      const normalizedName = teams[i].name.trim().toLowerCase()
+      if (existingNamesSet.has(normalizedName)) {
+        return apiError(`Une équipe nommée "${teams[i].name}" existe déjà dans ce tournoi`, 400)
+      }
+    }
+
     // Construire la requête d'insertion en masse
     const values: (string | string[] | Record<string, unknown>)[] = []
     const valueStrings: string[] = []

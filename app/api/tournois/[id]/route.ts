@@ -130,13 +130,32 @@ export async function PUT(
       if (body.settings.maxPoints !== undefined && (typeof body.settings.maxPoints !== 'number' || body.settings.maxPoints < 1 || body.settings.maxPoints > 50)) {
         return apiError('maxPoints doit être un nombre entre 1 et 50', 400)
       }
-      if (body.settings.pouleSize !== undefined && (typeof body.settings.pouleSize !== 'number' || body.settings.pouleSize < 3)) {
-        return apiError('pouleSize doit être un nombre >= 3', 400)
+      if (body.settings.pouleSize !== undefined && (typeof body.settings.pouleSize !== 'number' || body.settings.pouleSize < 3 || body.settings.pouleSize > 10)) {
+        return apiError('pouleSize doit être un nombre entre 3 et 10', 400)
       }
-      if (body.settings.qualifiedPerPoule !== undefined && body.settings.pouleSize !== undefined) {
-        if (body.settings.qualifiedPerPoule >= body.settings.pouleSize) {
+      if (body.settings.qualifiedPerPoule !== undefined) {
+        if (typeof body.settings.qualifiedPerPoule !== 'number' || body.settings.qualifiedPerPoule < 1) {
+          return apiError('qualifiedPerPoule doit être un nombre >= 1', 400)
+        }
+        if (body.settings.pouleSize !== undefined && body.settings.qualifiedPerPoule >= body.settings.pouleSize) {
           return apiError('qualifiedPerPoule doit être inférieur à pouleSize', 400)
         }
+      }
+      if (body.settings.terrains !== undefined && (typeof body.settings.terrains !== 'number' || body.settings.terrains < 1 || body.settings.terrains > 100)) {
+        return apiError('terrains doit être un nombre entre 1 et 100', 400)
+      }
+      // 🔧 FIX: Validation timeLimit et timeLimitMinutes
+      if (body.settings.timeLimit !== undefined && typeof body.settings.timeLimit !== 'boolean') {
+        return apiError('timeLimit doit être un booléen', 400)
+      }
+      if (body.settings.timeLimitMinutes !== undefined) {
+        if (typeof body.settings.timeLimitMinutes !== 'number' || body.settings.timeLimitMinutes < 1 || body.settings.timeLimitMinutes > 300) {
+          return apiError('timeLimitMinutes doit être un nombre entre 1 et 300', 400)
+        }
+      }
+      // 🔧 FIX: Validation consolante
+      if (body.settings.consolante !== undefined && typeof body.settings.consolante !== 'boolean') {
+        return apiError('consolante doit être un booléen', 400)
       }
       updates.push(`settings = $${paramIndex++}::jsonb`)
       values.push(body.settings)
@@ -190,6 +209,16 @@ export async function DELETE(
     const hasAccess = await checkOrgAccess(user.id, tournoi.org_id)
     if (!hasAccess) {
       return apiError('Accès refusé', 403)
+    }
+
+    // 🔧 FIX: Bloquer suppression des tournois qui ne sont pas en préparation
+    const tournoiStatus = tournoi.status || 'preparation'
+    if (tournoiStatus !== 'preparation') {
+      return apiError(
+        `Impossible de supprimer un tournoi ${tournoiStatus === 'en_cours' ? 'en cours' : tournoiStatus}. ` +
+        `Seuls les tournois en préparation peuvent être supprimés.`,
+        400
+      )
     }
 
     // Supprimer le tournoi (cascade supprimera équipes et matchs)

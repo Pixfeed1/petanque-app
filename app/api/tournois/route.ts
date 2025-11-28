@@ -61,6 +61,14 @@ export async function POST(request: NextRequest) {
       return apiError('Champs requis: org_id, name, format, mode', 400)
     }
 
+    // 🔧 FIX: Validation du nom du tournoi
+    if (typeof name !== 'string' || name.trim().length === 0) {
+      return apiError('Le nom du tournoi ne peut pas être vide', 400)
+    }
+    if (name.trim().length > 200) {
+      return apiError('Le nom du tournoi est trop long (maximum 200 caractères)', 400)
+    }
+
     // 🔧 FIX: Validation du format du tournoi
     const validFormats = ['tete_a_tete', 'doublette', 'triplette']
     if (!validFormats.includes(format)) {
@@ -78,16 +86,33 @@ export async function POST(request: NextRequest) {
       if (settings.maxPoints !== undefined && (typeof settings.maxPoints !== 'number' || settings.maxPoints < 1 || settings.maxPoints > 50)) {
         return apiError('maxPoints doit être un nombre entre 1 et 50', 400)
       }
-      if (settings.pouleSize !== undefined && (typeof settings.pouleSize !== 'number' || settings.pouleSize < 3)) {
-        return apiError('pouleSize doit être un nombre >= 3', 400)
+      if (settings.pouleSize !== undefined && (typeof settings.pouleSize !== 'number' || settings.pouleSize < 3 || settings.pouleSize > 10)) {
+        return apiError('pouleSize doit être un nombre entre 3 et 10', 400)
       }
-      if (settings.qualifiedPerPoule !== undefined && settings.pouleSize !== undefined) {
-        if (settings.qualifiedPerPoule >= settings.pouleSize) {
+      if (settings.qualifiedPerPoule !== undefined) {
+        if (typeof settings.qualifiedPerPoule !== 'number' || settings.qualifiedPerPoule < 1) {
+          return apiError('qualifiedPerPoule doit être un nombre >= 1', 400)
+        }
+        // Vérifier la cohérence avec pouleSize si fourni
+        if (settings.pouleSize !== undefined && settings.qualifiedPerPoule >= settings.pouleSize) {
           return apiError('qualifiedPerPoule doit être inférieur à pouleSize', 400)
         }
       }
-      if (settings.terrains !== undefined && (typeof settings.terrains !== 'number' || settings.terrains < 1)) {
-        return apiError('terrains doit être un nombre >= 1', 400)
+      if (settings.terrains !== undefined && (typeof settings.terrains !== 'number' || settings.terrains < 1 || settings.terrains > 100)) {
+        return apiError('terrains doit être un nombre entre 1 et 100', 400)
+      }
+      // 🔧 FIX: Validation timeLimit et timeLimitMinutes
+      if (settings.timeLimit !== undefined && typeof settings.timeLimit !== 'boolean') {
+        return apiError('timeLimit doit être un booléen', 400)
+      }
+      if (settings.timeLimitMinutes !== undefined) {
+        if (typeof settings.timeLimitMinutes !== 'number' || settings.timeLimitMinutes < 1 || settings.timeLimitMinutes > 300) {
+          return apiError('timeLimitMinutes doit être un nombre entre 1 et 300', 400)
+        }
+      }
+      // 🔧 FIX: Validation consolante
+      if (settings.consolante !== undefined && typeof settings.consolante !== 'boolean') {
+        return apiError('consolante doit être un booléen', 400)
       }
     }
 

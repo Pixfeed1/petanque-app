@@ -84,6 +84,16 @@ export async function PUT(
       if (body.name.trim().length > 50) {
         return apiError('Le nom de l\'équipe est trop long (maximum 50 caractères)', 400)
       }
+
+      // 🔧 FIX: Vérifier unicité du nom dans le tournoi (sauf l'équipe actuelle)
+      const conflictingTeam = await queryOne(
+        'SELECT id FROM equipes WHERE tournoi_id = $1 AND id != $2 AND LOWER(name) = LOWER($3)',
+        [existingEquipe.tournoi_id, id, body.name.trim()]
+      )
+      if (conflictingTeam) {
+        return apiError(`Une équipe nommée "${body.name}" existe déjà dans ce tournoi`, 400)
+      }
+
       updates.push(`name = $${paramIndex++}`)
       values.push(body.name.trim())
     }

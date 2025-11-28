@@ -154,6 +154,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 🔧 FIX: Validation des scores à la création
+    if (score_a !== undefined && score_a !== null) {
+      if (!Number.isInteger(score_a) || score_a < 0) {
+        return apiError('score_a doit être un entier positif ou zéro', 400)
+      }
+      if (score_a > 99) {
+        return apiError('score_a est trop élevé (maximum 99)', 400)
+      }
+    }
+    if (score_b !== undefined && score_b !== null) {
+      if (!Number.isInteger(score_b) || score_b < 0) {
+        return apiError('score_b doit être un entier positif ou zéro', 400)
+      }
+      if (score_b > 99) {
+        return apiError('score_b est trop élevé (maximum 99)', 400)
+      }
+    }
+
     // 🔧 FIX: Pour les matchs BYE, calculer automatiquement winner_id si non fourni
     let finalWinnerId = winner_id
     if (isByeMatch && status === 'termine' && !winner_id) {

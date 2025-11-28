@@ -309,8 +309,9 @@ export async function PUT(
     //   updates.push(`proposed_at = NOW()`)
     // }
 
-    // Le winner_id peut être calculé automatiquement pour un match terminé
-    if (body.winner_id !== undefined && body.winner_id !== null) {
+    // 🔧 FIX: Le winner_id peut être null (match nul) ou une équipe
+    // On doit permettre de sauvegarder null explicitement pour les égalités en mode timeLimit
+    if (body.winner_id !== undefined) {
       updates.push(`winner_id = $${paramIndex++}`)
       values.push(body.winner_id)
     }

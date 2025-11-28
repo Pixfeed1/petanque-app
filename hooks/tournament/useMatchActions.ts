@@ -281,7 +281,13 @@ export function useMatchActions({
 
     // Calculer le classement de chaque poule
     const qualifiedPerPoule = tournament.settings.qualifiedPerPoule || 2
-    const pouleNames = [...new Set(pouleMatches.map(m => m.poule))]
+    // 🔧 FIX: Trier les noms de poules alphabétiquement pour un seeding déterministe
+    const pouleNames = [...new Set(pouleMatches.map(m => m.poule))].sort((a, b) => {
+      if (!a && !b) return 0
+      if (!a) return 1
+      if (!b) return -1
+      return a.localeCompare(b)
+    })
 
     // Vérifier avec ValidationService qu'aucune poule n'a un nom null/undefined
     const pouleValidation = ValidationService.validatePouleNames(pouleNames as string[])
@@ -562,10 +568,20 @@ export function useMatchActions({
       return
     }
 
-    // Récupérer les matchs du tour actuel
+    // 🔧 FIX: Récupérer les matchs du tour actuel + les matchs BYE de la même phase
+    // Les matchs BYE ont type='bye' mais appartiennent à la même phase d'élimination
     const currentRoundMatches = matches.filter(m => m.type === currentRound)
 
-    // Valider avec BracketService que tous les matchs sont terminés et sans égalité
+    // Trouver les matchs BYE associés à cette phase (même tour/wave)
+    const currentTour = currentRoundMatches[0]?.tour || 1
+    const byeMatches = matches.filter(m =>
+      m.type === 'bye' &&
+      m.status === 'termine' &&
+      m.tour === currentTour
+    )
+
+    // Valider avec BracketService que tous les matchs normaux sont terminés et sans égalité
+    // Les BYE sont déjà terminés par définition
     const validation = BracketService.validateBracketGeneration(
       currentRoundMatches.map(m => ({
         equipe_a: m.equipe_a || undefined,
@@ -596,8 +612,9 @@ export function useMatchActions({
       return
     }
 
-    // Récupérer les gagnants du tour actuel
-    const winners = BracketService.getMatchWinners(
+    // 🔧 FIX: Récupérer les gagnants du tour actuel + les gagnants des BYE
+    // Pour les BYE, le gagnant est toujours equipe_a
+    const normalWinners = BracketService.getMatchWinners(
       currentRoundMatches.map(m => ({
         equipe_a_id: m.equipe_a_id || null,
         equipe_b_id: m.equipe_b_id || null,
@@ -608,6 +625,13 @@ export function useMatchActions({
         equipe_b: m.equipe_b ? { id: m.equipe_b.id, name: m.equipe_b.name } : undefined
       }))
     ).filter((w): w is { id: string; name: string } => w !== null)
+
+    // Ajouter les gagnants des matchs BYE (toujours equipe_a)
+    const byeWinners = byeMatches
+      .filter(m => m.equipe_a_id && m.equipe_a)
+      .map(m => ({ id: m.equipe_a!.id, name: m.equipe_a!.name }))
+
+    const winners = [...normalWinners, ...byeWinners]
 
     if (winners.length < 2) {
       notify.error('Pas assez de gagnants pour créer le tour suivant')
