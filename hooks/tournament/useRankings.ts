@@ -199,9 +199,13 @@ export function useRankings({
       }))
 
       // Trier par règle FIPJP
+      // 🔧 FIX: Tri par points FIPJP (victoires×3 + nuls×1) au lieu de victoires seules
       playerStats.sort((a: PlayerWithStats, b: PlayerWithStats) => {
-        if (b.victories !== a.victories) return b.victories - a.victories
+        // 1. Points FIPJP (critère principal)
+        if (b.points !== a.points) return b.points - a.points
+        // 2. Différence de points
         if (b.difference !== a.difference) return b.difference - a.difference
+        // 3. Points marqués
         return b.pointsFor - a.pointsFor
       })
 

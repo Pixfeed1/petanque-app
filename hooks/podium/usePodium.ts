@@ -200,22 +200,31 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
         m.status === 'termine' && m.type === 'poule' &&
         (m.equipe_a_id === team.id || m.equipe_b_id === team.id)
       )
-      let victories = 0, pointsFor = 0, pointsAgainst = 0
+      // 🔧 FIX: Ajouter comptage des nuls pour points FIPJP
+      let victories = 0, draws = 0, pointsFor = 0, pointsAgainst = 0
       teamMatches.forEach((m: Match) => {
+        const scoreA = m.score_a ?? 0
+        const scoreB = m.score_b ?? 0
+
         if (m.equipe_a_id === team.id) {
-          if ((m.score_a ?? 0) > (m.score_b ?? 0)) victories++
-          pointsFor += m.score_a ?? 0
-          pointsAgainst += m.score_b ?? 0
+          if (scoreA > scoreB) victories++
+          else if (scoreA === scoreB) draws++
+          pointsFor += scoreA
+          pointsAgainst += scoreB
         } else if (m.equipe_b_id === team.id) {
-          if ((m.score_b ?? 0) > (m.score_a ?? 0)) victories++
-          pointsFor += m.score_b ?? 0
-          pointsAgainst += m.score_a ?? 0
+          if (scoreB > scoreA) victories++
+          else if (scoreB === scoreA) draws++
+          pointsFor += scoreB
+          pointsAgainst += scoreA
         }
       })
-      return { team, victories, difference: pointsFor - pointsAgainst, pointsFor }
+      // Points FIPJP = victoires × 3 + nuls × 1
+      const points = victories * 3 + draws
+      return { team, victories, draws, points, difference: pointsFor - pointsAgainst, pointsFor }
     }).sort((a: TeamClassement, b: TeamClassement) => {
-      // 1. Nombre de victoires (regle FIPJP)
-      if (b.victories !== a.victories) return b.victories - a.victories
+      // 🔧 FIX: Tri par points FIPJP au lieu de victoires seules
+      // 1. Points FIPJP (victoires × 3 + nuls × 1)
+      if (b.points !== a.points) return b.points - a.points
       // 2. Difference de points
       if (b.difference !== a.difference) return b.difference - a.difference
       // 3. Confrontation directe

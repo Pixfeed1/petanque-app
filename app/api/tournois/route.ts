@@ -56,9 +56,39 @@ export async function POST(request: NextRequest) {
 
     const { org_id, name, format, mode, settings } = body
 
-    // Validation
+    // Validation des champs requis
     if (!org_id || !name || !format || !mode) {
       return apiError('Champs requis: org_id, name, format, mode', 400)
+    }
+
+    // 🔧 FIX: Validation du format du tournoi
+    const validFormats = ['tete_a_tete', 'doublette', 'triplette']
+    if (!validFormats.includes(format)) {
+      return apiError(`Format invalide: ${format}. Formats acceptés: ${validFormats.join(', ')}`, 400)
+    }
+
+    // 🔧 FIX: Validation du mode du tournoi
+    const validModes = ['choisi', 'melee_fixe', 'melee_tournante']
+    if (!validModes.includes(mode)) {
+      return apiError(`Mode invalide: ${mode}. Modes acceptés: ${validModes.join(', ')}`, 400)
+    }
+
+    // 🔧 FIX: Validation des settings si fournis
+    if (settings) {
+      if (settings.maxPoints !== undefined && (typeof settings.maxPoints !== 'number' || settings.maxPoints < 1 || settings.maxPoints > 50)) {
+        return apiError('maxPoints doit être un nombre entre 1 et 50', 400)
+      }
+      if (settings.pouleSize !== undefined && (typeof settings.pouleSize !== 'number' || settings.pouleSize < 3)) {
+        return apiError('pouleSize doit être un nombre >= 3', 400)
+      }
+      if (settings.qualifiedPerPoule !== undefined && settings.pouleSize !== undefined) {
+        if (settings.qualifiedPerPoule >= settings.pouleSize) {
+          return apiError('qualifiedPerPoule doit être inférieur à pouleSize', 400)
+        }
+      }
+      if (settings.terrains !== undefined && (typeof settings.terrains !== 'number' || settings.terrains < 1)) {
+        return apiError('terrains doit être un nombre >= 1', 400)
+      }
     }
 
     // Vérifier l'accès

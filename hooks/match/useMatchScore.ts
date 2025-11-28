@@ -162,7 +162,14 @@ export function useMatchScore({
           setStartTime(new Date())
         }
         if (data.status === 'termine') {
-          setWinner(data.score_a > data.score_b ? 'A' : 'B')
+          // 🔧 FIX: Gérer les égalités (match nul en mode timeLimit)
+          if (data.score_a > data.score_b) {
+            setWinner('A')
+          } else if (data.score_a < data.score_b) {
+            setWinner('B')
+          } else {
+            setWinner('draw')
+          }
         }
       }
     } catch (error) {

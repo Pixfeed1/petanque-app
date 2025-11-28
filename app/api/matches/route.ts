@@ -99,7 +99,8 @@ export async function POST(request: NextRequest) {
     if (authResult instanceof Response) return authResult
 
     const body = await request.json()
-    const { tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status } = body
+    // 🔧 FIX: Accepter winner_id pour les matchs BYE créés déjà terminés
+    const { tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status, winner_id, score_a, score_b } = body
 
     // Validation des champs requis
     if (!tournoi_id) {
@@ -153,11 +154,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 🔧 FIX: Pour les matchs BYE, calculer automatiquement winner_id si non fourni
+    let finalWinnerId = winner_id
+    if (isByeMatch && status === 'termine' && !winner_id) {
+      finalWinnerId = equipe_a_id // L'équipe A gagne automatiquement un BYE
+    }
+
+    // Valider winner_id si fourni
+    if (finalWinnerId && finalWinnerId !== equipe_a_id && finalWinnerId !== equipe_b_id) {
+      return apiError('winner_id doit être equipe_a_id ou equipe_b_id', 400)
+    }
+
     const result = await query(
-      `INSERT INTO matches (tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+      `INSERT INTO matches (tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status, winner_id, score_a, score_b, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
        RETURNING *`,
-      [tournoi_id, tour || 1, terrain, equipe_a_id, equipe_b_id, type || 'poule', poule, status || 'a_jouer']
+      [tournoi_id, tour || 1, terrain, equipe_a_id, equipe_b_id, type || 'poule', poule, status || 'a_jouer', finalWinnerId || null, score_a ?? null, score_b ?? null]
     )
 
     return apiSuccess(result.rows[0], 201)
