@@ -51,7 +51,8 @@ export default function PlayersManagementPage() {
   } = usePlayersManagement({
     onSuccess: showSuccess,
     onError: showError,
-    onConfirm: confirm
+    // 🔧 FIX: Wrapper pour adapter le type de confirm (UseConfirmOptions → string)
+    onConfirm: (message: string) => confirm({ title: 'Confirmation', message })
   })
 
   useEffect(() => {
