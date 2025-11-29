@@ -37,11 +37,11 @@ export default function MentionsLegales() {
             </h2>
             <div className="space-y-3 text-gray-700">
               <p><strong>Raison sociale :</strong> Pixfeed</p>
-              <p><strong>Adresse :</strong> [Votre adresse complète]</p>
-              <p><strong>SIRET :</strong> [Votre numéro SIRET]</p>
+              <p><strong>Adresse :</strong> 1 Rue des Morillons, 95130 Franconville La Garenne</p>
+              <p><strong>SIRET :</strong> 852 393 735 00018</p>
               <p><strong>Email :</strong> <a href="mailto:contact@petanquepro.fr" className="text-green-600 hover:text-green-700">contact@petanquepro.fr</a></p>
-              <p><strong>Téléphone :</strong> [Votre téléphone]</p>
-              <p><strong>Directeur de publication :</strong> [Nom du directeur]</p>
+              <p><strong>Téléphone :</strong> 09 54 32 02 85</p>
+              <p><strong>Directeur de publication :</strong> Michael Vaertan</p>
             </div>
           </section>
 
@@ -51,9 +51,9 @@ export default function MentionsLegales() {
               Hébergeur du site
             </h2>
             <div className="space-y-3 text-gray-700">
-              <p><strong>Raison sociale :</strong> [Nom hébergeur]</p>
-              <p><strong>Adresse :</strong> [Adresse hébergeur]</p>
-              <p><strong>Téléphone :</strong> [Téléphone hébergeur]</p>
+              <p><strong>Raison sociale :</strong> Ex2.com</p>
+              <p><strong>Adresse :</strong> CP 70161 Québec STN Québec-Centre, G2K 0A2 Québec, Canada</p>
+              <p><strong>Site web :</strong> <a href="https://www.ex2.com" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700">www.ex2.com</a></p>
             </div>
           </section>
 
@@ -103,9 +103,13 @@ export default function MentionsLegales() {
                 de médiation de la consommation.
               </p>
               <p>
-                L'entité de médiation retenue est : [Nom du médiateur]<br />
-                Adresse : [Adresse du médiateur]<br />
-                Site web : [Site du médiateur]
+                <strong>L'entité de médiation retenue est :</strong> Médiateur du e-commerce de la FEVAD<br />
+                <strong>Adresse :</strong> 60 rue La Boétie, 75008 Paris<br />
+                <strong>Site web :</strong> <a href="https://www.mediateurfevad.fr" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700">www.mediateurfevad.fr</a>
+              </p>
+              <p className="text-sm text-gray-500">
+                Avant de saisir le médiateur, vous devez avoir préalablement tenté de résoudre votre litige
+                directement auprès de notre service client par une réclamation écrite.
               </p>
             </div>
           </section>
@@ -113,7 +117,7 @@ export default function MentionsLegales() {
           {/* Dernière mise à jour */}
           <div className="mt-12 pt-8 border-t border-gray-200">
             <p className="text-sm text-gray-500 text-center">
-              Dernière mise à jour : 13 novembre 2025
+              Dernière mise à jour : 29 novembre 2025
             </p>
           </div>
         </div>
