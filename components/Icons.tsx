@@ -81,6 +81,21 @@ export const Organization = ({ className = "w-5 h-5" }: { className?: string }) 
 
 export const Building = Organization // Alias
 
+// Icônes de genre - SVG propres
+export const Male = ({ className = "w-6 h-6" }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <circle cx="10" cy="14" r="6" strokeWidth={2.5} />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 3l-6 6M21 3h-5M21 3v5" />
+  </svg>
+)
+
+export const Female = ({ className = "w-6 h-6" }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <circle cx="12" cy="9" r="6" strokeWidth={2.5} />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v7M9 19h6" />
+  </svg>
+)
+
 // ============================================
 // ACTIONS & NAVIGATION
 // ============================================
