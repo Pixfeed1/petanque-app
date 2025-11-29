@@ -86,6 +86,7 @@ interface UseTournamentExportReturn {
   setExportOptions: (options: ExportOptions) => void
   exportToPDF: () => Promise<void>
   exportToExcel: () => Promise<void>
+  exportMatchSheetsPDF: () => Promise<void>
   handlePrint: () => void
 }
 
@@ -684,6 +685,255 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
     window.print()
   }, [])
 
+  /**
+   * Export feuilles de match PDF pour arbitres
+   * Génère une feuille par match avec espaces pour scores
+   */
+  const exportMatchSheetsPDF = useCallback(async () => {
+    if (!tournament || matches.length === 0) return
+    setExporting(true)
+
+    try {
+      const pdf = new jsPDF()
+      const maxPoints = tournament.settings.maxPoints || 13
+
+      // Filtrer les matchs non terminés (ou tous si on veut imprimer l'historique)
+      const matchesToPrint = matches.filter(m => m.status !== 'termine' && m.equipe_b)
+
+      if (matchesToPrint.length === 0) {
+        // Si tous les matchs sont terminés, imprimer tous les matchs
+        matchesToPrint.push(...matches.filter(m => m.equipe_b))
+      }
+
+      matchesToPrint.forEach((match, index) => {
+        if (index > 0) {
+          pdf.addPage()
+        }
+
+        // En-tête vert
+        pdf.setFillColor(74, 124, 89)
+        pdf.rect(0, 0, 210, 35, 'F')
+        pdf.setTextColor(255, 255, 255)
+        pdf.setFontSize(18)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text('FEUILLE DE MATCH', 105, 15, { align: 'center' })
+        pdf.setFontSize(12)
+        pdf.setFont('helvetica', 'normal')
+        pdf.text(cleanControlCharacters(tournament.name) || 'Tournoi', 105, 25, { align: 'center' })
+
+        pdf.setTextColor(0, 0, 0)
+        let yPos = 45
+
+        // Infos du match
+        pdf.setFillColor(240, 240, 240)
+        pdf.rect(15, yPos - 5, 180, 25, 'F')
+        pdf.setFontSize(11)
+        pdf.setFont('helvetica', 'bold')
+
+        const matchInfo = []
+        if (match.terrain) matchInfo.push(`Terrain ${match.terrain}`)
+        if (match.poule) matchInfo.push(`Poule ${match.poule}`)
+        if (match.type && match.type !== 'poule') {
+          const typeLabels: { [key: string]: string } = {
+            'huitieme': '1/8 Finale',
+            'quart': '1/4 Finale',
+            'demi': 'Demi-finale',
+            'finale': 'FINALE',
+            'petite_finale': 'Petite finale'
+          }
+          matchInfo.push(typeLabels[match.type] || match.type)
+        }
+        matchInfo.push(`Tour ${match.tour}`)
+
+        pdf.text(matchInfo.join('  |  '), 105, yPos + 5, { align: 'center' })
+        pdf.setFontSize(10)
+        pdf.setFont('helvetica', 'normal')
+        pdf.text(`Premier a ${maxPoints} points`, 105, yPos + 15, { align: 'center' })
+
+        yPos = 80
+
+        // Équipe A
+        pdf.setFillColor(220, 252, 231) // vert clair
+        pdf.rect(15, yPos, 85, 35, 'F')
+        pdf.setDrawColor(74, 124, 89)
+        pdf.rect(15, yPos, 85, 35, 'S')
+        pdf.setFontSize(14)
+        pdf.setFont('helvetica', 'bold')
+        pdf.setTextColor(0, 0, 0)
+        pdf.text('EQUIPE A', 57.5, yPos + 10, { align: 'center' })
+        pdf.setFontSize(11)
+        pdf.setFont('helvetica', 'normal')
+        const teamAName = match.equipe_a?.name || 'Equipe A'
+        pdf.text(cleanControlCharacters(teamAName).substring(0, 20), 57.5, yPos + 20, { align: 'center' })
+
+        // Joueurs équipe A
+        if (match.equipe_a?.players && match.equipe_a.players.length > 0) {
+          const playersA = match.equipe_a.players.map((p: any) => p.name || p).join(', ')
+          pdf.setFontSize(9)
+          pdf.text(cleanControlCharacters(playersA).substring(0, 30), 57.5, yPos + 28, { align: 'center' })
+        }
+
+        // VS
+        pdf.setFontSize(20)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text('VS', 105, yPos + 20, { align: 'center' })
+
+        // Équipe B
+        pdf.setFillColor(254, 226, 226) // rouge clair
+        pdf.rect(110, yPos, 85, 35, 'F')
+        pdf.setDrawColor(220, 38, 38)
+        pdf.rect(110, yPos, 85, 35, 'S')
+        pdf.setFontSize(14)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text('EQUIPE B', 152.5, yPos + 10, { align: 'center' })
+        pdf.setFontSize(11)
+        pdf.setFont('helvetica', 'normal')
+        const teamBName = match.equipe_b?.name || 'Equipe B'
+        pdf.text(cleanControlCharacters(teamBName).substring(0, 20), 152.5, yPos + 20, { align: 'center' })
+
+        // Joueurs équipe B
+        if (match.equipe_b?.players && match.equipe_b.players.length > 0) {
+          const playersB = match.equipe_b.players.map((p: any) => p.name || p).join(', ')
+          pdf.setFontSize(9)
+          pdf.text(cleanControlCharacters(playersB).substring(0, 30), 152.5, yPos + 28, { align: 'center' })
+        }
+
+        yPos = 125
+
+        // Tableau des mènes
+        pdf.setFontSize(12)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text('SCORE PAR MENE', 105, yPos, { align: 'center' })
+        yPos += 8
+
+        // En-têtes du tableau
+        const colWidth = 16
+        const startX = 25
+        const nbMenes = 10
+
+        pdf.setFillColor(74, 124, 89)
+        pdf.rect(startX, yPos, 15, 10, 'F')
+        pdf.setTextColor(255, 255, 255)
+        pdf.setFontSize(8)
+        pdf.text('Mene', startX + 7.5, yPos + 7, { align: 'center' })
+
+        for (let i = 1; i <= nbMenes; i++) {
+          pdf.setFillColor(74, 124, 89)
+          pdf.rect(startX + 15 + (i - 1) * colWidth, yPos, colWidth, 10, 'F')
+          pdf.text(i.toString(), startX + 15 + (i - 1) * colWidth + colWidth / 2, yPos + 7, { align: 'center' })
+        }
+
+        pdf.setFillColor(74, 124, 89)
+        pdf.rect(startX + 15 + nbMenes * colWidth, yPos, 20, 10, 'F')
+        pdf.text('TOTAL', startX + 15 + nbMenes * colWidth + 10, yPos + 7, { align: 'center' })
+
+        pdf.setTextColor(0, 0, 0)
+        yPos += 10
+
+        // Ligne Équipe A
+        pdf.setFillColor(220, 252, 231)
+        pdf.rect(startX, yPos, 15, 12, 'F')
+        pdf.setDrawColor(0, 0, 0)
+        pdf.rect(startX, yPos, 15, 12, 'S')
+        pdf.setFontSize(8)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text('Eq. A', startX + 7.5, yPos + 8, { align: 'center' })
+
+        for (let i = 1; i <= nbMenes; i++) {
+          pdf.rect(startX + 15 + (i - 1) * colWidth, yPos, colWidth, 12, 'S')
+        }
+        pdf.setFillColor(220, 252, 231)
+        pdf.rect(startX + 15 + nbMenes * colWidth, yPos, 20, 12, 'F')
+        pdf.rect(startX + 15 + nbMenes * colWidth, yPos, 20, 12, 'S')
+
+        yPos += 12
+
+        // Ligne Équipe B
+        pdf.setFillColor(254, 226, 226)
+        pdf.rect(startX, yPos, 15, 12, 'F')
+        pdf.rect(startX, yPos, 15, 12, 'S')
+        pdf.setFontSize(8)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text('Eq. B', startX + 7.5, yPos + 8, { align: 'center' })
+
+        for (let i = 1; i <= nbMenes; i++) {
+          pdf.rect(startX + 15 + (i - 1) * colWidth, yPos, colWidth, 12, 'S')
+        }
+        pdf.setFillColor(254, 226, 226)
+        pdf.rect(startX + 15 + nbMenes * colWidth, yPos, 20, 12, 'F')
+        pdf.rect(startX + 15 + nbMenes * colWidth, yPos, 20, 12, 'S')
+
+        yPos += 25
+
+        // Score final
+        pdf.setFontSize(14)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text('SCORE FINAL', 105, yPos, { align: 'center' })
+        yPos += 10
+
+        // Grandes cases pour score final
+        pdf.setFillColor(220, 252, 231)
+        pdf.rect(40, yPos, 40, 25, 'F')
+        pdf.setDrawColor(74, 124, 89)
+        pdf.setLineWidth(1)
+        pdf.rect(40, yPos, 40, 25, 'S')
+
+        pdf.setFillColor(254, 226, 226)
+        pdf.rect(130, yPos, 40, 25, 'F')
+        pdf.setDrawColor(220, 38, 38)
+        pdf.rect(130, yPos, 40, 25, 'S')
+
+        pdf.setLineWidth(0.2)
+        pdf.setDrawColor(0, 0, 0)
+
+        pdf.setFontSize(12)
+        pdf.setFont('helvetica', 'normal')
+        pdf.text('Eq. A', 60, yPos - 3, { align: 'center' })
+        pdf.text('Eq. B', 150, yPos - 3, { align: 'center' })
+
+        pdf.setFontSize(20)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text('-', 105, yPos + 17, { align: 'center' })
+
+        yPos += 40
+
+        // Vainqueur
+        pdf.setFontSize(12)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text('VAINQUEUR :', 50, yPos)
+        pdf.setDrawColor(0, 0, 0)
+        pdf.line(85, yPos, 180, yPos)
+
+        yPos += 15
+
+        // Signatures
+        pdf.setFontSize(10)
+        pdf.setFont('helvetica', 'normal')
+        pdf.text('Signature Eq. A:', 25, yPos)
+        pdf.line(60, yPos, 100, yPos)
+        pdf.text('Signature Eq. B:', 115, yPos)
+        pdf.line(150, yPos, 190, yPos)
+
+        yPos += 15
+        pdf.text('Arbitre:', 25, yPos)
+        pdf.line(45, yPos, 100, yPos)
+        pdf.text('Date:', 115, yPos)
+        pdf.line(130, yPos, 190, yPos)
+
+        // Pied de page
+        pdf.setFontSize(8)
+        pdf.setTextColor(128, 128, 128)
+        pdf.text(`Match ${index + 1}/${matchesToPrint.length} - Genere le ${new Date().toLocaleDateString('fr-FR')}`, 105, 290, { align: 'center' })
+      })
+
+      pdf.save(`${tournament.name?.replace(/[^a-z0-9]/gi, '_')}_feuilles_match.pdf`)
+    } catch (error) {
+      console.error('Erreur export feuilles de match:', error)
+    } finally {
+      setExporting(false)
+    }
+  }, [tournament, matches])
+
   return {
     loading,
     exporting,
@@ -696,6 +946,7 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
     setExportOptions,
     exportToPDF,
     exportToExcel,
+    exportMatchSheetsPDF,
     handlePrint
   }
 }

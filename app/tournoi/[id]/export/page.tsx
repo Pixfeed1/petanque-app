@@ -29,6 +29,7 @@ export default function ExportTournamentPage() {
     setExportOptions,
     exportToPDF,
     exportToExcel,
+    exportMatchSheetsPDF,
     handlePrint
   } = useTournamentExport({ tournoiId: params.id })
 
@@ -91,7 +92,9 @@ export default function ExportTournamentPage() {
               exporting={exporting}
               onExportPDF={exportToPDF}
               onExportExcel={exportToExcel}
+              onExportMatchSheets={exportMatchSheetsPDF}
               onPrint={handlePrint}
+              matchCount={matches.filter(m => m.status !== 'termine' && m.equipe_b).length || matches.length}
             />
           </div>
         </div>
@@ -302,10 +305,12 @@ interface ExportActionsProps {
   exporting: boolean
   onExportPDF: () => void
   onExportExcel: () => void
+  onExportMatchSheets: () => void
   onPrint: () => void
+  matchCount: number
 }
 
-function ExportActions({ exporting, onExportPDF, onExportExcel, onPrint }: ExportActionsProps) {
+function ExportActions({ exporting, onExportPDF, onExportExcel, onExportMatchSheets, onPrint, matchCount }: ExportActionsProps) {
   const actions = [
     {
       onClick: onExportPDF,
@@ -322,6 +327,13 @@ function ExportActions({ exporting, onExportPDF, onExportExcel, onPrint }: Expor
       description: 'Tableaux pour analyses'
     },
     {
+      onClick: onExportMatchSheets,
+      gradient: 'from-purple-50 to-purple-100',
+      iconColor: 'text-purple-600',
+      title: 'Feuilles de match',
+      description: `${matchCount} feuille${matchCount > 1 ? 's' : ''} pour arbitres`
+    },
+    {
       onClick: onPrint,
       gradient: 'from-blue-50 to-blue-100',
       iconColor: 'text-blue-600',
@@ -335,7 +347,7 @@ function ExportActions({ exporting, onExportPDF, onExportExcel, onPrint }: Expor
     <div className="bg-white rounded-2xl shadow-lg p-6">
       <h2 className="text-lg font-bold text-gray-900 mb-4">Formats d'export disponibles</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {actions.map((action, index) => (
           <button
             key={index}
