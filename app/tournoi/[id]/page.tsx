@@ -430,25 +430,124 @@ export default function TournamentDetailPage() {
                   )}
                 </div>
               ) : (
-                Array.from(new Set(matches.map(m => m.tour))).sort((a, b) => a - b).map(tour => (
-                  <div key={tour} className="bg-white rounded-2xl shadow-lg p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Tour {tour}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {matches.filter(m => m.tour === tour).map(match => (
-                        <MatchCard
-                          key={match.id}
-                          match={match}
-                          maxPoints={tournament.settings.maxPoints || 13}
-                          isOrganizer={isOrganizer}
-                          getTeamPlayers={getTeamPlayers}
-                          onAssignTerrain={assignTerrain}
-                          availableTerrains={tournament.settings.terrains}
-                          onWarning={showWarning}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))
+                <>
+                  {/* Matchs de POULE - groupés par poule (A, B, C...) */}
+                  {(() => {
+                    const pouleMatches = matches.filter(m => m.type === 'poule' && m.poule)
+                    const pouleNames = [...new Set(pouleMatches.map(m => m.poule))].sort()
+
+                    if (pouleNames.length === 0) return null
+
+                    return (
+                      <div className="space-y-4">
+                        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                          <Grid className="w-6 h-6 text-green-600" />
+                          Phase de poules
+                        </h2>
+                        {pouleNames.map(pouleName => {
+                          const pouleMatchList = pouleMatches.filter(m => m.poule === pouleName)
+                          const playedCount = pouleMatchList.filter(m => m.status === 'termine').length
+                          const totalCount = pouleMatchList.length
+
+                          return (
+                            <div key={pouleName} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                              <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 text-white flex items-center justify-between">
+                                <h3 className="text-lg font-bold">Poule {pouleName}</h3>
+                                <span className="text-sm opacity-90">
+                                  {playedCount}/{totalCount} termines
+                                </span>
+                              </div>
+                              <div className="p-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                  {pouleMatchList.map(match => (
+                                    <MatchCard
+                                      key={match.id}
+                                      match={match}
+                                      maxPoints={tournament.settings.maxPoints || 13}
+                                      isOrganizer={isOrganizer}
+                                      getTeamPlayers={getTeamPlayers}
+                                      onAssignTerrain={assignTerrain}
+                                      availableTerrains={tournament.settings.terrains}
+                                      onWarning={showWarning}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
+
+                  {/* Matchs ELIMINATOIRES - groupés par type (huitièmes, quarts, demis, finale) */}
+                  {(() => {
+                    const eliminationTypes = [
+                      { type: 'huitieme', label: 'Huitièmes de finale', gradient: 'from-blue-500 to-indigo-600' },
+                      { type: 'quart', label: 'Quarts de finale', gradient: 'from-purple-500 to-indigo-600' },
+                      { type: 'demi', label: 'Demi-finales', gradient: 'from-orange-500 to-red-600' },
+                      { type: 'finale', label: 'Finale', gradient: 'from-yellow-500 to-orange-600' },
+                      { type: 'petite_finale', label: 'Petite finale', gradient: 'from-gray-500 to-gray-600' }
+                    ]
+
+                    const eliminationMatches = matches.filter(m =>
+                      m.type && ['huitieme', 'quart', 'demi', 'finale', 'petite_finale'].includes(m.type)
+                    )
+
+                    if (eliminationMatches.length === 0) return null
+
+                    return (
+                      <div className="space-y-4 mt-8">
+                        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                          <Trophy className="w-6 h-6 text-yellow-500" />
+                          Phases finales
+                        </h2>
+                        {eliminationTypes.map(({ type, label, gradient }) => {
+                          const typeMatches = eliminationMatches.filter(m => m.type === type)
+                          if (typeMatches.length === 0) return null
+
+                          return (
+                            <div key={type} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                              <div className={`bg-gradient-to-r ${gradient} p-4 text-white`}>
+                                <h3 className="text-lg font-bold">{label}</h3>
+                              </div>
+                              <div className="p-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                  {typeMatches.map(match => (
+                                    <MatchCard
+                                      key={match.id}
+                                      match={match}
+                                      maxPoints={tournament.settings.maxPoints || 13}
+                                      isOrganizer={isOrganizer}
+                                      getTeamPlayers={getTeamPlayers}
+                                      onAssignTerrain={assignTerrain}
+                                      availableTerrains={tournament.settings.terrains}
+                                      onWarning={showWarning}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
+
+                  {/* Matchs BYE (si présents, pour debug/info) */}
+                  {(() => {
+                    const byeMatches = matches.filter(m => m.type === 'bye')
+                    if (byeMatches.length === 0) return null
+
+                    return (
+                      <div className="mt-4 p-4 bg-gray-50 rounded-xl">
+                        <p className="text-sm text-gray-500">
+                          {byeMatches.length} match(s) BYE (qualifications automatiques)
+                        </p>
+                      </div>
+                    )
+                  })()}
+                </>
               )}
             </div>
           )}
