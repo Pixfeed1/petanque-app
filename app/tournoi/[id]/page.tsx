@@ -190,6 +190,15 @@ export default function TournamentDetailPage() {
     }
   }, [matches])
 
+  // 🔧 FIX: Initialiser selectedPoule à la première poule disponible
+  // Évite d'afficher une poule vide si 'A' n'existe pas
+  useEffect(() => {
+    const pouleNames = Object.keys(teamsByPoule).sort()
+    if (pouleNames.length > 0 && !pouleNames.includes(selectedPoule)) {
+      setSelectedPoule(pouleNames[0])
+    }
+  }, [teamsByPoule, selectedPoule])
+
   // Démarrer le tournoi
   const handleStartTournament = async () => {
     if (!tournament) return
@@ -566,22 +575,32 @@ export default function TournamentDetailPage() {
                   Phase actuelle : {currentPhase === 'poules' ? 'Poules' : 'Phases finales'}
                 </h3>
 
-                {/* Sélecteur de poule */}
-                <div className="flex space-x-2 mb-4">
-                  {['A', 'B', 'C', 'D'].slice(0, Math.ceil(teams.length / (tournament.settings.pouleSize || 4))).map(poule => (
+                {/* Sélecteur de poule - dynamique basé sur les poules réelles */}
+                {Object.keys(teamsByPoule).length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    {Object.keys(teamsByPoule).sort().map(poule => (
+                      <button
+                        key={poule}
+                        onClick={() => setSelectedPoule(poule)}
+                        className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                          selectedPoule === poule
+                            ? 'bg-green-600 text-white shadow-lg'
+                            : 'bg-white text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        Poule {poule}
+                      </button>
+                    ))}
+                    {/* Lien vers vue complète des poules */}
                     <button
-                      key={poule}
-                      onClick={() => setSelectedPoule(poule)}
-                      className={`px-4 py-2 rounded-xl font-medium transition-all ${
-                        selectedPoule === poule
-                          ? 'bg-green-600 text-white shadow-lg'
-                          : 'bg-white text-gray-700 hover:bg-gray-100'
-                      }`}
+                      onClick={() => router.push(`/tournoi/${params.id}/poules`)}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center gap-2"
                     >
-                      Poule {poule}
+                      <Grid className="w-4 h-4" />
+                      <span>Voir toutes les poules</span>
                     </button>
-                  ))}
-                </div>
+                  </div>
+                )}
 
                 {/* Matchs de la poule */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

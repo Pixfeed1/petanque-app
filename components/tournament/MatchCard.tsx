@@ -170,18 +170,6 @@ export default function MatchCard({
         </div>
       )}
 
-      {/* Badge statut */}
-      <div className="mt-3 flex items-center justify-center">
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-          match.status === 'a_jouer' ? 'bg-gray-100 text-gray-700' :
-          match.status === 'en_cours' ? 'bg-green-100 text-green-700' :
-          'bg-blue-100 text-blue-700'
-        }`}>
-          {match.status === 'a_jouer' ? 'À jouer' :
-           match.status === 'en_cours' ? 'En cours' :
-           'Terminé'}
-        </span>
-      </div>
     </div>
   )
 }

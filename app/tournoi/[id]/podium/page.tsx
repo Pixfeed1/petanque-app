@@ -380,7 +380,8 @@ interface FinalActionsProps {
 function FinalActions({ tournoiId, onNavigate }: FinalActionsProps) {
   const actions = [
     {
-      onClick: () => onNavigate(`/export/${tournoiId}`),
+      // 🔧 FIX: URL corrigée - /tournoi/[id]/export au lieu de /export/[id]
+      onClick: () => onNavigate(`/tournoi/${tournoiId}/export`),
       gradient: 'from-blue-600 to-indigo-600',
       icon: Icons.download,
       label: 'Exporter les resultats'
