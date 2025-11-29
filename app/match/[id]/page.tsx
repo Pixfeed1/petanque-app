@@ -510,11 +510,22 @@ interface ScoreControlsProps {
 
 function ScoreControls({ score, maxScore, colorScheme, onUpdate }: ScoreControlsProps) {
   const textClass = colorScheme === 'blue' ? 'text-blue-900' : 'text-green-900'
+  const bgClass = colorScheme === 'blue' ? 'bg-blue-100' : 'bg-green-100'
+  const fillClass = colorScheme === 'blue' ? 'bg-blue-500' : 'bg-green-500'
 
   return (
     <div className="bg-white rounded-2xl p-4 shadow-lg">
-      <div className={`text-4xl sm:text-5xl font-bold ${textClass} mb-4`}>
+      {/* A9 FIX: Afficher score / max avec indicateur visuel */}
+      <div className={`text-4xl sm:text-5xl font-bold ${textClass} mb-2`}>
         {score}
+        <span className="text-lg sm:text-xl text-gray-400 font-normal">/{maxScore}</span>
+      </div>
+      {/* Barre de progression */}
+      <div className={`h-2 ${bgClass} rounded-full mb-4 overflow-hidden`}>
+        <div
+          className={`h-full ${fillClass} rounded-full transition-all duration-200`}
+          style={{ width: `${(score / maxScore) * 100}%` }}
+        />
       </div>
       {/* I5 FIX: Boutons +/- plus grands et plus espacés sur mobile */}
       <div className="flex justify-center space-x-4 sm:space-x-6">

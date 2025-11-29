@@ -15,7 +15,7 @@ const Icons = {
   petanque: <Petanque className="w-10 h-10" />,
   share: <Download className="w-6 h-6" />,
   download: <Download className="w-6 h-6" />,
-  loader: <Loader className="h-8 w-8" />,
+  loader: <Loader className="h-5 w-5 animate-spin" />,  // A6 FIX: Animation spinner
   camera: <Download className="w-6 h-6" />
 }
 
@@ -222,7 +222,8 @@ interface AnimatedTitleProps {
 function AnimatedTitle({ showAnimation, tournamentName, tournamentDate }: AnimatedTitleProps) {
   return (
     <div className="text-center mt-12 mb-8">
-      <div className={`transition-all duration-1000 transform ${showAnimation ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
+      {/* A1 FIX: Animation plus rapide (500ms au lieu de 1000ms) */}
+      <div className={`transition-all duration-500 transform ${showAnimation ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
         <h2 className="text-5xl font-bold text-gray-900 mb-4 flex items-center justify-center">
           <span className="mr-4">🎉</span>
           Felicitations aux vainqueurs !
@@ -277,8 +278,9 @@ function PodiumPlace({ position, team, animationStep, generatingCertificate, onG
     }
   }[position]
 
+  // A1 FIX: Animation plus rapide (500ms au lieu de 1000ms)
   return (
-    <div className={`flex-1 max-w-xs transition-all duration-1000 transform ${
+    <div className={`flex-1 max-w-xs transition-all duration-500 transform ${
       isVisible ? `translate-y-0 opacity-100 ${config.scale}` : 'translate-y-20 opacity-0'
     }`}>
       {/* Badge de position */}

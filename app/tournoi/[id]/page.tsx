@@ -116,7 +116,8 @@ export default function TournamentDetailPage() {
     generatePoules,
     generateEliminationPhases,
     generateFinales,
-    assignTerrain
+    assignTerrain,
+    autoAssignTerrain  // A3 FIX: Auto-assignation terrain
   } = useMatchActions({
     tournament,
     teams,
@@ -543,6 +544,7 @@ export default function TournamentDetailPage() {
                                       isOrganizer={isOrganizer}
                                       getTeamPlayers={getTeamPlayers}
                                       onAssignTerrain={assignTerrain}
+                                      onAutoAssignTerrain={autoAssignTerrain}
                                       availableTerrains={tournament.settings.terrains}
                                       onWarning={showWarning}
                                     />
@@ -597,6 +599,7 @@ export default function TournamentDetailPage() {
                                       isOrganizer={isOrganizer}
                                       getTeamPlayers={getTeamPlayers}
                                       onAssignTerrain={assignTerrain}
+                                      onAutoAssignTerrain={autoAssignTerrain}
                                       availableTerrains={tournament.settings.terrains}
                                       onWarning={showWarning}
                                     />

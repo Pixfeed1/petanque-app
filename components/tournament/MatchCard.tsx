@@ -29,6 +29,7 @@ interface MatchCardProps {
   isOrganizer: boolean
   getTeamPlayers: (teamId: string) => string[]
   onAssignTerrain?: (matchId: string, terrain: number) => void
+  onAutoAssignTerrain?: (matchId: string) => void  // A3 FIX: Auto-assignation terrain
   availableTerrains: number
   onWarning?: (message: string) => void
 }
@@ -39,6 +40,7 @@ export default function MatchCard({
   isOrganizer,
   getTeamPlayers,
   onAssignTerrain,
+  onAutoAssignTerrain,  // A3 FIX: Auto-assignation terrain
   availableTerrains,
   onWarning
 }: MatchCardProps) {
@@ -77,8 +79,13 @@ export default function MatchCard({
            match.status === 'en_attente_validation' ? '⏳ En attente validation' :
            'À jouer'}
         </span>
-        {match.terrain && (
+        {/* A3 FIX: Affichage terrain amélioré */}
+        {match.terrain ? (
           <span className="text-sm font-semibold text-gray-900">Terrain {match.terrain}</span>
+        ) : match.status === 'a_jouer' && (
+          <span className="text-sm font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+            À assigner
+          </span>
         )}
       </div>
 
@@ -142,33 +149,42 @@ export default function MatchCard({
         </div>
       </div>
 
-      {/* Actions pour match à jouer */}
+      {/* A3 FIX: Actions pour match à jouer avec choix auto/manuel */}
       {match.status === 'a_jouer' && isOrganizer && onAssignTerrain && (
-        <div className="mt-3 flex space-x-2">
-          <select
-            value={match.terrain || ''}
-            onChange={(e) => onAssignTerrain(match.id, parseInt(e.target.value))}
-            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:border-green-500"
-          >
-            <option value="">Terrain...</option>
-            {Array.from({ length: availableTerrains }, (_, i) => (
-              <option key={i + 1} value={i + 1}>Terrain {i + 1}</option>
-            ))}
-          </select>
-          <button
-            onClick={() => {
-              if (!match.terrain) {
-                if (onWarning) {
-                  onWarning('Veuillez d\'abord assigner un terrain au match avant de le démarrer')
-                }
-                return
-              }
-              router.push(`/match/${match.id}`)
-            }}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
-          >
-            Démarrer
-          </button>
+        <div className="mt-3 flex flex-col gap-2">
+          {/* Ligne 1: Choix terrain (auto ou manuel) */}
+          <div className="flex space-x-2">
+            {/* Bouton Auto - assigne le premier terrain libre */}
+            {onAutoAssignTerrain && !match.terrain && (
+              <button
+                onClick={() => onAutoAssignTerrain(match.id)}
+                className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all text-sm font-medium flex items-center gap-1"
+                title="Assigner automatiquement le premier terrain libre"
+              >
+                <span>⚡</span> Auto
+              </button>
+            )}
+            {/* Dropdown pour choix manuel */}
+            <select
+              value={match.terrain || ''}
+              onChange={(e) => onAssignTerrain(match.id, parseInt(e.target.value))}
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:border-green-500 text-sm"
+            >
+              <option value="">Choisir terrain...</option>
+              {Array.from({ length: availableTerrains }, (_, i) => (
+                <option key={i + 1} value={i + 1}>Terrain {i + 1}</option>
+              ))}
+            </select>
+          </div>
+          {/* Ligne 2: Bouton Démarrer (apparaît quand terrain assigné) */}
+          {match.terrain && (
+            <button
+              onClick={() => router.push(`/match/${match.id}`)}
+              className="w-full px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all font-medium shadow-md"
+            >
+              ▶ Démarrer le match
+            </button>
+          )}
         </div>
       )}
 

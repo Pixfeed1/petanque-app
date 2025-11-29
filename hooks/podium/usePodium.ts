@@ -297,18 +297,19 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
     }
   }
 
+  // A1 FIX: Animations podium plus rapides
   const animatePodium = () => {
     // Stocker les timeouts pour cleanup
     animationTimeoutsRef.current = [
-      setTimeout(() => setAnimationStep(3), 300),  // 3eme
-      setTimeout(() => setAnimationStep(2), 600),  // 2eme
-      setTimeout(() => setAnimationStep(1), 900),  // 1er
-      setTimeout(() => fireConfetti(), 1200)
+      setTimeout(() => setAnimationStep(3), 200),  // 3eme (était 300)
+      setTimeout(() => setAnimationStep(2), 400),  // 2eme (était 600)
+      setTimeout(() => setAnimationStep(1), 600),  // 1er (était 900)
+      setTimeout(() => fireConfetti(), 800)       // (était 1200)
     ]
   }
 
   const fireConfetti = useCallback(() => {
-    const duration = 5000
+    const duration = 3000  // A1 FIX: Réduire de 5s à 3s
     const animationEnd = Date.now() + duration
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
 

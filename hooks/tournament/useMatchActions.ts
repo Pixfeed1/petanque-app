@@ -36,6 +36,7 @@ interface UseMatchActionsReturn {
   generateNextEliminationRound: () => Promise<void>
   generateFinales: () => Promise<void>
   assignTerrain: (matchId: string, terrain: number) => Promise<void>
+  autoAssignTerrain: (matchId: string) => Promise<void>  // A3 FIX: Auto-assignation
   createRoundRobinMatches: (teams: Team[], tour: number, poule: string | null) => Promise<void>
 }
 
@@ -973,6 +974,54 @@ export function useMatchActions({
     }
   }, [tournament, matches, getTeamPlayers, loadTournamentData])
 
+  /**
+   * A3 FIX: Auto-assigne le premier terrain libre à un match
+   * Trouve le terrain avec le moins de matchs en cours/à jouer
+   */
+  const autoAssignTerrain = useCallback(async (matchId: string) => {
+    if (!tournament?.settings.terrains) {
+      notify.error('Nombre de terrains non défini pour ce tournoi')
+      return
+    }
+
+    const totalTerrains = tournament.settings.terrains
+
+    // Compter les matchs actifs (en_cours) sur chaque terrain
+    const terrainUsage: { [key: number]: { active: number; pending: number } } = {}
+    for (let t = 1; t <= totalTerrains; t++) {
+      terrainUsage[t] = { active: 0, pending: 0 }
+    }
+
+    matches.forEach(m => {
+      if (m.terrain && m.terrain >= 1 && m.terrain <= totalTerrains) {
+        if (m.status === 'en_cours') {
+          terrainUsage[m.terrain].active++
+        } else if (m.status === 'a_jouer') {
+          terrainUsage[m.terrain].pending++
+        }
+      }
+    })
+
+    // Trouver le premier terrain sans match en cours
+    let bestTerrain = 1
+    let minActive = Infinity
+    let minPending = Infinity
+
+    for (let t = 1; t <= totalTerrains; t++) {
+      const usage = terrainUsage[t]
+      // Priorité: moins de matchs en cours, puis moins de matchs à jouer
+      if (usage.active < minActive ||
+          (usage.active === minActive && usage.pending < minPending)) {
+        minActive = usage.active
+        minPending = usage.pending
+        bestTerrain = t
+      }
+    }
+
+    // Assigner le meilleur terrain trouvé
+    await assignTerrain(matchId, bestTerrain)
+  }, [tournament, matches, assignTerrain, notify])
+
   return {
     // Validation helpers
     isValidPoolConfiguration,
@@ -985,6 +1034,7 @@ export function useMatchActions({
     generateNextEliminationRound,
     generateFinales,
     assignTerrain,
+    autoAssignTerrain,  // A3 FIX: Auto-assignation
     createRoundRobinMatches
   }
 }
