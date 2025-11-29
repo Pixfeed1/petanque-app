@@ -50,8 +50,7 @@ export default function TournamentDetailPage() {
 
   // UI state
   const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState<'vue' | 'matchs' | 'classement' | 'equipes'>('vue')
-  const [selectedPoule, setSelectedPoule] = useState<string>('A')
+  const [activeTab, setActiveTab] = useState<'matchs' | 'classement' | 'equipes'>('matchs')
   const [currentPhase, setCurrentPhase] = useState<'poules' | 'elimination' | 'finale'>('poules')
   const [showStartModal, setShowStartModal] = useState(false)
 
@@ -190,14 +189,6 @@ export default function TournamentDetailPage() {
     }
   }, [matches])
 
-  // 🔧 FIX: Initialiser selectedPoule à la première poule disponible
-  // Évite d'afficher une poule vide si 'A' n'existe pas
-  useEffect(() => {
-    const pouleNames = Object.keys(teamsByPoule).sort()
-    if (pouleNames.length > 0 && !pouleNames.includes(selectedPoule)) {
-      setSelectedPoule(pouleNames[0])
-    }
-  }, [teamsByPoule, selectedPoule])
 
   // Démarrer le tournoi
   const handleStartTournament = async () => {
@@ -381,11 +372,10 @@ export default function TournamentDetailPage() {
           ))}
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - 3 onglets (Vue d'ensemble supprimée car redondante avec Matchs) */}
         <div className="mb-6">
           <div className="flex border-b border-gray-200 bg-white/80 backdrop-blur-xl rounded-t-2xl overflow-x-auto">
             {[
-              { id: 'vue', label: 'Vue d\'ensemble', icon: <Grid className="w-5 h-5" /> },
               { id: 'matchs', label: 'Matchs', icon: <Flag className="w-5 h-5" /> },
               { id: 'classement', label: 'Classement', icon: <Trophy className="w-5 h-5" /> },
               { id: 'equipes', label: 'Équipes', icon: <Users className="w-5 h-5" /> }
@@ -431,6 +421,41 @@ export default function TournamentDetailPage() {
                 </div>
               ) : (
                 <>
+                  {/* Stats rapides + Actions */}
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-4 mb-4">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex items-center gap-6">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-gray-900">
+                            {matches.filter(m => m.status === 'termine').length}/{matches.length}
+                          </p>
+                          <p className="text-xs text-gray-600">Matchs terminés</p>
+                        </div>
+                        <div className="h-10 w-px bg-gray-300"></div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-green-600">
+                            {matches.filter(m => m.status === 'en_cours').length}
+                          </p>
+                          <p className="text-xs text-gray-600">En cours</p>
+                        </div>
+                        <div className="h-10 w-px bg-gray-300"></div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-gray-400">
+                            {matches.filter(m => m.status === 'a_jouer').length}
+                          </p>
+                          <p className="text-xs text-gray-600">À jouer</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => router.push(`/tournoi/${params.id}/poules`)}
+                        className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center gap-2"
+                      >
+                        <Grid className="w-4 h-4" />
+                        <span>Vue complète poules</span>
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Matchs de POULE - groupés par poule (A, B, C...) */}
                   {(() => {
                     const pouleMatches = matches.filter(m => m.type === 'poule' && m.poule)
@@ -666,100 +691,6 @@ export default function TournamentDetailPage() {
             </div>
           )}
 
-          {activeTab === 'vue' && (
-            <div className="space-y-6">
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                  <Sparkles className="w-6 h-6 mr-2" />
-                  Phase actuelle : {currentPhase === 'poules' ? 'Poules' : 'Phases finales'}
-                </h3>
-
-                {/* Sélecteur de poule - dynamique basé sur les poules réelles */}
-                {Object.keys(teamsByPoule).length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2 mb-4">
-                    {Object.keys(teamsByPoule).sort().map(poule => (
-                      <button
-                        key={poule}
-                        onClick={() => setSelectedPoule(poule)}
-                        className={`px-4 py-2 rounded-xl font-medium transition-all ${
-                          selectedPoule === poule
-                            ? 'bg-green-600 text-white shadow-lg'
-                            : 'bg-white text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        Poule {poule}
-                      </button>
-                    ))}
-                    {/* Lien vers vue complète des poules */}
-                    <button
-                      onClick={() => router.push(`/tournoi/${params.id}/poules`)}
-                      className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center gap-2"
-                    >
-                      <Grid className="w-4 h-4" />
-                      <span>Voir toutes les poules</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Matchs de la poule */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {matches.filter(m => m.poule === selectedPoule).map(match => (
-                    <MatchCard
-                      key={match.id}
-                      match={match}
-                      maxPoints={tournament.settings.maxPoints || 13}
-                      isOrganizer={isOrganizer}
-                      getTeamPlayers={getTeamPlayers}
-                      onAssignTerrain={assignTerrain}
-                      availableTerrains={tournament.settings.terrains}
-                      onWarning={showWarning}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Stats rapides */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white rounded-xl p-6 shadow-md">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">Matchs joués</span>
-                    <Flag className="w-5 h-5 text-gray-400" />
-                  </div>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {matches.filter(m => m.status === 'termine').length} / {matches.length}
-                  </p>
-                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all"
-                      style={{ width: `${matches.length > 0 ? (matches.filter(m => m.status === 'termine').length / matches.length) * 100 : 0}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl p-6 shadow-md">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">Points moyens/match</span>
-                    <Chart className="w-5 h-5 text-gray-400" />
-                  </div>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {matches.filter(m => m.status === 'termine').length > 0
-                      ? Math.round(matches.filter(m => m.status === 'termine').reduce((acc, m) => acc + (m.score_a ?? 0) + (m.score_b ?? 0), 0) / matches.filter(m => m.status === 'termine').length)
-                      : 0}
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-xl p-6 shadow-md">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">Leader actuel</span>
-                    <Trophy className="w-5 h-5 text-yellow-500" />
-                  </div>
-                  <p className="text-xl font-bold text-gray-900">
-                    {teamsWithStats.sort((a, b) => (b.victories || 0) - (a.victories || 0))[0]?.name || 'À déterminer'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
