@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
 
     // 🔧 FIX: Vérifier les noms contre les équipes EXISTANTES dans le tournoi
     const existingTeamNames = await queryMany<{ name: string }>(
-      'SELECT LOWER(name) as name FROM equipes WHERE tournoi_id = $1',
+      'SELECT LOWER(TRIM(name)) as name FROM equipes WHERE tournoi_id = $1',
       [tournoiId]
     )
     const existingNamesSet = new Set(existingTeamNames.map(t => t.name))
@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
     teams.forEach((team, i) => {
       const baseIndex = i * 4
       valueStrings.push(
-        `($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}::bigint[], $${baseIndex + 4}::jsonb)`
+        `($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}::bigint[], $${baseIndex + 4}::jsonb, NOW())`
       )
       values.push(
         team.tournoi_id,
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
     })
 
     const insertQuery = `
-      INSERT INTO equipes (tournoi_id, name, joueur_ids, stats)
+      INSERT INTO equipes (tournoi_id, name, joueur_ids, stats, created_at)
       VALUES ${valueStrings.join(', ')}
       RETURNING *
     `

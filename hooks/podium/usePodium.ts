@@ -274,16 +274,15 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
           const scoreA = match.score_a ?? 0
           const scoreB = match.score_b ?? 0
 
-          if (match.equipe_a?.id === item.team.id) {
+          // 🔧 FIX: Utiliser equipe_a_id/equipe_b_id au lieu de equipe_a?.id pour cohérence
+          if (match.equipe_a_id === item.team.id) {
             if (scoreA > scoreB) stats.victories++
             else if (scoreA < scoreB) stats.defeats++
-            // 🔧 FIX: Égalité = ni victoire ni défaite (stats.draws si nécessaire)
             stats.pointsFor += scoreA
             stats.pointsAgainst += scoreB
-          } else if (match.equipe_b?.id === item.team.id) {
+          } else if (match.equipe_b_id === item.team.id) {
             if (scoreB > scoreA) stats.victories++
             else if (scoreB < scoreA) stats.defeats++
-            // 🔧 FIX: Égalité = ni victoire ni défaite
             stats.pointsFor += scoreB
             stats.pointsAgainst += scoreA
           }

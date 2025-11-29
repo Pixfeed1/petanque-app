@@ -230,8 +230,11 @@ export async function PUT(
         const scoreA = body.score_a !== undefined ? body.score_a : (existingMatch.score_a ?? 0)
         const scoreB = body.score_b !== undefined ? body.score_b : (existingMatch.score_b ?? 0)
 
-        // Vérifier que les scores sont définis avant de terminer
-        if (scoreA === 0 && scoreB === 0 && body.score_a === undefined && body.score_b === undefined) {
+        // 🔧 FIX: Identifier les matchs BYE AVANT la validation des scores
+        const isByeMatch = existingMatch.type === 'bye' || !existingMatch.equipe_b_id
+
+        // Vérifier que les scores sont définis avant de terminer (sauf BYE)
+        if (!isByeMatch && scoreA === 0 && scoreB === 0 && body.score_a === undefined && body.score_b === undefined) {
           return apiError('Impossible de terminer un match sans scores', 400)
         }
 
@@ -243,9 +246,6 @@ export async function PUT(
         const settings = (tournoiQuery.rows[0]?.settings as any) || {}
         const maxPoints = settings.maxPoints || 13
         const timeLimit = settings.timeLimit || false
-
-        // Identifier les matchs BYE
-        const isByeMatch = existingMatch.type === 'bye' || !existingMatch.equipe_b_id
 
         // Égalités autorisées SEULEMENT si timeLimit est activé ou match BYE
         if (!isByeMatch && scoreA === scoreB && !timeLimit) {
