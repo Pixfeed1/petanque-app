@@ -153,6 +153,8 @@ export function useRankings({
 
   /**
    * Charge le classement individuel (pour mêlée tournante)
+   *
+   * 🔧 FIX Bug #5: Filtre pour inclure seulement les joueurs du tournoi
    */
   const loadIndividualRankings = useCallback(async () => {
     if (!organization || !tournament) return
@@ -165,7 +167,17 @@ export function useRankings({
 
       if (!joueursResponse.ok) return
       const joueursData = await joueursResponse.json()
-      const joueurs = Array.isArray(joueursData) ? joueursData : joueursData.joueurs || []
+      const allJoueurs = Array.isArray(joueursData) ? joueursData : joueursData.joueurs || []
+
+      // 🔧 FIX Bug #5: Filtrer pour n'inclure que les joueurs du tournoi
+      const tournamentPlayerIds = tournament.settings?.players || []
+      const joueurs = allJoueurs.filter((p: Joueur) => tournamentPlayerIds.includes(p.id))
+
+      // Si aucun joueur configuré, ne rien afficher
+      if (joueurs.length === 0) {
+        setIndividualRankings([])
+        return
+      }
 
       // Charger toutes les équipes et matchs du tournoi
       const equipesResponse = await fetch(`/api/equipes?tournoi_id=${tournament.id}`, {

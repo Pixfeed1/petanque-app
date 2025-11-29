@@ -46,9 +46,11 @@ export function calculateTeamStats(
   // Filtrer les matchs de cette équipe (uniquement terminés, pas les BYE)
   // Utiliser equipe_a_id/equipe_b_id en priorité (toujours présents)
   // puis fallback sur equipe_a?.id (si relation jointe)
+  // 🔧 FIX Bug #7: Exclure aussi les matchs avec equipe_b_id null (BYE implicites)
   const teamMatches = matches.filter(m =>
     m.status === 'termine' &&
     m.type !== 'bye' &&
+    m.equipe_b_id !== null && // Exclure BYE implicites
     (m.equipe_a_id === teamId || m.equipe_b_id === teamId ||
      m.equipe_a?.id === teamId || m.equipe_b?.id === teamId)
   )
@@ -133,9 +135,11 @@ export function calculatePlayerStats(
 
   // Filtrer les matchs où le joueur a participé
   // Utiliser equipe_a_id/equipe_b_id en priorité puis fallback sur equipe_a?.id
+  // 🔧 FIX Bug #7: Exclure aussi les matchs avec equipe_b_id null (BYE implicites)
   const playerMatches = matches.filter(m =>
     m.status === 'termine' &&
     m.type !== 'bye' &&
+    m.equipe_b_id !== null && // Exclure BYE implicites
     (playerTeamIds.includes(m.equipe_a_id || '') ||
      playerTeamIds.includes(m.equipe_b_id || '') ||
      playerTeamIds.includes(m.equipe_a?.id || '') ||
@@ -215,8 +219,9 @@ export function calculateAllPlayersStats(
   })
 
   // Filtrer les matchs terminés une seule fois
+  // 🔧 FIX Bug #7: Exclure aussi les matchs avec equipe_b_id null (BYE implicites)
   const completedMatches = matches.filter(m =>
-    m.status === 'termine' && m.type !== 'bye'
+    m.status === 'termine' && m.type !== 'bye' && m.equipe_b_id !== null
   )
 
   // Calculer stats pour chaque joueur avec lookup O(1)

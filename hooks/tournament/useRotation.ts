@@ -6,7 +6,7 @@
  * - Validation des partenaires (évite les répétitions)
  */
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { MixiteService } from '@/lib/services/mixite.service'
 import type { Joueur } from '@/lib/types'
@@ -105,6 +105,19 @@ export function useRotation({
   }
 
   const [currentRotation, setCurrentRotation] = useState(1)
+
+  /**
+   * 🔧 FIX Bug #1: Synchroniser currentRotation avec les données de la BD
+   * Initialise le tour actuel depuis les matchs existants au chargement
+   */
+  useEffect(() => {
+    if (matches.length === 0) return
+
+    const maxTour = Math.max(...matches.map(m => m.tour))
+    if (maxTour !== currentRotation) {
+      setCurrentRotation(maxTour)
+    }
+  }, [matches]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Vérifie si la rotation est disponible (tous les matchs terminés selon le mode)

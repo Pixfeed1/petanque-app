@@ -193,11 +193,15 @@ export function validateMatchStart(match: {
 
 /**
  * Valide qu'un score est conforme aux règles FIPJP
+ *
+ * 🔧 FIX Bug #4: Gère timeLimit - avec limite de temps, égalité autorisée
+ * et pas besoin d'atteindre maxPoints
  */
 export function validateScore(
   scoreA: number,
   scoreB: number,
-  maxPoints: number
+  maxPoints: number,
+  timeLimit: boolean = false
 ): ValidationResult {
   if (scoreA < 0 || scoreB < 0) {
     return {
@@ -206,6 +210,20 @@ export function validateScore(
     }
   }
 
+  // Avec timeLimit, les règles sont plus souples
+  if (timeLimit) {
+    // Seule contrainte: les scores ne peuvent pas dépasser maxPoints
+    if (scoreA > maxPoints || scoreB > maxPoints) {
+      return {
+        valid: false,
+        error: `Score maximum autorisé : ${maxPoints} points`
+      }
+    }
+    // Égalité autorisée, pas besoin d'atteindre maxPoints
+    return { valid: true }
+  }
+
+  // Sans timeLimit: règles standard FIPJP
   // En pétanque FIPJP : le match s'arrête dès qu'une équipe atteint maxPoints
   if (scoreA === maxPoints && scoreB === maxPoints) {
     return {
@@ -221,18 +239,11 @@ export function validateScore(
     }
   }
 
-  // Si une équipe a atteint maxPoints, l'autre doit avoir moins
-  if (scoreA === maxPoints && scoreB >= maxPoints) {
+  // Sans timeLimit, une équipe doit atteindre maxPoints pour terminer
+  if (scoreA < maxPoints && scoreB < maxPoints) {
     return {
       valid: false,
-      error: `Si une équipe atteint ${maxPoints} points, le match est terminé`
-    }
-  }
-
-  if (scoreB === maxPoints && scoreA >= maxPoints) {
-    return {
-      valid: false,
-      error: `Si une équipe atteint ${maxPoints} points, le match est terminé`
+      error: `Une équipe doit atteindre ${maxPoints} points pour terminer le match`
     }
   }
 
@@ -257,6 +268,9 @@ export function validatePouleNames(pouleNames: (string | null | undefined)[]): V
 
 /**
  * Valide qu'une mixité est réalisable avec les joueurs disponibles
+ *
+ * 🔧 FIX Bug #2: Triplette fonctionne avec 1H+2F ou 2H+1F (pas besoin de 2 de chaque)
+ * 🔧 FIX Bug #3: tete_a_tete retourne error au lieu de warning
  */
 export function validateMixity(
   hommes: number,
@@ -269,10 +283,10 @@ export function validateMixity(
   }
 
   if (format === 'tete_a_tete') {
-    // Pas de mixité possible en tête-à-tête
+    // 🔧 FIX Bug #3: Pas de mixité possible en tête-à-tête - retourne error, pas warning
     return {
       valid: false,
-      warning: 'La mixité obligatoire n\'est pas applicable en tête-à-tête'
+      error: 'La mixité obligatoire n\'est pas applicable en tête-à-tête (1 joueur par équipe)'
     }
   }
 
@@ -287,11 +301,12 @@ export function validateMixity(
   }
 
   if (format === 'triplette') {
-    // Besoin d'au moins 2 de chaque sexe (pour faire 2H+1F ou 1H+2F)
-    if (hommes < 2 || femmes < 2) {
+    // 🔧 FIX Bug #2: L'algo de formation fonctionne avec 1H+2F ou 2H+1F
+    // On a juste besoin d'au moins 1 homme ET 1 femme
+    if (hommes < 1 || femmes < 1) {
       return {
         valid: false,
-        error: 'Mixité obligatoire en triplette requiert au moins 2 hommes et 2 femmes'
+        error: 'Mixité obligatoire en triplette requiert au moins 1 homme et 1 femme'
       }
     }
   }
