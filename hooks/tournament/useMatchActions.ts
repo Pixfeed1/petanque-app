@@ -183,11 +183,18 @@ export function useMatchActions({
       return
     }
 
-    // Vérifier qu'il n'y a pas déjà des matchs de poule
-    const existingPouleMatches = matches.filter(m => m.type === 'poule')
-    if (existingPouleMatches.length > 0) {
-      notify.error('Des matchs de poule existent déjà. Supprimez-les avant de régénérer les poules.')
-      return
+    // 🔧 FIX: Vérifier côté serveur qu'il n'y a pas déjà des matchs de poule
+    // (évite les doublons si le state local est désynchronisé après une erreur partielle)
+    const checkMatchesResponse = await fetch(`/api/matches?tournoi_id=${tournament.id}&type=poule`, {
+      credentials: 'include'
+    })
+    if (checkMatchesResponse.ok) {
+      const existingMatches = await checkMatchesResponse.json()
+      const matchList = Array.isArray(existingMatches) ? existingMatches : []
+      if (matchList.length > 0) {
+        notify.error('Des matchs de poule existent déjà. Supprimez-les avant de régénérer les poules.')
+        return
+      }
     }
 
     // Vérifier que toutes les équipes ont des joueurs
@@ -648,38 +655,55 @@ export function useMatchActions({
 
       // Cas spécial: demi-finales → finale + petite finale
       if (nextRound === 'finale') {
+        // 🔧 FIX: Valider qu'on a bien 2 demi-finales
+        if (currentRoundMatches.length < 2) {
+          notify.error(`Attendu 2 demi-finales, trouvé ${currentRoundMatches.length}`)
+          return
+        }
+
         // Récupérer aussi les perdants pour la petite finale
         const losers: { id: string; name: string }[] = []
         for (const match of currentRoundMatches) {
           if (!match.equipe_a_id || !match.equipe_b_id) continue
           const isAWinner = (match.score_a ?? 0) > (match.score_b ?? 0)
+          // 🔧 FIX: Utiliser equipe_a_id/equipe_b_id directement au lieu de equipe_a?.id
           const loser = isAWinner
-            ? (match.equipe_b ? { id: match.equipe_b.id, name: match.equipe_b.name } : null)
-            : (match.equipe_a ? { id: match.equipe_a.id, name: match.equipe_a.name } : null)
-          if (loser) losers.push(loser)
+            ? { id: match.equipe_b_id, name: match.equipe_b?.name || 'Équipe' }
+            : { id: match.equipe_a_id, name: match.equipe_a?.name || 'Équipe' }
+          losers.push(loser)
+        }
+
+        // 🔧 FIX: Valider qu'on a 2 gagnants avant de créer la finale
+        if (winners.length !== 2) {
+          notify.error(`Impossible: ${winners.length} gagnant(s) trouvé(s), 2 requis pour la finale`)
+          return
         }
 
         // Créer la finale
-        if (winners.length === 2) {
-          const finaleResponse = await fetch('/api/matches', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              tournoi_id: tournament.id,
-              equipe_a_id: winners[0].id,
-              equipe_b_id: winners[1].id,
-              tour: 1,
-              terrain: null,
-              type: 'finale',
-              status: 'a_jouer'
-            })
+        const finaleResponse = await fetch('/api/matches', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            tournoi_id: tournament.id,
+            equipe_a_id: winners[0].id,
+            equipe_b_id: winners[1].id,
+            tour: 1,
+            terrain: null,
+            type: 'finale',
+            status: 'a_jouer'
           })
-          if (!finaleResponse.ok) {
-            const error = await finaleResponse.json().catch(() => ({ error: 'Erreur serveur' }))
-            throw new Error(`Échec création finale: ${error.error}`)
-          }
-          createdMatches++
+        })
+        if (!finaleResponse.ok) {
+          const error = await finaleResponse.json().catch(() => ({ error: 'Erreur serveur' }))
+          throw new Error(`Échec création finale: ${error.error}`)
+        }
+        createdMatches++
+
+        // 🔧 FIX: Valider les perdants pour petite finale si consolante activée
+        if (tournament.settings.consolante && losers.length !== 2) {
+          notify.error(`Impossible: ${losers.length} perdant(s) trouvé(s), 2 requis pour la petite finale`)
+          return
         }
 
         // Créer la petite finale si consolante activée

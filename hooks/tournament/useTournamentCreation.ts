@@ -316,6 +316,12 @@ export function useTournamentCreation({
       return
     }
 
+    // 🔧 FIX: Validation qualifiés >= 1
+    if (formData.qualifiedPerPoule < 1) {
+      notify.error('Le nombre de qualifiés par poule doit être au moins 1')
+      return
+    }
+
     // Validation qualifiés < taille poule
     if (formData.qualifiedPerPoule >= formData.pouleSize) {
       notify.error(`Le nombre de qualifiés (${formData.qualifiedPerPoule}) doit être < taille poule (${formData.pouleSize})`)

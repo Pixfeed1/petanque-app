@@ -54,6 +54,11 @@ export function calculateBracketMatches(nbTeams: number): {
     throw new Error('Impossible de créer un bracket avec moins de 2 équipes')
   }
 
+  // 🔧 FIX: Valider le maximum d'équipes supportées (16 max pour huitièmes)
+  if (nbTeams > 16) {
+    throw new Error(`Trop d'équipes qualifiées (${nbTeams}). Maximum 16 équipes supportées pour les huitièmes de finale.`)
+  }
+
   if (nbTeams === 2) {
     return { nbMatches: 1, round: 'finale', hasByes: false, nbByes: 0 }
   }
