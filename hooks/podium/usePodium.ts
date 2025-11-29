@@ -197,7 +197,11 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
     if (!equipesResponse.ok) return
 
     const equipesData = await equipesResponse.json()
-    const classement: TeamClassement[] = equipesData.map((team: Equipe) => {
+    // 🔧 FIX: Vérifier que equipesData est un tableau avant .map()
+    const equipes = Array.isArray(equipesData) ? equipesData : equipesData.equipes || []
+    if (equipes.length === 0) return
+
+    const classement: TeamClassement[] = equipes.map((team: Equipe) => {
       const teamMatches = allMatches.filter((m: Match) =>
         m.status === 'termine' && m.type === 'poule' &&
         (m.equipe_a_id === team.id || m.equipe_b_id === team.id)

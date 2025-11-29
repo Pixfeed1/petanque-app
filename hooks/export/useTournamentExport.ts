@@ -266,7 +266,9 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
           credentials: 'include'
         })
         if (!teamsResponse.ok) throw new Error('Erreur chargement équipes')
-        let teamsData = await teamsResponse.json()
+        const teamsJson = await teamsResponse.json()
+        // 🔧 FIX: Vérifier que teamsData est un tableau avant .map()
+        let teamsData = Array.isArray(teamsJson) ? teamsJson : teamsJson.equipes || []
 
         // Enrichir avec les joueurs
         teamsData = await Promise.all(
@@ -305,9 +307,11 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
           credentials: 'include'
         })
         if (!matchesResponse.ok) throw new Error('Erreur chargement matchs')
-        const matchesData = await matchesResponse.json()
+        const matchesJson = await matchesResponse.json()
+        // 🔧 FIX: Vérifier que matchesData est un tableau avant .map()
+        const matchesData = Array.isArray(matchesJson) ? matchesJson : matchesJson.matches || []
 
-        const matchesWithMenes = matchesData?.map((match: Match) => ({
+        const matchesWithMenes = matchesData.map((match: Match) => ({
           ...match,
           menes: match.manches_json || []
         })) || []
