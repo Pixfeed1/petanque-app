@@ -37,6 +37,7 @@ export default function CreateTournamentPage() {
     formData,
     currentStep,
     validationError,
+    hasDraft,  // A8 FIX
     setFormData,
     setCurrentStep,
     setValidationError,
@@ -49,6 +50,7 @@ export default function CreateTournamentPage() {
     getEstimatedTeams,
     getEstimatedPools,
     getPlayersPerTeam,
+    clearDraft,  // A8 FIX
     steps
   } = useCreateTournament()
 
@@ -81,7 +83,8 @@ export default function CreateTournamentPage() {
     availablePlayers,
     getEstimatedTeams,
     onError: showError,
-    onWarning: showWarning
+    onWarning: showWarning,
+    onSuccess: clearDraft  // A8 FIX: Effacer brouillon après création
   })
 
   // Effets
@@ -148,16 +151,30 @@ export default function CreateTournamentPage() {
               </div>
               <div>
                 <h1 className="text-sm sm:text-xl font-bold text-gray-900">Nouveau Tournoi</h1>
-                <p className="text-xs text-gray-500 hidden sm:block">Créez votre compétition</p>
+                <p className="text-xs text-gray-500 hidden sm:block">
+                  {hasDraft ? 'Brouillon restauré' : 'Créez votre compétition'}
+                </p>
               </div>
             </div>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl"
-            >
-              <X className="w-5 h-5" />
-              <span className="hidden sm:inline">Annuler</span>
-            </button>
+            <div className="flex items-center space-x-2">
+              {/* A8 FIX: Bouton pour effacer le brouillon */}
+              {hasDraft && (
+                <button
+                  onClick={clearDraft}
+                  className="hidden sm:flex items-center space-x-1 px-3 py-2 text-xs text-amber-600 hover:bg-amber-50 rounded-xl"
+                  title="Recommencer de zéro"
+                >
+                  <span>Effacer brouillon</span>
+                </button>
+              )}
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl"
+              >
+                <X className="w-5 h-5" />
+                <span className="hidden sm:inline">Annuler</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -193,7 +210,7 @@ export default function CreateTournamentPage() {
                   <p className="text-xs text-gray-400 mt-1">{formData.name.length}/100</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Date *</label>
                     <input
@@ -201,6 +218,7 @@ export default function CreateTournamentPage() {
                       value={formData.date}
                       onChange={(e) => updateFormField('date', e.target.value)}
                       className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl focus:border-green-500"
+                      aria-label="Date du tournoi"
                     />
                   </div>
                   <div>
@@ -210,6 +228,7 @@ export default function CreateTournamentPage() {
                       value={formData.time}
                       onChange={(e) => updateFormField('time', e.target.value)}
                       className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl focus:border-green-500"
+                      aria-label="Heure du tournoi"
                     />
                   </div>
                 </div>

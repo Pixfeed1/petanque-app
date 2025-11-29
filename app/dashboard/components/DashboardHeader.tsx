@@ -89,6 +89,8 @@ export default function DashboardHeader({
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label={`Notifications${pendingActionsCount > 0 ? ` (${pendingActionsCount} en attente)` : ''}`}
+                aria-expanded={showNotifications}
               >
                 {Icons.bell}
                 {pendingActionsCount > 0 && (
@@ -105,7 +107,7 @@ export default function DashboardHeader({
                     className="fixed inset-0 z-10"
                     onClick={() => setShowNotifications(false)}
                   ></div>
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-20">
+                  <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-80 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-20">
                     <div className="p-4 bg-gray-50 border-b border-gray-200">
                       <h3 className="font-semibold text-gray-900">
                         {pendingActionsCount > 0
@@ -157,6 +159,8 @@ export default function DashboardHeader({
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Menu profil"
+                aria-expanded={showProfileMenu}
               >
                 <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white text-sm font-semibold">
                   {user?.email?.charAt(0).toUpperCase() || 'U'}

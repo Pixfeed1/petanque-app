@@ -5,7 +5,7 @@
  * - Navigation entre les étapes
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 
 export interface TournamentFormData {
   // Étape 1 - Informations
@@ -81,11 +81,48 @@ const initialFormData: TournamentFormData = {
   recordMenes: true
 }
 
+// A8 FIX: Clé localStorage pour le brouillon
+const DRAFT_STORAGE_KEY = 'petanque_tournament_draft'
+
+// A8 FIX: Charger le brouillon depuis localStorage
+const loadDraft = (): TournamentFormData | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const saved = localStorage.getItem(DRAFT_STORAGE_KEY)
+    if (saved) {
+      const draft = JSON.parse(saved)
+      // Vérifier que le brouillon n'est pas trop ancien (24h max)
+      if (draft.savedAt && Date.now() - draft.savedAt < 24 * 60 * 60 * 1000) {
+        return draft.data as TournamentFormData
+      } else {
+        localStorage.removeItem(DRAFT_STORAGE_KEY)
+      }
+    }
+  } catch (e) {
+    console.warn('Erreur chargement brouillon:', e)
+  }
+  return null
+}
+
+// A8 FIX: Sauvegarder le brouillon dans localStorage
+const saveDraft = (data: TournamentFormData) => {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
+      data,
+      savedAt: Date.now()
+    }))
+  } catch (e) {
+    console.warn('Erreur sauvegarde brouillon:', e)
+  }
+}
+
 interface UseCreateTournamentReturn {
   // State
   formData: TournamentFormData
   currentStep: number
   validationError: string
+  hasDraft: boolean  // A8 FIX: Indique si un brouillon existe
 
   // Setters
   setFormData: React.Dispatch<React.SetStateAction<TournamentFormData>>
@@ -105,6 +142,9 @@ interface UseCreateTournamentReturn {
   getEstimatedPools: () => number
   getPlayersPerTeam: () => number
 
+  // A8 FIX: Gestion brouillon
+  clearDraft: () => void
+
   // Steps config
   steps: StepConfig[]
 }
@@ -119,6 +159,35 @@ export function useCreateTournament(): UseCreateTournamentReturn {
   const [formData, setFormData] = useState<TournamentFormData>(initialFormData)
   const [currentStep, setCurrentStep] = useState(1)
   const [validationError, setValidationError] = useState('')
+  const [hasDraft, setHasDraft] = useState(false)  // A8 FIX
+
+  // A8 FIX: Charger le brouillon au montage
+  useEffect(() => {
+    const draft = loadDraft()
+    if (draft) {
+      setFormData(draft)
+      setHasDraft(true)
+    }
+  }, [])
+
+  // A8 FIX: Sauvegarder le brouillon à chaque modification
+  useEffect(() => {
+    // Ne pas sauvegarder si le formulaire est vide (initialFormData)
+    if (formData.name.trim() || formData.selectedPlayers.length > 0 || formData.newPlayers.length > 0) {
+      saveDraft(formData)
+      setHasDraft(true)
+    }
+  }, [formData])
+
+  // A8 FIX: Fonction pour effacer le brouillon
+  const clearDraft = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(DRAFT_STORAGE_KEY)
+    }
+    setHasDraft(false)
+    setFormData(initialFormData)
+    setCurrentStep(1)
+  }, [])
 
   const steps: StepConfig[] = [
     { number: 1, title: 'Informations', color: 'from-green-500 to-emerald-600' },
@@ -279,6 +348,7 @@ export function useCreateTournament(): UseCreateTournamentReturn {
     formData,
     currentStep,
     validationError,
+    hasDraft,  // A8 FIX
     setFormData,
     setCurrentStep,
     setValidationError,
@@ -291,6 +361,7 @@ export function useCreateTournament(): UseCreateTournamentReturn {
     getEstimatedTeams,
     getEstimatedPools,
     getPlayersPerTeam,
+    clearDraft,  // A8 FIX
     steps
   }
 }

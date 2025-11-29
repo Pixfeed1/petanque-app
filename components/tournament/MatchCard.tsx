@@ -169,6 +169,7 @@ export default function MatchCard({
               value={match.terrain || ''}
               onChange={(e) => onAssignTerrain(match.id, parseInt(e.target.value))}
               className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:border-green-500 text-sm"
+              aria-label={`Sélectionner terrain pour ${match.equipe_a?.name || 'Équipe A'} vs ${match.equipe_b?.name || 'Équipe B'}`}
             >
               <option value="">Choisir terrain...</option>
               {Array.from({ length: availableTerrains }, (_, i) => (

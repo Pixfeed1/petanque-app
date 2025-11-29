@@ -292,6 +292,7 @@ function FiltersBar({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Rechercher un joueur..."
             className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all"
+            aria-label="Rechercher un joueur par nom ou email"
           />
         </div>
 
@@ -473,12 +474,14 @@ function PlayerRow({ player, index, isSelected, onToggle, onEdit, onDelete }: Pl
             <button
               onClick={onEdit}
               className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all hover:scale-110"
+              aria-label={`Modifier ${player.name}`}
             >
               <Edit className="w-5 h-5" />
             </button>
             <button
               onClick={onDelete}
               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all hover:scale-110"
+              aria-label={`Supprimer ${player.name}`}
             >
               <Trash className="w-5 h-5" />
             </button>

@@ -25,6 +25,7 @@ interface UseTournamentCreationProps {
   getEstimatedTeams: () => number
   onError?: (message: string) => void
   onWarning?: (message: string) => void
+  onSuccess?: () => void  // A8 FIX: Callback après création réussie
 }
 
 interface UseTournamentCreationReturn {
@@ -41,7 +42,8 @@ export function useTournamentCreation({
   availablePlayers,
   getEstimatedTeams,
   onError,
-  onWarning
+  onWarning,
+  onSuccess  // A8 FIX
 }: UseTournamentCreationProps): UseTournamentCreationReturn {
   const router = useRouter()
   const { user, organization, refreshOrganization } = useAuth()
@@ -452,6 +454,9 @@ export function useTournamentCreation({
           })
         })
       }
+
+      // A8 FIX: Effacer le brouillon après création réussie
+      if (onSuccess) onSuccess()
 
       // Animation et redirection
       setSuccessAnimation(true)
