@@ -216,6 +216,27 @@ export function useCreateTournament(): UseCreateTournamentReturn {
     setValidationError('')
 
     if (currentStep === 3) {
+      // C2 FIX: Validation noms joueurs non vides
+      const emptyNamePlayers = formData.newPlayers.filter(p => p.name.trim() === '' && formData.newPlayers.length > 0)
+      if (emptyNamePlayers.length > 0 && formData.newPlayers.some(p => p.name.trim() !== '')) {
+        // Il y a des joueurs avec nom ET des joueurs sans nom = erreur
+        const emptyCount = formData.newPlayers.filter(p => p.name.trim() === '').length
+        if (emptyCount > 0 && formData.newPlayers.length > emptyCount) {
+          setValidationError(`${emptyCount} joueur(s) sans nom. Remplissez tous les noms ou supprimez les lignes vides.`)
+          return
+        }
+      }
+
+      // C6 FIX: Détection doublons joueurs (nouveaux joueurs entre eux)
+      const newPlayerNames = formData.newPlayers
+        .map(p => p.name.trim().toLowerCase())
+        .filter(name => name !== '')
+      const duplicateNewNames = newPlayerNames.filter((name, index) => newPlayerNames.indexOf(name) !== index)
+      if (duplicateNewNames.length > 0) {
+        setValidationError(`Joueur en double : "${duplicateNewNames[0]}". Chaque joueur doit avoir un nom unique.`)
+        return
+      }
+
       const totalPlayers = getTotalPlayers()
       const minPlayers = getMinPlayers()
 

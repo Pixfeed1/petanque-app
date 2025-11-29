@@ -53,6 +53,7 @@ export default function TournamentDetailPage() {
   const [activeTab, setActiveTab] = useState<'matchs' | 'classement' | 'equipes'>('matchs')
   const [currentPhase, setCurrentPhase] = useState<'poules' | 'elimination' | 'finale'>('poules')
   const [showStartModal, setShowStartModal] = useState(false)
+  const [generatingPhases, setGeneratingPhases] = useState(false)  // C5 FIX: Loader pour génération phases
 
   // Hook principal - données du tournoi
   const {
@@ -63,6 +64,7 @@ export default function TournamentDetailPage() {
     matches,
     setMatches,
     loading,
+    error,  // C4 FIX: Récupérer l'erreur du hook
     isOrganizer,
     userPlan,
     loadTournamentData
@@ -221,6 +223,26 @@ export default function TournamentDetailPage() {
     }
   }
 
+  // C5 FIX: Handler pour génération phases finales avec loader
+  const handleGenerateEliminationPhases = async () => {
+    setGeneratingPhases(true)
+    try {
+      await generateEliminationPhases()
+    } finally {
+      setGeneratingPhases(false)
+    }
+  }
+
+  // C5 FIX: Handler pour génération finale avec loader
+  const handleGenerateFinales = async () => {
+    setGeneratingPhases(true)
+    try {
+      await generateFinales()
+    } finally {
+      setGeneratingPhases(false)
+    }
+  }
+
   // Loading
   if (loading) {
     return (
@@ -238,11 +260,28 @@ export default function TournamentDetailPage() {
     )
   }
 
-  if (!tournament) {
+  // C4 FIX: Afficher l'erreur à l'utilisateur
+  if (error || !tournament) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-2xl font-bold text-gray-900">Tournoi introuvable</p>
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="bg-white rounded-3xl p-8 shadow-2xl">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <X className="w-8 h-8 text-red-600" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900 mb-2">
+              {error ? 'Erreur de chargement' : 'Tournoi introuvable'}
+            </p>
+            {error && (
+              <p className="text-gray-600 mb-4">{error}</p>
+            )}
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-medium hover:shadow-lg transition-all"
+            >
+              Retour au dashboard
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -321,28 +360,40 @@ export default function TournamentDetailPage() {
                 </button>
               )}
 
+              {/* C5 FIX: Bouton génération phases finales avec loader */}
               {tournament.status === 'en_cours' && isOrganizer &&
                tournament.mode !== 'melee_tournante' &&
                matches.some(m => m.type === 'poule' && m.status === 'termine') &&
                !matches.some(m => ['huitieme', 'quart', 'demi', 'finale'].includes(m.type || '')) && (
                 <button
-                  onClick={generateEliminationPhases}
-                  className="px-2 sm:px-4 py-2 bg-gradient-to-r from-yellow-600 to-orange-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base"
+                  onClick={handleGenerateEliminationPhases}
+                  disabled={generatingPhases}
+                  className="px-2 sm:px-4 py-2 bg-gradient-to-r from-yellow-600 to-orange-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base disabled:opacity-50"
                 >
-                  <Flag className="w-5 h-5" />
-                  <span className="hidden sm:inline">Générer phases finales</span>
+                  {generatingPhases ? (
+                    <Loader className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Flag className="w-5 h-5" />
+                  )}
+                  <span className="hidden sm:inline">{generatingPhases ? 'Génération...' : 'Générer phases finales'}</span>
                 </button>
               )}
 
+              {/* C5 FIX: Bouton génération finale avec loader */}
               {tournament.status === 'en_cours' && isOrganizer &&
                matches.filter(m => m.type === 'demi' && m.status === 'termine').length === 2 &&
                !matches.some(m => m.type === 'finale') && (
                 <button
-                  onClick={generateFinales}
-                  className="px-2 sm:px-4 py-2 bg-gradient-to-r from-amber-600 to-yellow-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base"
+                  onClick={handleGenerateFinales}
+                  disabled={generatingPhases}
+                  className="px-2 sm:px-4 py-2 bg-gradient-to-r from-amber-600 to-yellow-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base disabled:opacity-50"
                 >
-                  <Trophy className="w-5 h-5" />
-                  <span className="hidden sm:inline">Générer finale</span>
+                  {generatingPhases ? (
+                    <Loader className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Trophy className="w-5 h-5" />
+                  )}
+                  <span className="hidden sm:inline">{generatingPhases ? 'Génération...' : 'Générer finale'}</span>
                 </button>
               )}
             </div>

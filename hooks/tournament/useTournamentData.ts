@@ -100,6 +100,7 @@ interface UseTournamentDataReturn {
   matches: Match[]
   setMatches: React.Dispatch<React.SetStateAction<Match[]>>
   loading: boolean
+  error: string | null  // C4 FIX: Exposer les erreurs à l'utilisateur
   isOrganizer: boolean
   userPlan: string
 
@@ -116,6 +117,7 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
   const [teams, setTeams] = useState<Team[]>([])
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)  // C4 FIX: État erreur
   const [isOrganizer, setIsOrganizer] = useState(false)
   const [userPlan, setUserPlan] = useState('free')
 
@@ -272,9 +274,11 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
           setIsOrganizer(false)
         }
       }
-    } catch (error) {
-      console.error('Erreur chargement tournoi:', error)
-      // Erreur silencieuse côté hook - le composant affichera un état d'erreur via loading/tournament null
+    } catch (err) {
+      console.error('Erreur chargement tournoi:', err)
+      // C4 FIX: Exposer l'erreur à l'utilisateur au lieu d'être silencieux
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors du chargement du tournoi'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -296,6 +300,7 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
     matches,
     setMatches,
     loading,
+    error,  // C4 FIX: Exposer l'erreur
     isOrganizer,
     userPlan,
 

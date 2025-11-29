@@ -57,6 +57,38 @@ export default function MatchScorePage() {
     setMounted(true)
   }, [])
 
+  // C1 FIX: Avertissement avant de quitter si match en cours avec données non sauvegardées
+  useEffect(() => {
+    const hasUnsavedData = manches.length > 0 && !winner
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedData) {
+        e.preventDefault()
+        e.returnValue = 'Vous avez un match en cours. Êtes-vous sûr de vouloir quitter ?'
+        return e.returnValue
+      }
+    }
+
+    if (hasUnsavedData) {
+      window.addEventListener('beforeunload', handleBeforeUnload)
+    }
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [manches.length, winner])
+
+  // C1 FIX: Auto-sauvegarde toutes les 30 secondes si match en cours
+  useEffect(() => {
+    if (!winner && manches.length > 0 && !saving) {
+      const autoSaveInterval = setInterval(() => {
+        saveProgress(scoreA, scoreB, manches, false)
+      }, 30000) // 30 secondes
+
+      return () => clearInterval(autoSaveInterval)
+    }
+  }, [winner, manches, scoreA, scoreB, saving, saveProgress])
+
   // Loading state
   if (loading) {
     return (
