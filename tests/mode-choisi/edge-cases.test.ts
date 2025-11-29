@@ -115,13 +115,10 @@ describe('Edge Cases - Mode Choisi', () => {
 
       expect(nbPoules).toBe(3)
 
-      // Distribution des équipes
-      const distribution: number[] = []
-      let remaining = nbTeams
-      for (let i = 0; i < nbPoules; i++) {
-        const teamsInPoule = Math.min(pouleSize, remaining)
-        distribution.push(teamsInPoule)
-        remaining -= teamsInPoule
+      // Distribution round-robin des équipes (comme dans l'app)
+      const distribution: number[] = Array(nbPoules).fill(0)
+      for (let i = 0; i < nbTeams; i++) {
+        distribution[i % nbPoules]++
       }
 
       // Vérifier que la différence max est de 1
@@ -166,8 +163,9 @@ describe('Edge Cases - Mode Choisi', () => {
       const scoreB = 10
       const timeLimit = false
 
-      const isValid = scoreA === scoreB && !timeLimit
-      expect(isValid).toBe(false)
+      // Une égalité sans timeLimit est INVALIDE
+      const isInvalid = scoreA === scoreB && !timeLimit
+      expect(isInvalid).toBe(true) // C'est bien invalide, donc rejeté
     })
   })
 
