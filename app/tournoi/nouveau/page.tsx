@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { useToast } from '@/components/ui/Toast'
+import { useConfirm } from '@/components/ui/ConfirmModal'
 
 // Hooks
 import {
@@ -29,7 +30,8 @@ import {
 export default function CreateTournamentPage() {
   const router = useRouter()
   const { user, organization, loading: authLoading } = useAuth()
-  const { showError, showWarning } = useToast()
+  const { showError, showWarning, showInfo } = useToast()
+  const { confirm, ConfirmModal } = useConfirm()  // DEST3 FIX
   const [mounted, setMounted] = useState(false)
 
   // Hook formulaire
@@ -38,6 +40,7 @@ export default function CreateTournamentPage() {
     currentStep,
     validationError,
     hasDraft,  // A8 FIX
+    draftRestored,  // I9 FIX
     setFormData,
     setCurrentStep,
     setValidationError,
@@ -51,6 +54,7 @@ export default function CreateTournamentPage() {
     getEstimatedPools,
     getPlayersPerTeam,
     clearDraft,  // A8 FIX
+    clearDraftRestoredFlag,  // I9 FIX
     steps
   } = useCreateTournament()
 
@@ -108,6 +112,29 @@ export default function CreateTournamentPage() {
     }
   }, [user, organization, authLoading, loadPlayers, router])
 
+  // I9 FIX: Afficher toast quand brouillon est restauré
+  useEffect(() => {
+    if (draftRestored && mounted) {
+      showInfo('Brouillon restauré - Continuez où vous en étiez')
+      clearDraftRestoredFlag()
+    }
+  }, [draftRestored, mounted, showInfo, clearDraftRestoredFlag])
+
+  // DEST3 FIX: Confirmation avant effacement du brouillon
+  const handleClearDraft = async () => {
+    const confirmed = await confirm({
+      title: 'Effacer le brouillon ?',
+      message: 'Toutes les informations saisies seront perdues. Cette action est irréversible.',
+      confirmText: 'Effacer',
+      cancelText: 'Annuler',
+      variant: 'danger'
+    })
+    if (confirmed) {
+      clearDraft()
+      showInfo('Brouillon effacé')
+    }
+  }
+
   // Configs modes et formats
   const modes = [
     { value: 'choisi', title: 'Mode Choisi', description: 'Équipes choisies par les joueurs', icon: <Users className="w-6 h-6" />, gradient: 'from-blue-400 to-blue-600' },
@@ -158,9 +185,10 @@ export default function CreateTournamentPage() {
             </div>
             <div className="flex items-center space-x-2">
               {/* A8 FIX: Bouton pour effacer le brouillon */}
+              {/* DEST3 FIX: Utiliser handleClearDraft avec confirmation */}
               {hasDraft && (
                 <button
-                  onClick={clearDraft}
+                  onClick={handleClearDraft}
                   className="hidden sm:flex items-center space-x-1 px-3 py-2 text-xs text-amber-600 hover:bg-amber-50 rounded-xl"
                   title="Recommencer de zéro"
                 >
@@ -616,6 +644,9 @@ export default function CreateTournamentPage() {
         }
         .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
       `}</style>
+
+      {/* DEST3 FIX: Modal de confirmation */}
+      {ConfirmModal}
     </div>
   )
 }

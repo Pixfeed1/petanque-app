@@ -29,6 +29,8 @@ export default function MatchScorePage() {
     match,
     loading,
     saving,
+    saveStatus,     // C1+I6 FIX
+    lastSavedAt,    // I6 FIX
     scoreA,
     scoreB,
     manches,
@@ -135,11 +137,14 @@ export default function MatchScorePage() {
         formatTime={formatTime}
         currentManche={currentManche}
         winner={winner}
+        saveStatus={saveStatus}
+        lastSavedAt={lastSavedAt}
         onBack={() => match?.tournoi?.id && router.push(`/tournoi/${match.tournoi.id}`)}
         onForfeit={declareForfeit}
       />
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      {/* R4 FIX: Ajouter padding bottom pour safe-area et bouton flottant */}
+      <div className="max-w-6xl mx-auto px-4 py-8 pb-24" style={{ paddingBottom: 'max(6rem, calc(env(safe-area-inset-bottom, 0px) + 6rem))' }}>
         {/* Carte principale du match */}
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden mb-8">
           {/* Barre de score en haut */}
@@ -239,11 +244,19 @@ interface MatchHeaderProps {
   formatTime: (s: number) => string
   currentManche: number
   winner: 'A' | 'B' | 'draw' | null
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error' | 'retrying'  // C1+I6 FIX
+  lastSavedAt: Date | null  // I6 FIX
   onBack: () => void
   onForfeit?: (team: 'A' | 'B') => Promise<void>
 }
 
-function MatchHeader({ match, elapsedTime, formatTime, currentManche, winner, onBack, onForfeit }: MatchHeaderProps) {
+function MatchHeader({ match, elapsedTime, formatTime, currentManche, winner, saveStatus, lastSavedAt, onBack, onForfeit }: MatchHeaderProps) {
+  // I6 FIX: Formater l'heure de dernière sauvegarde
+  const formatLastSaved = (date: Date | null) => {
+    if (!date) return ''
+    return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  }
+
   return (
     <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-gray-200/50 shadow-sm">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
@@ -291,6 +304,21 @@ function MatchHeader({ match, elapsedTime, formatTime, currentManche, winner, on
                 </>
               )}
             </div>
+
+            {/* C1+I6 FIX: Indicateur de sauvegarde */}
+            {!winner && saveStatus !== 'idle' && (
+              <div className={`hidden sm:flex items-center space-x-1 px-2 py-1 rounded-lg text-xs ${
+                saveStatus === 'saving' ? 'bg-blue-100 text-blue-700' :
+                saveStatus === 'saved' ? 'bg-green-100 text-green-700' :
+                saveStatus === 'retrying' ? 'bg-amber-100 text-amber-700' :
+                'bg-red-100 text-red-700'
+              }`}>
+                {saveStatus === 'saving' && <><Loader className="w-3 h-3 animate-spin" /> <span>Sauvegarde...</span></>}
+                {saveStatus === 'saved' && <><Check className="w-3 h-3" /> <span>{formatLastSaved(lastSavedAt)}</span></>}
+                {saveStatus === 'retrying' && <><Loader className="w-3 h-3 animate-spin" /> <span>Reconnexion...</span></>}
+                {saveStatus === 'error' && <><span className="text-red-600">Hors ligne</span></>}
+              </div>
+            )}
 
             {/* Mène actuelle */}
             {!winner && (
@@ -527,21 +555,23 @@ function ScoreControls({ score, maxScore, colorScheme, onUpdate }: ScoreControls
           style={{ width: `${(score / maxScore) * 100}%` }}
         />
       </div>
-      {/* I5 FIX: Boutons +/- plus grands et plus espacés sur mobile */}
-      <div className="flex justify-center space-x-4 sm:space-x-6">
+      {/* I5 FIX: Boutons +/- plus grands et plus espacés sur mobile (min 48px touch target) */}
+      <div className="flex justify-center space-x-6 sm:space-x-8">
         <button
           onClick={() => onUpdate(-1)}
-          className="p-4 sm:p-5 bg-red-50 hover:bg-red-100 rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed border-2 border-red-200"
+          className="p-5 sm:p-6 bg-red-50 hover:bg-red-100 rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed border-2 border-red-200 min-w-[64px] min-h-[64px] sm:min-w-[72px] sm:min-h-[72px] flex items-center justify-center"
           disabled={score === 0}
+          aria-label="Retirer un point"
         >
-          <Minus className="w-8 h-8 sm:w-10 sm:h-10 text-red-600" />
+          <Minus className="w-10 h-10 sm:w-12 sm:h-12 text-red-600" />
         </button>
         <button
           onClick={() => onUpdate(1)}
-          className="p-4 sm:p-5 bg-green-50 hover:bg-green-100 rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed border-2 border-green-200"
+          className="p-5 sm:p-6 bg-green-50 hover:bg-green-100 rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed border-2 border-green-200 min-w-[64px] min-h-[64px] sm:min-w-[72px] sm:min-h-[72px] flex items-center justify-center"
           disabled={score === maxScore}
+          aria-label="Ajouter un point"
         >
-          <Plus className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
+          <Plus className="w-10 h-10 sm:w-12 sm:h-12 text-green-600" />
         </button>
       </div>
     </div>
@@ -638,7 +668,8 @@ interface FloatingSaveButtonProps {
 
 function FloatingSaveButton({ saving, onSave }: FloatingSaveButtonProps) {
   return (
-    <div className="fixed bottom-8 right-8">
+    // R4 FIX: Utiliser safe-area-inset pour éviter d'être masqué par l'UI mobile
+    <div className="fixed right-4 sm:right-8 z-40" style={{ bottom: 'max(2rem, env(safe-area-inset-bottom, 2rem))' }}>
       <button
         onClick={onSave}
         disabled={saving}

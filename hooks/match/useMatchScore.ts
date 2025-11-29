@@ -48,6 +48,8 @@ interface UseMatchScoreReturn {
   match: Match | null
   loading: boolean
   saving: boolean
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error' | 'retrying'  // C1+I6 FIX
+  lastSavedAt: Date | null  // I6 FIX
   scoreA: number
   scoreB: number
   manches: Manche[]
@@ -96,6 +98,9 @@ export function useMatchScore({
   const [match, setMatch] = useState<Match | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error' | 'retrying'>('idle')  // C1+I6 FIX
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)  // I6 FIX
+  const [pendingSave, setPendingSave] = useState<{scoreA: number, scoreB: number, manches: Manche[], isFinished: boolean} | null>(null)  // C1 FIX: Queue de retry
   const [scoreA, setScoreA] = useState(0)
   const [scoreB, setScoreB] = useState(0)
   const [manches, setManches] = useState<Manche[]>([])
@@ -192,14 +197,20 @@ export function useMatchScore({
     }
   }, [maxPointsPerManche])
 
-  // Save progress
+  // C1 FIX: Save progress avec retry logic
   const saveProgress = useCallback(async (
     finalScoreA: number,
     finalScoreB: number,
     allManches: Manche[],
-    isFinished: boolean
+    isFinished: boolean,
+    retryCount: number = 0
   ) => {
+    const MAX_RETRIES = 3
+    const RETRY_DELAYS = [2000, 4000, 8000] // Exponential backoff
+
     setSaving(true)
+    setSaveStatus(retryCount > 0 ? 'retrying' : 'saving')
+
     try {
       const updateData: Record<string, unknown> = {
         score_a: finalScoreA,
@@ -218,18 +229,59 @@ export function useMatchScore({
         updateData.validated_at = new Date().toISOString()
       }
 
-      await fetch(`/api/matches/${matchId}`, {
+      const response = await fetch(`/api/matches/${matchId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(updateData)
       })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      // C1+I6 FIX: Succès - mettre à jour le statut
+      setSaveStatus('saved')
+      setLastSavedAt(new Date())
+      setPendingSave(null)
+
+      // Réinitialiser le statut après 3 secondes
+      setTimeout(() => setSaveStatus('idle'), 3000)
+
     } catch (error) {
       console.error('Erreur sauvegarde:', error)
+
+      // C1 FIX: Retry logic avec exponential backoff
+      if (retryCount < MAX_RETRIES) {
+        setSaveStatus('retrying')
+        setPendingSave({ scoreA: finalScoreA, scoreB: finalScoreB, manches: allManches, isFinished })
+
+        setTimeout(() => {
+          saveProgress(finalScoreA, finalScoreB, allManches, isFinished, retryCount + 1)
+        }, RETRY_DELAYS[retryCount])
+      } else {
+        // Échec après tous les retries
+        setSaveStatus('error')
+        setPendingSave({ scoreA: finalScoreA, scoreB: finalScoreB, manches: allManches, isFinished })
+        notify.error('Erreur de connexion. Les données seront sauvegardées dès que possible.')
+      }
     } finally {
       setSaving(false)
     }
   }, [matchId, match?.started_at, startTime])
+
+  // C1 FIX: Retry pending save quand connexion revient
+  useEffect(() => {
+    const handleOnline = () => {
+      if (pendingSave && saveStatus === 'error') {
+        notify.warning('Connexion rétablie, sauvegarde en cours...')
+        saveProgress(pendingSave.scoreA, pendingSave.scoreB, pendingSave.manches, pendingSave.isFinished)
+      }
+    }
+
+    window.addEventListener('online', handleOnline)
+    return () => window.removeEventListener('online', handleOnline)
+  }, [pendingSave, saveStatus, saveProgress])
 
   // Finish match (avec ou sans égalité selon timeLimit)
   const finishMatch = useCallback(async (
@@ -450,6 +502,8 @@ export function useMatchScore({
     match,
     loading,
     saving,
+    saveStatus,      // C1+I6 FIX
+    lastSavedAt,     // I6 FIX
     scoreA,
     scoreB,
     manches,

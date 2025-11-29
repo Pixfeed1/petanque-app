@@ -15,6 +15,7 @@ interface ToastContextType {
   showSuccess: (message: string) => void
   showError: (message: string) => void
   showWarning: (message: string) => void
+  showInfo: (message: string) => void
 }
 
 const ToastContext = createContext<ToastContextType | null>(null)
@@ -59,9 +60,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const showSuccess = useCallback((message: string) => showToast(message, 'success'), [showToast])
   const showError = useCallback((message: string) => showToast(message, 'error'), [showToast])
   const showWarning = useCallback((message: string) => showToast(message, 'warning'), [showToast])
+  const showInfo = useCallback((message: string) => showToast(message, 'info'), [showToast])
 
   return (
-    <ToastContext.Provider value={{ showToast, showSuccess, showError, showWarning }}>
+    <ToastContext.Provider value={{ showToast, showSuccess, showError, showWarning, showInfo }}>
       {children}
 
       {/* Toast Container */}

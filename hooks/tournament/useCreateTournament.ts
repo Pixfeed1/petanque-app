@@ -123,6 +123,7 @@ interface UseCreateTournamentReturn {
   currentStep: number
   validationError: string
   hasDraft: boolean  // A8 FIX: Indique si un brouillon existe
+  draftRestored: boolean  // I9 FIX: Indique si un brouillon vient d'être restauré
 
   // Setters
   setFormData: React.Dispatch<React.SetStateAction<TournamentFormData>>
@@ -144,6 +145,7 @@ interface UseCreateTournamentReturn {
 
   // A8 FIX: Gestion brouillon
   clearDraft: () => void
+  clearDraftRestoredFlag: () => void  // I9 FIX
 
   // Steps config
   steps: StepConfig[]
@@ -160,6 +162,7 @@ export function useCreateTournament(): UseCreateTournamentReturn {
   const [currentStep, setCurrentStep] = useState(1)
   const [validationError, setValidationError] = useState('')
   const [hasDraft, setHasDraft] = useState(false)  // A8 FIX
+  const [draftRestored, setDraftRestored] = useState(false)  // I9 FIX
 
   // A8 FIX: Charger le brouillon au montage
   useEffect(() => {
@@ -167,6 +170,7 @@ export function useCreateTournament(): UseCreateTournamentReturn {
     if (draft) {
       setFormData(draft)
       setHasDraft(true)
+      setDraftRestored(true)  // I9 FIX: Signaler que le brouillon a été restauré
     }
   }, [])
 
@@ -185,8 +189,14 @@ export function useCreateTournament(): UseCreateTournamentReturn {
       localStorage.removeItem(DRAFT_STORAGE_KEY)
     }
     setHasDraft(false)
+    setDraftRestored(false)
     setFormData(initialFormData)
     setCurrentStep(1)
+  }, [])
+
+  // I9 FIX: Fonction pour effacer le flag de restauration (après affichage du toast)
+  const clearDraftRestoredFlag = useCallback(() => {
+    setDraftRestored(false)
   }, [])
 
   const steps: StepConfig[] = [
@@ -349,6 +359,7 @@ export function useCreateTournament(): UseCreateTournamentReturn {
     currentStep,
     validationError,
     hasDraft,  // A8 FIX
+    draftRestored,  // I9 FIX
     setFormData,
     setCurrentStep,
     setValidationError,
@@ -362,6 +373,7 @@ export function useCreateTournament(): UseCreateTournamentReturn {
     getEstimatedPools,
     getPlayersPerTeam,
     clearDraft,  // A8 FIX
+    clearDraftRestoredFlag,  // I9 FIX
     steps
   }
 }

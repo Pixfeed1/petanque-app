@@ -26,10 +26,12 @@ export const metadata: Metadata = {
 }
 
 // Export séparé pour viewport
+// R4 FIX: Ajouter viewportFit pour activer safe-area-inset sur iOS
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  viewportFit: "cover",
 }
 
 export default function RootLayout({

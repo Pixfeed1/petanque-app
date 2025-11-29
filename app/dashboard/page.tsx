@@ -311,48 +311,64 @@ export default function Dashboard() {
           <div className="mb-16">
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">Vue d'ensemble</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <button
-                onClick={() => {
-                  document.getElementById('tournois-section')?.scrollIntoView({ behavior: 'smooth' })
-                }}
-                className="text-left hover:bg-gray-50 p-4 rounded-xl transition-all cursor-pointer"
-              >
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-4xl font-semibold text-gray-900">{stats.totalTournois}</span>
-                  {stats.nouveauxTournois > 0 && (
-                    <span className="text-sm font-medium text-green-600">+{stats.nouveauxTournois}</span>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600">Tournois créés</p>
-              </button>
+              {/* I3 FIX: Skeleton loaders pendant le chargement */}
+              {loading ? (
+                <>
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-4 rounded-xl animate-pulse">
+                      <div className="flex items-baseline gap-2 mb-2">
+                        <div className="h-10 w-16 bg-gray-200 rounded" />
+                      </div>
+                      <div className="h-4 w-24 bg-gray-200 rounded" />
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      document.getElementById('tournois-section')?.scrollIntoView({ behavior: 'smooth' })
+                    }}
+                    className="text-left hover:bg-gray-50 p-4 rounded-xl transition-all cursor-pointer"
+                  >
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <span className="text-4xl font-semibold text-gray-900">{stats.totalTournois}</span>
+                      {stats.nouveauxTournois > 0 && (
+                        <span className="text-sm font-medium text-green-600">+{stats.nouveauxTournois}</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600">Tournois créés</p>
+                  </button>
 
-              <button
-                onClick={() => router.push('/joueurs')}
-                className="text-left hover:bg-gray-50 p-4 rounded-xl transition-all cursor-pointer"
-              >
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-4xl font-semibold text-gray-900">{stats.totalJoueurs}</span>
-                  {stats.nouveauxJoueurs > 0 && (
-                    <span className="text-sm font-medium text-green-600">+{stats.nouveauxJoueurs}</span>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600">Joueurs actifs</p>
-              </button>
+                  <button
+                    onClick={() => router.push('/joueurs')}
+                    className="text-left hover:bg-gray-50 p-4 rounded-xl transition-all cursor-pointer"
+                  >
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <span className="text-4xl font-semibold text-gray-900">{stats.totalJoueurs}</span>
+                      {stats.nouveauxJoueurs > 0 && (
+                        <span className="text-sm font-medium text-green-600">+{stats.nouveauxJoueurs}</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600">Joueurs actifs</p>
+                  </button>
 
-              <button
-                onClick={() => {
-                  document.getElementById('recent-matches')?.scrollIntoView({ behavior: 'smooth' })
-                }}
-                className="text-left hover:bg-gray-50 p-4 rounded-xl transition-all cursor-pointer"
-              >
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-4xl font-semibold text-gray-900">{stats.totalMatchs}</span>
-                  {stats.nouveauxMatchs > 0 && (
-                    <span className="text-sm font-medium text-green-600">+{stats.nouveauxMatchs}</span>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600">Matchs joués</p>
-              </button>
+                  <button
+                    onClick={() => {
+                      document.getElementById('recent-matches')?.scrollIntoView({ behavior: 'smooth' })
+                    }}
+                    className="text-left hover:bg-gray-50 p-4 rounded-xl transition-all cursor-pointer"
+                  >
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <span className="text-4xl font-semibold text-gray-900">{stats.totalMatchs}</span>
+                      {stats.nouveauxMatchs > 0 && (
+                        <span className="text-sm font-medium text-green-600">+{stats.nouveauxMatchs}</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600">Matchs joués</p>
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
