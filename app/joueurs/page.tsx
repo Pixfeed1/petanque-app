@@ -130,8 +130,8 @@ export default function JoueursPage() {
         <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
           {[
             { label: 'Total joueurs', value: stats.total, icon: <Users className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" /> },
-            { label: 'Hommes', value: stats.hommes, icon: <span className="text-4xl sm:text-5xl text-blue-400">♂</span> },
-            { label: 'Femmes', value: stats.femmes, icon: <span className="text-4xl sm:text-5xl text-pink-400">♀</span> }
+            { label: 'Hommes', value: stats.hommes, icon: <span className="text-4xl sm:text-5xl font-black text-blue-500" style={{ WebkitTextStroke: '2px currentColor' }}>♂</span> },
+            { label: 'Femmes', value: stats.femmes, icon: <span className="text-4xl sm:text-5xl font-black text-pink-500" style={{ WebkitTextStroke: '2px currentColor' }}>♀</span> }
           ].map((stat, index) => (
             <div
               key={index}
@@ -237,12 +237,12 @@ export default function JoueursPage() {
                 <div className="relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all group-hover:-translate-y-1">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
-                      {/* Avatar avec symbole de genre */}
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl ${
+                      {/* Avatar avec symbole de genre épais */}
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
                         joueur.gender === 'F'
                           ? 'bg-pink-100 text-pink-600'
                           : 'bg-blue-100 text-blue-600'
-                      }`}>
+                      }`} style={{ WebkitTextStroke: '1px currentColor', fontWeight: 900 }}>
                         {joueur.gender === 'F' ? '♀' : '♂'}
                       </div>
 
