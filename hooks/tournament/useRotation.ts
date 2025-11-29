@@ -3,6 +3,7 @@
  * - Création de nouvelles équipes avec mélange
  * - Génération des matchs de rotation
  * - Gestion des tours
+ * - Validation des partenaires (évite les répétitions)
  */
 
 import { useState, useMemo, useCallback } from 'react'
@@ -10,6 +11,58 @@ import { useAuth } from '@/app/providers/AuthProvider'
 import { MixiteService } from '@/lib/services/mixite.service'
 import type { Joueur } from '@/lib/types'
 import type { Tournament, Team, Match } from './useTournamentData'
+
+/**
+ * 🔧 FIX Bug #2: Validation des rotations pour éviter les partenaires répétés
+ * Construit un index des partenaires précédents pour chaque joueur
+ */
+function buildPreviousPartnersIndex(teams: Team[]): Map<string, Set<string>> {
+  const partnersIndex = new Map<string, Set<string>>()
+
+  teams.forEach(team => {
+    const playerIds = team.joueur_ids || []
+    playerIds.forEach(playerId => {
+      if (!partnersIndex.has(playerId)) {
+        partnersIndex.set(playerId, new Set())
+      }
+      // Ajouter tous les autres joueurs de l'équipe comme partenaires
+      playerIds.forEach(partnerId => {
+        if (partnerId !== playerId) {
+          partnersIndex.get(playerId)!.add(partnerId)
+        }
+      })
+    })
+  })
+
+  return partnersIndex
+}
+
+/**
+ * Vérifie si une formation d'équipe contient des partenaires répétés
+ * @returns Le nombre de paires répétées trouvées
+ */
+function countRepeatedPartners(
+  newTeams: Array<{ joueur_ids: string[] }>,
+  previousPartners: Map<string, Set<string>>
+): number {
+  let repeatedCount = 0
+
+  newTeams.forEach(team => {
+    const playerIds = team.joueur_ids
+    for (let i = 0; i < playerIds.length; i++) {
+      const playerPartners = previousPartners.get(playerIds[i])
+      if (playerPartners) {
+        for (let j = i + 1; j < playerIds.length; j++) {
+          if (playerPartners.has(playerIds[j])) {
+            repeatedCount++
+          }
+        }
+      }
+    }
+  })
+
+  return repeatedCount
+}
 
 interface UseRotationProps {
   tournament: Tournament | null
@@ -75,6 +128,7 @@ export function useRotation({
 
   /**
    * Crée de nouvelles équipes avec l'algorithme de mixité
+   * 🔧 FIX Bug #2: Évite les partenaires répétés des rotations précédentes
    */
   const createNewTeamsWithAlgorithm = useCallback(async () => {
     if (!organization || !tournament?.settings.players) return
@@ -98,24 +152,55 @@ export function useRotation({
 
       // Créer les nouvelles équipes
       const teamSize = tournament.format === 'doublette' ? 2 : 3
-      const rotationNumber = currentRotation
+      const rotationNumber = currentRotation + 1 // On crée pour la prochaine rotation
       let teamNumber = 1
 
-      // Utiliser MixiteService pour formation des équipes
-      const mixiteResult = MixiteService.createTeamsWithMixite(
+      // 🔧 FIX Bug #2: Construire l'index des partenaires précédents
+      const previousPartners = buildPreviousPartnersIndex(teams)
+
+      // Essayer plusieurs fois pour minimiser les partenaires répétés
+      const MAX_RETRIES = 10
+      let bestResult = MixiteService.createTeamsWithMixite(
         players,
         teamSize as 2 | 3,
         tournament.settings.mixiteObligatoire || false
       )
+      let bestRepeatedCount = countRepeatedPartners(bestResult.teams, previousPartners)
 
-      const newTeams = mixiteResult.teams.map(team => ({
+      // Si on a des partenaires répétés, essayer de trouver une meilleure formation
+      if (bestRepeatedCount > 0) {
+        for (let i = 0; i < MAX_RETRIES && bestRepeatedCount > 0; i++) {
+          const candidate = MixiteService.createTeamsWithMixite(
+            players,
+            teamSize as 2 | 3,
+            tournament.settings.mixiteObligatoire || false
+          )
+          const candidateRepeatedCount = countRepeatedPartners(candidate.teams, previousPartners)
+
+          if (candidateRepeatedCount < bestRepeatedCount) {
+            bestResult = candidate
+            bestRepeatedCount = candidateRepeatedCount
+          }
+        }
+
+        // Avertir si on n'a pas pu éviter tous les partenaires répétés
+        if (bestRepeatedCount > 0) {
+          notify.warning(
+            `⚠️ ${bestRepeatedCount} paire(s) de partenaires répétée(s) dans cette rotation. ` +
+            `Avec ${players.length} joueurs après ${currentRotation} rotation(s), ` +
+            `il devient difficile d'éviter les répétitions.`
+          )
+        }
+      }
+
+      const newTeams = bestResult.teams.map(team => ({
         name: `R${rotationNumber}-Équipe ${teamNumber++}`,
         joueur_ids: team.joueur_ids
       }))
 
       // Alerter si des joueurs ne peuvent pas être assignés
-      if (mixiteResult.unassignedPlayerIds.length > 0) {
-        console.warn(`${mixiteResult.unassignedPlayerIds.length} joueur(s) non assigné(s) pour la rotation ${rotationNumber}:`, mixiteResult.warnings)
+      if (bestResult.unassignedPlayerIds.length > 0) {
+        console.warn(`${bestResult.unassignedPlayerIds.length} joueur(s) non assigné(s) pour la rotation ${rotationNumber}:`, bestResult.warnings)
       }
 
       // Créer les équipes en batch (1 seule requête au lieu de N)
@@ -148,7 +233,7 @@ export function useRotation({
     } catch (error) {
       console.error('Erreur création équipes:', error)
     }
-  }, [organization, tournament, currentRotation, loadTournamentData])
+  }, [organization, tournament, currentRotation, teams, loadTournamentData, notify])
 
   /**
    * Crée les matchs round-robin pour les équipes du tour de rotation

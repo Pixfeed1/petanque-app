@@ -3,6 +3,19 @@
  * Conforme aux règles FIPJP pour les tournois de pétanque
  */
 
+/**
+ * Fisher-Yates shuffle - Algorithme de mélange uniforme non biaisé
+ * Chaque permutation a exactement la même probabilité (1/n!)
+ */
+function fisherYatesShuffle<T>(array: T[]): T[] {
+  const result = [...array]
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[result[i], result[j]] = [result[j], result[i]]
+  }
+  return result
+}
+
 export interface Joueur {
   id: string
   gender?: 'H' | 'F'
@@ -101,7 +114,8 @@ export class MixiteService {
 
     // Si mixité NON obligatoire : formation libre sans contrainte de genre
     if (!mixiteObligatoire) {
-      const shuffled = [...players].sort(() => Math.random() - 0.5)
+      // 🔧 FIX: Utiliser Fisher-Yates shuffle (uniforme) au lieu de sort() biaisé
+      const shuffled = fisherYatesShuffle(players)
       const nbEquipes = Math.floor(shuffled.length / playersPerTeam)
 
       for (let i = 0; i < nbEquipes; i++) {
@@ -141,9 +155,9 @@ export class MixiteService {
       playersByGender[gender].push(player)
     }
 
-    // Mélanger chaque genre pour randomiser
-    playersByGender.H.sort(() => Math.random() - 0.5)
-    playersByGender.F.sort(() => Math.random() - 0.5)
+    // Mélanger chaque genre pour randomiser (Fisher-Yates)
+    playersByGender.H = fisherYatesShuffle(playersByGender.H)
+    playersByGender.F = fisherYatesShuffle(playersByGender.F)
 
     if (playersPerTeam === 2) {
       // DOUBLETTE : 1H + 1F autant que possible
@@ -156,8 +170,7 @@ export class MixiteService {
       }
 
       // Équipes restantes (non-mixtes si nécessaire pour inclure tous)
-      const remaining = [...playersByGender.H, ...playersByGender.F]
-      remaining.sort(() => Math.random() - 0.5) // Mélanger
+      let remaining = fisherYatesShuffle([...playersByGender.H, ...playersByGender.F])
 
       while (remaining.length >= playersPerTeam) {
         const teamPlayerIds = remaining.splice(0, playersPerTeam).map(p => p.id)
@@ -199,8 +212,7 @@ export class MixiteService {
       }
 
       // Équipes restantes (non-mixtes si nécessaire pour inclure tous)
-      const remaining = [...playersByGender.H, ...playersByGender.F]
-      remaining.sort(() => Math.random() - 0.5) // Mélanger pour alterner H/F
+      let remaining = fisherYatesShuffle([...playersByGender.H, ...playersByGender.F])
 
       while (remaining.length >= playersPerTeam) {
         const teamPlayerIds = remaining.splice(0, playersPerTeam).map(p => p.id)
