@@ -261,7 +261,9 @@ export function useMatchActions({
       notify.success(`${Object.keys(poules).length} poule(s) générée(s) avec succès !`)
     } catch (error) {
       console.error('Erreur génération poules:', error)
-      notify.error('Erreur lors de la génération des poules')
+      // I12 FIX: Message d'erreur plus informatif
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
+      notify.error(`Erreur lors de la génération des poules : ${errorMessage}`)
     }
   }, [tournament, teams, matches, isValidPoolConfiguration, createRoundRobinMatches, loadTournamentData])
 
@@ -537,7 +539,9 @@ export function useMatchActions({
       await loadTournamentData()
     } catch (error) {
       console.error('Erreur génération phases finales:', error)
-      notify.error('Erreur lors de la génération des phases finales')
+      // I12 FIX: Message d'erreur plus informatif
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
+      notify.error(`Erreur lors de la génération des phases finales : ${errorMessage}`)
     }
   }, [tournament, teams, matches, loadTournamentData, notify])
 
@@ -792,7 +796,9 @@ export function useMatchActions({
       await loadTournamentData()
     } catch (error) {
       console.error('Erreur génération tour suivant:', error)
-      notify.error('Erreur lors de la génération du tour suivant')
+      // I12 FIX: Message d'erreur plus informatif
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
+      notify.error(`Erreur lors de la génération du tour suivant : ${errorMessage}`)
     }
   }, [tournament, matches, loadTournamentData, notify])
 
@@ -891,7 +897,9 @@ export function useMatchActions({
       await loadTournamentData()
     } catch (error) {
       console.error('Erreur génération finales:', error)
-      notify.error('Erreur lors de la génération des finales')
+      // I12 FIX: Message d'erreur plus informatif
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
+      notify.error(`Erreur lors de la génération des finales : ${errorMessage}`)
     }
   }, [tournament, matches, loadTournamentData, notify])
 

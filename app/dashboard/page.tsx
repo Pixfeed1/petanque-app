@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
 import { loadStripe } from '@stripe/stripe-js'
@@ -44,6 +44,22 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'preparation' | 'termine'>('all')
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const profileMenuRef = useRef<HTMLDivElement>(null)  // I7 FIX: Ref pour click-outside
+
+  // I7 FIX: Fermer le menu profile au clic en dehors
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false)
+      }
+    }
+    if (showProfileMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showProfileMenu])
 
   useEffect(() => {
     if (organization?.settings?.plan && typeof organization.settings.plan === 'string') {
@@ -218,7 +234,8 @@ export default function Dashboard() {
                 {Icons.settings}
                 <span className="text-sm">Paramètres</span>
               </button>
-              <div className="relative">
+              {/* I7 FIX: Ajout ref pour click-outside */}
+              <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                   className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-xl transition"
