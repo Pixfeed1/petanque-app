@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useTournamentExport, ExportOptions } from '@/hooks/export'
 import {
   Download, Trophy, Users, Calendar, Loader, Flag,
-  Chart, Petanque, Settings
+  Chart, Petanque, Settings, Clock
 } from '@/components/Icons'
 
 /**
@@ -70,6 +70,34 @@ export default function ExportTournamentPage() {
 
           {/* Aperçu et actions */}
           <div className="lg:col-span-2 space-y-6">
+            {/* I8 FIX: Avertissement si matchs non terminés */}
+            {(() => {
+              const pendingMatches = matches.filter(m => m.status !== 'termine' && m.equipe_b)
+              const inProgressMatches = matches.filter(m => m.status === 'en_cours')
+              if (pendingMatches.length > 0 || inProgressMatches.length > 0) {
+                return (
+                  <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 flex items-start space-x-3">
+                    <div className="p-2 bg-amber-100 rounded-xl">
+                      <Clock className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-amber-800">Tournoi en cours</h3>
+                      <p className="text-sm text-amber-700">
+                        {inProgressMatches.length > 0 && (
+                          <span>{inProgressMatches.length} match(s) en cours. </span>
+                        )}
+                        {pendingMatches.length > 0 && (
+                          <span>{pendingMatches.length} match(s) non joué(s). </span>
+                        )}
+                        L'export contiendra des données partielles.
+                      </p>
+                    </div>
+                  </div>
+                )
+              }
+              return null
+            })()}
+
             {/* Résumé du tournoi */}
             <TournamentSummary
               tournament={tournament}

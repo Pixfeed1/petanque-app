@@ -275,10 +275,21 @@ function MatchHeader({ match, elapsedTime, formatTime, currentManche, winner, on
 
           {/* Section droite */}
           <div className="flex items-center space-x-2 sm:space-x-4 lg:space-x-6 flex-shrink-0">
-            {/* Timer */}
-            <div className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-100 rounded-lg sm:rounded-xl">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="font-mono font-bold text-sm sm:text-lg">{formatTime(elapsedTime)}</span>
+            {/* I6 FIX: Timer avec état différent après victoire */}
+            <div className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl ${
+              winner ? 'bg-green-100 text-green-700' : 'bg-gray-100'
+            }`}>
+              {winner ? (
+                <>
+                  <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="font-bold text-sm sm:text-lg">{formatTime(elapsedTime)}</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="font-mono font-bold text-sm sm:text-lg">{formatTime(elapsedTime)}</span>
+                </>
+              )}
             </div>
 
             {/* Mène actuelle */}
@@ -505,20 +516,21 @@ function ScoreControls({ score, maxScore, colorScheme, onUpdate }: ScoreControls
       <div className={`text-4xl sm:text-5xl font-bold ${textClass} mb-4`}>
         {score}
       </div>
-      <div className="flex justify-center space-x-3">
+      {/* I5 FIX: Boutons +/- plus grands et plus espacés sur mobile */}
+      <div className="flex justify-center space-x-4 sm:space-x-6">
         <button
           onClick={() => onUpdate(-1)}
-          className="p-3 sm:p-4 bg-white hover:bg-red-50 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
+          className="p-4 sm:p-5 bg-red-50 hover:bg-red-100 rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed border-2 border-red-200"
           disabled={score === 0}
         >
-          <Minus className="w-6 h-6 sm:w-8 sm:h-8 text-red-500" />
+          <Minus className="w-8 h-8 sm:w-10 sm:h-10 text-red-600" />
         </button>
         <button
           onClick={() => onUpdate(1)}
-          className="p-3 sm:p-4 bg-white hover:bg-green-50 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
+          className="p-4 sm:p-5 bg-green-50 hover:bg-green-100 rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed border-2 border-green-200"
           disabled={score === maxScore}
         >
-          <Plus className="w-6 h-6 sm:w-8 sm:h-8 text-green-500" />
+          <Plus className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
         </button>
       </div>
     </div>
@@ -641,13 +653,14 @@ function ForfeitDropdown({ match, onForfeit }: ForfeitDropdownProps) {
 
   return (
     <div className="relative">
+      {/* I1 FIX: Bouton forfait plus visible sur mobile avec fond rouge */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 sm:py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg sm:rounded-xl transition-all"
+        className="flex items-center space-x-1 px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-xl transition-all border border-red-200"
         title="Déclarer un forfait"
       >
-        <Flag className="w-4 h-4 sm:w-5 sm:h-5" />
-        <span className="text-xs sm:text-sm font-medium hidden sm:inline">Forfait</span>
+        <Flag className="w-5 h-5" />
+        <span className="text-xs sm:text-sm font-medium">Forfait</span>
       </button>
 
       {isOpen && (

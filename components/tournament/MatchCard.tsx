@@ -89,11 +89,12 @@ export default function MatchCard({
           <p className="font-medium text-gray-900 text-xs sm:text-base truncate px-1">
             {match.equipe_a?.name || 'En attente'}
           </p>
+          {/* I4 FIX: Noms joueurs plus lisibles */}
           {(() => {
             const players = match.equipe_a ? getTeamPlayers(match.equipe_a.id) : []
             if (players.length > 0) {
               return (
-                <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 px-1 truncate leading-tight">
+                <p className="text-xs text-gray-500 mt-0.5 px-1 truncate" title={players.join(', ')}>
                   {players.join(', ')}
                 </p>
               )
@@ -118,11 +119,12 @@ export default function MatchCard({
           <p className="font-medium text-gray-900 text-xs sm:text-base truncate px-1">
             {match.equipe_b?.name || 'En attente'}
           </p>
+          {/* I4 FIX: Noms joueurs plus lisibles */}
           {(() => {
             const players = match.equipe_b ? getTeamPlayers(match.equipe_b.id) : []
             if (players.length > 0) {
               return (
-                <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 px-1 truncate leading-tight">
+                <p className="text-xs text-gray-500 mt-0.5 px-1 truncate" title={players.join(', ')}>
                   {players.join(', ')}
                 </p>
               )

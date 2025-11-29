@@ -266,8 +266,9 @@ export default function PoulesPage() {
                                 {index === 2 && '🥉'}
                                 {index > 2 && (index + 1)}
                               </td>
-                              <td className="py-2 px-2 font-medium text-gray-900 truncate max-w-[120px]">
-                                {team.name}
+                              {/* I3 FIX: Noms équipes plus lisibles sur mobile */}
+                              <td className="py-2 px-2 font-medium text-gray-900 max-w-[150px] sm:max-w-none">
+                                <span className="block truncate" title={team.name}>{team.name}</span>
                               </td>
                               <td className="py-2 px-1 text-center text-gray-600">
                                 {team.played || 0}
