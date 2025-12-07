@@ -1,4 +1,6 @@
-# ads.txt - Google AdSense
-# Format: google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+# ads.txt - Pétanque Pro
+# Adsterra ne requiert pas de fichier ads.txt
+# Ce fichier peut rester vide ou être supprimé
 
-google.com, pub-7977336597476261, DIRECT, f08c47fec0942fa0
+# Si vous utilisez plusieurs régies, ajoutez leurs lignes ici
+# Format: domaine, publisher_id, DIRECT/RESELLER, tag_id
