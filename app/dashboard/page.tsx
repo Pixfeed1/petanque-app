@@ -461,7 +461,6 @@ export default function Dashboard() {
           {/* Publicité 2 - Uniquement pour les utilisateurs gratuits */}
           <div className="mb-16">
             <AdBanner
-              variant="horizontal"
               userPlan={userPlan}
               showOnlyForFree={true}
             />
