@@ -1,10 +1,11 @@
 // components/AdBanner.tsx
 // Composant publicitaire - En attente de validation The Moneytizer
-// N'affiche les pubs QUE pour les utilisateurs gratuits
+// N'affiche les pubs QUE pour les utilisateurs gratuits ET avec consentement
 
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useCookieConsent } from './CookieConsent'
 
 interface AdBannerProps {
   /**
@@ -30,6 +31,7 @@ interface AdBannerProps {
  *
  * Fonctionnalités:
  * - N'affiche RIEN si l'utilisateur est Premium
+ * - N'affiche RIEN si l'utilisateur n'a pas consenti aux cookies publicitaires
  * - Prêt pour intégration The Moneytizer
  */
 export default function AdBanner({
@@ -38,6 +40,7 @@ export default function AdBanner({
   className = ''
 }: AdBannerProps) {
   const [mounted, setMounted] = useState(false)
+  const { canShowAds, isLoaded } = useCookieConsent()
 
   // Ne pas afficher pour les utilisateurs Premium
   const isPremium = userPlan === 'premium' || userPlan === 'pro'
@@ -52,7 +55,12 @@ export default function AdBanner({
   }
 
   // SSR: ne rien rendre côté serveur
-  if (!mounted) {
+  if (!mounted || !isLoaded) {
+    return null
+  }
+
+  // Ne pas afficher si l'utilisateur n'a pas consenti aux cookies publicitaires
+  if (!canShowAds) {
     return null
   }
 

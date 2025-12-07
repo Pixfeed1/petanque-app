@@ -5,6 +5,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { Settings, Lock, Chart, Bell, Check } from './Icons'
 
 interface CookiePreferences {
   essential: boolean      // Toujours true, requis pour le fonctionnement
@@ -134,7 +135,7 @@ export default function CookieConsent() {
             <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">🍪</span>
+                  <Settings className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h2 className="text-white font-bold text-lg">Vos préférences de cookies</h2>
@@ -156,9 +157,10 @@ export default function CookieConsent() {
                   <div className="flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={handleAcceptAll}
-                      className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                      className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
                     >
-                      ✓ Tout accepter
+                      <Check className="w-5 h-5" />
+                      Tout accepter
                     </button>
                     <button
                       onClick={handleRejectAll}
@@ -182,11 +184,11 @@ export default function CookieConsent() {
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-lg">🔒</span>
+                          <Lock className="w-5 h-5 text-green-600" />
                           <h3 className="font-semibold text-gray-900">Cookies essentiels</h3>
                           <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">Requis</span>
                         </div>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 mt-1 ml-7">
                           Nécessaires au fonctionnement du site (authentification, sécurité)
                         </p>
                       </div>
@@ -199,10 +201,10 @@ export default function CookieConsent() {
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-lg">📊</span>
+                          <Chart className="w-5 h-5 text-gray-600" />
                           <h3 className="font-semibold text-gray-900">Cookies analytiques</h3>
                         </div>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 mt-1 ml-7">
                           Nous aident à comprendre comment vous utilisez l'application
                         </p>
                       </div>
@@ -220,10 +222,10 @@ export default function CookieConsent() {
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-lg">📢</span>
+                          <Bell className="w-5 h-5 text-gray-600" />
                           <h3 className="font-semibold text-gray-900">Cookies publicitaires</h3>
                         </div>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 mt-1 ml-7">
                           Permettent d'afficher des publicités pertinentes (finance l'app)
                         </p>
                       </div>
@@ -258,7 +260,7 @@ export default function CookieConsent() {
               {/* Lien politique */}
               <p className="text-center text-xs text-gray-400 mt-4">
                 En savoir plus dans notre{' '}
-                <a href="/confidentialite" className="text-green-600 hover:underline">
+                <a href="/legal/privacy" className="text-green-600 hover:underline">
                   politique de confidentialité
                 </a>
               </p>
@@ -297,9 +299,10 @@ export function CookieSettingsButton({ className = '' }: { className?: string })
   return (
     <button
       onClick={reopenBanner}
-      className={`text-sm text-gray-500 hover:text-green-600 transition-colors ${className}`}
+      className={`text-sm text-gray-500 hover:text-green-600 transition-colors flex items-center gap-1 ${className}`}
     >
-      🍪 Gérer les cookies
+      <Settings className="w-4 h-4" />
+      Gérer les cookies
     </button>
   )
 }
