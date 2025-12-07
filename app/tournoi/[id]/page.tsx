@@ -452,7 +452,7 @@ export default function TournamentDetailPage() {
 
           {/* Pub */}
           <div className="mt-6 mb-6">
-            <AdBanner variant="responsive" userPlan={userPlan} showOnlyForFree={true} />
+            <AdBanner userPlan={userPlan} showOnlyForFree={true} />
           </div>
 
           {/* Contenu des tabs */}
