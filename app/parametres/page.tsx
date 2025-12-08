@@ -279,13 +279,21 @@ export default function Parametres() {
                       {Icons.sparkles}
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">Plan Gratuit</h3>
-                    <p className="text-gray-600 mb-6">Passez à Premium pour supprimer les publicités</p>
-                    <button
-                      onClick={() => router.push('/dashboard?upgrade=true')}
-                      className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-medium hover:shadow-lg transition-all transform hover:scale-105"
-                    >
-                      Passer à Premium - 19,99€
-                    </button>
+                    <p className="text-gray-600 mb-6">Passez a Premium pour supprimer les publicites</p>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <button
+                        onClick={() => router.push('/dashboard?upgrade=true')}
+                        className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-medium hover:shadow-lg transition-all transform hover:scale-105"
+                      >
+                        Premium - 19,99€/an
+                      </button>
+                      <button
+                        onClick={() => router.push('/pack-club')}
+                        className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium hover:shadow-lg transition-all transform hover:scale-105"
+                      >
+                        Premium + Pack Club - 29,98€/an
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

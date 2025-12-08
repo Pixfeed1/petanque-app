@@ -611,33 +611,29 @@ export default function HomePage() {
             Choisissez votre formule
           </h2>
           <p className="text-xl text-gray-600 mb-12">
-            Gratuit avec publicités ou premium sans pub
+            Gratuit avec publicites, Premium sans pub, ou Pack Club pour les clubs
           </p>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {/* Version Gratuite */}
             <div className="bg-white rounded-3xl shadow-xl p-8 relative">
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Version Gratuite</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Gratuit</h3>
                 <div className="text-5xl font-bold text-gray-900 mb-2">0€</div>
-                <p className="text-gray-600">Avec publicités</p>
+                <p className="text-gray-600">Avec publicites</p>
               </div>
               <ul className="space-y-3 text-left mb-8">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700">Toutes les fonctionnalités</span>
+                  <span className="text-gray-700">Toutes les fonctionnalites</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700">Tournois illimités</span>
+                  <span className="text-gray-700">Tournois illimites</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
                   <span className="text-gray-700">Tous les modes de jeu</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700">Export PDF et partage</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-orange-500 mr-2 mt-1">
@@ -645,60 +641,93 @@ export default function HomePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                   </span>
-                  <span className="text-gray-700">Publicités non intrusives</span>
+                  <span className="text-gray-700">Publicites non intrusives</span>
                 </li>
               </ul>
-              <button 
+              <button
                 onClick={() => router.push('/login')}
                 className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-all font-medium"
               >
-                Utiliser gratuitement
+                Commencer
               </button>
             </div>
 
             {/* Version Premium */}
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl shadow-xl p-8 relative border-2 border-green-400">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-1 rounded-full text-sm font-bold">
-                RECOMMANDÉ
+                POPULAIRE
               </div>
-              
+
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Version Premium</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Premium</h3>
                 <div className="text-5xl font-bold text-green-600 mb-2">19,99€</div>
-                <p className="text-gray-600">Par an</p>
+                <p className="text-gray-600">/an</p>
               </div>
               <ul className="space-y-3 text-left mb-8">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700 font-medium">Toutes les fonctionnalités</span>
+                  <span className="text-gray-700">Toutes les fonctionnalites</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700 font-medium">Tournois illimités</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700 font-medium">Tous les modes de jeu</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700 font-medium">Export PDF et partage</span>
+                  <span className="text-gray-700">Tournois illimites</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.star}</span>
-                  <span className="text-gray-700 font-bold">Sans publicité</span>
+                  <span className="text-gray-700 font-bold">Sans publicite</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
+                  <span className="text-gray-700">Support prioritaire</span>
                 </li>
               </ul>
-              <button 
+              <button
                 onClick={() => router.push('/login')}
                 className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full hover:shadow-lg transition-all transform hover:scale-105 font-bold"
               >
-                Acheter la version premium
+                Passer Premium
+              </button>
+            </div>
+
+            {/* Pack Club */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl shadow-xl p-8 relative border-2 border-blue-400">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-1 rounded-full text-sm font-bold">
+                CLUBS
+              </div>
+
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Premium + Pack Club</h3>
+                <div className="text-5xl font-bold text-blue-600 mb-2">29,98€</div>
+                <p className="text-gray-600">/an</p>
+              </div>
+              <ul className="space-y-3 text-left mb-8">
+                <li className="flex items-start">
+                  <span className="text-blue-500 mr-2 mt-1">{Icons.check}</span>
+                  <span className="text-gray-700">Tout Premium inclus</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-500 mr-2 mt-1">{Icons.star}</span>
+                  <span className="text-gray-700 font-bold">Regles personnalisees</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-500 mr-2 mt-1">{Icons.check}</span>
+                  <span className="text-gray-700">Modes de jeu custom</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-500 mr-2 mt-1">{Icons.check}</span>
+                  <span className="text-gray-700">Presets de club illimites</span>
+                </li>
+              </ul>
+              <button
+                onClick={() => router.push('/pack-club')}
+                className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-full hover:shadow-lg transition-all transform hover:scale-105 font-bold"
+              >
+                Decouvrir Pack Club
               </button>
             </div>
           </div>
           <p className="mt-8 text-sm text-gray-500">
-            Paiement sécurisé • Satisfaction garantie
+            Paiement securise par Stripe - Abonnement annuel resiliable
           </p>
         </div>
       </section>

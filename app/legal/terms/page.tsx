@@ -152,22 +152,22 @@ export default function TermsPage() {
       content: (
         <div className="space-y-6">
           <p className="text-gray-700">
-            Pétanque Pro propose deux formules :
+            Petanque Pro propose trois formules :
           </p>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-3 gap-4">
             <div className="border-2 border-gray-200 rounded-lg p-6">
               <h4 className="text-xl font-bold text-gray-900 mb-3">Version Gratuite</h4>
               <div className="text-3xl font-bold text-gray-900 mb-2">0€</div>
-              <p className="text-gray-600 mb-4">Avec publicités non intrusives</p>
+              <p className="text-gray-600 mb-4">Avec publicites non intrusives</p>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span>Toutes les fonctionnalités</span>
+                  <span>Toutes les fonctionnalites</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span>Tournois illimités</span>
+                  <span>Tournois illimites</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
@@ -182,19 +182,42 @@ export default function TermsPage() {
               </div>
               <h4 className="text-xl font-bold text-gray-900 mb-3">Version Premium</h4>
               <div className="text-3xl font-bold text-green-600 mb-2">19,99€</div>
-              <p className="text-gray-600 mb-4">Abonnement annuel renouvelable</p>
+              <p className="text-gray-600 mb-4">Abonnement annuel</p>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span>Toutes les fonctionnalités</span>
+                  <span>Toutes les fonctionnalites</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span><strong>Sans publicité</strong></span>
+                  <span><strong>Sans publicite</strong></span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
                   <span>Support prioritaire</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="border-2 border-blue-400 rounded-lg p-6 bg-gradient-to-br from-blue-50 to-indigo-50 relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold">
+                CLUBS
+              </div>
+              <h4 className="text-xl font-bold text-gray-900 mb-3">Pack Club</h4>
+              <div className="text-3xl font-bold text-blue-600 mb-2">9,99€</div>
+              <p className="text-gray-600 mb-4">Addon Premium annuel</p>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start">
+                  <span className="text-blue-500 mr-2 mt-1">{Icons.check}</span>
+                  <span>Requiert Premium</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-500 mr-2 mt-1">{Icons.check}</span>
+                  <span><strong>Regles personnalisees</strong></span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-500 mr-2 mt-1">{Icons.check}</span>
+                  <span>Modes de jeu custom</span>
                 </li>
               </ul>
             </div>
