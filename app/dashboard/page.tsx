@@ -130,7 +130,7 @@ export default function Dashboard() {
     await signOut()
   }
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (productType: 'premium' | 'premium_bundle' = 'premium') => {
     if (!user?.id) return
 
     setProcessingPayment(true)
@@ -141,7 +141,7 @@ export default function Dashboard() {
         body: JSON.stringify({
           userId: user.id,
           userEmail: user.email,
-          product: 'premium'
+          product: productType
         })
       })
 
@@ -651,14 +651,14 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Modal Upgrade Premium */}
+      {/* Modal Upgrade */}
       {showUpgradeModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-fadeIn">
-            {/* Header avec gradient vert */}
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-fadeIn">
+            {/* Header */}
             <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-white">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Passer à Premium</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Choisissez votre formule</h2>
                 <button
                   onClick={() => setShowUpgradeModal(false)}
                   disabled={processingPayment}
@@ -669,88 +669,105 @@ export default function Dashboard() {
                   </svg>
                 </button>
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold">19,99€</span>
-                <span className="text-white/80">/an</span>
-              </div>
             </div>
 
             {/* Contenu */}
-            <div className="p-6 space-y-6">
-              {/* Avantages */}
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
-                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
+            <div className="p-6 space-y-4">
+              {/* Option Premium */}
+              <div className="border-2 border-green-400 rounded-xl p-4 bg-green-50/50">
+                <div className="flex items-start justify-between mb-3">
                   <div>
-                    <p className="font-medium text-gray-900">Sans publicité</p>
-                    <p className="text-sm text-gray-600">Une expérience pure et fluide</p>
+                    <h3 className="font-bold text-gray-900">Premium</h3>
+                    <p className="text-sm text-gray-600">Sans publicite</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-2xl font-bold text-green-600">19,99€</span>
+                    <span className="text-gray-500 text-sm">/an</span>
                   </div>
                 </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
-                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <ul className="text-sm text-gray-600 space-y-1 mb-4">
+                  <li className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Accès illimité</p>
-                    <p className="text-sm text-gray-600">Tous les tournois, sans limite</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
-                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    Experience sans pub
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Support prioritaire</p>
-                    <p className="text-sm text-gray-600">Réponse rapide à vos questions</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
-                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Mises à jour gratuites</p>
-                    <p className="text-sm text-gray-600">Toutes les nouvelles fonctionnalités</p>
-                  </div>
-                </div>
+                    Support prioritaire
+                  </li>
+                </ul>
+                <button
+                  onClick={() => handleUpgrade('premium')}
+                  disabled={processingPayment}
+                  className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {processingPayment ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Redirection...</span>
+                    </>
+                  ) : (
+                    <span>Choisir Premium</span>
+                  )}
+                </button>
               </div>
 
-              {/* Bouton de paiement */}
-              <button
-                onClick={handleUpgrade}
-                disabled={processingPayment}
-                className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {processingPayment ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Redirection...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              {/* Option Premium + Pack Club */}
+              <div className="border-2 border-blue-400 rounded-xl p-4 bg-blue-50/50 relative">
+                <div className="absolute -top-3 left-4 px-2 py-0.5 bg-blue-600 text-white text-xs font-medium rounded-full">
+                  Recommande pour les clubs
+                </div>
+                <div className="flex items-start justify-between mb-3 mt-1">
+                  <div>
+                    <h3 className="font-bold text-gray-900">Premium + Pack Club</h3>
+                    <p className="text-sm text-gray-600">Sans pub + regles personnalisees</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-2xl font-bold text-blue-600">29,98€</span>
+                    <span className="text-gray-500 text-sm">/an</span>
+                  </div>
+                </div>
+                <ul className="text-sm text-gray-600 space-y-1 mb-4">
+                  <li className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    <span>S'abonner - 19,99€/an</span>
-                  </>
-                )}
-              </button>
+                    Tout Premium inclus
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    Regles de tournoi personnalisees
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    Presets de club illimites
+                  </li>
+                </ul>
+                <button
+                  onClick={() => handleUpgrade('premium_bundle')}
+                  disabled={processingPayment}
+                  className="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {processingPayment ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Redirection...</span>
+                    </>
+                  ) : (
+                    <span>Choisir Pack Complet</span>
+                  )}
+                </button>
+              </div>
 
               <p className="text-xs text-center text-gray-500">
-                Paiement sécurisé par Stripe • Satisfait ou remboursé 30 jours
+                Paiement securise par Stripe - Abonnement annuel resiliable
               </p>
             </div>
           </div>
