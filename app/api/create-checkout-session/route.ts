@@ -78,7 +78,8 @@ export async function POST(request: NextRequest) {
    const userResult = await query(
      `SELECT u.metadata, o.settings as org_settings
       FROM users u
-      LEFT JOIN organisations o ON u.org_id = o.id
+      LEFT JOIN user_roles ur ON ur.user_id = u.id
+      LEFT JOIN organisations o ON o.id = ur.org_id
       WHERE u.id = $1`,
      [userId]
    )
@@ -293,7 +294,7 @@ export async function GET(request: NextRequest) {
               '{pack_club}',
               'true'::jsonb
             )
-            WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+            WHERE id = (SELECT ur.org_id FROM user_roles ur WHERE ur.user_id = $1 LIMIT 1)`,
            [userId]
          )
 
@@ -341,7 +342,7 @@ export async function GET(request: NextRequest) {
               '{plan}',
               '"premium"'::jsonb
             )
-            WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+            WHERE id = (SELECT ur.org_id FROM user_roles ur WHERE ur.user_id = $1 LIMIT 1)`,
            [userId]
          )
        }

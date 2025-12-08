@@ -129,7 +129,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
              '{pack_club}',
              'true'::jsonb
            )
-           WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+           WHERE id = (SELECT ur.org_id FROM user_roles ur WHERE ur.user_id = $1 LIMIT 1)`,
           [userId]
         )
 
@@ -159,7 +159,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
              '{pack_club}',
              'false'::jsonb
            )
-           WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+           WHERE id = (SELECT ur.org_id FROM user_roles ur WHERE ur.user_id = $1 LIMIT 1)`,
           [userId]
         )
 
@@ -218,7 +218,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
            '{plan}',
            $1::jsonb
          )
-         WHERE id = (SELECT org_id FROM users WHERE id = $2)`,
+         WHERE id = (SELECT ur.org_id FROM user_roles ur WHERE ur.user_id = $2 LIMIT 1)`,
         [JSON.stringify(plan), userId]
       )
 
@@ -254,7 +254,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
            '{pack_club}',
            'false'::jsonb
          )
-         WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+         WHERE id = (SELECT ur.org_id FROM user_roles ur WHERE ur.user_id = $1 LIMIT 1)`,
         [userId]
       )
 
@@ -294,7 +294,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
            '{plan}',
            '"free"'::jsonb
          )
-         WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+         WHERE id = (SELECT ur.org_id FROM user_roles ur WHERE ur.user_id = $1 LIMIT 1)`,
         [userId]
       )
 
@@ -420,7 +420,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
            '{pack_club}',
            'true'::jsonb
          )
-         WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+         WHERE id = (SELECT ur.org_id FROM user_roles ur WHERE ur.user_id = $1 LIMIT 1)`,
         [userId]
       )
 
@@ -463,7 +463,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
            '{plan}',
            '"premium"'::jsonb
          )
-         WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+         WHERE id = (SELECT ur.org_id FROM user_roles ur WHERE ur.user_id = $1 LIMIT 1)`,
         [userId]
       )
 
