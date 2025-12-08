@@ -33,7 +33,7 @@ const Icons = {
 export default function Dashboard() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user, organization, loading: authLoading, signOut } = useAuth()
+  const { user, organization, loading: authLoading, signOut, hasPackClub } = useAuth()
   const { loading, stats, tournois, recentMatches, refetch } = useDashboardData(organization?.id ? Number(organization.id) : undefined)
   const { showSuccess, showError } = useToast()
   const { confirm, ConfirmModal } = useConfirm()
@@ -278,6 +278,28 @@ export default function Dashboard() {
                           </svg>
                           <span>Passer à Premium</span>
                         </button>
+                      )}
+                      {userPlan === 'premium' && !hasPackClub && (
+                        <button
+                          onClick={() => {
+                            setShowProfileMenu(false)
+                            router.push('/pack-club')
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:shadow-md transition font-medium mb-1"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                          </svg>
+                          <span>Pack Club - 9,99€</span>
+                        </button>
+                      )}
+                      {userPlan === 'premium' && hasPackClub && (
+                        <div className="flex items-center gap-2 px-4 py-2 text-sm text-blue-600 bg-blue-50 rounded-xl mb-1">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          <span>Pack Club actif</span>
+                        </div>
                       )}
                       <button
                         onClick={handleLogout}
