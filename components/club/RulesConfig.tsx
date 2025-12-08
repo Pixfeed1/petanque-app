@@ -175,9 +175,9 @@ export default function RulesConfig({
   ]
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+      <div className="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -200,7 +200,7 @@ export default function RulesConfig({
               )}
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-white text-green-600 rounded-xl font-semibold hover:bg-green-50 transition-all flex items-center gap-2"
+                className="px-4 py-2 bg-white text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-all flex items-center gap-2"
               >
                 <Save className="w-5 h-5" />
                 Enregistrer
@@ -220,7 +220,7 @@ export default function RulesConfig({
                 onClick={() => setActiveSection(section.id)}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
                   activeSection === section.id
-                    ? 'bg-green-100 text-green-700 font-medium'
+                    ? 'bg-blue-100 text-blue-700 font-medium'
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
@@ -245,7 +245,7 @@ export default function RulesConfig({
                   value={formData.name}
                   onChange={e => updateField('name', e.target.value)}
                   disabled={readOnly}
-                  className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl focus:border-green-500 disabled:bg-gray-50"
+                  className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 disabled:bg-gray-50"
                   placeholder="Ex: Règlement Club Pétanque Lyon"
                   maxLength={100}
                 />
@@ -259,7 +259,7 @@ export default function RulesConfig({
                   value={formData.description || ''}
                   onChange={e => updateField('description', e.target.value)}
                   disabled={readOnly}
-                  className="w-full h-24 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 disabled:bg-gray-50 resize-none"
+                  className="w-full h-24 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 disabled:bg-gray-50 resize-none"
                   placeholder="Description des règles..."
                   maxLength={500}
                 />
@@ -277,7 +277,7 @@ export default function RulesConfig({
                       disabled={readOnly}
                       className={`w-16 h-12 rounded-xl border-2 font-bold transition-all ${
                         formData.nombreParties === n
-                          ? 'border-green-500 bg-green-50 text-green-700'
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
                           : 'border-gray-200 text-gray-600 hover:border-gray-300'
                       } disabled:opacity-50`}
                     >
@@ -299,7 +299,7 @@ export default function RulesConfig({
                       disabled={readOnly}
                       className={`px-4 h-12 rounded-xl border-2 font-bold transition-all ${
                         formData.pointsGagnants === pts
-                          ? 'border-green-500 bg-green-50 text-green-700'
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
                           : 'border-gray-200 text-gray-600 hover:border-gray-300'
                       } disabled:opacity-50`}
                     >
@@ -326,12 +326,12 @@ export default function RulesConfig({
                       disabled={readOnly}
                       className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
                         formData.mode === mode.value
-                          ? 'border-green-500 bg-green-50'
+                          ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300'
                       } disabled:opacity-50`}
                     >
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        formData.mode === mode.value ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600'
+                        formData.mode === mode.value ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'
                       }`}>
                         {mode.icon}
                       </div>
@@ -340,7 +340,7 @@ export default function RulesConfig({
                         <p className="text-sm text-gray-500">{mode.description}</p>
                       </div>
                       {formData.mode === mode.value && (
-                        <Check className="w-5 h-5 text-green-500 ml-auto" />
+                        <Check className="w-5 h-5 text-blue-500 ml-auto" />
                       )}
                     </button>
                   ))}
@@ -359,7 +359,7 @@ export default function RulesConfig({
                       disabled={readOnly}
                       className={`p-4 rounded-xl border-2 transition-all text-center ${
                         formData.format === format.value
-                          ? 'border-green-500 bg-green-50'
+                          ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300'
                       } disabled:opacity-50`}
                     >
@@ -377,7 +377,7 @@ export default function RulesConfig({
                     checked={formData.autoriserMelangeFormats}
                     onChange={e => updateField('autoriserMelangeFormats', e.target.checked)}
                     disabled={readOnly}
-                    className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-gray-700">
                     Autoriser le mélange doublette/triplette (si nombre impair)
@@ -390,7 +390,7 @@ export default function RulesConfig({
                     checked={formData.privilegierFormatPrincipal}
                     onChange={e => updateField('privilegierFormatPrincipal', e.target.checked)}
                     disabled={readOnly}
-                    className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-gray-700">
                     Privilégier le format principal (ex: triplettes avant doublettes)
@@ -418,7 +418,7 @@ export default function RulesConfig({
                   onClick={() => updateNestedField('mixite', 'enabled', !formData.mixite.enabled)}
                   disabled={readOnly}
                   className={`w-12 h-7 rounded-full flex items-center px-1 transition-all ${
-                    formData.mixite.enabled ? 'bg-green-500 justify-end' : 'bg-gray-300 justify-start'
+                    formData.mixite.enabled ? 'bg-blue-500 justify-end' : 'bg-gray-300 justify-start'
                   }`}
                 >
                   <div className="w-5 h-5 bg-white rounded-full shadow" />
@@ -426,14 +426,14 @@ export default function RulesConfig({
               </div>
 
               {formData.mixite.enabled && (
-                <div className="space-y-4 pl-4 border-l-2 border-green-200">
+                <div className="space-y-4 pl-4 border-l-2 border-blue-200">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formData.mixite.jamaisTroisMemeGenre}
                       onChange={e => updateNestedField('mixite', 'jamaisTroisMemeGenre', e.target.checked)}
                       disabled={readOnly}
-                      className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <div>
                       <span className="text-gray-700 font-medium">
@@ -451,7 +451,7 @@ export default function RulesConfig({
                       checked={formData.mixite.equilibreMatchsHF}
                       onChange={e => updateNestedField('mixite', 'equilibreMatchsHF', e.target.checked)}
                       disabled={readOnly}
-                      className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <div>
                       <span className="text-gray-700 font-medium">
@@ -469,7 +469,7 @@ export default function RulesConfig({
                       checked={formData.mixite.prioriteMixite}
                       onChange={e => updateNestedField('mixite', 'prioriteMixite', e.target.checked)}
                       disabled={readOnly}
-                      className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <div>
                       <span className="text-gray-700 font-medium">
@@ -518,13 +518,13 @@ export default function RulesConfig({
                       value={newTerrain}
                       onChange={e => setNewTerrain(e.target.value)}
                       onKeyPress={e => e.key === 'Enter' && addTerrain()}
-                      className="flex-1 h-10 px-4 border-2 border-gray-200 rounded-lg focus:border-green-500"
+                      className="flex-1 h-10 px-4 border-2 border-gray-200 rounded-lg focus:border-blue-500"
                       placeholder="Nom du terrain (ex: A, B, 1, 2...)"
                       maxLength={10}
                     />
                     <button
                       onClick={addTerrain}
-                      className="px-4 h-10 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all flex items-center gap-2"
+                      className="px-4 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center gap-2"
                     >
                       <Plus className="w-4 h-4" />
                       Ajouter
@@ -539,7 +539,7 @@ export default function RulesConfig({
                   checked={formData.terrains.attributionAuto}
                   onChange={e => updateNestedField('terrains', 'attributionAuto', e.target.checked)}
                   disabled={readOnly}
-                  className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <div>
                   <span className="text-gray-700 font-medium">
@@ -568,13 +568,13 @@ export default function RulesConfig({
                       disabled={readOnly}
                       className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
                         formData.classement.methode === methode.value
-                          ? 'border-green-500 bg-green-50'
+                          ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300'
                       } disabled:opacity-50`}
                     >
                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                         formData.classement.methode === methode.value
-                          ? 'border-green-500 bg-green-500'
+                          ? 'border-blue-500 bg-blue-500'
                           : 'border-gray-300'
                       }`}>
                         {formData.classement.methode === methode.value && (
@@ -610,7 +610,7 @@ export default function RulesConfig({
                   checked={formData.classement.calculDifference}
                   onChange={e => updateNestedField('classement', 'calculDifference', e.target.checked)}
                   disabled={readOnly}
-                  className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <div>
                   <span className="text-gray-700 font-medium">
