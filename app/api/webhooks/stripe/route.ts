@@ -118,8 +118,97 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
   console.log(`Abonnement ${subscription.status} pour user ${userId} → ${product} (active: ${isActive})`)
 
   try {
-    if (product === 'pack_club') {
-      // Gestion Pack Club
+    if (product === 'premium_bundle') {
+      // Gestion Bundle Premium + Pack Club
+      if (isActive) {
+        // Activer Premium ET Pack Club
+        await query(
+          `UPDATE organisations
+           SET settings = jsonb_set(
+             jsonb_set(
+               COALESCE(settings, '{}'::jsonb),
+               '{plan}',
+               '"premium"'::jsonb
+             ),
+             '{pack_club}',
+             'true'::jsonb
+           )
+           WHERE id = (SELECT ur.org_id FROM user_roles ur WHERE ur.user_id = $1 LIMIT 1)`,
+          [userId]
+        )
+
+        await query(
+          `UPDATE users
+           SET metadata = jsonb_set(
+             jsonb_set(
+               jsonb_set(
+                 jsonb_set(
+                   COALESCE(metadata, '{}'::jsonb),
+                   '{subscription,status}',
+                   '"premium"'::jsonb
+                 ),
+                 '{subscription,plan}',
+                 '"premium_yearly"'::jsonb
+               ),
+               '{subscription,stripe_subscription_id}',
+               $1::jsonb
+             ),
+             '{subscription,pack_club}',
+             $2::jsonb
+           )
+           WHERE id = $3`,
+          [
+            JSON.stringify(subscription.id),
+            JSON.stringify({
+              active: true,
+              purchased_at: new Date().toISOString(),
+              current_period_end: currentPeriodEnd
+            }),
+            userId
+          ]
+        )
+
+        console.log(`✅ Bundle Premium + Pack Club activé pour user ${userId}`)
+      } else {
+        // Désactiver tout
+        await query(
+          `UPDATE organisations
+           SET settings = jsonb_set(
+             jsonb_set(
+               COALESCE(settings, '{}'::jsonb),
+               '{plan}',
+               '"free"'::jsonb
+             ),
+             '{pack_club}',
+             'false'::jsonb
+           )
+           WHERE id = (SELECT ur.org_id FROM user_roles ur WHERE ur.user_id = $1 LIMIT 1)`,
+          [userId]
+        )
+
+        await query(
+          `UPDATE users
+           SET metadata = jsonb_set(
+             jsonb_set(
+               jsonb_set(
+                 COALESCE(metadata, '{}'::jsonb),
+                 '{subscription,status}',
+                 '"free"'::jsonb
+               ),
+               '{subscription,plan}',
+               '"free"'::jsonb
+             ),
+             '{subscription,pack_club,active}',
+             'false'::jsonb
+           )
+           WHERE id = $1`,
+          [userId]
+        )
+
+        console.log(`⚠️ Bundle désactivé pour user ${userId}`)
+      }
+    } else if (product === 'pack_club') {
+      // Gestion Pack Club seul
       if (isActive) {
         // Activer Pack Club
         await query(

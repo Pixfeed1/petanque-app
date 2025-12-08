@@ -168,7 +168,7 @@ export const createCheckoutSessionSchema = z.object({
   userId: idSchema,
   userEmail: z.string().email('Email invalide'),
   priceId: z.string().optional().nullable(),
-  product: z.enum(['premium', 'pack_club']).optional().default('premium')
+  product: z.enum(['premium', 'pack_club', 'premium_bundle']).optional().default('premium')
 })
 
 export const verifyPaymentSchema = z.object({

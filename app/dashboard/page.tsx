@@ -158,6 +158,32 @@ export default function Dashboard() {
     }
   }
 
+  const handleManageSubscription = async () => {
+    if (!user?.id) return
+
+    try {
+      const response = await fetch('/api/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
+      })
+
+      const { url, error } = await response.json()
+
+      if (error) {
+        showError(error)
+        return
+      }
+
+      if (url) {
+        window.location.href = url
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'ouverture du portail:', error)
+      showError('Une erreur est survenue. Veuillez réessayer.')
+    }
+  }
+
   const handleDeleteTournament = async (tournoiId: number | string) => {
     const confirmed = await confirm({
       title: 'Supprimer le tournoi',
@@ -300,6 +326,18 @@ export default function Dashboard() {
                           </svg>
                           <span>Pack Club actif</span>
                         </div>
+                      )}
+                      {userPlan === 'premium' && (
+                        <button
+                          onClick={handleManageSubscription}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span>Gerer mon abonnement</span>
+                        </button>
                       )}
                       <button
                         onClick={handleLogout}

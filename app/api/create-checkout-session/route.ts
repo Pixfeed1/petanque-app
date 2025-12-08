@@ -38,14 +38,28 @@ export async function POST(request: NextRequest) {
 
    // Déterminer le prix en fonction du produit
    const isPackClub = product === 'pack_club'
+   const isBundle = product === 'premium_bundle'
+
+   // Pour le bundle, on a besoin des deux price IDs
+   const premiumPriceId = process.env.STRIPE_PRICE_ID || null
+   const packClubPriceId = process.env.STRIPE_PACK_CLUB_PRICE_ID || null
 
    if (!priceId) {
      if (isPackClub) {
        // Pack Club 9.99€ - Utiliser STRIPE_PACK_CLUB_PRICE_ID
-       priceId = process.env.STRIPE_PACK_CLUB_PRICE_ID || null
+       priceId = packClubPriceId
+     } else if (isBundle) {
+       // Bundle: on vérifie que les deux prix existent
+       if (!premiumPriceId || !packClubPriceId) {
+         return NextResponse.json(
+           { error: 'Configuration des prix manquante pour le bundle' },
+           { status: 500 }
+         )
+       }
+       priceId = premiumPriceId // On utilise le premium comme prix principal
      } else {
        // Premium 19.99€ - Utiliser STRIPE_PRICE_ID
-       priceId = process.env.STRIPE_PRICE_ID || null
+       priceId = premiumPriceId
      }
    }
 
@@ -94,6 +108,14 @@ export async function POST(request: NextRequest) {
      if (orgSettings.pack_club === true) {
        return NextResponse.json(
          { error: 'Vous avez déjà le Pack Club actif' },
+         { status: 400 }
+       )
+     }
+   } else if (isBundle) {
+     // Vérifier si déjà Premium ET Pack Club
+     if (subscription.status === 'premium' && orgSettings.pack_club === true) {
+       return NextResponse.json(
+         { error: 'Vous avez déjà Premium et le Pack Club' },
          { status: 400 }
        )
      }
@@ -147,6 +169,13 @@ export async function POST(request: NextRequest) {
          submitMessage: 'Activer Pack Club',
          amount: 999 // 9.99€
        }
+     : isBundle
+     ? {
+         productName: 'premium_bundle',
+         successUrl: `${baseUrl}/dashboard?payment=success&product=premium_bundle&session_id={CHECKOUT_SESSION_ID}`,
+         submitMessage: 'Activer Premium + Pack Club',
+         amount: 2998 // 29.98€
+       }
      : {
          productName: 'premium',
          successUrl: `${baseUrl}/dashboard?payment=success&product=premium&session_id={CHECKOUT_SESSION_ID}`,
@@ -154,17 +183,22 @@ export async function POST(request: NextRequest) {
          amount: 1999 // 19.99€
        }
 
+   // Préparer les line_items selon le produit
+   const lineItems = isBundle
+     ? [
+         { price: premiumPriceId!, quantity: 1 },
+         { price: packClubPriceId!, quantity: 1 }
+       ]
+     : [
+         { price: finalPriceId, quantity: 1 }
+       ]
+
    // Créer la session Stripe Checkout
    const session = await stripe.checkout.sessions.create({
      customer: customerId,
      payment_method_types: ['card'],
      mode: 'subscription', // Abonnement annuel
-     line_items: [
-       {
-         price: finalPriceId,
-         quantity: 1
-       }
-     ],
+     line_items: lineItems,
      // Métadonnées pour le webhook de session
      metadata: {
        user_id: userId,
