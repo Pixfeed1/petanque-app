@@ -284,7 +284,7 @@ export default function Parametres() {
                       onClick={() => router.push('/dashboard?upgrade=true')}
                       className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-medium hover:shadow-lg transition-all transform hover:scale-105"
                     >
-                      Passer à Premium - 4,99€
+                      Passer à Premium - 19,99€
                     </button>
                   </div>
                 )}

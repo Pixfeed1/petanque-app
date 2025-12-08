@@ -181,7 +181,7 @@ export default function TermsPage() {
                 POPULAIRE
               </div>
               <h4 className="text-xl font-bold text-gray-900 mb-3">Version Premium</h4>
-              <div className="text-3xl font-bold text-green-600 mb-2">4,99€</div>
+              <div className="text-3xl font-bold text-green-600 mb-2">19,99€</div>
               <p className="text-gray-600 mb-4">Abonnement annuel renouvelable</p>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start">
