@@ -104,7 +104,7 @@ export default function PackClubPage() {
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5 2a2 2 0 00-2 2v14l3.5-2 3.5 2 3.5-2 3.5 2V4a2 2 0 00-2-2H5zm2.5 3a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm6.207.293a1 1 0 00-1.414 0l-6 6a1 1 0 101.414 1.414l6-6a1 1 0 000-1.414zM12.5 10a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" clipRule="evenodd" />
               </svg>
-              Addon pour clubs
+              Option pour clubs
             </div>
             <h1 className="text-5xl font-bold text-gray-900 tracking-tight mb-4">
               Pack Club
@@ -225,7 +225,7 @@ export default function PackClubPage() {
                   </div>
                 ) : !isPremium ? (
                   <div className="space-y-4">
-                    {/* Option Bundle - Recommandee */}
+                    {/* Option Pack Complet - Recommandee */}
                     <div className="relative">
                       <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-full">
                         Recommande
@@ -371,7 +371,7 @@ export default function PackClubPage() {
                   Le Pack Club est-il inclus dans Premium ?
                 </h3>
                 <p className="text-gray-600">
-                  Non, le Pack Club est un addon separe. Premium supprime les publicites, Pack Club ajoute les regles personnalisees.
+                  Non, le Pack Club est une option separee. Premium supprime les publicites, Pack Club ajoute les regles personnalisees.
                 </p>
               </div>
 
