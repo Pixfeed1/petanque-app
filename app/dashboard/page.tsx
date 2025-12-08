@@ -140,8 +140,8 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
-          userEmail: user.email
-          // priceId omis = utilise process.env.STRIPE_PRICE_ID configuré dans l'API
+          userEmail: user.email,
+          product: 'premium'
         })
       })
 
