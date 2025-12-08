@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
  */
 async function handleSubscriptionChange(subscription: Stripe.Subscription) {
   const userId = subscription.metadata.user_id
+  const product = subscription.metadata.product || 'premium'
 
   if (!userId) {
     console.error('user_id manquant dans les métadonnées de l\'abonnement')
@@ -108,59 +109,121 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
   }
 
   const isActive = subscription.status === 'active' || subscription.status === 'trialing'
-  const plan = isActive ? 'premium' : 'free'
 
   // current_period_end peut ne pas être présent sur tous les types d'abonnement
   const currentPeriodEnd = (subscription as any).current_period_end
     ? new Date((subscription as any).current_period_end * 1000).toISOString()
     : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 an par défaut
 
-  console.log(`Abonnement ${subscription.status} pour user ${userId} → ${plan}`)
+  console.log(`Abonnement ${subscription.status} pour user ${userId} → ${product} (active: ${isActive})`)
 
   try {
-    // Mettre à jour l'utilisateur
-    await query(
-      `UPDATE users
-       SET metadata = jsonb_set(
-         jsonb_set(
+    if (product === 'pack_club') {
+      // Gestion Pack Club
+      if (isActive) {
+        // Activer Pack Club
+        await query(
+          `UPDATE organisations
+           SET settings = jsonb_set(
+             COALESCE(settings, '{}'::jsonb),
+             '{pack_club}',
+             'true'::jsonb
+           )
+           WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+          [userId]
+        )
+
+        await query(
+          `UPDATE users
+           SET metadata = jsonb_set(
+             COALESCE(metadata, '{}'::jsonb),
+             '{subscription,pack_club}',
+             $1::jsonb
+           )
+           WHERE id = $2`,
+          [JSON.stringify({
+            active: true,
+            purchased_at: new Date().toISOString(),
+            stripe_subscription_id: subscription.id,
+            current_period_end: currentPeriodEnd
+          }), userId]
+        )
+
+        console.log(`✅ Pack Club activé pour user ${userId}`)
+      } else {
+        // Désactiver Pack Club
+        await query(
+          `UPDATE organisations
+           SET settings = jsonb_set(
+             COALESCE(settings, '{}'::jsonb),
+             '{pack_club}',
+             'false'::jsonb
+           )
+           WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+          [userId]
+        )
+
+        await query(
+          `UPDATE users
+           SET metadata = jsonb_set(
+             COALESCE(metadata, '{}'::jsonb),
+             '{subscription,pack_club,active}',
+             'false'::jsonb
+           )
+           WHERE id = $1`,
+          [userId]
+        )
+
+        console.log(`⚠️ Pack Club désactivé pour user ${userId}`)
+      }
+    } else {
+      // Gestion Premium (comportement existant)
+      const plan = isActive ? 'premium' : 'free'
+
+      // Mettre à jour l'utilisateur
+      await query(
+        `UPDATE users
+         SET metadata = jsonb_set(
            jsonb_set(
              jsonb_set(
-               COALESCE(metadata, '{}'::jsonb),
-               '{subscription,status}',
-               $1::jsonb
+               jsonb_set(
+                 COALESCE(metadata, '{}'::jsonb),
+                 '{subscription,status}',
+                 $1::jsonb
+               ),
+               '{subscription,plan}',
+               $2::jsonb
              ),
-             '{subscription,plan}',
-             $2::jsonb
+             '{subscription,stripe_subscription_id}',
+             $3::jsonb
            ),
-           '{subscription,stripe_subscription_id}',
-           $3::jsonb
-         ),
-         '{subscription,current_period_end}',
-         $4::jsonb
-       )
-       WHERE id = $5`,
-      [
-        JSON.stringify(plan),
-        JSON.stringify(plan === 'premium' ? 'premium_yearly' : 'free'),
-        JSON.stringify(subscription.id),
-        JSON.stringify(currentPeriodEnd),
-        userId
-      ]
-    )
+           '{subscription,current_period_end}',
+           $4::jsonb
+         )
+         WHERE id = $5`,
+        [
+          JSON.stringify(plan),
+          JSON.stringify(plan === 'premium' ? 'premium_yearly' : 'free'),
+          JSON.stringify(subscription.id),
+          JSON.stringify(currentPeriodEnd),
+          userId
+        ]
+      )
 
-    // Mettre à jour l'organisation
-    await query(
-      `UPDATE organisations
-       SET settings = jsonb_set(
-         COALESCE(settings, '{}'::jsonb),
-         '{plan}',
-         $1::jsonb
-       )
-       WHERE id = (SELECT org_id FROM users WHERE id = $2)`,
-      [JSON.stringify(plan), userId]
-    )
+      // Mettre à jour l'organisation
+      await query(
+        `UPDATE organisations
+         SET settings = jsonb_set(
+           COALESCE(settings, '{}'::jsonb),
+           '{plan}',
+           $1::jsonb
+         )
+         WHERE id = (SELECT org_id FROM users WHERE id = $2)`,
+        [JSON.stringify(plan), userId]
+      )
 
-    console.log(`✅ Utilisateur ${userId} mis à jour vers plan ${plan}`)
+      console.log(`✅ Utilisateur ${userId} mis à jour vers plan ${plan}`)
+    }
   } catch (error) {
     console.error('Erreur lors de la mise à jour de l\'abonnement:', error)
     throw error
@@ -172,43 +235,71 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
  */
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const userId = subscription.metadata.user_id
+  const product = subscription.metadata.product || 'premium'
 
   if (!userId) {
     console.error('user_id manquant dans les métadonnées de l\'abonnement')
     return
   }
 
-  console.log(`Abonnement annulé pour user ${userId} → Retour au plan gratuit`)
+  console.log(`Abonnement ${product} annulé pour user ${userId}`)
 
   try {
-    // Retour au plan gratuit
-    await query(
-      `UPDATE users
-       SET metadata = jsonb_set(
-         jsonb_set(
+    if (product === 'pack_club') {
+      // Désactiver Pack Club
+      await query(
+        `UPDATE organisations
+         SET settings = jsonb_set(
+           COALESCE(settings, '{}'::jsonb),
+           '{pack_club}',
+           'false'::jsonb
+         )
+         WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+        [userId]
+      )
+
+      await query(
+        `UPDATE users
+         SET metadata = jsonb_set(
            COALESCE(metadata, '{}'::jsonb),
-           '{subscription,status}',
+           '{subscription,pack_club,active}',
+           'false'::jsonb
+         )
+         WHERE id = $1`,
+        [userId]
+      )
+
+      console.log(`✅ Pack Club désactivé pour user ${userId}`)
+    } else {
+      // Retour au plan gratuit (Premium)
+      await query(
+        `UPDATE users
+         SET metadata = jsonb_set(
+           jsonb_set(
+             COALESCE(metadata, '{}'::jsonb),
+             '{subscription,status}',
+             '"free"'::jsonb
+           ),
+           '{subscription,plan}',
            '"free"'::jsonb
-         ),
-         '{subscription,plan}',
-         '"free"'::jsonb
-       )
-       WHERE id = $1`,
-      [userId]
-    )
+         )
+         WHERE id = $1`,
+        [userId]
+      )
 
-    await query(
-      `UPDATE organisations
-       SET settings = jsonb_set(
-         COALESCE(settings, '{}'::jsonb),
-         '{plan}',
-         '"free"'::jsonb
-       )
-       WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
-      [userId]
-    )
+      await query(
+        `UPDATE organisations
+         SET settings = jsonb_set(
+           COALESCE(settings, '{}'::jsonb),
+           '{plan}',
+           '"free"'::jsonb
+         )
+         WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+        [userId]
+      )
 
-    console.log(`✅ Utilisateur ${userId} repassé en plan gratuit`)
+      console.log(`✅ Utilisateur ${userId} repassé en plan gratuit`)
+    }
   } catch (error) {
     console.error('Erreur lors de l\'annulation de l\'abonnement:', error)
     throw error
@@ -303,13 +394,14 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.user_id
+  const product = session.metadata?.product || 'premium'
 
   if (!userId) {
     console.error('user_id manquant dans les métadonnées de la session')
     return
   }
 
-  console.log(`Checkout complété pour user ${userId}`)
+  console.log(`Checkout ${product} complété pour user ${userId}`)
 
   // Si c'est un abonnement, on attend l'événement subscription.created
   if (session.mode === 'subscription') {
@@ -319,35 +411,66 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // Pour un paiement unique (mode payment), on active directement
   try {
-    await query(
-      `UPDATE users
-       SET metadata = jsonb_set(
-         jsonb_set(
+    if (product === 'pack_club') {
+      // Activer Pack Club
+      await query(
+        `UPDATE organisations
+         SET settings = jsonb_set(
+           COALESCE(settings, '{}'::jsonb),
+           '{pack_club}',
+           'true'::jsonb
+         )
+         WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+        [userId]
+      )
+
+      await query(
+        `UPDATE users
+         SET metadata = jsonb_set(
            COALESCE(metadata, '{}'::jsonb),
-           '{subscription,status}',
+           '{subscription,pack_club}',
+           $1::jsonb
+         )
+         WHERE id = $2`,
+        [JSON.stringify({
+          active: true,
+          purchased_at: new Date().toISOString()
+        }), userId]
+      )
+
+      console.log(`✅ Pack Club activé pour user ${userId} (checkout session)`)
+    } else {
+      // Activer Premium
+      await query(
+        `UPDATE users
+         SET metadata = jsonb_set(
+           jsonb_set(
+             COALESCE(metadata, '{}'::jsonb),
+             '{subscription,status}',
+             '"premium"'::jsonb
+           ),
+           '{subscription,plan}',
+           '"premium_yearly"'::jsonb
+         )
+         WHERE id = $1`,
+        [userId]
+      )
+
+      await query(
+        `UPDATE organisations
+         SET settings = jsonb_set(
+           COALESCE(settings, '{}'::jsonb),
+           '{plan}',
            '"premium"'::jsonb
-         ),
-         '{subscription,plan}',
-         '"premium_yearly"'::jsonb
-       )
-       WHERE id = $1`,
-      [userId]
-    )
+         )
+         WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
+        [userId]
+      )
 
-    await query(
-      `UPDATE organisations
-       SET settings = jsonb_set(
-         COALESCE(settings, '{}'::jsonb),
-         '{plan}',
-         '"premium"'::jsonb
-       )
-       WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
-      [userId]
-    )
-
-    console.log(`✅ Premium activé pour user ${userId} (checkout session)`)
+      console.log(`✅ Premium activé pour user ${userId} (checkout session)`)
+    }
   } catch (error) {
-    console.error('Erreur lors de l\'activation premium après checkout:', error)
+    console.error('Erreur lors de l\'activation après checkout:', error)
     throw error
   }
 }

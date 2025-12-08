@@ -33,6 +33,7 @@ interface AuthContextType {
   refreshOrganization: () => Promise<void>
   isAuthenticated: boolean
   isPremium: boolean
+  hasPackClub: boolean
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -43,7 +44,8 @@ const AuthContext = createContext<AuthContextType>({
   updateUserPlan: async () => false,
   refreshOrganization: async () => {},
   isAuthenticated: false,
-  isPremium: false
+  isPremium: false,
+  hasPackClub: false
 })
 
 export const useAuth = () => useContext(AuthContext)
@@ -185,6 +187,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Vérification Pack Club depuis les settings de l'organisation
+  const orgSettings = organization?.settings as { plan?: string; pack_club?: boolean } | null
+
   const value: AuthContextType = {
     user,
     organization,
@@ -193,7 +198,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateUserPlan,
     refreshOrganization,
     isAuthenticated: !!user,
-    isPremium: organization?.settings?.plan === 'premium'
+    isPremium: orgSettings?.plan === 'premium',
+    hasPackClub: orgSettings?.pack_club === true
   }
 
   // Logs de debug en développement

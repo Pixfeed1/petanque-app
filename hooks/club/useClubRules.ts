@@ -4,9 +4,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ClubRules, DEFAULT_CLUB_RULES } from '@/lib/club/types'
 import { ClubRulesService } from '@/lib/club/rules.service'
+import { useAuth } from '@/app/providers/AuthProvider'
 
 interface UseClubRulesOptions {
-  userId: string | null
   autoLoad?: boolean
 }
 
@@ -28,23 +28,24 @@ interface UseClubRulesReturn {
   // Helpers
   hasPackClub: boolean
   canCreateRules: boolean
+  isPremium: boolean
 }
 
 /**
  * Hook pour gérer les règles personnalisées Pack Club
  */
 export function useClubRules({
-  userId,
   autoLoad = true
-}: UseClubRulesOptions): UseClubRulesReturn {
+}: UseClubRulesOptions = {}): UseClubRulesReturn {
+  const { user, hasPackClub, isPremium } = useAuth()
+  const userId = user?.id || null
+
   const [rules, setRules] = useState<ClubRules[]>([])
   const [currentRules, setCurrentRules] = useState<ClubRules | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // TODO: Vérifier si l'utilisateur a le Pack Club
-  // Pour l'instant, on simule que tout utilisateur connecté a le Pack Club
-  const hasPackClub = !!userId
+  // Pack Club requis pour créer des règles personnalisées
   const canCreateRules = hasPackClub
 
   /**
@@ -214,7 +215,8 @@ export function useClubRules({
     deleteRules,
     duplicateRules,
     hasPackClub,
-    canCreateRules
+    canCreateRules,
+    isPremium
   }
 }
 

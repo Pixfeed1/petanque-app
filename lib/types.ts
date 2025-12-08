@@ -204,6 +204,13 @@ export interface UserMetadata {
     stripe_subscription_id?: string
     premium_since?: string
     current_period_end?: string
+    // Pack Club addon (9.99€)
+    pack_club?: {
+      active: boolean
+      purchased_at?: string
+      stripe_subscription_id?: string
+      expires_at?: string
+    }
   }
   preferences?: {
     theme?: 'light' | 'dark'
@@ -224,6 +231,7 @@ export interface Organisation {
 
 export interface OrganisationSettings {
   plan: 'free' | 'premium'
+  pack_club?: boolean // Addon règles personnalisées (9.99€)
   features?: {
     max_tournois?: number
     max_joueurs?: number

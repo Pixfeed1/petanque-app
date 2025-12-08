@@ -167,7 +167,8 @@ export const matchIdSchema = z.object({
 export const createCheckoutSessionSchema = z.object({
   userId: idSchema,
   userEmail: z.string().email('Email invalide'),
-  priceId: z.string().optional().nullable()
+  priceId: z.string().optional().nullable(),
+  product: z.enum(['premium', 'pack_club']).optional().default('premium')
 })
 
 export const verifyPaymentSchema = z.object({
