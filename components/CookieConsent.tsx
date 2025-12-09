@@ -346,56 +346,68 @@ export default function CookieConsent() {
   }, [])
 
   const handleAcceptAll = useCallback(() => {
-    const model = createTCModel(true)
-    tcModel = model
-    const tcStr = generateTCString(model)
+    try {
+      const model = createTCModel(true)
+      tcModel = model
+      const tcStr = generateTCString(model)
 
-    saveConsent({
-      essential: true,
-      analytics: true,
-      advertising: true,
-      timestamp: Date.now()
-    }, tcStr)
-
+      saveConsent({
+        essential: true,
+        analytics: true,
+        advertising: true,
+        timestamp: Date.now()
+      }, tcStr)
+    } catch (e) {
+      console.warn('Erreur TCF acceptAll:', e)
+    }
+    // Toujours fermer le bandeau, même en cas d'erreur
     setShowBanner(false)
   }, [])
 
   const handleRejectAll = useCallback(() => {
-    const model = createTCModel(false)
-    tcModel = model
-    const tcStr = generateTCString(model)
+    try {
+      const model = createTCModel(false)
+      tcModel = model
+      const tcStr = generateTCString(model)
 
-    saveConsent({
-      essential: true,
-      analytics: false,
-      advertising: false,
-      timestamp: Date.now()
-    }, tcStr)
-
+      saveConsent({
+        essential: true,
+        analytics: false,
+        advertising: false,
+        timestamp: Date.now()
+      }, tcStr)
+    } catch (e) {
+      console.warn('Erreur TCF rejectAll:', e)
+    }
+    // Toujours fermer le bandeau, même en cas d'erreur
     setShowBanner(false)
   }, [])
 
   const handleSavePreferences = useCallback(() => {
-    const model = createTCModel(tempPrefs.advertising)
+    try {
+      const model = createTCModel(tempPrefs.advertising)
 
-    // Si analytics mais pas advertising, on active quand même certains purposes
-    if (tempPrefs.analytics && !tempPrefs.advertising) {
-      model.purposeConsents.set(1) // Storage
-      model.purposeConsents.set(7) // Measure ad performance
-      model.purposeConsents.set(8) // Measure content performance
-      model.purposeConsents.set(9) // Market research
+      // Si analytics mais pas advertising, on active quand même certains purposes
+      if (tempPrefs.analytics && !tempPrefs.advertising) {
+        model.purposeConsents.set(1) // Storage
+        model.purposeConsents.set(7) // Measure ad performance
+        model.purposeConsents.set(8) // Measure content performance
+        model.purposeConsents.set(9) // Market research
+      }
+
+      tcModel = model
+      const tcStr = generateTCString(model)
+
+      saveConsent({
+        essential: true,
+        analytics: tempPrefs.analytics,
+        advertising: tempPrefs.advertising,
+        timestamp: Date.now()
+      }, tcStr)
+    } catch (e) {
+      console.warn('Erreur TCF savePreferences:', e)
     }
-
-    tcModel = model
-    const tcStr = generateTCString(model)
-
-    saveConsent({
-      essential: true,
-      analytics: tempPrefs.analytics,
-      advertising: tempPrefs.advertising,
-      timestamp: Date.now()
-    }, tcStr)
-
+    // Toujours fermer le bandeau, même en cas d'erreur
     setShowBanner(false)
     setShowDetails(false)
   }, [tempPrefs])
