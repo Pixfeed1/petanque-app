@@ -171,6 +171,13 @@ export default function TournamentDetailPage() {
     setMounted(true)
   }, [])
 
+  // FIX UX Mode Choisi: Afficher l'onglet Équipes par défaut si aucune équipe n'existe
+  useEffect(() => {
+    if (tournament?.mode === 'choisi' && teams.length === 0 && tournament.status === 'preparation') {
+      setActiveTab('equipes')
+    }
+  }, [tournament?.mode, tournament?.status, teams.length])
+
   // Mettre a jour la phase actuelle en fonction des matchs
   useEffect(() => {
     if (!matches || matches.length === 0) {
@@ -462,7 +469,34 @@ export default function TournamentDetailPage() {
                 <div className="text-center py-12">
                   <Flag className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                   <p className="text-gray-500 mb-2">Aucun match généré</p>
-                  {isOrganizer && tournament.status === 'preparation' && (
+                  {/* FIX UX: Message d'aide si moins de 4 équipes */}
+                  {isOrganizer && tournament.status === 'preparation' && teams.length < 4 ? (
+                    <div className="max-w-md mx-auto">
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                        <div className="flex items-start gap-3">
+                          <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                          <div className="text-left">
+                            <p className="text-amber-800 font-medium">
+                              Minimum 4 équipes requises
+                            </p>
+                            <p className="text-amber-700 text-sm mt-1">
+                              Vous avez actuellement {teams.length} équipe{teams.length > 1 ? 's' : ''}.
+                              {tournament.mode === 'choisi' && (
+                                <span> Composez vos équipes dans l'onglet Équipes.</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('equipes')}
+                        className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
+                      >
+                        <Users className="w-5 h-5 inline mr-2" />
+                        Aller aux équipes
+                      </button>
+                    </div>
+                  ) : isOrganizer && tournament.status === 'preparation' && (
                     <button
                       onClick={generatePoules}
                       className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg"
