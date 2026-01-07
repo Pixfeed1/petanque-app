@@ -28,6 +28,7 @@ export interface TournamentSettings {
   sendNotifications?: boolean
   players: string[]
   poules_created?: boolean
+  available_players?: string[]  // Joueurs sélectionnés pour Mode Choisi
 }
 
 export interface Tournament {
