@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useTournamentData } from '@/hooks/tournament/useTournamentData'
 import { useRankings } from '@/hooks/tournament/useRankings'
+import { useMatchActions } from '@/hooks/tournament/useMatchActions'
 import { StandingsTable } from '@/components/tournament'
 import { useToast } from '@/components/ui/Toast'
 import {
@@ -20,14 +21,16 @@ import {
 export default function PoulesPage() {
   const params = useParams()
   const router = useRouter()
-  const { showWarning } = useToast()
+  const { showSuccess, showError, showWarning } = useToast()
+  const [generatingPhases, setGeneratingPhases] = useState(false)
 
   const {
     tournament,
     teams,
     matches,
     loading,
-    isOrganizer
+    isOrganizer,
+    loadTournamentData
   } = useTournamentData({ tournamentId: params.id })
 
   const {
@@ -38,6 +41,29 @@ export default function PoulesPage() {
     teams,
     matches
   })
+
+  // Hook pour générer les phases finales
+  const { generateEliminationPhases } = useMatchActions({
+    tournament,
+    teams,
+    matches,
+    loadTournamentData,
+    getTeamPlayers: () => [],
+    onSuccess: showSuccess,
+    onError: showError,
+    onWarning: showWarning
+  })
+
+  // Handler pour générer les phases finales
+  const handleGenerateEliminationPhases = async () => {
+    setGeneratingPhases(true)
+    try {
+      await generateEliminationPhases()
+      router.push(`/tournoi/${params.id}`)
+    } finally {
+      setGeneratingPhases(false)
+    }
+  }
 
   // Filtrer uniquement les matchs de poule
   const pouleMatches = useMemo(() => {
@@ -204,8 +230,8 @@ export default function PoulesPage() {
           </div>
         )}
 
-        {/* Grille des poules */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Grille des poules - pleine largeur si 1 seule poule */}
+        <div className={`grid gap-8 ${pouleNames.length === 1 ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
           {pouleNames.map(pouleName => {
             const pouleTeams = teamsByPoule[pouleName] || []
             const pouleMatchList = matchesByPoule[pouleName] || []
@@ -382,10 +408,18 @@ export default function PoulesPage() {
               Vous pouvez maintenant generer les phases finales.
             </p>
             <button
-              onClick={() => router.push(`/tournoi/${params.id}`)}
-              className="px-6 py-3 bg-gradient-to-r from-yellow-600 to-orange-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
+              onClick={handleGenerateEliminationPhases}
+              disabled={generatingPhases}
+              className="px-6 py-3 bg-gradient-to-r from-yellow-600 to-orange-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
             >
-              Generer les phases finales
+              {generatingPhases ? (
+                <>
+                  <Loader className="w-5 h-5 animate-spin inline mr-2" />
+                  Generation en cours...
+                </>
+              ) : (
+                'Generer les phases finales'
+              )}
             </button>
           </div>
         )}
