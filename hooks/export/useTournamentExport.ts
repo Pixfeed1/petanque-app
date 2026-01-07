@@ -807,8 +807,9 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
         yPos += 8
 
         // En-têtes du tableau
-        const colWidth = 16
-        const startX = 25
+        // FIX: Réduire largeur colonnes pour éviter débordement droite (page A4 = 210mm)
+        const colWidth = 14  // Était 16, causait débordement de 10mm
+        const startX = 15    // Était 25, on utilise la marge standard
         const nbMenes = 10
 
         pdf.setFillColor(74, 124, 89)
