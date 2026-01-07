@@ -123,8 +123,9 @@ export function useTeamManagement({
         let allPlayers = Array.isArray(data) ? data : data.joueurs || []
 
         // FIX: En Mode Choisi, ne garder QUE les joueurs sélectionnés à l'étape 3
-        if (tournament?.mode === 'choisi' && tournament.settings?.available_players?.length > 0) {
-          const tournamentPlayerIds = new Set(tournament.settings.available_players)
+        const availablePlayerIds = tournament?.settings?.available_players
+        if (tournament?.mode === 'choisi' && availablePlayerIds && availablePlayerIds.length > 0) {
+          const tournamentPlayerIds = new Set(availablePlayerIds)
           allPlayers = allPlayers.filter((player: Joueur) => tournamentPlayerIds.has(player.id))
         }
 
