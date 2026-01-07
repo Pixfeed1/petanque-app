@@ -107,6 +107,7 @@ export function useTeamManagement({
 
   /**
    * Charge les joueurs disponibles (non assignés à une équipe)
+   * En Mode Choisi : ne charge QUE les joueurs sélectionnés lors de la création (settings.available_players)
    * Si on édite la composition d'une équipe, inclut aussi les joueurs de cette équipe
    */
   const loadAvailablePlayers = useCallback(async (forTeamId?: string) => {
@@ -119,7 +120,13 @@ export function useTeamManagement({
 
       if (response.ok) {
         const data = await response.json()
-        const allPlayers = Array.isArray(data) ? data : data.joueurs || []
+        let allPlayers = Array.isArray(data) ? data : data.joueurs || []
+
+        // FIX: En Mode Choisi, ne garder QUE les joueurs sélectionnés à l'étape 3
+        if (tournament?.mode === 'choisi' && tournament.settings?.available_players?.length > 0) {
+          const tournamentPlayerIds = new Set(tournament.settings.available_players)
+          allPlayers = allPlayers.filter((player: Joueur) => tournamentPlayerIds.has(player.id))
+        }
 
         // Filtrer les joueurs déjà assignés à une équipe de ce tournoi
         // Sauf ceux de l'équipe qu'on édite (forTeamId)
@@ -140,7 +147,7 @@ export function useTeamManagement({
     } catch (error) {
       console.error('Erreur chargement joueurs:', error)
     }
-  }, [organization?.id, teams])
+  }, [organization?.id, teams, tournament?.mode, tournament?.settings?.available_players])
 
   // Charger les joueurs disponibles quand on ouvre le modal
   useEffect(() => {
