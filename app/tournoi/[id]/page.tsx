@@ -54,6 +54,7 @@ export default function TournamentDetailPage() {
   const [currentPhase, setCurrentPhase] = useState<'poules' | 'elimination' | 'finale'>('poules')
   const [showStartModal, setShowStartModal] = useState(false)
   const [generatingPhases, setGeneratingPhases] = useState(false)  // C5 FIX: Loader pour génération phases
+  const [showLoader, setShowLoader] = useState(false)  // FIX: Loader différé pour éviter flash
 
   // Hook principal - données du tournoi
   const {
@@ -171,6 +172,17 @@ export default function TournamentDetailPage() {
     setMounted(true)
   }, [])
 
+  // FIX: Délai avant d'afficher le loader pour éviter le flash
+  useEffect(() => {
+    let timer: NodeJS.Timeout
+    if (loading) {
+      timer = setTimeout(() => setShowLoader(true), 200) // 200ms de délai
+    } else {
+      setShowLoader(false)
+    }
+    return () => clearTimeout(timer)
+  }, [loading])
+
   // FIX UX Mode Choisi: Afficher l'onglet Équipes par défaut si aucune équipe n'existe
   useEffect(() => {
     if (tournament?.mode === 'choisi' && teams.length === 0 && tournament.status === 'preparation') {
@@ -251,8 +263,8 @@ export default function TournamentDetailPage() {
     }
   }
 
-  // Loading
-  if (loading) {
+  // Loading - FIX: N'afficher que si loading > 200ms pour éviter le flash
+  if (loading && showLoader) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30 flex items-center justify-center">
         <div className="text-center">
@@ -266,6 +278,11 @@ export default function TournamentDetailPage() {
         </div>
       </div>
     )
+  }
+
+  // FIX: Si loading mais pas encore showLoader, ne rien afficher (évite le flash)
+  if (loading) {
+    return null
   }
 
   // C4 FIX: Afficher l'erreur à l'utilisateur
