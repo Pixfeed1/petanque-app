@@ -43,7 +43,7 @@ export default function StandingsTable({
       <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 text-white">
         <h3 className="text-xl font-bold flex items-center">
           <Trophy className="w-6 h-6 mr-2" />
-          {poule}
+          Poule {poule}
         </h3>
       </div>
 

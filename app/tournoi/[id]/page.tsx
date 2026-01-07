@@ -710,29 +710,23 @@ export default function TournamentDetailPage() {
               ) : (
                 <div className="space-y-4">
                   {Object.keys(teamsByPoule).sort().map(poule => (
-                    <div key={poule} className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                      <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 text-white">
-                        <h3 className="text-xl font-bold">Poule {poule}</h3>
-                      </div>
-                      <div className="p-4">
-                        <StandingsTable
-                          poule={poule}
-                          teams={teamsByPoule[poule].map(team => ({
-                            id: team.id,
-                            name: team.name,
-                            played: team.played || 0,
-                            victories: team.victories || 0,
-                            defeats: team.defeats || 0,
-                            draws: team.draws || 0,
-                            pointsFor: team.pointsFor || 0,
-                            pointsAgainst: team.pointsAgainst || 0,
-                            difference: team.difference || 0,
-                            points: (team.victories || 0) * 3 + (team.draws || 0)
-                          }))}
-                          qualifiedCount={tournament.settings.qualifiedPerPoule || 2}
-                        />
-                      </div>
-                    </div>
+                    <StandingsTable
+                      key={poule}
+                      poule={poule}
+                      teams={teamsByPoule[poule].map(team => ({
+                        id: team.id,
+                        name: team.name,
+                        played: team.played || 0,
+                        victories: team.victories || 0,
+                        defeats: team.defeats || 0,
+                        draws: team.draws || 0,
+                        pointsFor: team.pointsFor || 0,
+                        pointsAgainst: team.pointsAgainst || 0,
+                        difference: team.difference || 0,
+                        points: (team.victories || 0) * 3 + (team.draws || 0)
+                      }))}
+                      qualifiedCount={tournament.settings.qualifiedPerPoule || 2}
+                    />
                   ))}
                   <div className="text-center">
                     <button
