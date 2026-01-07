@@ -343,6 +343,26 @@ export default function TournamentDetailPage() {
 
             {/* Actions */}
             <div className="flex items-center space-x-1 sm:space-x-3">
+              {/* Bouton Exporter - toujours visible */}
+              <button
+                onClick={() => router.push(`/tournoi/${params.id}/export`)}
+                className="px-2 sm:px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all flex items-center space-x-1 sm:space-x-2 text-sm"
+              >
+                <Settings className="w-4 h-4" />
+                <span className="hidden sm:inline">Exporter</span>
+              </button>
+
+              {/* Bouton Podium - visible quand tournoi terminé */}
+              {tournament.status === 'termine' && (
+                <button
+                  onClick={() => router.push(`/tournoi/${params.id}/podium`)}
+                  className="px-2 sm:px-4 py-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base"
+                >
+                  <Trophy className="w-5 h-5" />
+                  <span className="hidden sm:inline">Podium</span>
+                </button>
+              )}
+
               {tournament.status === 'preparation' && isOrganizer && (
                 <button
                   onClick={() => setShowStartModal(true)}
@@ -774,6 +794,31 @@ export default function TournamentDetailPage() {
           )}
 
         </div>
+
+        {/* Section Tournoi Terminé */}
+        {tournament.status === 'termine' && (
+          <div className="mt-8 bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 rounded-3xl p-8 text-center border-2 border-yellow-200">
+            <div className="text-6xl mb-4">🏆</div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Tournoi terminé !</h2>
+            <p className="text-gray-600 mb-6">Félicitations à tous les participants</p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <button
+                onClick={() => router.push(`/tournoi/${params.id}/podium`)}
+                className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center space-x-2"
+              >
+                <Trophy className="w-5 h-5" />
+                <span>Voir le podium</span>
+              </button>
+              <button
+                onClick={() => router.push(`/tournoi/${params.id}/export`)}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center space-x-2"
+              >
+                <Settings className="w-5 h-5" />
+                <span>Exporter les résultats</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modals */}
