@@ -798,7 +798,11 @@ export default function TournamentDetailPage() {
         {/* Section Tournoi Terminé */}
         {tournament.status === 'termine' && (
           <div className="mt-8 bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 rounded-3xl p-8 text-center border-2 border-yellow-200">
-            <div className="text-6xl mb-4">🏆</div>
+            <div className="mb-4">
+              <div className="inline-block p-4 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-full">
+                <Trophy className="w-12 h-12 text-white" />
+              </div>
+            </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Tournoi terminé !</h2>
             <p className="text-gray-600 mb-6">Félicitations à tous les participants</p>
             <div className="flex flex-wrap justify-center gap-4">
@@ -806,7 +810,7 @@ export default function TournamentDetailPage() {
                 onClick={() => router.push(`/tournoi/${params.id}/podium`)}
                 className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center space-x-2"
               >
-                <Trophy className="w-5 h-5" />
+                <Medal className="w-5 h-5" />
                 <span>Voir le podium</span>
               </button>
               <button
