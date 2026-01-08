@@ -211,12 +211,12 @@ export async function DELETE(
       return apiError('Accès refusé', 403)
     }
 
-    // 🔧 FIX: Bloquer suppression des tournois qui ne sont pas en préparation
+    // 🔧 FIX: Bloquer suppression des tournois en cours uniquement
+    // On peut supprimer les tournois en "preparation" (annuler) ou "termine" (ménage)
     const tournoiStatus = tournoi.status || 'preparation'
-    if (tournoiStatus !== 'preparation') {
+    if (tournoiStatus === 'en_cours') {
       return apiError(
-        `Impossible de supprimer un tournoi ${tournoiStatus === 'en_cours' ? 'en cours' : tournoiStatus}. ` +
-        `Seuls les tournois en préparation peuvent être supprimés.`,
+        'Impossible de supprimer un tournoi en cours. Terminez-le d\'abord ou attendez qu\'il soit terminé.',
         400
       )
     }
