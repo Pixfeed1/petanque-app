@@ -248,18 +248,27 @@ function getStoredTCString(): string {
   }
 }
 
-function saveConsent(preferences: CookiePreferences, tcStr: string) {
+function saveConsent(preferences: CookiePreferences, tcStr: string): boolean {
   try {
     localStorage.setItem(CONSENT_KEY, JSON.stringify(preferences))
     localStorage.setItem(TC_STRING_KEY, tcStr)
+
+    // Vérifier que la sauvegarde a fonctionné
+    const verified = localStorage.getItem(CONSENT_KEY)
+    if (!verified) {
+      console.error('Cookie consent: échec sauvegarde localStorage')
+      return false
+    }
 
     // Mettre à jour les variables globales
     tcString = tcStr
 
     // Notifier les listeners
     notifyListeners(tcStr)
-  } catch {
-    // Ignore
+    return true
+  } catch (e) {
+    console.error('Cookie consent: erreur localStorage', e)
+    return false
   }
 }
 
@@ -337,6 +346,16 @@ export default function CookieConsent() {
 
     // Vérifier si on doit afficher le bandeau
     const stored = getStoredConsent()
+
+    // Debug: log l'état du consentement
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Cookie consent check:', {
+        hasStored: !!stored,
+        hasTCString: !!storedTCString,
+        timestamp: stored?.timestamp
+      })
+    }
+
     if (!stored) {
       setTimeout(() => setShowBanner(true), 500)
     } else {
