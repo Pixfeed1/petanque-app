@@ -773,10 +773,10 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
           pdf.text(cleanControlCharacters(playersA).substring(0, 30), 57.5, yPos + 28, { align: 'center' })
         }
 
-        // VS
-        pdf.setFontSize(20)
+        // VS (taille réduite)
+        pdf.setFontSize(14)
         pdf.setFont('helvetica', 'bold')
-        pdf.text('VS', 105, yPos + 20, { align: 'center' })
+        pdf.text('VS', 105, yPos + 18, { align: 'center' })
 
         // Équipe B
         pdf.setFillColor(254, 226, 226) // rouge clair
@@ -806,12 +806,11 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
         pdf.text('SCORE PAR MENE', 105, yPos, { align: 'center' })
         yPos += 8
 
-        // En-têtes du tableau
-        // FIX: Largeur optimisée pour page A4 (210mm) avec marges confortables
-        const colWidth = 12  // Colonnes compactes pour les scores (1-13)
-        const startX = 15    // Marge gauche standard
+        // En-têtes du tableau - même largeur que les blocs équipes (15 à 195 = 180mm)
+        const startX = 15    // Aligné avec les blocs équipes
         const nbMenes = 10
-        // Calcul: 15 + 15 + (10*12) + 20 = 170mm → marge droite 40mm ✓
+        const colWidth = 14.5  // (180 - 15 - 20) / 10 = 14.5mm par colonne
+        // Calcul: 15 + 15 + (10*14.5) + 20 = 195mm = aligné avec équipes ✓
 
         pdf.setFillColor(74, 124, 89)
         pdf.rect(startX, yPos, 15, 10, 'F')
