@@ -389,9 +389,11 @@ export default function TournamentDetailPage() {
               )}
 
               {/* C5 FIX: Bouton génération phases finales avec loader */}
-              {tournament.status === 'en_cours' && isOrganizer &&
+              {/* FIX: Afficher aussi si status preparation mais matchs de poule terminés */}
+              {(tournament.status === 'en_cours' || tournament.status === 'preparation') && isOrganizer &&
                tournament.mode !== 'melee_tournante' &&
-               matches.some(m => m.type === 'poule' && m.status === 'termine') &&
+               matches.filter(m => m.type === 'poule').every(m => m.status === 'termine') &&
+               matches.filter(m => m.type === 'poule').length > 0 &&
                !matches.some(m => ['huitieme', 'quart', 'demi', 'finale'].includes(m.type || '')) && (
                 <button
                   onClick={handleGenerateEliminationPhases}
@@ -408,7 +410,8 @@ export default function TournamentDetailPage() {
               )}
 
               {/* C5 FIX: Bouton génération finale avec loader */}
-              {tournament.status === 'en_cours' && isOrganizer &&
+              {/* FIX: Afficher aussi si status preparation */}
+              {(tournament.status === 'en_cours' || tournament.status === 'preparation') && isOrganizer &&
                matches.filter(m => m.type === 'demi' && m.status === 'termine').length === 2 &&
                !matches.some(m => m.type === 'finale') && (
                 <button

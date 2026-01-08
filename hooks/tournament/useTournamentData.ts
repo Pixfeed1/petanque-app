@@ -165,10 +165,14 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
     }
 
     // 2. Si le tournoi est "en_cours" et que tous les matchs sont terminés, passer à "termine"
+    // FIX: Ne pas terminer le tournoi si la finale n'a pas encore eu lieu
     if (tournamentData.status === 'en_cours') {
       const allMatchesFinished = matchesData.every(m => m.status === 'termine')
+      const hasFinale = matchesData.some(m => m.type === 'finale')
+      const finaleFinished = matchesData.some(m => m.type === 'finale' && m.status === 'termine')
 
-      if (allMatchesFinished) {
+      // Ne terminer que si la finale existe ET est terminée (ou s'il n'y a que des matchs de poule terminés sans possibilité de phases finales)
+      if (allMatchesFinished && hasFinale && finaleFinished) {
         try {
           const updateResponse = await fetch(`/api/tournois/${tournamentId}`, {
             method: 'PUT',
