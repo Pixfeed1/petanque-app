@@ -160,6 +160,31 @@ export default function CreateTournamentPage() {
     )
   }
 
+  // FIX: Overlay plein écran pendant la création pour éviter tout flash
+  if (savingTournament || successAnimation) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30 flex items-center justify-center">
+        <div className="bg-white rounded-3xl p-12 shadow-2xl text-center max-w-md">
+          {successAnimation ? (
+            <>
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Check className="w-10 h-10 text-green-600" />
+              </div>
+              <p className="text-xl font-bold text-green-600">Tournoi créé avec succès !</p>
+              <p className="text-gray-500 mt-2">Redirection en cours...</p>
+            </>
+          ) : (
+            <>
+              <Loader className="w-12 h-12 animate-spin mx-auto text-green-600" />
+              <p className="mt-4 text-lg font-medium text-gray-600">Création du tournoi...</p>
+              <p className="text-sm text-gray-400 mt-2">Veuillez patienter</p>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30 overflow-x-hidden">
       {/* Particules animées */}

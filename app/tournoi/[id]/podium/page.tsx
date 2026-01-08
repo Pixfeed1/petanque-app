@@ -246,7 +246,9 @@ interface PodiumPlaceProps {
 }
 
 function PodiumPlace({ position, team, animationStep, generatingCertificate, onGenerateCertificate }: PodiumPlaceProps) {
-  const isVisible = animationStep >= position
+  // FIX: Condition inversée - position >= animationStep pour révélation progressive
+  // animationStep: 3→2→1, donc position 3 apparaît d'abord, puis 2, puis 1
+  const isVisible = position >= animationStep && animationStep > 0
 
   const config = {
     1: {

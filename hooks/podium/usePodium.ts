@@ -673,9 +673,10 @@ function drawWatermark(ctx: CanvasRenderingContext2D) {
   ctx.globalAlpha = 0.03
   ctx.translate(600, 425)
   ctx.rotate(-Math.PI / 8)
-  ctx.font = 'bold 120px "Inter", "Helvetica", sans-serif'
+  // FIX: "PETANQUE PRO" en plus petit pour que ça rentre
+  ctx.font = 'bold 90px "Inter", "Helvetica", sans-serif'
   ctx.fillStyle = '#000000'
   ctx.textAlign = 'center'
-  ctx.fillText('PETANQUE', 0, 0)
+  ctx.fillText('PETANQUE PRO', 0, 0)
   ctx.restore()
 }
