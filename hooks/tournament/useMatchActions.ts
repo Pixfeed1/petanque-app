@@ -536,6 +536,115 @@ export function useMatchActions({
       // Message de succès avec détails sur les BYE
       const byeInfo = createdByes > 0 ? ` (${createdByes} BYE${createdByes > 1 ? 's' : ''})` : ''
       notify.success(`Phases éliminatoires générées : ${createdMatches} match(s) de ${matchType}${byeInfo}`)
+
+      // FIX: Créer la petite finale si on génère une finale directement et consolante activée
+      if (matchType === 'finale' && tournament.settings.consolante) {
+        // Récupérer les équipes 3ème et 4ème (non qualifiées)
+        // On recalcule le classement complet de chaque poule
+        const allRankedTeams: Array<{ team: Team; rank: number; poule: string }> = []
+
+        for (const pouleName of pouleNames) {
+          if (!pouleName) continue
+
+          const pouleTeamIds = new Set<string>()
+          pouleMatches
+            .filter(m => m.poule === pouleName)
+            .forEach(m => {
+              if (m.equipe_a_id) pouleTeamIds.add(m.equipe_a_id)
+              if (m.equipe_b_id) pouleTeamIds.add(m.equipe_b_id)
+            })
+
+          const pouleTeams = teams.filter(t => pouleTeamIds.has(t.id))
+
+          const teamStatsForPoule = pouleTeams.map(team => {
+            const teamPouleMatches = pouleMatches.filter(m =>
+              m.poule === pouleName &&
+              (m.equipe_a_id === team.id || m.equipe_b_id === team.id) &&
+              m.status === 'termine'
+            )
+
+            const matchesForService = teamPouleMatches.map(m => ({
+              id: m.id,
+              tournoi_id: tournament?.id || '',
+              equipe_a_id: m.equipe_a_id || null,
+              equipe_b_id: m.equipe_b_id || null,
+              equipe_a: m.equipe_a as any,
+              equipe_b: m.equipe_b as any,
+              score_a: m.score_a ?? null,
+              score_b: m.score_b ?? null,
+              tour: m.tour || 0,
+              terrain: m.terrain ?? null,
+              status: m.status as any,
+              type: m.type as any,
+              poule: m.poule || null,
+              round: null,
+              manches_json: m.manches_json || null,
+              started_at: m.started_at || null,
+              ended_at: m.ended_at || null,
+              validated_at: m.validated_at || null,
+              played_at: m.played_at || null,
+              proposed_by: null,
+              proposed_at: null,
+              winner_id: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }))
+
+            const stats = StatsService.calculateTeamStats(team.id, team.name, matchesForService as MatchType[])
+            return { team, stats }
+          })
+
+          const rankings = StatsService.sortTeamsByFIPJPRules(
+            teamStatsForPoule.map(t => ({
+              id: t.team.id,
+              name: t.team.name,
+              played: t.stats.played,
+              victories: t.stats.victories,
+              defeats: t.stats.defeats,
+              draws: t.stats.draws,
+              pointsFor: t.stats.pointsFor,
+              pointsAgainst: t.stats.pointsAgainst,
+              difference: t.stats.difference,
+              points: t.stats.points
+            }))
+          )
+
+          rankings.forEach((stats, index) => {
+            const teamData = teamStatsForPoule.find(t => t.team.id === stats.id)
+            if (teamData) {
+              allRankedTeams.push({ team: teamData.team, rank: index + 1, poule: pouleName })
+            }
+          })
+        }
+
+        // Trouver les équipes 3ème et 4ème (celles qui ne sont pas dans la finale)
+        const finaleTeamIds = reorderedQualified.map(t => t.id)
+        const nonFinaleTeams = allRankedTeams
+          .filter(t => !finaleTeamIds.includes(t.team.id))
+          .sort((a, b) => a.rank - b.rank)
+
+        if (nonFinaleTeams.length >= 2) {
+          const petiteFinaleResponse = await fetch('/api/matches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              tournoi_id: tournament.id,
+              equipe_a_id: nonFinaleTeams[0].team.id,
+              equipe_b_id: nonFinaleTeams[1].team.id,
+              tour: 1,
+              terrain: null,
+              type: 'petite_finale',
+              status: 'a_jouer'
+            })
+          })
+
+          if (petiteFinaleResponse.ok) {
+            notify.success('Petite finale également créée (3ème place)')
+          }
+        }
+      }
+
       await loadTournamentData()
     } catch (error) {
       console.error('Erreur génération phases finales:', error)
