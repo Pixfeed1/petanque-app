@@ -807,10 +807,11 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
         yPos += 8
 
         // En-têtes du tableau
-        // FIX: Réduire largeur colonnes pour éviter débordement droite (page A4 = 210mm)
-        const colWidth = 14  // Était 16, causait débordement de 10mm
-        const startX = 15    // Était 25, on utilise la marge standard
+        // FIX: Largeur optimisée pour page A4 (210mm) avec marges confortables
+        const colWidth = 12  // Colonnes compactes pour les scores (1-13)
+        const startX = 15    // Marge gauche standard
         const nbMenes = 10
+        // Calcul: 15 + 15 + (10*12) + 20 = 170mm → marge droite 40mm ✓
 
         pdf.setFillColor(74, 124, 89)
         pdf.rect(startX, yPos, 15, 10, 'F')
