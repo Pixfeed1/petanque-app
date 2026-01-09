@@ -34,7 +34,24 @@ export default function Dashboard() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, organization, loading: authLoading, signOut, hasPackClub } = useAuth()
-  const { loading, stats, tournois, recentMatches, refetch } = useDashboardData(organization?.id ? Number(organization.id) : undefined)
+  const { loading, stats, tournois, recentMatches, joueurs, refetch } = useDashboardData(organization?.id ? Number(organization.id) : undefined)
+
+  // Helper pour afficher les noms des joueurs d'une équipe
+  const getTeamDisplay = (equipe: { name: string; joueur_ids?: number[] } | undefined) => {
+    if (!equipe) return 'Équipe ?'
+    // Si on a des joueur_ids, afficher les noms des joueurs
+    if (equipe.joueur_ids && equipe.joueur_ids.length > 0 && joueurs.length > 0) {
+      const playerNames = equipe.joueur_ids
+        .map(id => joueurs.find(j => String(j.id) === String(id)))
+        .filter(Boolean)
+        .map(j => j!.name || 'Joueur')
+      if (playerNames.length > 0) {
+        return playerNames.join(' / ')
+      }
+    }
+    // Fallback sur le nom de l'équipe
+    return equipe.name || 'Équipe ?'
+  }
   const { showSuccess, showError } = useToast()
   const { confirm, ConfirmModal } = useConfirm()
 
@@ -497,7 +514,7 @@ export default function Dashboard() {
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-base font-medium text-gray-900 mb-1">
-                          {match.equipe_a?.name || 'Équipe A'} vs {match.equipe_b?.name || 'Équipe B'}
+                          {getTeamDisplay(match.equipe_a)} vs {getTeamDisplay(match.equipe_b)}
                         </p>
                         <p className="text-sm text-gray-500">
                           Tour {match.tour} {match.terrain ? `· Terrain ${match.terrain}` : ''}

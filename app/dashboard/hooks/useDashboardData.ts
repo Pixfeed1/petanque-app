@@ -41,8 +41,8 @@ export interface Match {
   terrain?: number
   score_a?: number
   score_b?: number
-  equipe_a?: { name: string }
-  equipe_b?: { name: string }
+  equipe_a?: { name: string; joueur_ids?: number[] }
+  equipe_b?: { name: string; joueur_ids?: number[] }
   created_at: string
   updated_at: string
 }
@@ -60,6 +60,7 @@ export function useDashboardData(organizationId: number | undefined) {
   })
   const [tournois, setTournois] = useState<Tournament[]>([])
   const [recentMatches, setRecentMatches] = useState<Match[]>([])
+  const [joueurs, setJoueurs] = useState<Joueur[]>([])
 
   useEffect(() => {
     if (!organizationId) return
@@ -106,6 +107,7 @@ export function useDashboardData(organizationId: number | undefined) {
       if (joueursRes.ok) {
         const data = await joueursRes.json()
         const joueursData: Joueur[] = Array.isArray(data) ? data : data.joueurs || []
+        setJoueurs(joueursData) // Sauvegarder pour résoudre les noms dans l'activité récente
         const lastMonth = getLastMonthDate()
         const recentPlayers = joueursData.filter(
           (j: Joueur) => j.created_at && new Date(j.created_at) > lastMonth
@@ -160,6 +162,7 @@ export function useDashboardData(organizationId: number | undefined) {
     stats,
     tournois,
     recentMatches,
+    joueurs,
     refetch: loadData
   }
 }
