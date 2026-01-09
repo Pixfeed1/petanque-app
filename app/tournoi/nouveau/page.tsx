@@ -509,32 +509,35 @@ export default function CreateTournamentPage() {
                 <h2 className="text-2xl font-bold text-gray-900">Options avancées</h2>
               </div>
               <div className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Taille des poules</label>
-                    <select
-                      value={formData.pouleSize}
-                      onChange={(e) => updateFormField('pouleSize', parseInt(e.target.value))}
-                      className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl"
-                    >
-                      {[3, 4, 5, 6].map(size => (
-                        <option key={size} value={size}>{size} équipes par poule</option>
-                      ))}
-                    </select>
+                {/* Options poules - non applicables en mêlée tournante */}
+                {formData.mode !== 'melee_tournante' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Taille des poules</label>
+                      <select
+                        value={formData.pouleSize}
+                        onChange={(e) => updateFormField('pouleSize', parseInt(e.target.value))}
+                        className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl"
+                      >
+                        {[3, 4, 5, 6].map(size => (
+                          <option key={size} value={size}>{size} équipes par poule</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Qualifiés par poule</label>
+                      <select
+                        value={formData.qualifiedPerPoule}
+                        onChange={(e) => updateFormField('qualifiedPerPoule', parseInt(e.target.value))}
+                        className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl"
+                      >
+                        {[1, 2, 3].map(n => (
+                          <option key={n} value={n}>{n} qualifié(s)</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Qualifiés par poule</label>
-                    <select
-                      value={formData.qualifiedPerPoule}
-                      onChange={(e) => updateFormField('qualifiedPerPoule', parseInt(e.target.value))}
-                      className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl"
-                    >
-                      {[1, 2, 3].map(n => (
-                        <option key={n} value={n}>{n} qualifié(s)</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                )}
 
                 {formData.mode === 'melee_tournante' && (
                   <div>
@@ -553,7 +556,8 @@ export default function CreateTournamentPage() {
                 <div className="space-y-4">
                   {[
                     { key: 'mixiteObligatoire', label: 'Mixité obligatoire (H/F dans chaque équipe)' },
-                    { key: 'consolante', label: 'Petite finale (3ème place)' },
+                    // Petite finale non applicable en mêlée tournante (classement individuel)
+                    ...(formData.mode !== 'melee_tournante' ? [{ key: 'consolante', label: 'Petite finale (3ème place)' }] : []),
                     { key: 'fairPlay', label: 'Mode Fair-Play' }
                   ].map(({ key, label }) => (
                     <label key={key} className="flex items-center space-x-3 cursor-pointer">
