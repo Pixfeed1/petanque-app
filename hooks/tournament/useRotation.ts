@@ -9,6 +9,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { MixiteService } from '@/lib/services/mixite.service'
+import { RotationService, type RotationPlayer } from '@/lib/services/rotation.service'
 import type { Joueur } from '@/lib/types'
 import type { Tournament, Team, Match } from './useTournamentData'
 
@@ -140,8 +141,9 @@ export function useRotation({
   }, [tournament, matches, currentRotation])
 
   /**
-   * Crée de nouvelles équipes avec l'algorithme de mixité
-   * 🔧 FIX Bug #2: Évite les partenaires répétés des rotations précédentes
+   * Crée de nouvelles équipes avec l'algorithme de rotation optimisé
+   * Utilise la méthode du cercle pour garantir zéro répétition de partenaires
+   * pendant n-1 rotations (où n = nombre de joueurs)
    */
   const createNewTeamsWithAlgorithm = useCallback(async () => {
     if (!organization || !tournament?.settings.players) return
@@ -168,52 +170,50 @@ export function useRotation({
       const rotationNumber = currentRotation + 1 // On crée pour la prochaine rotation
       let teamNumber = 1
 
-      // 🔧 FIX Bug #2: Construire l'index des partenaires précédents
+      // Convertir les joueurs au format attendu par RotationService
+      const rotationPlayers: RotationPlayer[] = players.map((p: Joueur) => ({
+        id: p.id,
+        gender: p.gender as 'H' | 'F' | undefined,
+        name: p.name
+      }))
+
+      // 🚀 Utiliser l'algorithme optimisé (méthode du cercle)
+      // rotationIndex est 0-indexed, donc currentRotation (1-indexed) correspond bien
+      // La rotation 1 a l'index 0, la rotation 2 a l'index 1, etc.
       const previousPartners = buildPreviousPartnersIndex(teams)
 
-      // Essayer plusieurs fois pour minimiser les partenaires répétés
-      const MAX_RETRIES = 10
-      let bestResult = MixiteService.createTeamsWithMixite(
-        players,
+      const result = RotationService.generateRotationTeams(
+        rotationPlayers,
+        currentRotation, // L'index de rotation (0 = premier tour, 1 = deuxième, etc.)
         teamSize as 2 | 3,
-        tournament.settings.mixiteObligatoire || false
+        tournament.settings.mixiteObligatoire || false,
+        previousPartners
       )
-      let bestRepeatedCount = countRepeatedPartners(bestResult.teams, previousPartners)
 
-      // Si on a des partenaires répétés, essayer de trouver une meilleure formation
-      if (bestRepeatedCount > 0) {
-        for (let i = 0; i < MAX_RETRIES && bestRepeatedCount > 0; i++) {
-          const candidate = MixiteService.createTeamsWithMixite(
-            players,
-            teamSize as 2 | 3,
-            tournament.settings.mixiteObligatoire || false
-          )
-          const candidateRepeatedCount = countRepeatedPartners(candidate.teams, previousPartners)
-
-          if (candidateRepeatedCount < bestRepeatedCount) {
-            bestResult = candidate
-            bestRepeatedCount = candidateRepeatedCount
-          }
-        }
-
-        // Avertir si on n'a pas pu éviter tous les partenaires répétés
-        if (bestRepeatedCount > 0) {
-          notify.warning(
-            `⚠️ ${bestRepeatedCount} paire(s) de partenaires répétée(s) dans cette rotation. ` +
-            `Avec ${players.length} joueurs après ${currentRotation} rotation(s), ` +
-            `il devient difficile d'éviter les répétitions.`
-          )
-        }
+      // Afficher les avertissements éventuels
+      if (result.warnings.length > 0) {
+        result.warnings.forEach(warning => {
+          notify.warning(`⚠️ ${warning}`)
+        })
       }
 
-      const newTeams = bestResult.teams.map(team => ({
+      // Vérifier les répétitions (ne devrait pas arriver avec la méthode du cercle)
+      const repeatedCount = RotationService.countRepeatedPartners(result.teams, previousPartners)
+      if (repeatedCount > 0) {
+        notify.warning(
+          `⚠️ ${repeatedCount} paire(s) de partenaires répétée(s). ` +
+          `Maximum théorique de rotations sans répétition atteint.`
+        )
+      }
+
+      const newTeams = result.teams.map(team => ({
         name: `R${rotationNumber}-Équipe ${teamNumber++}`,
         joueur_ids: team.joueur_ids
       }))
 
       // Alerter si des joueurs ne peuvent pas être assignés
-      if (bestResult.unassignedPlayerIds.length > 0) {
-        console.warn(`${bestResult.unassignedPlayerIds.length} joueur(s) non assigné(s) pour la rotation ${rotationNumber}:`, bestResult.warnings)
+      if (result.unassignedPlayerIds.length > 0) {
+        console.warn(`${result.unassignedPlayerIds.length} joueur(s) non assigné(s) pour la rotation ${rotationNumber}`)
       }
 
       // Créer les équipes en batch (1 seule requête au lieu de N)
