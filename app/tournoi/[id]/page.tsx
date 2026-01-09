@@ -692,28 +692,22 @@ export default function TournamentDetailPage() {
           {activeTab === 'classement' && (
             <div>
               {tournament.mode === 'melee_tournante' ? (
-                <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                  <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 text-white">
-                    <h3 className="text-xl font-bold">Classement Individuel</h3>
-                  </div>
-                  <div className="p-4">
-                    <PlayerRankingsTable
-                      players={individualRankings.map(player => ({
-                        id: player.id,
-                        name: player.name,
-                        email: player.email,
-                        played: player.played,
-                        victories: player.victories,
-                        defeats: player.defeats,
-                        draws: player.draws,
-                        pointsFor: player.pointsFor,
-                        pointsAgainst: player.pointsAgainst,
-                        difference: player.difference,
-                        points: player.points
-                      }))}
-                    />
-                  </div>
-                </div>
+                <PlayerRankingsTable
+                  players={individualRankings.map(player => ({
+                    id: player.id,
+                    name: player.name,
+                    email: player.email,
+                    played: player.played,
+                    victories: player.victories,
+                    defeats: player.defeats,
+                    draws: player.draws,
+                    pointsFor: player.pointsFor,
+                    pointsAgainst: player.pointsAgainst,
+                    difference: player.difference,
+                    points: player.points
+                  }))}
+                  rotationMode={tournament.settings.meleeRotation}
+                />
               ) : (
                 <div className="space-y-4">
                   {Object.keys(teamsByPoule).sort().map(poule => (
