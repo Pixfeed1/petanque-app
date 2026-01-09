@@ -94,7 +94,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier que le tournoi est en préparation
-    if (tournoi.status !== 'preparation') {
+    // Exception: en mêlée tournante, on peut créer des équipes en cours (rotation)
+    if (tournoi.status !== 'preparation' && tournoi.mode !== 'melee_tournante') {
       return apiError('Impossible de créer une équipe après le démarrage du tournoi', 400)
     }
 
