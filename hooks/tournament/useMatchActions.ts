@@ -273,6 +273,12 @@ export function useMatchActions({
   const generateEliminationPhases = useCallback(async () => {
     if (!tournament) return
 
+    // Pas de phases finales en mêlée tournante (classement individuel)
+    if (tournament.mode === 'melee_tournante') {
+      notify.warning('Pas de phases finales en mêlée tournante - le classement est individuel')
+      return
+    }
+
     // Vérifier que tous les matchs de poule sont terminés
     const pouleMatches = matches.filter(m => m.type === 'poule')
     const allPouleMatchesFinished = pouleMatches.every(m => m.status === 'termine')

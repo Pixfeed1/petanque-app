@@ -616,7 +616,8 @@ export default function TournamentDetailPage() {
                   })()}
 
                   {/* Matchs ELIMINATOIRES - groupés par type (huitièmes, quarts, demis, finale) */}
-                  {(() => {
+                  {/* Ne pas afficher en mêlée tournante (classement individuel, pas d'élimination) */}
+                  {tournament.mode !== 'melee_tournante' && (() => {
                     const eliminationTypes = [
                       { type: 'huitieme', label: 'Huitièmes de finale', gradient: 'from-blue-500 to-indigo-600' },
                       { type: 'quart', label: 'Quarts de finale', gradient: 'from-purple-500 to-indigo-600' },
