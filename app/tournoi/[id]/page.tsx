@@ -565,6 +565,57 @@ export default function TournamentDetailPage() {
                     </div>
                   </div>
 
+                  {/* Matchs de MÊLÉE TOURNANTE - groupés par tour/rotation */}
+                  {tournament.mode === 'melee_tournante' && (() => {
+                    // En mêlée tournante, les matchs ont type='poule' mais poule=null
+                    const rotationMatches = matches.filter(m => m.type === 'poule' && !m.poule)
+                    const tours = [...new Set(rotationMatches.map(m => m.tour))].sort((a, b) => a - b)
+
+                    if (tours.length === 0) return null
+
+                    return (
+                      <div className="space-y-4">
+                        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                          <Shuffle className="w-6 h-6 text-purple-600" />
+                          Matchs par rotation
+                        </h2>
+                        {tours.map(tour => {
+                          const tourMatches = rotationMatches.filter(m => m.tour === tour)
+                          const playedCount = tourMatches.filter(m => m.status === 'termine').length
+                          const totalCount = tourMatches.length
+
+                          return (
+                            <div key={tour} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                              <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 text-white flex items-center justify-between">
+                                <h3 className="text-lg font-bold">Tour {tour}</h3>
+                                <span className="text-sm opacity-90">
+                                  {playedCount}/{totalCount} terminés
+                                </span>
+                              </div>
+                              <div className="p-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                  {tourMatches.map(match => (
+                                    <MatchCard
+                                      key={match.id}
+                                      match={match}
+                                      maxPoints={tournament.settings.maxPoints || 13}
+                                      isOrganizer={isOrganizer}
+                                      getTeamPlayers={getTeamPlayers}
+                                      onAssignTerrain={assignTerrain}
+                                      onAutoAssignTerrain={autoAssignTerrain}
+                                      availableTerrains={tournament.settings.terrains}
+                                      onWarning={showWarning}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
+
                   {/* Matchs de POULE - groupés par poule (A, B, C...) */}
                   {(() => {
                     const pouleMatches = matches.filter(m => m.type === 'poule' && m.poule)
