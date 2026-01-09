@@ -211,16 +211,6 @@ export async function DELETE(
       return apiError('Accès refusé', 403)
     }
 
-    // 🔧 FIX: Bloquer suppression des tournois en cours uniquement
-    // On peut supprimer les tournois en "preparation" (annuler) ou "termine" (ménage)
-    const tournoiStatus = tournoi.status || 'preparation'
-    if (tournoiStatus === 'en_cours') {
-      return apiError(
-        'Impossible de supprimer un tournoi en cours. Terminez-le d\'abord ou attendez qu\'il soit terminé.',
-        400
-      )
-    }
-
     // Supprimer le tournoi (cascade supprimera équipes et matchs)
     await query('DELETE FROM tournois WHERE id = $1', [id])
 
