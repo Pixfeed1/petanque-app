@@ -141,7 +141,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 🔧 FIX: Vérifier qu'aucun joueur n'est déjà dans une autre équipe de ce tournoi
-    if (allPlayerIds.length > 0) {
+    // Exception: en mêlée tournante, les joueurs changent d'équipe à chaque rotation
+    if (allPlayerIds.length > 0 && tournoi.mode !== 'melee_tournante') {
       const existingTeamsWithPlayers = await queryMany<{ id: string; name: string; joueur_ids: string[] }>(
         `SELECT id, name, joueur_ids FROM equipes WHERE tournoi_id = $1`,
         [tournoiId]
