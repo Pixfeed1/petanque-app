@@ -70,11 +70,11 @@ export async function POST(request: NextRequest) {
         return apiError(`Match ${i}: Les deux équipes doivent être différentes`, 400)
       }
 
-      if (!validEquipeIds.has(match.equipe_a_id)) {
+      if (!validEquipeIds.has(String(match.equipe_a_id))) {
         return apiError(`Match ${i}: equipe_a_id invalide`, 400)
       }
 
-      if (!isByeMatch && match.equipe_b_id && !validEquipeIds.has(match.equipe_b_id)) {
+      if (!isByeMatch && match.equipe_b_id && !validEquipeIds.has(String(match.equipe_b_id))) {
         return apiError(`Match ${i}: equipe_b_id invalide`, 400)
       }
     }
