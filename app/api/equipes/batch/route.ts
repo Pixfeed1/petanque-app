@@ -43,9 +43,9 @@ export async function POST(request: NextRequest) {
       return apiError('Toutes les équipes doivent appartenir au même tournoi', 400)
     }
 
-    // 🔧 FIX: Récupérer le tournoi avec format et status
-    const tournoi = await queryOne<{ org_id: number; format: string; status: string }>(
-      'SELECT org_id, format, status FROM tournois WHERE id = $1',
+    // 🔧 FIX: Récupérer le tournoi avec format, mode et status
+    const tournoi = await queryOne<{ org_id: number; format: string; mode: string; status: string }>(
+      'SELECT org_id, format, mode, status FROM tournois WHERE id = $1',
       [tournoiId]
     )
 
