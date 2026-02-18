@@ -28,7 +28,7 @@ interface PlayerStats {
 interface UsePlayersManagementProps {
   onSuccess?: (message: string) => void
   onError?: (message: string) => void
-  onConfirm?: (message: string) => Promise<boolean>
+  onConfirm?: (options: { title: string; message: string; confirmText?: string; cancelText?: string; variant?: 'danger' | 'warning' | 'default' }) => Promise<boolean>
 }
 
 interface UsePlayersManagementReturn {
@@ -216,7 +216,7 @@ export function usePlayersManagement(props?: UsePlayersManagementProps): UsePlay
    */
   const deletePlayer = useCallback(async (playerId: string) => {
     const confirmed = onConfirm
-      ? await onConfirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')
+      ? await onConfirm({ title: 'Supprimer le joueur', message: 'Êtes-vous sûr de vouloir supprimer ce joueur ?', variant: 'danger' })
       : window.confirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')
 
     if (!confirmed) return
@@ -245,7 +245,7 @@ export function usePlayersManagement(props?: UsePlayersManagementProps): UsePlay
    */
   const bulkDelete = useCallback(async () => {
     const confirmed = onConfirm
-      ? await onConfirm(`Supprimer ${selectedPlayers.length} joueur(s) ?`)
+      ? await onConfirm({ title: 'Suppression en masse', message: `Supprimer ${selectedPlayers.length} joueur(s) ?`, variant: 'danger' })
       : window.confirm(`Supprimer ${selectedPlayers.length} joueur(s) ?`)
 
     if (!confirmed) return
