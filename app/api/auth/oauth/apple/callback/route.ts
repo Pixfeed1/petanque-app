@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
          RETURNING *`,
         [
           `Organisation de ${orgName}`,
-          (user as Record<string, unknown>).id,
+          (user as Record<string, unknown>).id as number,
           JSON.stringify({ plan: 'free' })
         ]
       )
@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
       await query(
         `INSERT INTO user_roles (user_id, org_id, role)
          VALUES ($1, $2, 'owner')`,
-        [(user as Record<string, unknown>).id, orgId]
+        [(user as Record<string, unknown>).id as number, orgId]
       )
     }
 
