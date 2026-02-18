@@ -180,7 +180,7 @@ export default function MatchScorePage() {
         .animation-delay-4000 { animation-delay: 4s; }
       `}</style>
 
-      <ConfirmModal />
+      {ConfirmModal}
     </div>
   )
 }

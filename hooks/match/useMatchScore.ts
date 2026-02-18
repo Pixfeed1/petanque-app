@@ -38,7 +38,7 @@ interface UseMatchScoreProps {
   onSuccess?: (message: string) => void
   onError?: (message: string) => void
   onWarning?: (message: string) => void
-  onConfirm?: (message: string) => Promise<boolean>
+  onConfirm?: (options: { title: string; message: string; confirmText?: string; cancelText?: string; variant?: 'danger' | 'warning' | 'default' }) => Promise<boolean>
 }
 
 interface UseMatchScoreReturn {
@@ -283,7 +283,7 @@ export function useMatchScore({
     if (totalA >= maxPoints || totalB >= maxPoints) {
       const winnerName = totalA >= maxPoints ? match?.equipe_a?.name : match?.equipe_b?.name
       const confirmed = onConfirm
-        ? await onConfirm(`Terminer et déclarer ${winnerName} vainqueur ?`)
+        ? await onConfirm({ title: 'Fin du match', message: `Terminer et déclarer ${winnerName} vainqueur ?` })
         : window.confirm(`Terminer et déclarer ${winnerName} vainqueur ?`)
 
       if (confirmed) {
