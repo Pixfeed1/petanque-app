@@ -611,70 +611,74 @@ export default function HomePage() {
             Choisissez votre formule
           </h2>
           <p className="text-xl text-gray-600 mb-12">
-            Gratuit avec publicités ou premium sans pub
+            Testez gratuitement, puis choisissez le plan adapté à vos besoins
           </p>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {/* Version Gratuite */}
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Plan Gratuit */}
             <div className="bg-white rounded-3xl shadow-xl p-8 relative">
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Version Gratuite</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Gratuit</h3>
                 <div className="text-5xl font-bold text-gray-900 mb-2">0€</div>
-                <p className="text-gray-600">Avec publicités</p>
+                <p className="text-gray-600">Pour découvrir</p>
               </div>
               <ul className="space-y-3 text-left mb-8">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700">Toutes les fonctionnalités</span>
+                  <span className="text-gray-700">1 tournoi</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700">Tournois illimités</span>
+                  <span className="text-gray-700">8 équipes max par tournoi</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
                   <span className="text-gray-700">Tous les modes de jeu</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700">Export PDF et partage</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-orange-500 mr-2 mt-1">
+                  <span className="text-gray-300 mr-2 mt-1">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </span>
-                  <span className="text-gray-700">Publicités non intrusives</span>
+                  <span className="text-gray-400">Export PDF</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-gray-300 mr-2 mt-1">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </span>
+                  <span className="text-gray-400">Historique des tournois</span>
                 </li>
               </ul>
-              <button 
+              <button
                 onClick={() => router.push('/login')}
                 className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-all font-medium"
               >
-                Utiliser gratuitement
+                Essayer gratuitement
               </button>
             </div>
 
-            {/* Version Premium */}
+            {/* Plan Essentiel */}
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl shadow-xl p-8 relative border-2 border-green-400">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-1 rounded-full text-sm font-bold">
                 RECOMMANDÉ
               </div>
-              
+
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Version Premium</h3>
-                <div className="text-5xl font-bold text-green-600 mb-2">4,99€</div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Essentiel</h3>
+                <div className="text-5xl font-bold text-green-600 mb-2">2,99€</div>
                 <p className="text-gray-600">Par an</p>
               </div>
               <ul className="space-y-3 text-left mb-8">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700 font-medium">Toutes les fonctionnalités</span>
+                  <span className="text-gray-700 font-medium">Tournois illimités</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700 font-medium">Tournois illimités</span>
+                  <span className="text-gray-700 font-medium">Équipes illimitées</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
@@ -685,20 +689,57 @@ export default function HomePage() {
                   <span className="text-gray-700 font-medium">Export PDF et partage</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-green-500 mr-2 mt-1">{Icons.star}</span>
-                  <span className="text-gray-700 font-bold">Sans publicité</span>
+                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
+                  <span className="text-gray-700 font-medium">Historique des tournois</span>
                 </li>
               </ul>
-              <button 
+              <button
                 onClick={() => router.push('/login')}
                 className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full hover:shadow-lg transition-all transform hover:scale-105 font-bold"
               >
-                Acheter la version premium
+                Choisir Essentiel
+              </button>
+            </div>
+
+            {/* Plan Club */}
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl shadow-xl p-8 relative border-2 border-amber-400">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Club</h3>
+                <div className="text-5xl font-bold text-amber-600 mb-2">9,99€</div>
+                <p className="text-gray-600">Par an</p>
+              </div>
+              <ul className="space-y-3 text-left mb-8">
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
+                  <span className="text-gray-700 font-medium">Tout le plan Essentiel</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-1">{Icons.star}</span>
+                  <span className="text-gray-700 font-bold">Statistiques avancées</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-1">{Icons.star}</span>
+                  <span className="text-gray-700 font-bold">Personnalisation club</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-1">{Icons.star}</span>
+                  <span className="text-gray-700 font-bold">Support prioritaire</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-1">{Icons.star}</span>
+                  <span className="text-gray-700 font-bold">Mises à jour en avant-première</span>
+                </li>
+              </ul>
+              <button
+                onClick={() => router.push('/login')}
+                className="w-full px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full hover:shadow-lg transition-all transform hover:scale-105 font-bold"
+              >
+                Choisir Club
               </button>
             </div>
           </div>
           <p className="mt-8 text-sm text-gray-500">
-            Paiement sécurisé • Satisfaction garantie
+            Paiement sécurisé par Stripe • Satisfait ou remboursé 30 jours
           </p>
         </div>
       </section>

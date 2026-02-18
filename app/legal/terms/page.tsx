@@ -152,26 +152,22 @@ export default function TermsPage() {
       content: (
         <div className="space-y-6">
           <p className="text-gray-700">
-            Pétanque Pro propose deux formules :
+            Pétanque Pro propose trois formules :
           </p>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-3 gap-4">
             <div className="border-2 border-gray-200 rounded-lg p-6">
-              <h4 className="text-xl font-bold text-gray-900 mb-3">Version Gratuite</h4>
+              <h4 className="text-xl font-bold text-gray-900 mb-3">Gratuit</h4>
               <div className="text-3xl font-bold text-gray-900 mb-2">0€</div>
-              <p className="text-gray-600 mb-4">Avec publicités non intrusives</p>
+              <p className="text-gray-600 mb-4">Pour découvrir</p>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span>Toutes les fonctionnalités</span>
+                  <span>1 tournoi, 8 équipes max</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span>Tournois illimités</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span>Support par email</span>
+                  <span>Tous les modes de jeu</span>
                 </li>
               </ul>
             </div>
@@ -180,17 +176,41 @@ export default function TermsPage() {
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold">
                 POPULAIRE
               </div>
-              <h4 className="text-xl font-bold text-gray-900 mb-3">Version Premium</h4>
-              <div className="text-3xl font-bold text-green-600 mb-2">4,99€</div>
-              <p className="text-gray-600 mb-4">Abonnement annuel renouvelable</p>
+              <h4 className="text-xl font-bold text-gray-900 mb-3">Essentiel</h4>
+              <div className="text-3xl font-bold text-green-600 mb-2">2,99€</div>
+              <p className="text-gray-600 mb-4">Abonnement annuel</p>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span>Toutes les fonctionnalités</span>
+                  <span>Tournois et équipes illimités</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span><strong>Sans publicité</strong></span>
+                  <span>Export PDF et partage</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
+                  <span>Historique des tournois</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="border-2 border-amber-400 rounded-lg p-6 bg-gradient-to-br from-amber-50 to-orange-50">
+              <h4 className="text-xl font-bold text-gray-900 mb-3">Club</h4>
+              <div className="text-3xl font-bold text-amber-600 mb-2">9,99€</div>
+              <p className="text-gray-600 mb-4">Abonnement annuel</p>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
+                  <span>Tout le plan Essentiel</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
+                  <span><strong>Statistiques avancées</strong></span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
+                  <span><strong>Personnalisation club</strong></span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>

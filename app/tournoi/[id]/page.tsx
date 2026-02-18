@@ -8,7 +8,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
-import AdBanner from '@/components/AdBanner'
 import { useToast } from '@/components/ui/Toast'
 import { useConfirm } from '@/components/ui/ConfirmModal'
 
@@ -399,10 +398,6 @@ export default function TournamentDetailPage() {
             ))}
           </div>
 
-          {/* Pub */}
-          <div className="mt-6 mb-6">
-            <AdBanner variant="responsive" userPlan={userPlan} showOnlyForFree={true} />
-          </div>
 
           {/* Contenu des tabs */}
           {activeTab === 'matchs' && (

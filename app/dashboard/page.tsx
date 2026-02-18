@@ -8,7 +8,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
 import { loadStripe } from '@stripe/stripe-js'
 import { useDashboardData } from './hooks/useDashboardData'
-import AdBanner from '@/components/AdBanner'
 import { Petanque, Trophy, Users, Play, Chart, Plus, Logout, Settings } from '@/components/Icons'
 import { useToast } from '@/components/ui/Toast'
 import { useConfirm } from '@/components/ui/ConfirmModal'
@@ -235,17 +234,17 @@ export default function Dashboard() {
                     <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-b border-gray-100">
                       <p className="text-sm font-medium text-gray-900">{user?.email}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{organization?.name}</p>
-                      {userPlan === 'premium' && (
-                        <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-medium rounded-full">
+                      {userPlan !== 'free' && (
+                        <div className={`mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-white text-xs font-medium rounded-full ${userPlan === 'club' ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-gradient-to-r from-green-600 to-emerald-600'}`}>
                           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                           </svg>
-                          Premium
+                          {userPlan === 'club' ? 'Club' : 'Essentiel'}
                         </div>
                       )}
                     </div>
                     <div className="p-2">
-                      {userPlan !== 'premium' && (
+                      {userPlan === 'free' && (
                         <button
                           onClick={() => {
                             setShowProfileMenu(false)
@@ -256,7 +255,7 @@ export default function Dashboard() {
                           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                           </svg>
-                          <span>Passer à Premium</span>
+                          <span>Changer de plan</span>
                         </button>
                       )}
                       <button
@@ -336,14 +335,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Publicité 1 - Uniquement pour les utilisateurs gratuits */}
-          <div className="mb-16">
-            <AdBanner
-              variant="responsive"
-              userPlan={userPlan}
-              showOnlyForFree={true}
-            />
-          </div>
 
           {/* Tournois en cours */}
           {stats.tournoiEnCours > 0 && (
@@ -423,14 +414,6 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Publicité 2 - Uniquement pour les utilisateurs gratuits */}
-          <div className="mb-16">
-            <AdBanner
-              variant="horizontal"
-              userPlan={userPlan}
-              showOnlyForFree={true}
-            />
-          </div>
 
           {/* Actions requises */}
           {actionItems.length > 0 && (
@@ -556,14 +539,14 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Modal Upgrade Premium */}
+      {/* Modal Upgrade */}
       {showUpgradeModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-fadeIn">
-            {/* Header avec gradient vert */}
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden animate-fadeIn">
+            {/* Header */}
             <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-white">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Passer à Premium</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Passez au niveau supérieur</h2>
                 <button
                   onClick={() => setShowUpgradeModal(false)}
                   disabled={processingPayment}
@@ -574,87 +557,97 @@ export default function Dashboard() {
                   </svg>
                 </button>
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold">4,99€</span>
-                <span className="text-white/80">/an</span>
-              </div>
+              <p className="text-white/80 mt-1">Débloquez tout le potentiel de Pétanque Pro</p>
             </div>
 
-            {/* Contenu */}
-            <div className="p-6 space-y-6">
-              {/* Avantages */}
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
-                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
+            {/* Contenu - 2 plans côte à côte */}
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Plan Essentiel */}
+                <div className="border-2 border-green-400 rounded-xl p-5 bg-green-50/50 relative">
+                  <div className="absolute -top-3 left-4 bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">POPULAIRE</div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">Essentiel</h3>
+                  <div className="flex items-baseline gap-1 mb-3">
+                    <span className="text-3xl font-bold text-green-600">2,99€</span>
+                    <span className="text-gray-500">/an</span>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Sans publicité</p>
-                    <p className="text-sm text-gray-600">Une expérience pure et fluide</p>
-                  </div>
+                  <ul className="space-y-2 mb-4 text-sm">
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                      <span className="text-gray-700">Tournois illimités</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                      <span className="text-gray-700">Équipes illimitées</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                      <span className="text-gray-700">Export PDF et partage</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                      <span className="text-gray-700">Historique des tournois</span>
+                    </li>
+                  </ul>
+                  <button
+                    onClick={handleUpgrade}
+                    disabled={processingPayment}
+                    className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                  >
+                    {processingPayment ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Redirection...</span>
+                      </>
+                    ) : (
+                      <span>Choisir Essentiel - 2,99€/an</span>
+                    )}
+                  </button>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
-                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
+                {/* Plan Club */}
+                <div className="border-2 border-amber-400 rounded-xl p-5 bg-amber-50/50">
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">Club</h3>
+                  <div className="flex items-baseline gap-1 mb-3">
+                    <span className="text-3xl font-bold text-amber-600">9,99€</span>
+                    <span className="text-gray-500">/an</span>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Accès illimité</p>
-                    <p className="text-sm text-gray-600">Tous les tournois, sans limite</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
-                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Support prioritaire</p>
-                    <p className="text-sm text-gray-600">Réponse rapide à vos questions</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
-                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Mises à jour gratuites</p>
-                    <p className="text-sm text-gray-600">Toutes les nouvelles fonctionnalités</p>
-                  </div>
+                  <ul className="space-y-2 mb-4 text-sm">
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                      <span className="text-gray-700">Tout le plan Essentiel</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                      <span className="text-gray-700 font-medium">Statistiques avancées</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                      <span className="text-gray-700 font-medium">Personnalisation club</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                      <span className="text-gray-700 font-medium">Support prioritaire</span>
+                    </li>
+                  </ul>
+                  <button
+                    onClick={handleUpgrade}
+                    disabled={processingPayment}
+                    className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                  >
+                    {processingPayment ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Redirection...</span>
+                      </>
+                    ) : (
+                      <span>Choisir Club - 9,99€/an</span>
+                    )}
+                  </button>
                 </div>
               </div>
 
-              {/* Bouton de paiement */}
-              <button
-                onClick={handleUpgrade}
-                disabled={processingPayment}
-                className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {processingPayment ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Redirection...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    <span>S'abonner - 4,99€/an</span>
-                  </>
-                )}
-              </button>
-
-              <p className="text-xs text-center text-gray-500">
+              <p className="text-xs text-center text-gray-500 mt-4">
                 Paiement sécurisé par Stripe • Satisfait ou remboursé 30 jours
               </p>
             </div>

@@ -235,10 +235,9 @@ export default function PrivacyPolicy() {
                   </div>
 
                   <div className="border-l-4 border-orange-600 pl-4">
-                    <h4 className="font-semibold text-gray-900">Cookies publicitaires (optionnels)</h4>
+                    <h4 className="font-semibold text-gray-900">Cookies fonctionnels (optionnels)</h4>
                     <p className="text-gray-700 mt-2">
-                      Utilisés pour afficher des publicités pertinentes dans la version gratuite.
-                      Non présents dans la version Premium.
+                      Utilisés pour mémoriser vos préférences et personnaliser votre expérience.
                     </p>
                     <p className="text-sm text-gray-600 mt-2"><strong>Durée :</strong> 13 mois</p>
                   </div>

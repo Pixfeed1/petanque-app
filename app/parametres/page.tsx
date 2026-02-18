@@ -240,14 +240,14 @@ export default function Parametres() {
                 {isPremium ? (
                   <div className="relative overflow-hidden bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 rounded-2xl p-6">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-yellow-300/20 to-orange-300/20 rounded-full -translate-y-16 translate-x-16"></div>
-                    
+
                     <div className="relative">
                       <div className="flex items-center justify-between mb-4">
                         <div>
                           <div className="flex items-center space-x-2 mb-2">
-                            <span className="text-2xl font-bold text-gray-900">Premium</span>
-                            <span className="px-2 py-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-bold rounded-full">
-                              À VIE
+                            <span className="text-2xl font-bold text-gray-900">Essentiel</span>
+                            <span className="px-2 py-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold rounded-full">
+                              ACTIF
                             </span>
                           </div>
                           <p className="text-gray-600">Toutes les fonctionnalités débloquées</p>
@@ -260,15 +260,15 @@ export default function Parametres() {
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2 text-sm">
                           <span className="text-green-500">{Icons.check}</span>
-                          <span className="text-gray-700">Sans publicité</span>
+                          <span className="text-gray-700">Tournois illimités</span>
                         </div>
                         <div className="flex items-center space-x-2 text-sm">
                           <span className="text-green-500">{Icons.check}</span>
-                          <span className="text-gray-700">Support prioritaire</span>
+                          <span className="text-gray-700">Export PDF et partage</span>
                         </div>
                         <div className="flex items-center space-x-2 text-sm">
                           <span className="text-green-500">{Icons.check}</span>
-                          <span className="text-gray-700">Mises à jour gratuites</span>
+                          <span className="text-gray-700">Historique des tournois</span>
                         </div>
                       </div>
                     </div>
@@ -279,12 +279,12 @@ export default function Parametres() {
                       {Icons.sparkles}
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">Plan Gratuit</h3>
-                    <p className="text-gray-600 mb-6">Passez à Premium pour supprimer les publicités</p>
+                    <p className="text-gray-600 mb-6">1 tournoi, 8 équipes max — Passez à Essentiel pour tout débloquer</p>
                     <button
                       onClick={() => router.push('/dashboard?upgrade=true')}
                       className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-medium hover:shadow-lg transition-all transform hover:scale-105"
                     >
-                      Passer à Premium - 4,99€
+                      Voir les plans - à partir de 2,99€/an
                     </button>
                   </div>
                 )}
@@ -355,7 +355,7 @@ export default function Parametres() {
                   Vous souhaitez nous quitter ? Vos données seront conservées 30 jours pour récupération.
                   {isPremium && (
                     <span className="block mt-2 text-green-600 font-medium">
-                      ✓ Votre statut Premium sera conservé avec votre email
+                      ✓ Votre abonnement sera conservé avec votre email
                     </span>
                   )}
                 </p>
@@ -389,7 +389,7 @@ export default function Parametres() {
                 {isPremium && (
                   <div className="mt-4 p-3 bg-green-50 rounded-xl">
                     <p className="text-sm text-green-800">
-                      <strong>Note Premium :</strong> Votre achat sera conservé. Si vous vous réinscrivez avec {user?.email}, votre statut Premium sera restauré automatiquement.
+                      <strong>Note :</strong> Votre abonnement sera conservé. Si vous vous réinscrivez avec {user?.email}, votre plan sera restauré automatiquement.
                     </p>
                   </div>
                 )}
