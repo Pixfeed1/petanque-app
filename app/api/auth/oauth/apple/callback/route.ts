@@ -169,20 +169,20 @@ export async function POST(request: NextRequest) {
       // L'utilisateur existe - mettre à jour la date de dernière connexion
       await query(
         'UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1',
-        [user.id]
+        [user.id as number]
       )
 
       // Si le nom n'était pas encore renseigné et qu'on le reçoit maintenant
       if (userName !== 'Utilisateur Apple' && user.full_name === 'Utilisateur Apple') {
         await query(
           'UPDATE users SET full_name = $1 WHERE id = $2',
-          [userName, user.id]
+          [userName, user.id as number]
         )
       }
 
       const userRole = await queryOne<Record<string, unknown>>(
         'SELECT org_id FROM user_roles WHERE user_id = $1 LIMIT 1',
-        [user.id]
+        [user.id as number]
       )
       orgId = userRole?.org_id as number
     } else {
