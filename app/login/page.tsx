@@ -581,10 +581,10 @@ function SocialLoginButtons({ onSocialLogin }: SocialLoginButtonsProps) {
         </button>
         <button
           onClick={() => onSocialLogin('apple')}
-          className="flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all hover:shadow-md bg-black hover:bg-gray-900"
+          className="flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all hover:shadow-md"
         >
           {Icons.apple}
-          <span className="ml-2 text-sm font-medium text-white">Apple</span>
+          <span className="ml-2 text-sm font-medium text-gray-700">Apple</span>
         </button>
       </div>
     </>
