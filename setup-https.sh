@@ -102,10 +102,12 @@ GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_REDIRECT_URI=https://petanquepro.fr/api/auth/oauth/google/callback
 
-# Facebook OAuth
-FACEBOOK_APP_ID=your_facebook_app_id
-FACEBOOK_APP_SECRET=your_facebook_app_secret
-FACEBOOK_REDIRECT_URI=https://petanquepro.fr/api/auth/oauth/facebook/callback
+# Apple Sign In
+APPLE_CLIENT_ID=
+APPLE_TEAM_ID=
+APPLE_KEY_ID=
+APPLE_PRIVATE_KEY=
+APPLE_REDIRECT_URI=https://petanquepro.fr/api/auth/oauth/apple/callback
 
 # Environnement
 NODE_ENV=production
@@ -118,7 +120,7 @@ else
     # Mettre à jour juste l'URL
     sed -i 's|NEXT_PUBLIC_APP_URL=.*|NEXT_PUBLIC_APP_URL=https://petanquepro.fr|' "$APP_DIR/.env.local"
     sed -i 's|GOOGLE_REDIRECT_URI=.*|GOOGLE_REDIRECT_URI=https://petanquepro.fr/api/auth/oauth/google/callback|' "$APP_DIR/.env.local"
-    sed -i 's|FACEBOOK_REDIRECT_URI=.*|FACEBOOK_REDIRECT_URI=https://petanquepro.fr/api/auth/oauth/facebook/callback|' "$APP_DIR/.env.local"
+    sed -i 's|APPLE_REDIRECT_URI=.*|APPLE_REDIRECT_URI=https://petanquepro.fr/api/auth/oauth/apple/callback|' "$APP_DIR/.env.local"
 fi
 
 echo ""

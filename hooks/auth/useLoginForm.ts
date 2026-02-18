@@ -65,7 +65,7 @@ export interface UseLoginFormReturn {
   handleLogin: () => Promise<void>
   handleSignup: () => Promise<void>
   handleForgotPassword: () => Promise<void>
-  handleSocialLogin: (provider: 'google' | 'facebook') => void
+  handleSocialLogin: (provider: 'google' | 'apple') => void
   handleKeyPress: (e: React.KeyboardEvent) => void
 }
 
@@ -273,7 +273,7 @@ export function useLoginForm(): UseLoginFormReturn {
   }, [email, isEmailValid])
 
   // Social login handler
-  const handleSocialLogin = useCallback((provider: 'google' | 'facebook') => {
+  const handleSocialLogin = useCallback((provider: 'google' | 'apple') => {
     const authUrl = `/api/auth/oauth/${provider}/login`
     window.location.href = authUrl
   }, [])

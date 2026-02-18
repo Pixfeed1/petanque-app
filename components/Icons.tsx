@@ -392,9 +392,9 @@ export const Google = ({ className = "w-5 h-5" }: { className?: string }) => (
   </svg>
 )
 
-export const Facebook = ({ className = "w-5 h-5 text-blue-600" }: { className?: string }) => (
+export const Apple = ({ className = "w-5 h-5" }: { className?: string }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/>
+    <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
   </svg>
 )
 
@@ -541,7 +541,7 @@ export const Icons = {
   dashboard: <Dashboard />,
   dice: <Dice />,
   google: <Google />,
-  facebook: <Facebook />,
+  apple: <Apple />,
   shield: <Shield />,
   book: <Book />,
   mobile: <Mobile />,

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useLoginForm, AuthTab } from '@/hooks/auth'
-import { Boule, Email, Lock, User, Building, Eye, EyeOff, Loader, Check, Google, Facebook, ArrowLeft } from '@/components/Icons'
+import { Boule, Email, Lock, User, Building, Eye, EyeOff, Loader, Check, Google, Apple, ArrowLeft } from '@/components/Icons'
 
 // Icones
 const Icons = {
@@ -16,7 +16,7 @@ const Icons = {
   loader: <Loader />,
   check: <Check />,
   google: <Google />,
-  facebook: <Facebook />,
+  apple: <Apple />,
   arrowLeft: <ArrowLeft />
 }
 
@@ -25,7 +25,7 @@ const Icons = {
  * - Login avec email/password
  * - Inscription avec organisation
  * - Mot de passe oublie
- * - OAuth Google/Facebook
+ * - OAuth Google/Apple
  */
 export default function LoginPage() {
   const router = useRouter()
@@ -556,7 +556,7 @@ function SubmitButton({ onClick, disabled, loading, success, loadingText, succes
 }
 
 interface SocialLoginButtonsProps {
-  onSocialLogin: (provider: 'google' | 'facebook') => void
+  onSocialLogin: (provider: 'google' | 'apple') => void
 }
 
 function SocialLoginButtons({ onSocialLogin }: SocialLoginButtonsProps) {
@@ -580,11 +580,11 @@ function SocialLoginButtons({ onSocialLogin }: SocialLoginButtonsProps) {
           <span className="ml-2 text-sm font-medium text-gray-700">Google</span>
         </button>
         <button
-          onClick={() => onSocialLogin('facebook')}
-          className="flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all hover:shadow-md"
+          onClick={() => onSocialLogin('apple')}
+          className="flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all hover:shadow-md bg-black hover:bg-gray-900"
         >
-          {Icons.facebook}
-          <span className="ml-2 text-sm font-medium text-gray-700">Facebook</span>
+          {Icons.apple}
+          <span className="ml-2 text-sm font-medium text-white">Apple</span>
         </button>
       </div>
     </>
