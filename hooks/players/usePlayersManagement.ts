@@ -282,7 +282,7 @@ export function usePlayersManagement(props?: UsePlayersManagementProps): UsePlay
       } else if (successCount === 0) {
         notify.error(`Échec de la suppression de ${failedCount} joueur(s)`)
       } else {
-        notify.warning(`${successCount} joueur(s) supprimé(s), ${failedCount} échec(s)`)
+        notify.error(`${successCount} joueur(s) supprimé(s), ${failedCount} échec(s)`)
       }
     } catch (error) {
       console.error('Erreur bulk delete:', error)
