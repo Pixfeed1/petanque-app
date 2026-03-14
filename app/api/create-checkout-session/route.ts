@@ -78,8 +78,8 @@ export async function POST(request: NextRequest) {
    // Utiliser le bon price ID selon le plan
    if (!priceId) {
      priceId = planType === 'club'
-       ? process.env.STRIPE_PRICE_ID_CLUB
-       : process.env.STRIPE_PRICE_ID_ESSENTIEL || process.env.STRIPE_PRICE_ID
+       ? process.env.STRIPE_PACK_CLUB_PRICE_ID
+       : process.env.STRIPE_PRICE_ID
    }
 
    // Vérifier si l'utilisateur n'est pas déjà abonné
