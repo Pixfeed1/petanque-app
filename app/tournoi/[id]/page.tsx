@@ -66,6 +66,7 @@ export default function TournamentDetailPage() {
     loading,
     isOrganizer,
     userPlan,
+    realtimeConnected,
     loadTournamentData
   } = useTournamentData({ tournamentId: params.id })
 
@@ -302,6 +303,12 @@ export default function TournamentDetailPage() {
                       {tournament.status === 'preparation' ? 'Prépa' :
                        tournament.status === 'en_cours' ? 'En cours' : 'Terminé'}
                     </span>
+                    {tournament.status === 'en_cours' && realtimeConnected && (
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 text-green-600 text-xs font-medium">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                        Live
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

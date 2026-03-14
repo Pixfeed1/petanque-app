@@ -21,6 +21,7 @@ interface TournamentHeaderProps {
   isOrganizer: boolean
   canGenerateElimination: boolean
   canGenerateFinale: boolean
+  realtimeConnected?: boolean
   onStartTournament: () => void
   onRotateTeams?: () => void
   onGenerateElimination?: () => void
@@ -32,6 +33,7 @@ export default function TournamentHeader({
   isOrganizer,
   canGenerateElimination,
   canGenerateFinale,
+  realtimeConnected,
   onStartTournament,
   onRotateTeams,
   onGenerateElimination,
@@ -86,6 +88,12 @@ export default function TournamentHeader({
                     {tournament.status === 'preparation' ? 'Prépa' :
                      tournament.status === 'en_cours' ? 'En cours' : 'Terminé'}
                   </span>
+                  {tournament.status === 'en_cours' && realtimeConnected && (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 text-green-600 text-xs font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                      Live
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

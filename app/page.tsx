@@ -140,7 +140,7 @@ export default function HomePage() {
     {
       icon: Icons.clock,
       title: 'Temps réel',
-      description: 'Classements et stats mis à jour instantanément',
+      description: 'Scores et classements mis à jour en direct via connexion live',
       color: 'from-blue-400 to-cyan-600'
     },
     {

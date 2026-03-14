@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { queryOne, query } from '@/lib/db'
 import { SQLValue } from '@/lib/types'
+import { emitTournamentEvent } from '@/lib/tournament-events'
 
 // GET - Récupérer un tournoi par ID
 export async function GET(
@@ -120,6 +121,8 @@ export async function PUT(
        RETURNING *`,
       values
     )
+
+    emitTournamentEvent('tournament:updated', id, { status: body.status })
 
     return apiSuccess(result.rows[0])
   } catch (error) {

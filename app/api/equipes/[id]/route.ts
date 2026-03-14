@@ -3,6 +3,7 @@
 
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
+import { emitTournamentEvent } from '@/lib/tournament-events'
 import { queryOne, query, queryMany } from '@/lib/db'
 import { SQLValue } from '@/lib/types'
 
@@ -114,6 +115,11 @@ export async function PUT(
        RETURNING *`,
       values
     )
+
+    // Notifier les clients SSE
+    if (result.rows[0]?.tournoi_id) {
+      emitTournamentEvent('team:updated', result.rows[0].tournoi_id, { team_id: id })
+    }
 
     return apiSuccess(result.rows[0])
   } catch (error) {

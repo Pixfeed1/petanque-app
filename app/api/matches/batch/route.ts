@@ -4,6 +4,7 @@
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { query, queryOne } from '@/lib/db'
+import { emitTournamentEvent } from '@/lib/tournament-events'
 
 interface MatchInput {
   tournoi_id: string
@@ -121,6 +122,8 @@ export async function POST(request: NextRequest) {
     `
 
     const result = await query(insertQuery, values)
+
+    emitTournamentEvent('match:created', tournoiId, { count: result.rows.length })
 
     return apiSuccess({
       created: result.rows.length,

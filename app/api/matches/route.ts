@@ -6,6 +6,7 @@ import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
 import { queryMany, query, queryOne } from '@/lib/db'
 import { MatchRawDB, MatchWithEquipes } from '@/lib/types'
 import { tournoiIdQuerySchema, validateRequest } from '@/lib/validations'
+import { emitTournamentEvent } from '@/lib/tournament-events'
 
 // GET - Récupérer les matches d'un tournoi
 export async function GET(request: NextRequest) {
@@ -159,6 +160,8 @@ export async function POST(request: NextRequest) {
        RETURNING *`,
       [tournoi_id, tour || 1, terrain, equipe_a_id, equipe_b_id, type || 'poule', poule, status || 'a_jouer']
     )
+
+    emitTournamentEvent('match:created', tournoi_id, { match_id: result.rows[0].id })
 
     return apiSuccess(result.rows[0], 201)
   } catch (error) {

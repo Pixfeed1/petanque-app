@@ -3,8 +3,9 @@
  * Centralise le chargement de: tournament, teams, matches
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
+import { useRealtimeUpdates } from '@/hooks/useRealtimeUpdates'
 import type { Joueur } from '@/lib/types'
 
 // Types locaux pour le hook
@@ -101,6 +102,7 @@ interface UseTournamentDataReturn {
   loading: boolean
   isOrganizer: boolean
   userPlan: string
+  realtimeConnected: boolean
 
   // Actions
   loadTournamentData: () => Promise<void>
@@ -286,13 +288,38 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
     }
   }, [user, tournamentId, loadTournamentData])
 
-  // Auto-refresh toutes les 10s quand le tournoi est en cours
-  useEffect(() => {
-    if (!tournament || tournament.status !== 'en_cours') return
+  // Temps réel via SSE quand le tournoi est en cours
+  const isLive = !!tournament && tournament.status === 'en_cours'
+  const tournamentIdStr = typeof tournamentId === 'string' ? tournamentId : Array.isArray(tournamentId) ? tournamentId[0] : undefined
 
+  // Debounce pour éviter les re-fetch trop fréquents (multiples events rapides)
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const handleRealtimeEvent = useCallback((event: { type: string }) => {
+    if (event.type === 'connected') return
+
+    // Debounce: attendre 500ms après le dernier event avant de re-fetch
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      loadTournamentData()
+    }, 500)
+  }, [loadTournamentData])
+
+  const { connected: realtimeConnected } = useRealtimeUpdates({
+    tournoiId: tournamentIdStr,
+    enabled: isLive,
+    onEvent: handleRealtimeEvent
+  })
+
+  // Fallback: polling toutes les 30s si SSE n'est pas connecté (réseau instable)
+  useEffect(() => {
+    if (!isLive) return
+
+    // Si SSE est connecté, pas besoin de polling agressif
+    // Juste un safety net toutes les 30s
     const interval = setInterval(() => {
       loadTournamentData()
-    }, 10000)
+    }, realtimeConnected ? 30000 : 10000)
 
     // Rafraîchir quand l'utilisateur revient sur l'onglet
     const handleVisibilityChange = () => {
@@ -306,7 +333,14 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
       clearInterval(interval)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [tournament?.status, loadTournamentData])
+  }, [isLive, realtimeConnected, loadTournamentData])
+
+  // Cleanup debounce
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
 
   return {
     // States
@@ -319,6 +353,7 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
     loading,
     isOrganizer,
     userPlan,
+    realtimeConnected,
 
     // Actions
     loadTournamentData,

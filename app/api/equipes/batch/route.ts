@@ -3,6 +3,7 @@
 
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
+import { emitTournamentEvent } from '@/lib/tournament-events'
 import { query, queryOne } from '@/lib/db'
 import { getOrgLimit } from '@/lib/plans'
 
@@ -114,6 +115,8 @@ export async function POST(request: NextRequest) {
 
       const result = await query(insertQuery, values)
       await query('COMMIT', [])
+
+      emitTournamentEvent('team:created', tournoiId, { count: result.rows.length })
 
       return apiSuccess({
         created: result.rows.length,

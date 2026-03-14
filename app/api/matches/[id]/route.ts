@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
 import { queryOne, query } from '@/lib/db'
 import { MatchRawDB, MatchWithEquipes, SQLValue } from '@/lib/types'
+import { emitTournamentEvent } from '@/lib/tournament-events'
 
 // GET - Récupérer un match par ID
 export async function GET(
@@ -297,6 +298,12 @@ export async function PUT(
        RETURNING *`,
       values
     )
+
+    // Notifier les clients SSE connectés au tournoi
+    emitTournamentEvent('match:updated', existingMatch.tournoi_id, {
+      match_id: id,
+      status: body.status
+    })
 
     return apiSuccess(result.rows[0])
   } catch (error) {
