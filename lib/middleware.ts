@@ -148,6 +148,32 @@ export async function checkOrgAdmin(
 }
 
 /**
+ * Middleware pour vérifier que l'utilisateur est un admin global
+ * Vérifie l'email contre ADMIN_EMAILS dans .env
+ */
+export async function requireAdmin(
+  request: NextRequest
+): Promise<{ user: User } | NextResponse> {
+  const authResult = await requireAuth(request)
+  if (authResult instanceof NextResponse) return authResult
+
+  const { user } = authResult
+  const adminEmails = (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean)
+
+  if (!adminEmails.includes(user.email.toLowerCase())) {
+    return NextResponse.json(
+      { error: 'Accès réservé aux administrateurs' },
+      { status: 403 }
+    )
+  }
+
+  return { user }
+}
+
+/**
  * Helper pour gérer les erreurs API de manière cohérente
  */
 export function apiError(message: string, status: number = 400): NextResponse {
