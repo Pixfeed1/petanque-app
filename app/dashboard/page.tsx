@@ -113,7 +113,7 @@ export default function Dashboard() {
     await signOut()
   }
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (planType: 'essentiel' | 'club' = 'essentiel') => {
     if (!user?.id) return
 
     setProcessingPayment(true)
@@ -123,8 +123,8 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
-          userEmail: user.email
-          // priceId omis = utilise process.env.STRIPE_PRICE_ID configuré dans l'API
+          userEmail: user.email,
+          planType
         })
       })
 
@@ -582,15 +582,11 @@ export default function Dashboard() {
                     </li>
                     <li className="flex items-center gap-2">
                       <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                      <span className="text-gray-700">Export PDF et partage</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                      <span className="text-gray-700">Historique des tournois</span>
+                      <span className="text-gray-700">Support standard</span>
                     </li>
                   </ul>
                   <button
-                    onClick={handleUpgrade}
+                    onClick={() => handleUpgrade('essentiel')}
                     disabled={processingPayment}
                     className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
                   >
@@ -631,7 +627,7 @@ export default function Dashboard() {
                     </li>
                   </ul>
                   <button
-                    onClick={handleUpgrade}
+                    onClick={() => handleUpgrade('club')}
                     disabled={processingPayment}
                     className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
                   >

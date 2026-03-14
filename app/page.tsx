@@ -636,20 +636,12 @@ export default function HomePage() {
                   <span className="text-gray-700">Tous les modes de jeu</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-gray-300 mr-2 mt-1">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </span>
-                  <span className="text-gray-400">Export PDF</span>
+                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
+                  <span className="text-gray-700">Export PDF et Excel</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-gray-300 mr-2 mt-1">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </span>
-                  <span className="text-gray-400">Historique des tournois</span>
+                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
+                  <span className="text-gray-700">Historique des tournois</span>
                 </li>
               </ul>
               <button
@@ -674,6 +666,10 @@ export default function HomePage() {
               <ul className="space-y-3 text-left mb-8">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
+                  <span className="text-gray-700 font-medium">Tout le plan Gratuit</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
                   <span className="text-gray-700 font-medium">Tournois illimités</span>
                 </li>
                 <li className="flex items-start">
@@ -682,15 +678,7 @@ export default function HomePage() {
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700 font-medium">Tous les modes de jeu</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700 font-medium">Export PDF et partage</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700 font-medium">Historique des tournois</span>
+                  <span className="text-gray-700 font-medium">Support standard</span>
                 </li>
               </ul>
               <button

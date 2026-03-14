@@ -224,11 +224,6 @@ export interface Organisation {
 
 export interface OrganisationSettings {
   plan: 'free' | 'essentiel' | 'club'
-  features?: {
-    max_tournois?: number
-    max_joueurs?: number
-    export_enabled?: boolean
-  }
 }
 
 // ============================================

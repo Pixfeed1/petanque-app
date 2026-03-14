@@ -57,23 +57,6 @@ export async function POST(request: NextRequest) {
       return apiError('Accès non autorisé à ce tournoi', 403)
     }
 
-    // Vérifier les limites du plan gratuit (8 équipes max)
-    const orgResult = await query(
-      `SELECT settings FROM organisations WHERE id = $1`,
-      [tournoi.org_id]
-    )
-    const plan = orgResult.rows[0]?.settings?.plan || 'free'
-    if (plan === 'free') {
-      const countResult = await query(
-        `SELECT COUNT(*) as count FROM equipes WHERE tournoi_id = $1`,
-        [tournoiId]
-      )
-      const existingCount = parseInt(countResult.rows[0]?.count || '0')
-      if (existingCount + teams.length > 8) {
-        return apiError(`Le plan Gratuit est limité à 8 équipes par tournoi (${existingCount} existantes). Passez au plan Essentiel pour des équipes illimitées.`, 403)
-      }
-    }
-
     // Valider chaque équipe
     for (let i = 0; i < teams.length; i++) {
       const team = teams[i]
@@ -81,6 +64,13 @@ export async function POST(request: NextRequest) {
         return apiError(`Équipe ${i}: name est requis`, 400)
       }
     }
+
+    // Vérifier les limites du plan gratuit (8 équipes max) avec verrouillage transactionnel
+    const orgResult = await query(
+      `SELECT settings FROM organisations WHERE id = $1`,
+      [tournoi.org_id]
+    )
+    const plan = orgResult.rows[0]?.settings?.plan || 'free'
 
     // Construire la requête d'insertion en masse
     const values: any[] = []
@@ -105,12 +95,32 @@ export async function POST(request: NextRequest) {
       RETURNING *
     `
 
-    const result = await query(insertQuery, values)
+    // Transaction avec verrou pour éviter la race condition sur la limite
+    await query('BEGIN', [])
+    try {
+      if (plan === 'free') {
+        const countResult = await query(
+          `SELECT COUNT(*) as count FROM equipes WHERE tournoi_id = $1 FOR UPDATE`,
+          [tournoiId]
+        )
+        const existingCount = parseInt(countResult.rows[0]?.count || '0')
+        if (existingCount + teams.length > 8) {
+          await query('ROLLBACK', [])
+          return apiError(`Le plan Gratuit est limité à 8 équipes par tournoi (${existingCount} existantes). Passez au plan Essentiel pour des équipes illimitées.`, 403)
+        }
+      }
 
-    return apiSuccess({
-      created: result.rows.length,
-      teams: result.rows
-    }, 201)
+      const result = await query(insertQuery, values)
+      await query('COMMIT', [])
+
+      return apiSuccess({
+        created: result.rows.length,
+        teams: result.rows
+      }, 201)
+    } catch (txError) {
+      await query('ROLLBACK', [])
+      throw txError
+    }
   } catch (error) {
     console.error('❌ Erreur POST /api/equipes/batch:', error)
     return apiError('Erreur lors de la création des équipes', 500)

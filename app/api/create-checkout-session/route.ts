@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
    const metadata = existingProfile?.metadata || {}
    const subscription = metadata.subscription || {}
 
-   if (['essentiel', 'club', 'premium'].includes(subscription.status)) {
+   if (['essentiel', 'club'].includes(subscription.status)) {
      return NextResponse.json(
        { error: 'Vous avez déjà un abonnement actif' },
        { status: 400 }
