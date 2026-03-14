@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
 import { loadStripe } from '@stripe/stripe-js'
 import { useDashboardData } from './hooks/useDashboardData'
-import { Petanque, Trophy, Users, Play, Chart, Plus, Logout, Settings } from '@/components/Icons'
+import { Petanque, Trophy, Users, Play, Chart, Plus, Logout, Settings, Archive } from '@/components/Icons'
 import { useToast } from '@/components/ui/Toast'
 import { useConfirm } from '@/components/ui/ConfirmModal'
 import type { ActionItem } from '@/lib/types'
@@ -203,6 +203,13 @@ export default function Dashboard() {
                   <span>Actualisation...</span>
                 </div>
               )}
+              <button
+                onClick={() => router.push('/dashboard/historique')}
+                className="flex items-center space-x-2 px-3 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+              >
+                <Archive className="w-5 h-5" />
+                <span className="text-sm hidden sm:inline">Historique</span>
+              </button>
               <button
                 onClick={() => router.push('/joueurs')}
                 className="flex items-center space-x-2 px-3 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
@@ -479,6 +486,12 @@ export default function Dashboard() {
                     </button>
                   ))}
                 </div>
+                <button
+                  onClick={() => router.push('/dashboard/historique')}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all font-medium"
+                >
+                  Voir l'historique
+                </button>
                 <button
                   onClick={() => router.push('/tournoi/nouveau')}
                   className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full hover:shadow-lg transition-all hover:scale-105 font-medium"
