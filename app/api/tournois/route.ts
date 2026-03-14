@@ -95,12 +95,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Appliquer les valeurs par défaut aux settings
+    const defaultSettings = {
+      terrains: 4,
+      maxPoints: 13,
+      pouleSize: 4,
+      timeLimit: false,
+      timeLimitMinutes: 60,
+      qualifiedPerPoule: 2,
+      consolante: false,
+      fairPlay: false,
+      recordMenes: false,
+      allowPhotos: false,
+      sendNotifications: false
+    }
+    const mergedSettings = { ...defaultSettings, ...(settings || {}) }
+
     // Créer le tournoi
     const result = await query(
       `INSERT INTO tournois (org_id, name, format, mode, status, settings, created_by, created_at, updated_at)
        VALUES ($1, $2, $3, $4, 'preparation', $5::jsonb, $6, NOW(), NOW())
        RETURNING *`,
-      [org_id, name, format, mode, settings || {}, user.id]
+      [org_id, name, format, mode, mergedSettings, user.id]
     )
 
     const tournoi = result.rows[0]

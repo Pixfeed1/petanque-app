@@ -93,19 +93,58 @@ export async function POST(request: NextRequest) {
       return apiError('Accès non autorisé à ce tournoi', 403)
     }
 
-    // Vérifier les limites du plan gratuit (8 équipes max)
+    // Vérifier les limites du plan gratuit (8 équipes max) avec verrouillage atomique
     const orgResult = await query(
       `SELECT settings FROM organisations WHERE id = $1`,
       [tournoi.org_id]
     )
     const plan = orgResult.rows[0]?.settings?.plan || 'free'
-    if (plan === 'free') {
-      const countResult = await query(
-        `SELECT COUNT(*) as count FROM equipes WHERE tournoi_id = $1`,
+
+    // Validation du nom
+    if (!name.trim()) {
+      return apiError('Le nom de l\'équipe ne peut pas être vide', 400)
+    }
+
+    // Validation du nombre de joueurs par équipe
+    if (Array.isArray(joueur_ids) && joueur_ids.length > 0) {
+      const tournoiDetails = await queryOne<{ format: string }>(
+        'SELECT format FROM tournois WHERE id = $1',
         [tournoi_id]
       )
-      if (parseInt(countResult.rows[0]?.count || '0') >= 8) {
-        return apiError('Le plan Gratuit est limité à 8 équipes par tournoi. Passez au plan Essentiel pour des équipes illimitées.', 403)
+      if (tournoiDetails) {
+        const expectedPlayers = tournoiDetails.format === 'tete_a_tete' ? 1 :
+                                tournoiDetails.format === 'doublette' ? 2 : 3
+        if (joueur_ids.length !== expectedPlayers) {
+          return apiError(`Une ${tournoiDetails.format} requiert exactement ${expectedPlayers} joueur(s) par équipe, ${joueur_ids.length} fourni(s)`, 400)
+        }
+      }
+    }
+
+    if (plan === 'free') {
+      // Utiliser une transaction avec verrou pour éviter la race condition
+      await query('BEGIN', [])
+      try {
+        // Verrou exclusif sur les équipes du tournoi
+        const countResult = await query(
+          `SELECT COUNT(*) as count FROM equipes WHERE tournoi_id = $1 FOR UPDATE`,
+          [tournoi_id]
+        )
+        if (parseInt(countResult.rows[0]?.count || '0') >= 8) {
+          await query('ROLLBACK', [])
+          return apiError('Le plan Gratuit est limité à 8 équipes par tournoi. Passez au plan Essentiel pour des équipes illimitées.', 403)
+        }
+
+        const result = await query(
+          `INSERT INTO equipes (tournoi_id, name, joueur_ids, stats, created_at)
+           VALUES ($1, $2, $3::bigint[], $4::jsonb, NOW())
+           RETURNING *`,
+          [tournoi_id, name.trim(), Array.isArray(joueur_ids) ? joueur_ids : [], JSON.stringify(stats || {})]
+        )
+        await query('COMMIT', [])
+        return apiSuccess(result.rows[0], 201)
+      } catch (txError) {
+        await query('ROLLBACK', [])
+        throw txError
       }
     }
 
@@ -115,7 +154,7 @@ export async function POST(request: NextRequest) {
        RETURNING *`,
       [
         tournoi_id,
-        name,
+        name.trim(),
         Array.isArray(joueur_ids) ? joueur_ids : [],
         JSON.stringify(stats || {})
       ]

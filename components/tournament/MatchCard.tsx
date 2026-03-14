@@ -62,21 +62,25 @@ export default function MatchCard({
     )
   }
 
+  const isFanny = match.status === 'termine' &&
+    ((match.score_a === maxPoints && match.score_b === 0) ||
+     (match.score_b === maxPoints && match.score_a === 0))
+
   return (
     <div className="bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition-all">
-      {/* Header - Statut et Terrain */}
+      {/* Header - Terrain uniquement */}
       <div className="flex justify-between items-center mb-2">
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          match.status === 'termine' ? 'bg-gray-100 text-gray-700' :
-          match.status === 'en_cours' ? 'bg-green-100 text-green-700' :
-          match.status === 'en_attente_validation' ? 'bg-orange-100 text-orange-700' :
-          'bg-yellow-100 text-yellow-700'
-        }`}>
-          {match.status === 'termine' ? 'Terminé' :
-           match.status === 'en_cours' ? 'En cours' :
-           match.status === 'en_attente_validation' ? '⏳ En attente validation' :
-           'À jouer'}
-        </span>
+        {match.status !== 'a_jouer' && (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+            match.status === 'termine' ? 'bg-gray-100 text-gray-700' :
+            match.status === 'en_cours' ? 'bg-green-100 text-green-700' :
+            'bg-orange-100 text-orange-700'
+          }`}>
+            {match.status === 'termine' ? 'Terminé' :
+             match.status === 'en_cours' ? 'En cours' :
+             '⏳ En attente validation'}
+          </span>
+        )}
         {match.terrain && (
           <span className="text-sm font-semibold text-gray-900">Terrain {match.terrain}</span>
         )}
@@ -103,21 +107,23 @@ export default function MatchCard({
           {match.status === 'termine' && (
             <div className="flex items-center justify-center gap-1 mt-1">
               <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_a ?? 0}</p>
-              {(match.score_a === maxPoints && match.score_b === 0) || (match.score_b === maxPoints && match.score_a === 0) ? (
+              {isFanny && match.score_a === maxPoints && (
                 <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
-              ) : null}
+              )}
             </div>
-          )}
-          {match.status === 'en_cours' && (
-            <p className="text-xs text-green-600 font-medium mt-1">En jeu...</p>
-          )}
-          {match.status === 'en_attente_validation' && (
-            <p className="text-xs text-orange-600 font-medium mt-1">Score proposé</p>
           )}
         </div>
 
-        {/* VS */}
-        <div className="px-1 sm:px-4 text-gray-400 font-bold text-sm sm:text-base">VS</div>
+        {/* VS / Statut central */}
+        <div className="px-1 sm:px-4 text-center">
+          <div className="text-gray-400 font-bold text-sm sm:text-base">VS</div>
+          {match.status === 'en_cours' && (
+            <p className="text-[10px] sm:text-xs text-green-600 font-medium mt-0.5">En jeu...</p>
+          )}
+          {match.status === 'en_attente_validation' && (
+            <p className="text-[10px] sm:text-xs text-orange-600 font-medium mt-0.5">Score proposé</p>
+          )}
+        </div>
 
         {/* Équipe B */}
         <div className="text-center flex-1">
@@ -138,16 +144,10 @@ export default function MatchCard({
           {match.status === 'termine' && (
             <div className="flex items-center justify-center gap-1 mt-1">
               <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_b ?? 0}</p>
-              {(match.score_a === maxPoints && match.score_b === 0) || (match.score_b === maxPoints && match.score_a === 0) ? (
+              {isFanny && match.score_b === maxPoints && (
                 <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
-              ) : null}
+              )}
             </div>
-          )}
-          {match.status === 'en_cours' && (
-            <p className="text-xs text-green-600 font-medium mt-1">En jeu...</p>
-          )}
-          {match.status === 'en_attente_validation' && (
-            <p className="text-xs text-orange-600 font-medium mt-1">Score proposé</p>
           )}
         </div>
       </div>

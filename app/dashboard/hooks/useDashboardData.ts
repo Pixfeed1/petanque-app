@@ -118,14 +118,11 @@ export function useDashboardData(organizationId: number | undefined) {
         }))
       }
 
-      // Charger tous les matchs de l'organisation en parallele (evite N+1 queries)
-      const matchPromises = tournoiData.map(tournoi =>
-        fetch(`/api/matches?tournoi_id=${tournoi.id}`, { credentials: 'include' })
-          .then(res => res.ok ? res.json() : [])
-          .catch(() => [])
-      )
-      const matchResults = await Promise.all(matchPromises)
-      const allMatches: Match[] = matchResults.flat()
+      // Charger tous les matchs de l'org en une seule requête via le endpoint dashboard stats
+      const matchesRes = await fetch(`/api/dashboard/matches?org_id=${organizationId}`, {
+        credentials: 'include'
+      })
+      const allMatches: Match[] = matchesRes.ok ? await matchesRes.json() : []
 
       if (allMatches.length > 0) {
         const lastMonth = getLastMonthDate()
