@@ -422,7 +422,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
               <div
                 key={index}
@@ -453,7 +453,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8">
             {/* Mode Choisi */}
             <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white mb-6">
@@ -565,7 +565,7 @@ export default function HomePage() {
             )}
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
               <div key={index} className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all">
                 <div className="flex mb-4">
@@ -614,7 +614,7 @@ export default function HomePage() {
             Testez gratuitement, puis choisissez le plan adapté à vos besoins
           </p>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Plan Gratuit */}
             <div className="bg-white rounded-3xl shadow-xl p-8 relative">
               <div className="mb-6">

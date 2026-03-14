@@ -5,7 +5,7 @@
  * - Navigation entre les étapes
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 
 export interface TournamentFormData {
   // Étape 1 - Informations
@@ -211,6 +211,13 @@ export function useCreateTournament(): UseCreateTournamentReturn {
         return false
     }
   }, [currentStep, formData, getTotalPlayers, getMinPlayers, getPlayersPerTeam])
+
+  // Effacer l'erreur de validation quand l'utilisateur modifie les joueurs
+  useEffect(() => {
+    if (validationError) {
+      setValidationError('')
+    }
+  }, [formData.selectedPlayers.length, formData.newPlayers])
 
   const handleContinue = useCallback(() => {
     setValidationError('')

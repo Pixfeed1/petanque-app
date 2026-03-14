@@ -404,9 +404,9 @@ export function useTournamentCreation({
         })
       }
 
-      // Animation et redirection
+      // Animation brève et redirection
       setSuccessAnimation(true)
-      await new Promise(r => setTimeout(r, 1500))
+      await new Promise(r => setTimeout(r, 400))
       router.push(`/tournoi/${tournoi.id}`)
 
     } catch (error) {

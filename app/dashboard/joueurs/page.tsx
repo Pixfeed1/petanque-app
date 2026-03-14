@@ -235,7 +235,7 @@ function StatsCards({ stats, mounted }: StatsCardsProps) {
   ]
 
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+    <div className={`grid grid-cols-2 md:grid-cols-4 gap-6 mb-8 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
       {cards.map((stat, index) => (
         <div
           key={index}

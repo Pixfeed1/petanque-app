@@ -352,7 +352,7 @@ export default function TournamentDetailPage() {
       {/* Contenu principal */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Stats cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[
             { label: 'Mode', value: tournament.mode === 'choisi' ? 'Choisi' : tournament.mode === 'melee_fixe' ? 'Mêlée fixe' : 'Mêlée tournante', icon: <Users className="w-5 h-5" />, gradient: 'from-blue-500 to-indigo-600' },
             { label: 'Format', value: tournament.format === 'doublette' ? 'Doublette' : 'Triplette', icon: <Petanque className="w-5 h-5" />, gradient: 'from-green-500 to-emerald-600' },
