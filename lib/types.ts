@@ -225,6 +225,9 @@ export interface Organisation {
 export interface PlanFeatures {
   max_tournois: number | null  // null = illimité
   max_equipes: number | null   // null = illimité
+  advanced_stats?: boolean     // Statistiques avancées (Club)
+  custom_rules?: boolean       // Règles de tournoi personnalisées (Club)
+  club_customization?: boolean // Personnalisation club (Club)
 }
 
 export interface ClubCustomization {

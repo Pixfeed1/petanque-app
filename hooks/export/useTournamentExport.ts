@@ -43,7 +43,7 @@ interface Match {
   status: string
   terrain?: number
   tour: number
-  type?: 'poule' | 'elimination' | 'finale'
+  type?: 'poule' | 'elimination' | 'finale' | 'bye' | 'demi' | 'quart' | 'huitieme' | 'petite_finale'
   poule?: string
   manches_json?: Array<{ points: number; team: 'A' | 'B' }>
   menes?: Array<{ points: number; team: 'A' | 'B' }>
@@ -113,8 +113,9 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
   const calculateTeamRankings = useCallback((matches: Match[], teams: Team[]) => {
     const teamRankings = teams.map(team => {
       const teamMatches = matches.filter(m =>
-        (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id) &&
-        m.status === 'termine'
+        m.status === 'termine' &&
+        m.type !== 'bye' &&
+        (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id)
       )
 
       const victories = teamMatches.filter(m =>
@@ -179,7 +180,7 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
   const calculateIndividualRankings = useCallback((matches: Match[]) => {
     const playerStats = new Map()
 
-    matches.filter(m => m.status === 'termine').forEach(match => {
+    matches.filter(m => m.status === 'termine' && m.type !== 'bye').forEach(match => {
       // Joueurs équipe A
       match.equipe_a?.players?.forEach((player: Joueur) => {
         if (!player) return

@@ -4,7 +4,7 @@
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { queryMany, query } from '@/lib/db'
-import { getOrgLimit } from '@/lib/plans'
+import { getOrgLimit, hasOrgFeature } from '@/lib/plans'
 
 // GET - Récupérer les tournois de l'organisation
 export async function GET(request: NextRequest) {
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const { user } = authResult
     const body = await request.json()
 
-    const { org_id, name, format, mode, settings } = body
+    const { org_id, name, format, mode, settings, visibility } = body
 
     // Validation
     if (!org_id || !name || !format || !mode) {
@@ -124,6 +124,20 @@ export async function POST(request: NextRequest) {
       sendNotifications: false
     }
     const mergedSettings = { ...defaultSettings, ...(settings || {}) }
+
+    // Valider maxPoints (range 7-25)
+    if (mergedSettings.maxPoints < 7 || mergedSettings.maxPoints > 25) {
+      return apiError('maxPoints doit être entre 7 et 25', 400)
+    }
+
+    // Règles personnalisées (maxPoints != 13) nécessitent le plan Club
+    if (mergedSettings.maxPoints !== 13 && !hasOrgFeature(orgSettings, 'custom_rules')) {
+      return apiError('Les règles de tournoi personnalisées nécessitent le plan Club', 403)
+    }
+
+    // Stocker visibility dans settings
+    const validVisibility = ['private', 'public']
+    mergedSettings.visibility = validVisibility.includes(visibility) ? visibility : 'private'
 
     // Créer le tournoi
     const result = await query(

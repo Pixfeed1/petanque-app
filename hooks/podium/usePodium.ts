@@ -248,6 +248,7 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
 
       const matchesData = allMatches.filter((match: Match) =>
         match.status === 'termine' &&
+        match.type !== 'bye' &&
         (match.equipe_a_id === item.team.id || match.equipe_b_id === item.team.id)
       )
 
