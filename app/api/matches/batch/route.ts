@@ -2,7 +2,7 @@
 // API pour créer plusieurs matches en une seule requête
 
 import { NextRequest } from 'next/server'
-import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
+import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { query, queryOne } from '@/lib/db'
 
 interface MatchInput {
@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
 
+    const { user } = authResult
     const body = await request.json()
     const { matches } = body as { matches: MatchInput[] }
 
@@ -43,6 +44,19 @@ export async function POST(request: NextRequest) {
     const allSameTournoi = matches.every(m => m.tournoi_id === tournoiId)
     if (!allSameTournoi) {
       return apiError('Tous les matchs doivent appartenir au même tournoi', 400)
+    }
+
+    // Vérifier que l'utilisateur a accès à l'organisation du tournoi
+    const tournoiResult = await queryOne(
+      'SELECT org_id FROM tournois WHERE id = $1',
+      [tournoiId]
+    )
+    if (!tournoiResult) {
+      return apiError('Tournoi introuvable', 404)
+    }
+    const hasAccess = await checkOrgAccess(user.id, (tournoiResult as Record<string, unknown>).org_id as string)
+    if (!hasAccess) {
+      return apiError('Accès refusé à ce tournoi', 403)
     }
 
     // Récupérer toutes les équipes du tournoi pour validation

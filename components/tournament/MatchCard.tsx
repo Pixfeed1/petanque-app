@@ -100,13 +100,19 @@ export default function MatchCard({
             }
             return null
           })()}
-          {(match.status === 'en_cours' || match.status === 'termine') && (
+          {match.status === 'termine' && (
             <div className="flex items-center justify-center gap-1 mt-1">
               <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_a ?? 0}</p>
-              {match.status === 'termine' && ((match.score_a === maxPoints && match.score_b === 0) || (match.score_b === maxPoints && match.score_a === 0)) && (
+              {(match.score_a === maxPoints && match.score_b === 0) || (match.score_b === maxPoints && match.score_a === 0) ? (
                 <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
-              )}
+              ) : null}
             </div>
+          )}
+          {match.status === 'en_cours' && (
+            <p className="text-xs text-green-600 font-medium mt-1">En jeu...</p>
+          )}
+          {match.status === 'en_attente_validation' && (
+            <p className="text-xs text-orange-600 font-medium mt-1">Score proposé</p>
           )}
         </div>
 
@@ -129,13 +135,19 @@ export default function MatchCard({
             }
             return null
           })()}
-          {(match.status === 'en_cours' || match.status === 'termine') && (
+          {match.status === 'termine' && (
             <div className="flex items-center justify-center gap-1 mt-1">
               <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_b ?? 0}</p>
-              {match.status === 'termine' && ((match.score_a === maxPoints && match.score_b === 0) || (match.score_b === maxPoints && match.score_a === 0)) && (
+              {(match.score_a === maxPoints && match.score_b === 0) || (match.score_b === maxPoints && match.score_a === 0) ? (
                 <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
-              )}
+              ) : null}
             </div>
+          )}
+          {match.status === 'en_cours' && (
+            <p className="text-xs text-green-600 font-medium mt-1">En jeu...</p>
+          )}
+          {match.status === 'en_attente_validation' && (
+            <p className="text-xs text-orange-600 font-medium mt-1">Score proposé</p>
           )}
         </div>
       </div>

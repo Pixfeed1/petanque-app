@@ -286,15 +286,26 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
     }
   }, [user, tournamentId, loadTournamentData])
 
-  // Auto-refresh toutes les 30s quand le tournoi est en cours
+  // Auto-refresh toutes les 10s quand le tournoi est en cours
   useEffect(() => {
     if (!tournament || tournament.status !== 'en_cours') return
 
     const interval = setInterval(() => {
       loadTournamentData()
-    }, 30000)
+    }, 10000)
 
-    return () => clearInterval(interval)
+    // Rafraîchir quand l'utilisateur revient sur l'onglet
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadTournamentData()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [tournament?.status, loadTournamentData])
 
   return {
