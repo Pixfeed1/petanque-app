@@ -220,12 +220,16 @@ export async function PUT(
         const maxPoints = settings.maxPoints || 13
         const timeLimit = settings.timeLimit || false
 
-        // 🔧 FIX Bug #6 : Si timeLimit activé OU match BYE, permettre de terminer sans atteindre maxPoints
-        if (!isByeMatch && !timeLimit && scoreA < maxPoints && scoreB < maxPoints) {
-          return apiError(
-            `Le match doit se terminer quand une équipe atteint ${maxPoints} points. Score actuel: ${scoreA}-${scoreB}`,
-            400
-          )
+        // Validation des scores de fin de match (règles pétanque)
+        if (!isByeMatch && !timeLimit) {
+          const oneReachesMax = scoreA === maxPoints || scoreB === maxPoints
+          const noneExceedsMax = scoreA <= maxPoints && scoreB <= maxPoints
+          if (!oneReachesMax || !noneExceedsMax) {
+            return apiError(
+              `Score invalide (${scoreA}-${scoreB}). Exactement une équipe doit atteindre ${maxPoints} points, l'autre doit être en dessous.`,
+              400
+            )
+          }
         }
 
         // Calculer automatiquement le winner_id basé sur les scores (ou équipe_a pour BYE)

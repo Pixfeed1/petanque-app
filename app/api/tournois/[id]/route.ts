@@ -81,6 +81,22 @@ export async function PUT(
     }
 
     if (body.status !== undefined) {
+      const validStatuses = ['preparation', 'en_cours', 'termine']
+      if (!validStatuses.includes(body.status)) {
+        return apiError(`Statut invalide. Valeurs acceptées: ${validStatuses.join(', ')}`, 400)
+      }
+
+      // Valider les transitions de statut autorisées
+      const allowedTransitions: Record<string, string[]> = {
+        'preparation': ['en_cours'],
+        'en_cours': ['termine'],
+        'termine': []
+      }
+      const currentStatus = existingTournoi.status as string
+      if (!allowedTransitions[currentStatus]?.includes(body.status)) {
+        return apiError(`Transition de statut invalide: ${currentStatus} → ${body.status}`, 400)
+      }
+
       updates.push(`status = $${paramIndex++}`)
       values.push(body.status)
     }
@@ -140,18 +156,17 @@ export async function DELETE(
       return apiError('Accès refusé', 403)
     }
 
-    // Supprimer le tournoi et ses données liées dans une transaction
-    // Les FK CASCADE existent en base, mais on supprime explicitement pour fiabilité
-    await query('BEGIN', [])
-    try {
-      await query('DELETE FROM matches WHERE tournoi_id = $1', [id])
-      await query('DELETE FROM equipes WHERE tournoi_id = $1', [id])
-      await query('DELETE FROM tournois WHERE id = $1', [id])
-      await query('COMMIT', [])
-    } catch (deleteError) {
-      await query('ROLLBACK', [])
-      throw deleteError
+    // Vérifier qu'il n'y a pas de matchs en cours avant suppression
+    const activeMatches = await queryOne(
+      `SELECT COUNT(*) as count FROM matches WHERE tournoi_id = $1 AND status = 'en_cours'`,
+      [id]
+    )
+    if (activeMatches && parseInt(activeMatches.count) > 0) {
+      return apiError('Impossible de supprimer un tournoi avec des matchs en cours', 400)
     }
+
+    // Supprimer le tournoi — les FK CASCADE suppriment automatiquement equipes et matches
+    await query('DELETE FROM tournois WHERE id = $1', [id])
 
     return apiSuccess({ message: 'Tournoi supprimé avec succès' })
   } catch (error) {

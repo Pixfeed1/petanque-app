@@ -16,7 +16,7 @@ interface Tournament {
   id: string
   name: string
   mode: 'choisi' | 'melee_fixe' | 'melee_tournante'
-  format: 'doublette' | 'triplette'
+  format: 'tete_a_tete' | 'doublette' | 'triplette'
   status: string
   settings: {
     date: string
@@ -341,7 +341,7 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
       pdf.setFont('helvetica', 'normal')
       const modeText = tournament.mode === 'choisi' ? 'Equipes choisies' :
                        tournament.mode === 'melee_fixe' ? 'Melee fixe' : 'Melee tournante'
-      pdf.text(`${modeText} - ${tournament.format === 'doublette' ? 'Doublette' : 'Triplette'}`, 105, 30, { align: 'center' })
+      pdf.text(`${modeText} - ${tournament.format === 'tete_a_tete' ? 'Tete-a-tete' : tournament.format === 'doublette' ? 'Doublette' : 'Triplette'}`, 105, 30, { align: 'center' })
 
       pdf.setTextColor(0, 0, 0)
       yPosition = 50
@@ -545,7 +545,7 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
         ['Tournoi', tournament.name],
         ['Mode', tournament.mode === 'choisi' ? 'Equipes choisies' :
                  tournament.mode === 'melee_fixe' ? 'Melee fixe' : 'Melee tournante'],
-        ['Format', tournament.format === 'doublette' ? 'Doublette' : 'Triplette'],
+        ['Format', tournament.format === 'tete_a_tete' ? 'Tete-a-tete' : tournament.format === 'doublette' ? 'Doublette' : 'Triplette'],
         ['Date', new Date(tournament.settings.date || '').toLocaleDateString('fr-FR')],
         ['Heure', tournament.settings.time],
         ['Lieu', tournament.settings.location || '-'],

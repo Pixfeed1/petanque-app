@@ -61,6 +61,15 @@ export async function POST(request: NextRequest) {
       return apiError('Champs requis: org_id, name, format, mode', 400)
     }
 
+    const validFormats = ['tete_a_tete', 'doublette', 'triplette']
+    const validModes = ['choisi', 'melee_fixe', 'melee_tournante']
+    if (!validFormats.includes(format)) {
+      return apiError(`Format invalide. Valeurs acceptées: ${validFormats.join(', ')}`, 400)
+    }
+    if (!validModes.includes(mode)) {
+      return apiError(`Mode invalide. Valeurs acceptées: ${validModes.join(', ')}`, 400)
+    }
+
     // Vérifier l'accès
     const hasAccess = await checkOrgAccess(user.id, org_id)
     if (!hasAccess) {

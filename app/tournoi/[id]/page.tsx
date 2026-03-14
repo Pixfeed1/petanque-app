@@ -371,6 +371,35 @@ export default function TournamentDetailPage() {
           ))}
         </div>
 
+        {/* Navigation rapide */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {matches.some(m => ['huitieme', 'quart', 'demi', 'finale'].includes(m.type || '')) && (
+            <button
+              onClick={() => router.push(`/tournoi/${tournament.id}/bracket`)}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center space-x-2 text-sm shadow-sm"
+            >
+              <Grid className="w-4 h-4" />
+              <span>Tableau final</span>
+            </button>
+          )}
+          {tournament.status === 'termine' && (
+            <button
+              onClick={() => router.push(`/tournoi/${tournament.id}/podium`)}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center space-x-2 text-sm shadow-sm"
+            >
+              <Trophy className="w-4 h-4" />
+              <span>Podium</span>
+            </button>
+          )}
+          <button
+            onClick={() => router.push(`/tournoi/${tournament.id}/export`)}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center space-x-2 text-sm shadow-sm"
+          >
+            <Chart className="w-4 h-4" />
+            <span>Export</span>
+          </button>
+        </div>
+
         {/* Tabs */}
         <div className="mb-6">
           <div className="flex border-b border-gray-200 bg-white/80 backdrop-blur-xl rounded-t-2xl overflow-x-auto">
