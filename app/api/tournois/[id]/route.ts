@@ -140,8 +140,18 @@ export async function DELETE(
       return apiError('Accès refusé', 403)
     }
 
-    // Supprimer le tournoi (cascade supprimera équipes et matchs)
-    await query('DELETE FROM tournois WHERE id = $1', [id])
+    // Supprimer le tournoi et ses données liées dans une transaction
+    // Les FK CASCADE existent en base, mais on supprime explicitement pour fiabilité
+    await query('BEGIN', [])
+    try {
+      await query('DELETE FROM matches WHERE tournoi_id = $1', [id])
+      await query('DELETE FROM equipes WHERE tournoi_id = $1', [id])
+      await query('DELETE FROM tournois WHERE id = $1', [id])
+      await query('COMMIT', [])
+    } catch (deleteError) {
+      await query('ROLLBACK', [])
+      throw deleteError
+    }
 
     return apiSuccess({ message: 'Tournoi supprimé avec succès' })
   } catch (error) {

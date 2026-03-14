@@ -103,7 +103,7 @@ export default function MatchCard({
           {(match.status === 'en_cours' || match.status === 'termine') && (
             <div className="flex items-center justify-center gap-1 mt-1">
               <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_a ?? 0}</p>
-              {match.status === 'termine' && match.score_a === maxPoints && match.score_b === 0 && (
+              {match.status === 'termine' && ((match.score_a === maxPoints && match.score_b === 0) || (match.score_b === maxPoints && match.score_a === 0)) && (
                 <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
               )}
             </div>
@@ -132,7 +132,7 @@ export default function MatchCard({
           {(match.status === 'en_cours' || match.status === 'termine') && (
             <div className="flex items-center justify-center gap-1 mt-1">
               <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_b ?? 0}</p>
-              {match.status === 'termine' && match.score_b === maxPoints && match.score_a === 0 && (
+              {match.status === 'termine' && ((match.score_a === maxPoints && match.score_b === 0) || (match.score_b === maxPoints && match.score_a === 0)) && (
                 <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
               )}
             </div>
