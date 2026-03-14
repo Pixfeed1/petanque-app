@@ -675,7 +675,15 @@ export default function TournamentDetailPage() {
                     <Trophy className="w-5 h-5 text-yellow-500" />
                   </div>
                   <p className="text-xl font-bold text-gray-900">
-                    {teamsWithStats.sort((a, b) => (b.victories || 0) - (a.victories || 0))[0]?.name || 'À déterminer'}
+                    {[...teamsWithStats].sort((a, b) => {
+                      const pointsA = (a.victories || 0) * 3 + (a.draws || 0)
+                      const pointsB = (b.victories || 0) * 3 + (b.draws || 0)
+                      if (pointsB !== pointsA) return pointsB - pointsA
+                      const diffA = (a.pointsFor || 0) - (a.pointsAgainst || 0)
+                      const diffB = (b.pointsFor || 0) - (b.pointsAgainst || 0)
+                      if (diffB !== diffA) return diffB - diffA
+                      return (b.pointsFor || 0) - (a.pointsFor || 0)
+                    })[0]?.name || 'À déterminer'}
                   </p>
                 </div>
               </div>

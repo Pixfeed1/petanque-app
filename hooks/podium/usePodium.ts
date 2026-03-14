@@ -21,6 +21,7 @@ export interface PodiumTeam {
   stats?: {
     victories: number
     defeats: number
+    draws: number
     pointsFor: number
     pointsAgainst: number
   }
@@ -254,21 +255,26 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
         const stats = {
           victories: 0,
           defeats: 0,
+          draws: 0,
           pointsFor: 0,
           pointsAgainst: 0
         }
 
         matchesData.forEach((match: Match) => {
+          const scoreA = match.score_a ?? 0
+          const scoreB = match.score_b ?? 0
           if (match.equipe_a?.id === item.team.id) {
-            if ((match.score_a ?? 0) > (match.score_b ?? 0)) stats.victories++
-            else stats.defeats++
-            stats.pointsFor += match.score_a ?? 0
-            stats.pointsAgainst += match.score_b ?? 0
+            if (scoreA > scoreB) stats.victories++
+            else if (scoreA < scoreB) stats.defeats++
+            else stats.draws++
+            stats.pointsFor += scoreA
+            stats.pointsAgainst += scoreB
           } else if (match.equipe_b?.id === item.team.id) {
-            if ((match.score_b ?? 0) > (match.score_a ?? 0)) stats.victories++
-            else stats.defeats++
-            stats.pointsFor += match.score_b ?? 0
-            stats.pointsAgainst += match.score_a ?? 0
+            if (scoreB > scoreA) stats.victories++
+            else if (scoreB < scoreA) stats.defeats++
+            else stats.draws++
+            stats.pointsFor += scoreB
+            stats.pointsAgainst += scoreA
           }
         })
 

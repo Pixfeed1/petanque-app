@@ -625,7 +625,7 @@ export default function HomePage() {
               <ul className="space-y-3 text-left mb-8">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700">1 tournoi</span>
+                  <span className="text-gray-700">1 tournoi actif</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>

@@ -127,6 +127,10 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
         (m.equipe_b?.id === team.id && m.score_b < m.score_a)
       ).length
 
+      const draws = teamMatches.filter(m =>
+        m.score_a === m.score_b
+      ).length
+
       const pointsFor = teamMatches.reduce((acc, m) =>
         acc + (m.equipe_a?.id === team.id ? m.score_a : m.score_b), 0
       )
@@ -140,10 +144,11 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
         played: teamMatches.length,
         victories,
         defeats,
+        draws,
         pointsFor,
         pointsAgainst,
         difference: pointsFor - pointsAgainst,
-        points: victories * 3
+        points: victories * 3 + draws * 1
       }
     }).sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points
@@ -183,12 +188,14 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
           played: 0,
           victories: 0,
           defeats: 0,
+          draws: 0,
           pointsFor: 0,
           pointsAgainst: 0
         }
         stats.played++
         if (match.score_a > match.score_b) stats.victories++
-        else stats.defeats++
+        else if (match.score_a < match.score_b) stats.defeats++
+        else stats.draws++
         stats.pointsFor += match.score_a
         stats.pointsAgainst += match.score_b
         playerStats.set(player.id, stats)
@@ -202,12 +209,14 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
           played: 0,
           victories: 0,
           defeats: 0,
+          draws: 0,
           pointsFor: 0,
           pointsAgainst: 0
         }
         stats.played++
         if (match.score_b > match.score_a) stats.victories++
-        else stats.defeats++
+        else if (match.score_b < match.score_a) stats.defeats++
+        else stats.draws++
         stats.pointsFor += match.score_b
         stats.pointsAgainst += match.score_a
         playerStats.set(player.id, stats)
@@ -218,7 +227,7 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
       .map(stats => ({
         ...stats,
         difference: stats.pointsFor - stats.pointsAgainst,
-        points: stats.victories * 3,
+        points: stats.victories * 3 + (stats.draws || 0) * 1,
         winRate: stats.played > 0 ? (stats.victories / stats.played * 100).toFixed(1) : 0
       }))
       .sort((a, b) => {

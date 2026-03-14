@@ -30,14 +30,27 @@ export async function GET(request: NextRequest) {
       return apiError('Accès refusé à cette organisation', 403)
     }
 
-    // Récupérer les tournois avec pagination
+    // Récupérer les tournois avec stats (nb_joueurs, nb_matchs)
     const tournois = await queryMany(
-      `SELECT * FROM tournois
-       WHERE org_id = $1
-       ORDER BY created_at DESC
+      `SELECT t.*,
+        (SELECT COUNT(DISTINCT unnest_id)
+         FROM equipes e, LATERAL unnest(e.joueur_ids) AS unnest_id
+         WHERE e.tournoi_id = t.id) AS nb_joueurs,
+        (SELECT COUNT(*) FROM matches m WHERE m.tournoi_id = t.id) AS nb_matchs_total,
+        (SELECT COUNT(*) FROM matches m WHERE m.tournoi_id = t.id AND m.status = 'termine') AS nb_matchs_joues
+       FROM tournois t
+       WHERE t.org_id = $1
+       ORDER BY t.created_at DESC
        LIMIT $2 OFFSET $3`,
       [orgId, limit, offset]
     )
+
+    // Convertir les counts en nombres
+    tournois.forEach((t: Record<string, unknown>) => {
+      t.nb_joueurs = parseInt(String(t.nb_joueurs || '0'))
+      t.nb_matchs_total = parseInt(String(t.nb_matchs_total || '0'))
+      t.nb_matchs_joues = parseInt(String(t.nb_matchs_joues || '0'))
+    })
 
     return apiSuccess(tournois)
   } catch (error) {
