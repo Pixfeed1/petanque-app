@@ -676,10 +676,6 @@ export default function HomePage() {
                   <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
                   <span className="text-gray-700 font-medium">Équipes illimitées</span>
                 </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-                  <span className="text-gray-700 font-medium">Support standard</span>
-                </li>
               </ul>
               <button
                 onClick={() => router.push('/login')}
@@ -711,11 +707,7 @@ export default function HomePage() {
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">{Icons.star}</span>
-                  <span className="text-gray-700 font-bold">Support prioritaire</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2 mt-1">{Icons.star}</span>
-                  <span className="text-gray-700 font-bold">Mises à jour en avant-première</span>
+                  <span className="text-gray-700 font-bold">Règles de tournoi personnalisées</span>
                 </li>
               </ul>
               <button
