@@ -227,9 +227,17 @@ export interface PlanFeatures {
   max_equipes: number | null   // null = illimité
 }
 
+export interface ClubCustomization {
+  logo_url?: string        // URL du logo du club
+  primary_color?: string   // Couleur principale (hex)
+  secondary_color?: string // Couleur secondaire (hex)
+  club_name?: string       // Nom affiché du club
+}
+
 export interface OrganisationSettings {
   plan: 'free' | 'essentiel' | 'club'
   features?: PlanFeatures
+  customization?: ClubCustomization
 }
 
 // ============================================

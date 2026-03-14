@@ -32,6 +32,7 @@ import {
   TeamFormationModal
 } from '@/components/tournament'
 import type { TeamStanding, PlayerRanking } from '@/components/tournament'
+import AdvancedStats from '@/components/tournament/AdvancedStats'
 
 // Icons
 import {
@@ -43,13 +44,13 @@ import {
 export default function TournamentDetailPage() {
   const router = useRouter()
   const params = useParams()
-  const { user } = useAuth()
+  const { user, organization } = useAuth()
   const { showSuccess, showError, showWarning } = useToast()
   const { confirm, ConfirmModal } = useConfirm()
 
   // UI state
   const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState<'vue' | 'matchs' | 'classement' | 'equipes'>('vue')
+  const [activeTab, setActiveTab] = useState<'vue' | 'matchs' | 'classement' | 'equipes' | 'stats'>('vue')
   const [selectedPoule, setSelectedPoule] = useState<string>('A')
   const [currentPhase, setCurrentPhase] = useState<'poules' | 'elimination' | 'finale'>('poules')
   const [showStartModal, setShowStartModal] = useState(false)
@@ -270,9 +271,22 @@ export default function TournamentDetailPage() {
               <div className="hidden sm:block h-10 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
 
               <div className="flex items-center space-x-1.5 sm:space-x-3">
-                <div className="p-1 sm:p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg sm:rounded-xl text-white">
-                  <Petanque className="w-5 h-5 sm:w-8 sm:h-8" />
-                </div>
+                {(() => {
+                  const cust = (organization?.settings as Record<string, any>)?.customization
+                  if (cust?.logo_url) {
+                    return <img src={cust.logo_url} alt="Club" className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  }
+                  const pc = cust?.primary_color
+                  const sc = cust?.secondary_color
+                  return (
+                    <div
+                      className={`p-1 sm:p-2 rounded-lg sm:rounded-xl text-white ${!pc ? 'bg-gradient-to-br from-green-500 to-emerald-600' : ''}`}
+                      style={pc && sc ? { background: `linear-gradient(135deg, ${pc}, ${sc})` } : undefined}
+                    >
+                      <Petanque className="w-5 h-5 sm:w-8 sm:h-8" />
+                    </div>
+                  )
+                })()}
                 <div>
                   <h1 className="text-sm sm:text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                     {tournament.name}
@@ -407,7 +421,8 @@ export default function TournamentDetailPage() {
               { id: 'vue', label: 'Vue d\'ensemble', icon: <Grid className="w-5 h-5" /> },
               { id: 'matchs', label: 'Matchs', icon: <Flag className="w-5 h-5" /> },
               { id: 'classement', label: 'Classement', icon: <Trophy className="w-5 h-5" /> },
-              { id: 'equipes', label: 'Équipes', icon: <Users className="w-5 h-5" /> }
+              { id: 'equipes', label: 'Équipes', icon: <Users className="w-5 h-5" /> },
+              ...(userPlan === 'club' ? [{ id: 'stats', label: 'Stats avancées', icon: <Chart className="w-5 h-5" /> }] : [])
             ].map(tab => (
               <button
                 key={tab.id}
@@ -665,6 +680,14 @@ export default function TournamentDetailPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {activeTab === 'stats' && userPlan === 'club' && (
+            <AdvancedStats
+              matches={matches}
+              teams={teams}
+              maxPoints={tournament.settings.maxPoints || 13}
+            />
           )}
         </div>
       </div>

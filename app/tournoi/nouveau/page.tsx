@@ -495,6 +495,70 @@ export default function CreateTournamentPage() {
                     </label>
                   ))}
                 </div>
+
+                {/* Options Club uniquement */}
+                {(() => {
+                  const plan = (organization?.settings as Record<string, any>)?.plan
+                  const isClubPlan = plan === 'club'
+                  return (
+                    <div className={`mt-6 p-4 rounded-xl border-2 ${isClubPlan ? 'border-amber-200 bg-amber-50/50' : 'border-gray-200 bg-gray-50/50'}`}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold rounded-full">CLUB</span>
+                        <span className="text-sm font-medium text-gray-700">Règles personnalisées</span>
+                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Points personnalisés</label>
+                          <input
+                            type="number"
+                            min={7}
+                            max={25}
+                            value={formData.maxPoints}
+                            onChange={(e) => updateFormField('maxPoints', parseInt(e.target.value) || 13)}
+                            disabled={!isClubPlan}
+                            className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            {isClubPlan ? 'Choisissez librement entre 7 et 25 points' : 'Disponible avec le plan Club — valeur standard : 13'}
+                          </p>
+                        </div>
+                        <label className={`flex items-center space-x-3 ${isClubPlan ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
+                          <input
+                            type="checkbox"
+                            checked={formData.timeLimit || false}
+                            onChange={(e) => updateFormField('timeLimit', e.target.checked)}
+                            disabled={!isClubPlan}
+                            className="w-5 h-5 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                          />
+                          <span className="text-gray-700">Limite de temps par match</span>
+                        </label>
+                        {formData.timeLimit && isClubPlan && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Minutes par match</label>
+                            <input
+                              type="number"
+                              min={15}
+                              max={120}
+                              value={formData.timeLimitMinutes || 60}
+                              onChange={(e) => updateFormField('timeLimitMinutes', parseInt(e.target.value) || 60)}
+                              className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl"
+                            />
+                          </div>
+                        )}
+                        <label className={`flex items-center space-x-3 ${isClubPlan ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
+                          <input
+                            type="checkbox"
+                            checked={formData.eliminationFormat === 'double'}
+                            onChange={(e) => updateFormField('eliminationFormat', e.target.checked ? 'double' : 'simple')}
+                            disabled={!isClubPlan}
+                            className="w-5 h-5 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                          />
+                          <span className="text-gray-700">Double élimination</span>
+                        </label>
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             </div>
           )}

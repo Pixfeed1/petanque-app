@@ -34,9 +34,65 @@ export default function Parametres() {
   const [exportingData, setExportingData] = useState(false)
   const [mounted, setMounted] = useState(false)
 
+  // Club customization state
+  const [clubName, setClubName] = useState('')
+  const [logoUrl, setLogoUrl] = useState('')
+  const [primaryColor, setPrimaryColor] = useState('#16a34a')
+  const [secondaryColor, setSecondaryColor] = useState('#059669')
+  const [savingCustomization, setSavingCustomization] = useState(false)
+
+  const userPlan = (organization?.settings as Record<string, any>)?.plan || 'free'
+  const isClub = userPlan === 'club'
+
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Load existing customization
+  useEffect(() => {
+    if (organization?.settings) {
+      const settings = organization.settings as Record<string, any>
+      const cust = settings.customization
+      if (cust) {
+        setClubName(cust.club_name || '')
+        setLogoUrl(cust.logo_url || '')
+        setPrimaryColor(cust.primary_color || '#16a34a')
+        setSecondaryColor(cust.secondary_color || '#059669')
+      }
+    }
+  }, [organization])
+
+  const handleSaveCustomization = async () => {
+    if (!organization?.id) return
+    setSavingCustomization(true)
+    try {
+      const response = await fetch('/api/organisations/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          org_id: organization.id,
+          customization: {
+            club_name: clubName.trim() || undefined,
+            logo_url: logoUrl.trim() || undefined,
+            primary_color: primaryColor,
+            secondary_color: secondaryColor
+          }
+        })
+      })
+
+      if (response.ok) {
+        showSuccess('Personnalisation sauvegardée')
+      } else {
+        const data = await response.json()
+        showError(data.error || 'Erreur lors de la sauvegarde')
+      }
+    } catch {
+      showError('Erreur lors de la sauvegarde')
+    } finally {
+      setSavingCustomization(false)
+    }
+  }
 
   const handleExportTournois = async () => {
     setExportingData(true)
@@ -292,6 +348,130 @@ export default function Parametres() {
             </div>
           </div>
         </div>
+
+        {/* Section Personnalisation Club (Club uniquement) */}
+        {isClub && (
+          <div className={`mb-6 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '250ms' }}>
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-xl rounded-3xl"></div>
+              <div className="relative bg-white/60 backdrop-blur-md rounded-3xl shadow-xl border border-white/50 overflow-hidden">
+                <div className="p-6 border-b border-gray-100/50">
+                  <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
+                    <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm0 2h12v3H4V4zm0 5h5v7H4V9zm7 0h5v7h-5V9z"/></svg>
+                    <span>Personnalisation Club</span>
+                    <span className="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold rounded-full">CLUB</span>
+                  </h2>
+                </div>
+
+                <div className="p-6 space-y-5">
+                  {/* Nom du club */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom du club</label>
+                    <input
+                      type="text"
+                      value={clubName}
+                      onChange={(e) => setClubName(e.target.value)}
+                      placeholder={organization?.name || 'Mon Club de Pétanque'}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white"
+                    />
+                  </div>
+
+                  {/* Logo URL */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">URL du logo</label>
+                    <input
+                      type="url"
+                      value={logoUrl}
+                      onChange={(e) => setLogoUrl(e.target.value)}
+                      placeholder="https://exemple.com/logo.png"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white"
+                    />
+                    {logoUrl && (
+                      <div className="mt-2 flex items-center gap-3">
+                        <img
+                          src={logoUrl}
+                          alt="Logo preview"
+                          className="w-12 h-12 rounded-lg object-contain border border-gray-200"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                        />
+                        <span className="text-xs text-gray-500">Aperçu du logo</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Couleurs */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Couleur principale</label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono bg-white"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Couleur secondaire</label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={secondaryColor}
+                          onChange={(e) => setSecondaryColor(e.target.value)}
+                          className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={secondaryColor}
+                          onChange={(e) => setSecondaryColor(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preview */}
+                  <div className="p-4 rounded-xl border border-gray-200" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
+                    <p className="text-sm text-gray-500 mb-2">Aperçu</p>
+                    <div className="flex items-center gap-3">
+                      {logoUrl ? (
+                        <img src={logoUrl} alt="Logo" className="w-10 h-10 rounded-lg object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}>
+                          {(clubName || organization?.name || 'C').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-bold" style={{ color: primaryColor }}>{clubName || organization?.name || 'Mon Club'}</p>
+                        <p className="text-xs text-gray-500">Pétanque Pro</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Save button */}
+                  <button
+                    onClick={handleSaveCustomization}
+                    disabled={savingCustomization}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-medium hover:shadow-lg transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {savingCustomization ? (
+                      <>{Icons.loader} <span>Sauvegarde...</span></>
+                    ) : (
+                      <><span>{Icons.check}</span> <span>Sauvegarder la personnalisation</span></>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Section Mes Données */}
         <div className={`mb-6 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '300ms' }}>
