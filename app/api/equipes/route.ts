@@ -78,28 +78,6 @@ export async function POST(request: NextRequest) {
       return apiError('Champs requis: tournoi_id, name', 400)
     }
 
-    // Vérifier les limites du plan gratuit (8 équipes max)
-    const tournoi = await queryOne<{ org_id: number }>(
-      'SELECT org_id FROM tournois WHERE id = $1',
-      [tournoi_id]
-    )
-    if (tournoi) {
-      const orgResult = await query(
-        `SELECT settings FROM organisations WHERE id = $1`,
-        [tournoi.org_id]
-      )
-      const plan = orgResult.rows[0]?.settings?.plan || 'free'
-      if (plan === 'free') {
-        const countResult = await query(
-          `SELECT COUNT(*) as count FROM equipes WHERE tournoi_id = $1`,
-          [tournoi_id]
-        )
-        if (parseInt(countResult.rows[0]?.count || '0') >= 8) {
-          return apiError('Le plan Gratuit est limité à 8 équipes par tournoi. Passez au plan Essentiel pour des équipes illimitées.', 403)
-        }
-      }
-    }
-
     // Vérifier accès au tournoi
     const tournoi = await queryOne<{ org_id: number }>(
       'SELECT org_id FROM tournois WHERE id = $1',
@@ -113,6 +91,22 @@ export async function POST(request: NextRequest) {
     const hasAccess = await checkOrgAccess(user.id, String(tournoi.org_id))
     if (!hasAccess) {
       return apiError('Accès non autorisé à ce tournoi', 403)
+    }
+
+    // Vérifier les limites du plan gratuit (8 équipes max)
+    const orgResult = await query(
+      `SELECT settings FROM organisations WHERE id = $1`,
+      [tournoi.org_id]
+    )
+    const plan = orgResult.rows[0]?.settings?.plan || 'free'
+    if (plan === 'free') {
+      const countResult = await query(
+        `SELECT COUNT(*) as count FROM equipes WHERE tournoi_id = $1`,
+        [tournoi_id]
+      )
+      if (parseInt(countResult.rows[0]?.count || '0') >= 8) {
+        return apiError('Le plan Gratuit est limité à 8 équipes par tournoi. Passez au plan Essentiel pour des équipes illimitées.', 403)
+      }
     }
 
     const result = await query(
