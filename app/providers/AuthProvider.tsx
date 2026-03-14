@@ -193,7 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateUserPlan,
     refreshOrganization,
     isAuthenticated: !!user,
-    isPremium: ['essentiel', 'club', 'premium'].includes(organization?.settings?.plan || '')
+    isPremium: ['essentiel', 'club', 'premium'].includes(String(organization?.settings?.plan || ''))
   }
 
   // Logs de debug en développement
