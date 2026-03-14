@@ -129,10 +129,10 @@ export function bergerRoundRobin(
       pairs.push([0, indices[0]])
     }
 
-    // Autres paires
+    // Autres paires : indices[i] ↔ indices[n-1-i] (miroir symétrique)
     for (let i = 1; i < n / 2; i++) {
       const a = indices[i]
-      const b = indices[n - 2 - i]
+      const b = indices[n - 1 - i]
 
       // Ignorer si une des deux est le fantôme (>= teamCount)
       if (a < teamCount && b < teamCount) {

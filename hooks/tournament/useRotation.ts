@@ -255,12 +255,25 @@ export function useRotation({
       })
 
       if (!matchesBatchResponse.ok) {
-        const error = await matchesBatchResponse.json()
-        throw new Error(error.error || `Échec création matchs`)
+        // Fallback : créer les matchs un par un si le batch échoue
+        console.warn(`Batch API échouée (${matchesBatchResponse.status}), fallback individuel`)
+        for (const match of matchesToCreate) {
+          const singleResponse = await fetch('/api/matches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(match)
+          })
+          if (!singleResponse.ok) {
+            const error = await singleResponse.json().catch(() => ({ error: 'Erreur inconnue' }))
+            throw new Error(error.error || `Échec création match`)
+          }
+        }
+        console.log(`✅ ${matchesToCreate.length} matchs créés (fallback) pour rotation ${rotationNumber}`)
+      } else {
+        const matchesResult = await matchesBatchResponse.json()
+        console.log(`✅ ${matchesResult.created} matchs créés pour rotation ${rotationNumber}`)
       }
-
-      const matchesResult = await matchesBatchResponse.json()
-      console.log(`✅ ${matchesResult.created} matchs créés pour rotation ${rotationNumber}`)
 
       // Recharger les données
       await loadTournamentData()

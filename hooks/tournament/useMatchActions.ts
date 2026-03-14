@@ -154,8 +154,20 @@ export function useMatchActions({
       })
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
-        throw new Error(error.error || `Échec création matchs (${response.status})`)
+        // Fallback : créer les matchs un par un si le batch échoue
+        console.warn(`Batch API échouée (${response.status}), fallback sur création individuelle`)
+        for (const match of matchesToCreate) {
+          const singleResponse = await fetch('/api/matches', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(match)
+          })
+          if (!singleResponse.ok) {
+            const error = await singleResponse.json().catch(() => ({ error: 'Erreur inconnue' }))
+            throw new Error(error.error || `Échec création match (${singleResponse.status})`)
+          }
+        }
       }
     } catch (error) {
       console.error(`Erreur création matchs poule ${poule}:`, error)
