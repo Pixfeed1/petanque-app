@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
         [
           `Organisation de ${orgName}`,
           (user as Record<string, unknown>).id as number,
-          JSON.stringify({ plan: 'free' })
+          JSON.stringify({ plan: 'free', features: { max_tournois: 1, max_equipes: 8 } })
         ]
       )
       orgId = (org as Record<string, unknown>).id as number

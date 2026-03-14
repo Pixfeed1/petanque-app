@@ -4,6 +4,7 @@
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { query, queryOne } from '@/lib/db'
+import { getOrgLimit } from '@/lib/plans'
 
 interface TeamInput {
   tournoi_id: string
@@ -65,12 +66,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Vérifier les limites du plan gratuit (8 équipes max) avec verrouillage transactionnel
+    // Récupérer les settings pour vérifier les limites
     const orgResult = await query(
       `SELECT settings FROM organisations WHERE id = $1`,
       [tournoi.org_id]
     )
-    const plan = orgResult.rows[0]?.settings?.plan || 'free'
+    const orgSettings = orgResult.rows[0]?.settings || {}
+    const maxEquipes = getOrgLimit(orgSettings, 'max_equipes')
 
     // Construire la requête d'insertion en masse
     const values: any[] = []
@@ -98,15 +100,15 @@ export async function POST(request: NextRequest) {
     // Transaction avec verrou pour éviter la race condition sur la limite
     await query('BEGIN', [])
     try {
-      if (plan === 'free') {
+      if (maxEquipes !== null) {
         const countResult = await query(
           `SELECT COUNT(*) as count FROM equipes WHERE tournoi_id = $1 FOR UPDATE`,
           [tournoiId]
         )
         const existingCount = parseInt(countResult.rows[0]?.count || '0')
-        if (existingCount + teams.length > 8) {
+        if (existingCount + teams.length > maxEquipes) {
           await query('ROLLBACK', [])
-          return apiError(`Le plan Gratuit est limité à 8 équipes par tournoi (${existingCount} existantes). Passez au plan Essentiel pour des équipes illimitées.`, 403)
+          return apiError(`Votre plan est limité à ${maxEquipes} équipes par tournoi (${existingCount} existantes). Passez au plan supérieur pour des équipes illimitées.`, 403)
         }
       }
 

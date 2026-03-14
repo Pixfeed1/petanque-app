@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       `INSERT INTO organisations (name, settings, created_by, created_at, updated_at)
        VALUES ($1, $2, $3, NOW(), NOW())
        RETURNING *`,
-      [name, JSON.stringify(settings || { plan: 'free' }), user.id]
+      [name, JSON.stringify({ plan: 'free', features: { max_tournois: 1, max_equipes: 8 }, ...(settings || {}) }), user.id]
     )
 
     const organisation = result.rows[0]

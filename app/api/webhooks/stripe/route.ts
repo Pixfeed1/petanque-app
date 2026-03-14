@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { query } from '@/lib/db'
+import { getFeaturesForPlan } from '@/lib/plans'
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -149,16 +150,21 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
       ]
     )
 
-    // Mettre à jour l'organisation
+    // Mettre à jour l'organisation (plan + features)
+    const features = getFeaturesForPlan(plan)
     await query(
       `UPDATE organisations
        SET settings = jsonb_set(
-         COALESCE(settings, '{}'::jsonb),
-         '{plan}',
-         $1::jsonb
+         jsonb_set(
+           COALESCE(settings, '{}'::jsonb),
+           '{plan}',
+           $1::jsonb
+         ),
+         '{features}',
+         $2::jsonb
        )
-       WHERE id = (SELECT org_id FROM users WHERE id = $2)`,
-      [JSON.stringify(plan), userId]
+       WHERE id = (SELECT org_id FROM users WHERE id = $3)`,
+      [JSON.stringify(plan), JSON.stringify(features), userId]
     )
 
     console.log(`✅ Utilisateur ${userId} mis à jour vers plan ${plan}`)

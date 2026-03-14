@@ -4,6 +4,7 @@
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { queryMany, query } from '@/lib/db'
+import { getOrgLimit } from '@/lib/plans'
 
 // GET - Récupérer les tournois de l'organisation
 export async function GET(request: NextRequest) {
@@ -76,22 +77,22 @@ export async function POST(request: NextRequest) {
       return apiError('Accès refusé à cette organisation', 403)
     }
 
-    // Vérifier les limites du plan gratuit
+    // Vérifier les limites du plan
     const orgResult = await query(
       `SELECT settings FROM organisations WHERE id = $1`,
       [org_id]
     )
     const orgSettings = orgResult.rows[0]?.settings || {}
-    const plan = orgSettings.plan || 'free'
 
-    if (plan === 'free') {
+    const maxTournois = getOrgLimit(orgSettings, 'max_tournois')
+    if (maxTournois !== null) {
       const countResult = await query(
         `SELECT COUNT(*) as count FROM tournois WHERE org_id = $1 AND status = 'en_cours'`,
         [org_id]
       )
       const activeTournoiCount = parseInt(countResult.rows[0]?.count || '0')
-      if (activeTournoiCount >= 1) {
-        return apiError('Le plan Gratuit est limité à 1 tournoi actif en cours. Terminez votre tournoi en cours ou passez au plan Essentiel pour des tournois illimités.', 403)
+      if (activeTournoiCount >= maxTournois) {
+        return apiError(`Votre plan est limité à ${maxTournois} tournoi${maxTournois > 1 ? 's' : ''} actif${maxTournois > 1 ? 's' : ''} en cours. Terminez votre tournoi en cours ou passez au plan supérieur.`, 403)
       }
     }
 

@@ -222,8 +222,14 @@ export interface Organisation {
   settings?: OrganisationSettings
 }
 
+export interface PlanFeatures {
+  max_tournois: number | null  // null = illimité
+  max_equipes: number | null   // null = illimité
+}
+
 export interface OrganisationSettings {
   plan: 'free' | 'essentiel' | 'club'
+  features?: PlanFeatures
 }
 
 // ============================================
