@@ -126,6 +126,12 @@ export async function POST(request: NextRequest) {
    }
 
    // Utiliser le priceId (soit fourni, soit depuis STRIPE_PRICE_ID env)
+   if (!priceId) {
+     return NextResponse.json(
+       { error: 'Aucun prix configuré pour ce plan. Vérifiez STRIPE_PRICE_ID_ESSENTIEL / STRIPE_PRICE_ID_CLUB dans .env' },
+       { status: 500 }
+     )
+   }
    const finalPriceId: string = priceId
 
    // URL de base pour les redirections
