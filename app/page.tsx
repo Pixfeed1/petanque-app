@@ -399,7 +399,7 @@ export default function HomePage() {
               </div>
               <div className="flex items-center">
                 {Icons.check}
-                <span className="ml-2">Sans pub à 4,99€</span>
+                <span className="ml-2">Plans à partir de 9,99€/an</span>
               </div>
               <div className="flex items-center">
                 {Icons.check}
@@ -668,7 +668,7 @@ export default function HomePage() {
 
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Essentiel</h3>
-                <div className="text-5xl font-bold text-green-600 mb-2">2,99€</div>
+                <div className="text-5xl font-bold text-green-600 mb-2">9,99€</div>
                 <p className="text-gray-600">Par an</p>
               </div>
               <ul className="space-y-3 text-left mb-8">
@@ -705,7 +705,7 @@ export default function HomePage() {
             <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl shadow-xl p-8 relative border-2 border-amber-400">
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Club</h3>
-                <div className="text-5xl font-bold text-amber-600 mb-2">9,99€</div>
+                <div className="text-5xl font-bold text-amber-600 mb-2">19,99€</div>
                 <p className="text-gray-600">Par an</p>
               </div>
               <ul className="space-y-3 text-left mb-8">
@@ -769,7 +769,7 @@ export default function HomePage() {
                   onClick={() => router.push('/login')}
                   className="px-8 py-4 bg-transparent text-white text-lg rounded-full border-2 border-white hover:bg-white hover:text-green-600 transition-all"
                 >
-                  Version premium (4,99€)
+                  Voir les plans
                 </button>
               </div>
             </div>

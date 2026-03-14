@@ -568,7 +568,7 @@ export default function Dashboard() {
                   <div className="absolute -top-3 left-4 bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">POPULAIRE</div>
                   <h3 className="text-lg font-bold text-gray-900 mb-1">Essentiel</h3>
                   <div className="flex items-baseline gap-1 mb-3">
-                    <span className="text-3xl font-bold text-green-600">2,99€</span>
+                    <span className="text-3xl font-bold text-green-600">9,99€</span>
                     <span className="text-gray-500">/an</span>
                   </div>
                   <ul className="space-y-2 mb-4 text-sm">
@@ -600,7 +600,7 @@ export default function Dashboard() {
                         <span>Redirection...</span>
                       </>
                     ) : (
-                      <span>Choisir Essentiel - 2,99€/an</span>
+                      <span>Choisir Essentiel - 9,99€/an</span>
                     )}
                   </button>
                 </div>
@@ -609,7 +609,7 @@ export default function Dashboard() {
                 <div className="border-2 border-amber-400 rounded-xl p-5 bg-amber-50/50">
                   <h3 className="text-lg font-bold text-gray-900 mb-1">Club</h3>
                   <div className="flex items-baseline gap-1 mb-3">
-                    <span className="text-3xl font-bold text-amber-600">9,99€</span>
+                    <span className="text-3xl font-bold text-amber-600">19,99€</span>
                     <span className="text-gray-500">/an</span>
                   </div>
                   <ul className="space-y-2 mb-4 text-sm">
@@ -641,7 +641,7 @@ export default function Dashboard() {
                         <span>Redirection...</span>
                       </>
                     ) : (
-                      <span>Choisir Club - 9,99€/an</span>
+                      <span>Choisir Club - 19,99€/an</span>
                     )}
                   </button>
                 </div>

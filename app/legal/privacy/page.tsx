@@ -268,7 +268,7 @@ export default function PrivacyPolicy() {
               <p>Vos données peuvent être partagées uniquement avec :</p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li><strong>Hébergeur :</strong> Pour le stockage sécurisé des données</li>
-                <li><strong>Processeur de paiement :</strong> Stripe (pour les paiements Premium)</li>
+                <li><strong>Processeur de paiement :</strong> Stripe (pour les abonnements Essentiel et Club)</li>
                 <li><strong>Services analytiques :</strong> Google Analytics (si vous acceptez les cookies analytiques)</li>
                 <li><strong>Autorités légales :</strong> Si requis par la loi</li>
               </ul>

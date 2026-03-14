@@ -29,7 +29,7 @@ interface AuthContextType {
   organization: Organization | null
   loading: boolean
   signOut: () => Promise<void>
-  updateUserPlan: (plan: 'free' | 'premium') => Promise<boolean>
+  updateUserPlan: (plan: 'free' | 'essentiel' | 'club') => Promise<boolean>
   refreshOrganization: () => Promise<void>
   isAuthenticated: boolean
   isPremium: boolean
@@ -149,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const updateUserPlan = async (plan: 'free' | 'premium'): Promise<boolean> => {
+  const updateUserPlan = async (plan: 'free' | 'essentiel' | 'club'): Promise<boolean> => {
     if (!organization || organization.id.startsWith('temp-')) {
       console.error('❌ Impossible de mettre à jour une organisation temporaire')
       return false
@@ -193,7 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateUserPlan,
     refreshOrganization,
     isAuthenticated: !!user,
-    isPremium: organization?.settings?.plan === 'premium'
+    isPremium: ['essentiel', 'club', 'premium'].includes(organization?.settings?.plan || '')
   }
 
   // Logs de debug en développement
@@ -205,7 +205,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         organizationName: organization?.name,
         loading,
         isAuthenticated: !!user,
-        isPremium: organization?.settings?.plan === 'premium'
+        plan: organization?.settings?.plan || 'free'
       })
     }
   }, [user, organization, loading])

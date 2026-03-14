@@ -108,7 +108,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
   }
 
   const isActive = subscription.status === 'active' || subscription.status === 'trialing'
-  const plan = isActive ? 'premium' : 'free'
+  const product = subscription.metadata.product || 'essentiel'
+  const plan = isActive ? (['essentiel', 'club'].includes(product) ? product : 'essentiel') : 'free'
 
   // current_period_end peut ne pas être présent sur tous les types d'abonnement
   const currentPeriodEnd = (subscription as any).current_period_end
@@ -141,7 +142,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
        WHERE id = $5`,
       [
         JSON.stringify(plan),
-        JSON.stringify(plan === 'premium' ? 'premium_yearly' : 'free'),
+        JSON.stringify(plan !== 'free' ? plan + '_yearly' : 'free'),
         JSON.stringify(subscription.id),
         JSON.stringify(currentPeriodEnd),
         userId
@@ -318,6 +319,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // Pour un paiement unique (mode payment), on active directement
+  const checkoutProduct = session.metadata?.product || 'essentiel'
+  const checkoutPlan = ['essentiel', 'club'].includes(checkoutProduct) ? checkoutProduct : 'essentiel'
+
   try {
     await query(
       `UPDATE users
@@ -325,13 +329,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
          jsonb_set(
            COALESCE(metadata, '{}'::jsonb),
            '{subscription,status}',
-           '"premium"'::jsonb
+           $1::jsonb
          ),
          '{subscription,plan}',
-         '"premium_yearly"'::jsonb
+         $2::jsonb
        )
-       WHERE id = $1`,
-      [userId]
+       WHERE id = $3`,
+      [JSON.stringify(checkoutPlan), JSON.stringify(checkoutPlan + '_yearly'), userId]
     )
 
     await query(
@@ -339,15 +343,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
        SET settings = jsonb_set(
          COALESCE(settings, '{}'::jsonb),
          '{plan}',
-         '"premium"'::jsonb
+         $1::jsonb
        )
-       WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
-      [userId]
+       WHERE id = (SELECT org_id FROM users WHERE id = $2)`,
+      [JSON.stringify(checkoutPlan), userId]
     )
 
-    console.log(`✅ Premium activé pour user ${userId} (checkout session)`)
+    console.log(`✅ Plan ${checkoutPlan} activé pour user ${userId} (checkout session)`)
   } catch (error) {
-    console.error('Erreur lors de l\'activation premium après checkout:', error)
+    console.error('Erreur lors de l\'activation du plan après checkout:', error)
     throw error
   }
 }

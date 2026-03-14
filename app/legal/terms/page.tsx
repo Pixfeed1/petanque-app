@@ -177,7 +177,7 @@ export default function TermsPage() {
                 POPULAIRE
               </div>
               <h4 className="text-xl font-bold text-gray-900 mb-3">Essentiel</h4>
-              <div className="text-3xl font-bold text-green-600 mb-2">2,99€</div>
+              <div className="text-3xl font-bold text-green-600 mb-2">9,99€</div>
               <p className="text-gray-600 mb-4">Abonnement annuel</p>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start">
@@ -197,7 +197,7 @@ export default function TermsPage() {
 
             <div className="border-2 border-amber-400 rounded-lg p-6 bg-gradient-to-br from-amber-50 to-orange-50">
               <h4 className="text-xl font-bold text-gray-900 mb-3">Club</h4>
-              <div className="text-3xl font-bold text-amber-600 mb-2">9,99€</div>
+              <div className="text-3xl font-bold text-amber-600 mb-2">19,99€</div>
               <p className="text-gray-600 mb-4">Abonnement annuel</p>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start">
@@ -251,11 +251,11 @@ export default function TermsPage() {
       content: (
         <div className="space-y-4">
           <p className="text-gray-700">
-            <strong>Version Gratuite :</strong> Accessible sans limitation de durée.
+            <strong>Plan Gratuit :</strong> Accessible sans limitation de durée (1 tournoi, 8 équipes max).
             Vous pouvez supprimer votre compte à tout moment depuis les paramètres.
           </p>
           <p className="text-gray-700">
-            <strong>Version Premium :</strong>
+            <strong>Plans Essentiel et Club :</strong>
           </p>
           <ul className="space-y-2">
             <li className="flex items-start">
@@ -272,7 +272,7 @@ export default function TermsPage() {
             </li>
             <li className="flex items-start">
               <span className="text-green-500 mr-2 mt-1">{Icons.check}</span>
-              <span>En cas de résiliation, l'accès Premium reste actif jusqu'à la fin de la période payée</span>
+              <span>En cas de résiliation, l'accès reste actif jusqu'à la fin de la période payée</span>
             </li>
           </ul>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

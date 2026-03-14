@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       user,
       organization: organisation,
       role: role?.role || 'member',
-      isPremium: organisation?.settings?.plan === 'premium'
+      isPremium: ['essentiel', 'club', 'premium'].includes(organisation?.settings?.plan || '')
     })
   } catch (error) {
     console.error('❌ Erreur /api/auth/me:', error)

@@ -198,10 +198,10 @@ export default function DashboardHeader({
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <span className="text-yellow-500">
-                              {userPlan === 'premium' ? Icons.crown : Icons.star}
+                              {userPlan !== 'free' ? Icons.crown : Icons.star}
                             </span>
                             <span className="text-sm font-medium">
-                              {userPlan === 'premium' ? 'Premium' : 'Gratuit'}
+                              {userPlan === 'club' ? 'Club' : userPlan === 'essentiel' ? 'Essentiel' : 'Gratuit'}
                             </span>
                           </div>
                           {userPlan === 'free' && (

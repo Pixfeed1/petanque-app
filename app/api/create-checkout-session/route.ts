@@ -66,7 +66,23 @@ export async function POST(request: NextRequest) {
      })
    }
 
-   // Vérifier si l'utilisateur n'est pas déjà Premium
+   // Déterminer le plan demandé (essentiel ou club)
+   const planType = body.planType || 'essentiel'
+   if (!['essentiel', 'club'].includes(planType)) {
+     return NextResponse.json(
+       { error: 'Plan invalide' },
+       { status: 400 }
+     )
+   }
+
+   // Utiliser le bon price ID selon le plan
+   if (!priceId) {
+     priceId = planType === 'club'
+       ? process.env.STRIPE_PRICE_ID_CLUB
+       : process.env.STRIPE_PRICE_ID_ESSENTIEL || process.env.STRIPE_PRICE_ID
+   }
+
+   // Vérifier si l'utilisateur n'est pas déjà abonné
    const userResult = await query(
      `SELECT metadata FROM users WHERE id = $1`,
      [userId]
@@ -76,9 +92,9 @@ export async function POST(request: NextRequest) {
    const metadata = existingProfile?.metadata || {}
    const subscription = metadata.subscription || {}
 
-   if (subscription.status === 'premium') {
+   if (['essentiel', 'club', 'premium'].includes(subscription.status)) {
      return NextResponse.json(
-       { error: 'Vous êtes déjà Premium' },
+       { error: 'Vous avez déjà un abonnement actif' },
        { status: 400 }
      )
    }
@@ -130,14 +146,14 @@ export async function POST(request: NextRequest) {
      metadata: {
        user_id: userId,
        user_email: userEmail,
-       product: 'premium'
+       product: planType
      },
      // IMPORTANT: Métadonnées pour l'abonnement (pour les webhooks subscription.*)
      subscription_data: {
        metadata: {
          user_id: userId,
          user_email: userEmail,
-         product: 'premium'
+         product: planType
        }
      },
      // URLs de redirection après paiement
@@ -151,7 +167,7 @@ export async function POST(request: NextRequest) {
      // Personnalisation
      custom_text: {
        submit: {
-         message: 'Passer Premium'
+         message: planType === 'club' ? 'Passer au plan Club' : 'Passer au plan Essentiel'
        }
      },
      
@@ -173,7 +189,7 @@ export async function POST(request: NextRequest) {
      `INSERT INTO payment_attempts
       (user_id, stripe_session_id, stripe_customer_id, amount, currency, status)
       VALUES ($1, $2, $3, $4, $5, $6)`,
-     [userId, session.id, customerId, 499, 'eur', 'pending']
+     [userId, session.id, customerId, planType === 'club' ? 1999 : 999, 'eur', 'pending']
    )
 
    // Retourner l'ID de session pour la redirection
@@ -240,7 +256,11 @@ export async function GET(request: NextRequest) {
 
    // Vérifier le statut du paiement
    if (session.payment_status === 'paid') {
-     // Mettre à jour l'utilisateur en Premium
+     // Déterminer le plan depuis les métadonnées de la session
+     const activatedPlan = session.metadata?.product || 'essentiel'
+     const planName = ['essentiel', 'club'].includes(activatedPlan) ? activatedPlan : 'essentiel'
+
+     // Mettre à jour l'utilisateur
      try {
        await query(
          `UPDATE users
@@ -249,28 +269,28 @@ export async function GET(request: NextRequest) {
               jsonb_set(
                 COALESCE(metadata, '{}'::jsonb),
                 '{subscription,status}',
-                '"premium"'::jsonb
+                $1::jsonb
               ),
               '{subscription,plan}',
-              '"premium_lifetime"'::jsonb
+              $2::jsonb
             ),
-            '{subscription,premium_since}',
-            $1::jsonb
+            '{subscription,subscribed_since}',
+            $3::jsonb
           )
-          WHERE id = $2`,
-         [JSON.stringify(new Date().toISOString()), userId]
+          WHERE id = $4`,
+         [JSON.stringify(planName), JSON.stringify(planName + '_yearly'), JSON.stringify(new Date().toISOString()), userId]
        )
 
-       // Mettre à jour l'organisation en Premium (CRITIQUE pour le dashboard)
+       // Mettre à jour l'organisation (CRITIQUE pour le dashboard)
        await query(
          `UPDATE organisations
           SET settings = jsonb_set(
             COALESCE(settings, '{}'::jsonb),
             '{plan}',
-            '"premium"'::jsonb
+            $1::jsonb
           )
-          WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
-         [userId]
+          WHERE id = (SELECT org_id FROM users WHERE id = $2)`,
+         [JSON.stringify(planName), userId]
        )
 
        // Mettre à jour l'enregistrement de paiement
@@ -289,8 +309,8 @@ export async function GET(request: NextRequest) {
 
      return NextResponse.json({
        success: true,
-       status: 'premium',
-       message: 'Paiement réussi - Compte Premium activé'
+       status: planName,
+       message: `Paiement réussi - Plan ${planName === 'club' ? 'Club' : 'Essentiel'} activé`
      })
    }
 
