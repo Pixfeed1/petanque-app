@@ -70,15 +70,15 @@ const initialFormData: TournamentFormData = {
   eliminationFormat: 'simple',
   meleeRotation: 'par_tour',
   qualifiedPerPoule: 2,
-  consolante: true,
+  consolante: false,
   mixiteObligatoire: false,
   selectedPlayers: [],
   newPlayers: [],
   visibility: 'private',
-  allowPhotos: true,
-  sendNotifications: true,
-  fairPlay: true,
-  recordMenes: true
+  allowPhotos: false,
+  sendNotifications: false,
+  fairPlay: false,
+  recordMenes: false
 }
 
 interface UseCreateTournamentReturn {
