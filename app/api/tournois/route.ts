@@ -77,12 +77,12 @@ export async function POST(request: NextRequest) {
 
     if (plan === 'free') {
       const countResult = await query(
-        `SELECT COUNT(*) as count FROM tournois WHERE org_id = $1`,
+        `SELECT COUNT(*) as count FROM tournois WHERE org_id = $1 AND status != 'termine'`,
         [org_id]
       )
-      const tournoiCount = parseInt(countResult.rows[0]?.count || '0')
-      if (tournoiCount >= 1) {
-        return apiError('Le plan Gratuit est limité à 1 tournoi. Passez au plan Essentiel pour des tournois illimités.', 403)
+      const activeTournoiCount = parseInt(countResult.rows[0]?.count || '0')
+      if (activeTournoiCount >= 1) {
+        return apiError('Le plan Gratuit est limité à 1 tournoi actif. Terminez votre tournoi en cours ou passez au plan Essentiel pour des tournois illimités.', 403)
       }
     }
 

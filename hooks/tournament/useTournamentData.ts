@@ -286,6 +286,17 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
     }
   }, [user, tournamentId, loadTournamentData])
 
+  // Auto-refresh toutes les 30s quand le tournoi est en cours
+  useEffect(() => {
+    if (!tournament || tournament.status !== 'en_cours') return
+
+    const interval = setInterval(() => {
+      loadTournamentData()
+    }, 30000)
+
+    return () => clearInterval(interval)
+  }, [tournament?.status, loadTournamentData])
+
   return {
     // States
     tournament,
