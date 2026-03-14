@@ -116,7 +116,7 @@ export default function Footer({ scrollToSection }: FooterProps) {
         
         <div className="border-t border-gray-800 pt-8 text-center text-sm">
           <p>
-            © 2025 Pétanque Pro - Fait avec ❤️ par{' '}
+            © {new Date().getFullYear()} Pétanque Pro - Fait avec ❤️ par{' '}
             <a 
               href="https://pixfeed.net" 
               target="_blank"
