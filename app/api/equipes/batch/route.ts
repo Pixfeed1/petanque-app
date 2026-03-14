@@ -57,6 +57,23 @@ export async function POST(request: NextRequest) {
       return apiError('Accès non autorisé à ce tournoi', 403)
     }
 
+    // Vérifier les limites du plan gratuit (8 équipes max)
+    const orgResult = await query(
+      `SELECT settings FROM organisations WHERE id = $1`,
+      [tournoi.org_id]
+    )
+    const plan = orgResult.rows[0]?.settings?.plan || 'free'
+    if (plan === 'free') {
+      const countResult = await query(
+        `SELECT COUNT(*) as count FROM equipes WHERE tournoi_id = $1`,
+        [tournoiId]
+      )
+      const existingCount = parseInt(countResult.rows[0]?.count || '0')
+      if (existingCount + teams.length > 8) {
+        return apiError(`Le plan Gratuit est limité à 8 équipes par tournoi (${existingCount} existantes). Passez au plan Essentiel pour des équipes illimitées.`, 403)
+      }
+    }
+
     // Valider chaque équipe
     for (let i = 0; i < teams.length; i++) {
       const team = teams[i]

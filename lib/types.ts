@@ -198,11 +198,11 @@ export interface User {
 
 export interface UserMetadata {
   subscription?: {
-    status: 'free' | 'premium'
-    plan: 'free' | 'premium_yearly'
+    status: 'free' | 'essentiel' | 'club'
+    plan: 'free' | 'essentiel_yearly' | 'club_yearly'
     stripe_customer_id?: string
     stripe_subscription_id?: string
-    premium_since?: string
+    subscribed_since?: string
     current_period_end?: string
   }
   preferences?: {
@@ -223,7 +223,7 @@ export interface Organisation {
 }
 
 export interface OrganisationSettings {
-  plan: 'free' | 'premium'
+  plan: 'free' | 'essentiel' | 'club'
   features?: {
     max_tournois?: number
     max_joueurs?: number

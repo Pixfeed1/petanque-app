@@ -67,6 +67,25 @@ export async function POST(request: NextRequest) {
       return apiError('Accès refusé à cette organisation', 403)
     }
 
+    // Vérifier les limites du plan gratuit
+    const orgResult = await query(
+      `SELECT settings FROM organisations WHERE id = $1`,
+      [org_id]
+    )
+    const orgSettings = orgResult.rows[0]?.settings || {}
+    const plan = orgSettings.plan || 'free'
+
+    if (plan === 'free') {
+      const countResult = await query(
+        `SELECT COUNT(*) as count FROM tournois WHERE org_id = $1`,
+        [org_id]
+      )
+      const tournoiCount = parseInt(countResult.rows[0]?.count || '0')
+      if (tournoiCount >= 1) {
+        return apiError('Le plan Gratuit est limité à 1 tournoi. Passez au plan Essentiel pour des tournois illimités.', 403)
+      }
+    }
+
     // Créer le tournoi
     const result = await query(
       `INSERT INTO tournois (org_id, name, format, mode, status, settings, created_by, created_at, updated_at)
