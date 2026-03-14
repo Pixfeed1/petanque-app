@@ -8,6 +8,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { MixiteService } from '@/lib/services/mixite.service'
+import { TirageService } from '@/lib/services'
 import type { Joueur } from '@/lib/types'
 import type { Tournament, Team, Match } from './useTournamentData'
 
@@ -74,7 +75,8 @@ export function useRotation({
   }, [tournament, matches, currentRotation])
 
   /**
-   * Crée de nouvelles équipes avec l'algorithme de mixité
+   * Crée de nouvelles équipes avec anti-rematch et mixité
+   * Utilise l'historique des rotations précédentes pour minimiser les doublons
    */
   const createNewTeamsWithAlgorithm = useCallback(async () => {
     if (!organization || !tournament?.settings.players) return
@@ -96,29 +98,67 @@ export function useRotation({
 
       if (players.length === 0) return
 
-      // Créer les nouvelles équipes
       const teamSize = tournament.format === 'doublette' ? 2 : 3
-      const rotationNumber = currentRotation
+      const newRotation = currentRotation + 1
       let teamNumber = 1
 
-      // Utiliser MixiteService pour formation des équipes
-      const mixiteResult = MixiteService.createTeamsWithMixite(
-        players,
-        teamSize as 2 | 3,
-        tournament.settings.mixiteObligatoire || false
-      )
+      // Si c'est la première rotation ou mixité obligatoire, utiliser MixiteService
+      // Sinon, utiliser l'algorithme anti-rematch
+      let teamCompositions: Array<{ joueur_ids: string[] }>
 
-      const newTeams = mixiteResult.teams.map(team => ({
-        name: `R${rotationNumber}-Équipe ${teamNumber++}`,
+      const isFirstRotation = currentRotation === 1 && teams.filter(t => t.name.startsWith('R')).length === 0
+      const needsMixite = tournament.settings.mixiteObligatoire || false
+
+      if (isFirstRotation || needsMixite) {
+        // Mixité obligatoire : utiliser le service dédié
+        const mixiteResult = MixiteService.createTeamsWithMixite(
+          players,
+          teamSize as 2 | 3,
+          needsMixite
+        )
+        teamCompositions = mixiteResult.teams
+
+        if (mixiteResult.unassignedPlayerIds.length > 0) {
+          console.warn(`${mixiteResult.unassignedPlayerIds.length} joueur(s) non assigné(s):`, mixiteResult.warnings)
+        }
+      } else {
+        // Anti-rematch : analyser l'historique des rotations précédentes
+        const previousTeams = teams
+          .filter(t => t.name.match(/^R\d+-/)) // Équipes de rotation
+          .map(t => ({ joueur_ids: t.joueur_ids || [] }))
+          .filter(t => t.joueur_ids.length > 0)
+
+        // Reconstruire les confrontations précédentes
+        const previousMatches: Array<{ equipe_a_joueur_ids: string[]; equipe_b_joueur_ids: string[] }> = []
+
+        for (const match of matches) {
+          if (!match.equipe_a_id || !match.equipe_b_id) continue
+
+          const teamA = teams.find(t => t.id === match.equipe_a_id)
+          const teamB = teams.find(t => t.id === match.equipe_b_id)
+
+          if (teamA?.joueur_ids?.length && teamB?.joueur_ids?.length) {
+            previousMatches.push({
+              equipe_a_joueur_ids: teamA.joueur_ids,
+              equipe_b_joueur_ids: teamB.joueur_ids
+            })
+          }
+        }
+
+        teamCompositions = TirageService.antiRematchTeamFormation(
+          players.map((p: Joueur) => ({ id: p.id, gender: p.gender as 'H' | 'F' | undefined })),
+          previousTeams,
+          previousMatches,
+          teamSize as 2 | 3
+        )
+      }
+
+      const newTeams = teamCompositions.map(team => ({
+        name: `R${newRotation}-Équipe ${teamNumber++}`,
         joueur_ids: team.joueur_ids
       }))
 
-      // Alerter si des joueurs ne peuvent pas être assignés
-      if (mixiteResult.unassignedPlayerIds.length > 0) {
-        console.warn(`${mixiteResult.unassignedPlayerIds.length} joueur(s) non assigné(s) pour la rotation ${rotationNumber}:`, mixiteResult.warnings)
-      }
-
-      // Créer les équipes en batch (1 seule requête au lieu de N)
+      // Créer les équipes en batch
       const teamsToCreate = newTeams.map(team => ({
         tournoi_id: tournament.id,
         name: team.name,
@@ -148,7 +188,7 @@ export function useRotation({
     } catch (error) {
       console.error('Erreur création équipes:', error)
     }
-  }, [organization, tournament, currentRotation, loadTournamentData])
+  }, [organization, tournament, teams, matches, currentRotation, loadTournamentData])
 
   /**
    * Crée les matchs round-robin pour les équipes du tour de rotation
@@ -178,22 +218,33 @@ export function useRotation({
         return
       }
 
-      // Générer matchs round-robin (tous contre tous) en batch
-      const matchesToCreate = []
-      for (let i = 0; i < rotationTeams.length; i++) {
-        for (let j = i + 1; j < rotationTeams.length; j++) {
-          matchesToCreate.push({
-            tournoi_id: tournament.id,
-            equipe_a_id: rotationTeams[i].id,
-            equipe_b_id: rotationTeams[j].id,
-            tour: rotationNumber,
-            terrain: null,
-            type: 'poule',
-            poule: null,
-            status: 'a_jouer'
-          })
-        }
+      // Générer matchs round-robin avec scheduling Berger (planning équilibré)
+      const bergerMatches = TirageService.generateBergerMatches(rotationTeams, null)
+
+      // Assignation intelligente des terrains
+      const terrains = tournament.settings.terrains || 0
+      let terrainMap: Map<string, number> | null = null
+
+      if (terrains > 0) {
+        const matchesForTerrain = bergerMatches.map((m, idx) => ({
+          id: `rot_${idx}`,
+          equipe_a_id: m.teamA.id,
+          equipe_b_id: m.teamB.id,
+          tour: m.tour
+        }))
+        terrainMap = TirageService.smartTerrainAssignment(matchesForTerrain, terrains)
       }
+
+      const matchesToCreate = bergerMatches.map((m, idx) => ({
+        tournoi_id: tournament.id,
+        equipe_a_id: m.teamA.id,
+        equipe_b_id: m.teamB.id,
+        tour: rotationNumber,
+        terrain: terrainMap?.get(`rot_${idx}`) || null,
+        type: 'poule',
+        poule: null,
+        status: 'a_jouer'
+      }))
 
       // Créer tous les matchs en batch (1 seule requête au lieu de N²)
       const matchesBatchResponse = await fetch('/api/matches/batch', {

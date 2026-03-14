@@ -9,6 +9,7 @@
 export * as StatsService from './stats.service'
 export * as BracketService from './bracket.service'
 export * as ValidationService from './validation.service'
+export * as TirageService from './tirage.service'
 
 // Re-export des types pour faciliter l'usage
 export type { TeamStats, PlayerStats } from './stats.service'

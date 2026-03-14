@@ -8,7 +8,7 @@
 
 import { useCallback } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
-import { ValidationService, BracketService, StatsService } from '@/lib/services'
+import { ValidationService, BracketService, StatsService, TirageService } from '@/lib/services'
 import type { Match as MatchType } from '@/lib/types'
 import type { Tournament, Team, Match } from './useTournamentData'
 
@@ -87,23 +87,16 @@ export function useMatchActions({
   }, [isValidPoolConfiguration])
 
   /**
-   * Calcule la distribution des équipes dans les poules
+   * Calcule la distribution équilibrée des équipes dans les poules
+   * Ex: 14 équipes, poules de 4 → [4, 4, 3, 3] au lieu de [4, 4, 4, 2]
    */
   const getPoolDistribution = useCallback((teamCount: number, poolSize: number): number[] => {
-    const nbPoules = Math.ceil(teamCount / poolSize)
-    const distribution: number[] = []
-
-    for (let i = 0; i < nbPoules; i++) {
-      const start = i * poolSize
-      const end = Math.min((i + 1) * poolSize, teamCount)
-      distribution.push(end - start)
-    }
-
-    return distribution
+    return TirageService.calculateBalancedPoolSizes(teamCount, poolSize)
   }, [])
 
   /**
-   * Crée des matchs round-robin (tous contre tous) pour un groupe d'équipes
+   * Crée des matchs round-robin (tous contre tous) avec scheduling Berger
+   * Garantit un planning équilibré : chaque équipe a du repos entre ses matchs
    */
   const createRoundRobinMatches = useCallback(async (
     teamsToMatch: Team[],
@@ -112,39 +105,69 @@ export function useMatchActions({
   ): Promise<void> => {
     if (!tournament) return
 
-    for (let i = 0; i < teamsToMatch.length; i++) {
-      for (let j = i + 1; j < teamsToMatch.length; j++) {
-        try {
-          const response = await fetch('/api/matches', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              tournoi_id: tournament.id,
-              equipe_a_id: teamsToMatch[i].id,
-              equipe_b_id: teamsToMatch[j].id,
-              tour,
-              terrain: null,
-              type: 'poule',
-              poule,
-              status: 'a_jouer'
-            })
-          })
+    // Générer le planning avec tables de Berger (scheduling optimal)
+    const bergerMatches = TirageService.generateBergerMatches(teamsToMatch, poule)
 
-          if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
-            throw new Error(error.error || `Échec création match (${response.status})`)
-          }
-        } catch (error) {
-          console.error(`Erreur création match ${teamsToMatch[i].name} vs ${teamsToMatch[j].name}:`, error)
-          throw error
-        }
-      }
+    // Assignation intelligente des terrains si disponibles
+    const terrains = tournament.settings.terrains || 0
+    let terrainAssignment: Map<string, number> | null = null
+
+    if (terrains > 0) {
+      // Préparer les données pour l'assignation
+      const matchesForTerrain = bergerMatches.map((m, idx) => ({
+        id: `temp_${idx}`,
+        equipe_a_id: m.teamA.id,
+        equipe_b_id: m.teamB.id,
+        tour: m.tour
+      }))
+
+      // Trouver les terrains actuellement occupés
+      const occupiedTerrains = matches
+        .filter(m => m.status === 'en_cours' && m.terrain)
+        .map(m => m.terrain!)
+
+      terrainAssignment = TirageService.smartTerrainAssignment(
+        matchesForTerrain,
+        terrains,
+        occupiedTerrains
+      )
     }
-  }, [tournament])
+
+    // Créer les matchs en batch
+    const matchesToCreate = bergerMatches.map((m, idx) => ({
+      tournoi_id: tournament.id,
+      equipe_a_id: m.teamA.id,
+      equipe_b_id: m.teamB.id,
+      tour: tour + m.tour - 1,
+      terrain: terrainAssignment?.get(`temp_${idx}`) || null,
+      type: 'poule' as const,
+      poule: m.poule,
+      status: 'a_jouer' as const
+    }))
+
+    try {
+      const response = await fetch('/api/matches/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ matches: matchesToCreate })
+      })
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+        throw new Error(error.error || `Échec création matchs (${response.status})`)
+      }
+    } catch (error) {
+      console.error(`Erreur création matchs poule ${poule}:`, error)
+      throw error
+    }
+  }, [tournament, matches])
 
   /**
-   * Génère les poules du tournoi
+   * Génère les poules du tournoi avec tirage intelligent
+   * - Distribution serpentin (snake draft) pour des poules équilibrées
+   * - Tailles de poules équilibrées (ex: 4-4-3-3 au lieu de 4-4-4-2)
+   * - Scheduling Berger pour les matchs (repos entre matchs d'une même équipe)
    */
   const generatePoules = useCallback(async () => {
     if (!tournament || teams.length === 0) return
@@ -157,28 +180,24 @@ export function useMatchActions({
       return
     }
 
-    const nbPoules = Math.ceil(teams.length / pouleSize)
+    // Distribution serpentin (snake draft) pour des poules équilibrées
+    const poules = TirageService.snakeDraftDistribution(teams, pouleSize)
 
-    // Mélanger les équipes avant de les répartir en poules (fairness)
-    const shuffledTeams = [...teams].sort(() => Math.random() - 0.5)
-
-    // Créer les poules
-    const poules: { [key: string]: Team[] } = {}
-    for (let i = 0; i < nbPoules; i++) {
-      const pouleName = String.fromCharCode(65 + i) // A, B, C...
-      poules[pouleName] = shuffledTeams.slice(i * pouleSize, (i + 1) * pouleSize)
-    }
-
-    // Générer les matchs de poule (round-robin)
+    // Générer les matchs de poule (round-robin avec Berger)
     try {
       for (const [pouleName, pouleTeams] of Object.entries(poules)) {
         await createRoundRobinMatches(pouleTeams, 1, pouleName)
       }
 
+      const nbPoules = Object.keys(poules).length
+      const sizes = Object.values(poules).map(p => p.length).join('-')
+      notify.success(`${nbPoules} poules générées (${sizes}) avec tirage serpentin`)
+
       // Recharger les données
       await loadTournamentData()
     } catch (error) {
       console.error('Erreur génération poules:', error)
+      notify.error('Erreur lors de la génération des poules')
     }
   }, [tournament, teams, isValidPoolConfiguration, createRoundRobinMatches, loadTournamentData])
 
