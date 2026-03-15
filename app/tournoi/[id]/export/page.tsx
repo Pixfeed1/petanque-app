@@ -30,7 +30,7 @@ export default function ExportTournamentPage() {
     exportToPDF,
     exportToExcel,
     handlePrint
-  } = useTournamentExport({ tournoiId: params.id })
+  } = useTournamentExport({ tournoiId: params?.id })
 
   if (loading) {
     return (
@@ -53,7 +53,7 @@ export default function ExportTournamentPage() {
       {/* Header */}
       <PageHeader
         tournamentName={tournament?.name}
-        onBack={() => router.push(`/tournoi/${params.id}`)}
+        onBack={() => router.push(`/tournoi/${params?.id}`)}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

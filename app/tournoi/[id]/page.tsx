@@ -68,7 +68,7 @@ export default function TournamentDetailPage() {
     userPlan,
     realtimeConnected,
     loadTournamentData
-  } = useTournamentData({ tournamentId: params.id })
+  } = useTournamentData({ tournamentId: params?.id })
 
   // Hook gestion des équipes
   const {

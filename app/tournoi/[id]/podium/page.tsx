@@ -40,7 +40,7 @@ export default function PodiumPage() {
     handleShare,
     generatePremiumCertificate
   } = usePodium({
-    tournoiId: params.id,
+    tournoiId: params?.id,
     onSuccess: showSuccess
   })
 
@@ -68,7 +68,7 @@ export default function PodiumPage() {
       {/* Header */}
       <PageHeader
         tournamentName={tournament?.name}
-        onBack={() => router.push(`/tournoi/${params.id}`)}
+        onBack={() => router.push(`/tournoi/${params?.id}`)}
         onShare={handleShare}
       />
 
@@ -124,7 +124,7 @@ export default function PodiumPage() {
 
       {/* Actions finales */}
       <FinalActions
-        tournoiId={params.id as string}
+        tournoiId={params?.id as string}
         onNavigate={router.push}
       />
 

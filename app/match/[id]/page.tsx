@@ -45,7 +45,7 @@ export default function MatchScorePage() {
     saveProgress,
     formatTime
   } = useMatchScore({
-    matchId: params.id,
+    matchId: params?.id,
     onSuccess: showSuccess,
     onError: showError,
     onWarning: showWarning,

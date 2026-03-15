@@ -23,7 +23,7 @@ export default function JoueurDetailPage() {
   const [joueur, setJoueur] = useState<JoueurDetail | null>(null)
 
   // Extraire l'ID du paramètre (format: "3-jean-dupont" -> "3")
-  const joueurId = params.id ? String(params.id).split('-')[0] : null
+  const joueurId = params?.id ? String(params.id).split('-')[0] : null
 
   useEffect(() => {
     if (joueurId && organization?.id) {

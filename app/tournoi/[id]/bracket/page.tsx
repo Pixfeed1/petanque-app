@@ -33,7 +33,7 @@ export default function BracketPage() {
     hasHuitiemes,
     hasQuarts,
     hasDemis
-  } = useBracket({ tournoiId: params.id })
+  } = useBracket({ tournoiId: params?.id })
 
   const handleUpdateScore = (matchId: string) => {
     router.push(`/match/${matchId}`)
@@ -63,7 +63,7 @@ export default function BracketPage() {
       {/* Header */}
       <PageHeader
         tournamentName={tournament?.name}
-        onBack={() => router.push(`/tournoi/${params.id}`)}
+        onBack={() => router.push(`/tournoi/${params?.id}`)}
       />
 
       {/* Arbre du tournoi */}
