@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ]
 
       // Vérifier si la route est publique (exact match ou wildcard pour /legal/*)
-      const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith('/legal/')
+      const isPublicRoute = publicRoutes.includes(pathname ?? '') || (pathname?.startsWith('/legal/') ?? false)
 
       if (user) {
         // Si l'utilisateur est connecté et tente d'accéder à login/signup, rediriger vers dashboard
