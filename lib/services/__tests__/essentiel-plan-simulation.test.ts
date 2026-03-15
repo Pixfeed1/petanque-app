@@ -27,6 +27,7 @@ import {
 import {
   applySeedingByRank,
   calculateBracketMatches,
+  generateBracketSeeding,
   generateFirstRoundPairs,
   getMatchWinners,
   getNextRound,
@@ -670,6 +671,130 @@ describe('Bracket avec BYE - Cas limites', () => {
     const winners = getMatchWinners(matches as any)
     expect(winners[0]!.id).toBe('t1') // Vainqueur normal
     expect(winners[1]!.id).toBe('t3') // BYE → qualifié auto
+  })
+})
+
+// ─── BRACKET SEEDING ──────────────────────────────────────────
+
+describe('generateBracketSeeding', () => {
+  it('bracket de 2 → [1, 2]', () => {
+    expect(generateBracketSeeding(2)).toEqual([1, 2])
+  })
+
+  it('bracket de 4 → [1, 4, 2, 3]', () => {
+    expect(generateBracketSeeding(4)).toEqual([1, 4, 2, 3])
+  })
+
+  it('bracket de 8 → [1, 8, 4, 5, 2, 7, 3, 6]', () => {
+    expect(generateBracketSeeding(8)).toEqual([1, 8, 4, 5, 2, 7, 3, 6])
+  })
+
+  it('bracket de 16 → seeding standard', () => {
+    const seeding = generateBracketSeeding(16)
+    expect(seeding.length).toBe(16)
+    // Seed 1 vs Seed 16 en premier match
+    expect(seeding[0]).toBe(1)
+    expect(seeding[1]).toBe(16)
+    // Seed 2 vs Seed 15 dans l'autre moitié du bracket
+    // (pas adjacent au match 1)
+    const seed2Idx = seeding.indexOf(2)
+    expect(seed2Idx).toBeGreaterThanOrEqual(8) // dans la 2ème moitié
+  })
+
+  it('chaque position de seed apparaît exactement une fois', () => {
+    for (const size of [2, 4, 8, 16]) {
+      const seeding = generateBracketSeeding(size)
+      const sorted = [...seeding].sort((a, b) => a - b)
+      expect(sorted).toEqual(Array.from({ length: size }, (_, i) => i + 1))
+    }
+  })
+
+  it('seed 1 et seed 2 sont dans des moitiés opposées du bracket', () => {
+    for (const size of [4, 8, 16]) {
+      const seeding = generateBracketSeeding(size)
+      const half = size / 2
+      const seed1Idx = seeding.indexOf(1)
+      const seed2Idx = seeding.indexOf(2)
+      // L'un dans la première moitié, l'autre dans la seconde
+      const seed1Half = seed1Idx < half ? 0 : 1
+      const seed2Half = seed2Idx < half ? 0 : 1
+      expect(seed1Half).not.toBe(seed2Half)
+    }
+  })
+})
+
+describe('generateFirstRoundPairs - seeding et BYE', () => {
+  it('4 équipes → 2 demi-finales, Seed 1 vs 4 et Seed 2 vs 3', () => {
+    const teams = makeTeams(4)
+    const pairs = generateFirstRoundPairs(teams)
+
+    expect(pairs.length).toBe(2)
+    expect(pairs[0].teamA!.id).toBe('t1')
+    expect(pairs[0].teamB!.id).toBe('t4')
+    expect(pairs[1].teamA!.id).toBe('t2')
+    expect(pairs[1].teamB!.id).toBe('t3')
+  })
+
+  it('3 équipes → Seed 1 a un BYE, Seed 2 vs Seed 3', () => {
+    const teams = makeTeams(3)
+    const pairs = generateFirstRoundPairs(teams)
+
+    expect(pairs.length).toBe(2)
+    // Match 1: Seed 1 vs BYE (seed 4 n'existe pas)
+    expect(pairs[0].teamA!.id).toBe('t1')
+    expect(pairs[0].teamB).toBeNull()
+    expect(pairs[0].isBye).toBe(true)
+    // Match 2: Seed 2 vs Seed 3
+    expect(pairs[1].teamA!.id).toBe('t2')
+    expect(pairs[1].teamB!.id).toBe('t3')
+    expect(pairs[1].isBye).toBe(false)
+  })
+
+  it('8 équipes → aucun BYE, bracket complet', () => {
+    const teams = makeTeams(8)
+    const pairs = generateFirstRoundPairs(teams)
+
+    expect(pairs.length).toBe(4)
+    const byes = pairs.filter(p => p.isBye)
+    expect(byes.length).toBe(0)
+
+    // Vérifie les oppositions classiques du seeding
+    // Match 1: Seed 1 vs Seed 8
+    expect(pairs[0].teamA!.id).toBe('t1')
+    expect(pairs[0].teamB!.id).toBe('t8')
+    // Match 2: Seed 4 vs Seed 5
+    expect(pairs[1].teamA!.id).toBe('t4')
+    expect(pairs[1].teamB!.id).toBe('t5')
+    // Match 3: Seed 2 vs Seed 7
+    expect(pairs[2].teamA!.id).toBe('t2')
+    expect(pairs[2].teamB!.id).toBe('t7')
+    // Match 4: Seed 3 vs Seed 6
+    expect(pairs[3].teamA!.id).toBe('t3')
+    expect(pairs[3].teamB!.id).toBe('t6')
+  })
+
+  it('7 équipes → 1 BYE pour Seed 1', () => {
+    const teams = makeTeams(7)
+    const pairs = generateFirstRoundPairs(teams)
+
+    expect(pairs.length).toBe(4)
+    // Seeding [1,8,4,5,2,7,3,6] — Seed 8 n'existe pas
+    // Seul BYE : Match 1 (Seed 1 vs Seed 8)
+    const byes = pairs.filter(p => p.isBye)
+    expect(byes.length).toBe(1)
+    expect(byes[0].teamA!.id).toBe('t1')
+    expect(byes[0].teamB).toBeNull()
+  })
+
+  it('2 équipes → finale directe', () => {
+    const teams = makeTeams(2)
+    const pairs = generateFirstRoundPairs(teams)
+
+    expect(pairs.length).toBe(1)
+    expect(pairs[0].teamA!.id).toBe('t1')
+    expect(pairs[0].teamB!.id).toBe('t2')
+    expect(pairs[0].round).toBe('finale')
+    expect(pairs[0].isBye).toBe(false)
   })
 })
 
