@@ -5,7 +5,7 @@ import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { emitTournamentEvent } from '@/lib/tournament-events'
 import { query, queryOne } from '@/lib/db'
-import { getOrgLimit } from '@/lib/plans'
+import { getOrgLimitAsync } from '@/lib/plans'
 
 interface TeamInput {
   tournoi_id: string
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       [tournoi.org_id]
     )
     const orgSettings = orgResult.rows[0]?.settings || {}
-    const maxEquipes = getOrgLimit(orgSettings, 'max_equipes')
+    const maxEquipes = await getOrgLimitAsync(orgSettings, 'max_equipes')
 
     // Construire la requête d'insertion en masse
     const values: any[] = []

@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import { AuthProvider } from "./providers/AuthProvider"
 import { ToastProvider } from "@/components/ui/Toast"
+import { FeedbackWidget } from "@/components/FeedbackWidget"
 
 // Utiliser une police système au lieu de Google Fonts
 // const inter = Inter({
@@ -46,6 +47,7 @@ export default function RootLayout({
         <AuthProvider>
           <ToastProvider>
             {children}
+            <FeedbackWidget />
           </ToastProvider>
         </AuthProvider>
       </body>

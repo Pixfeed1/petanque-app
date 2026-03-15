@@ -120,12 +120,20 @@ export default function AdminDashboard() {
               <p className="text-sm text-gray-500">Connecté en tant que {user?.email}</p>
             </div>
           </div>
-          <button
-            onClick={() => router.push('/admin/reviews')}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium"
-          >
-            Modérer les avis
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => router.push('/admin/feedback')}
+              className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition text-sm font-medium"
+            >
+              Feedbacks & Beta
+            </button>
+            <button
+              onClick={() => router.push('/admin/reviews')}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium"
+            >
+              Moderer les avis
+            </button>
+          </div>
         </div>
       </header>
 

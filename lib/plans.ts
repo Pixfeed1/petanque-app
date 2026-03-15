@@ -4,6 +4,36 @@
 
 import type { PlanFeatures } from './types'
 
+// ── Cache du mode beta (évite une requête BDD à chaque vérif de plan) ──
+
+let _betaModeCache: boolean | null = null
+let _betaModeCacheTime = 0
+const BETA_CACHE_TTL = 30_000 // 30 secondes
+
+/**
+ * Vérifie si le mode beta est actif (avec cache de 30s).
+ * Utilisable côté serveur uniquement.
+ */
+export async function isBetaModeEnabled(): Promise<boolean> {
+  const now = Date.now()
+  if (_betaModeCache !== null && now - _betaModeCacheTime < BETA_CACHE_TTL) {
+    return _betaModeCache
+  }
+
+  try {
+    // Import dynamique pour éviter les dépendances circulaires
+    const { queryOne } = await import('./db')
+    const setting = await queryOne<{ value: { enabled: boolean } }>(
+      `SELECT value FROM app_settings WHERE key = 'beta_mode'`
+    )
+    _betaModeCache = !!setting?.value?.enabled
+    _betaModeCacheTime = now
+    return _betaModeCache
+  } catch {
+    return _betaModeCache ?? false
+  }
+}
+
 const PLAN_FEATURES: Record<string, PlanFeatures> = {
   free: {
     max_tournois: 1,
@@ -67,4 +97,38 @@ export function getOrgLimit(
   // 2. Fallback sur le plan
   const plan = orgSettings?.plan || 'free'
   return getFeaturesForPlan(plan)[limitKey]
+}
+
+// ── Versions async tenant compte du mode beta ──
+
+/**
+ * Version async de hasOrgFeature — vérifie d'abord si le mode beta est actif.
+ * Si oui, toutes les features sont débloquées.
+ */
+export async function hasOrgFeatureAsync(
+  orgSettings: Record<string, any>,
+  featureKey: 'advanced_stats' | 'custom_rules' | 'club_customization'
+): Promise<boolean> {
+  if (await isBetaModeEnabled()) return true
+  return hasOrgFeature(orgSettings, featureKey)
+}
+
+/**
+ * Version async de getOrgLimit — vérifie d'abord si le mode beta est actif.
+ * Si oui, aucune limite (retourne null = illimité).
+ */
+export async function getOrgLimitAsync(
+  orgSettings: Record<string, any>,
+  limitKey: 'max_tournois' | 'max_equipes'
+): Promise<number | null> {
+  if (await isBetaModeEnabled()) return null
+  return getOrgLimit(orgSettings, limitKey)
+}
+
+/**
+ * Version async de getFeaturesForPlan — en mode beta, retourne les features Club.
+ */
+export async function getFeaturesForPlanAsync(plan: string): Promise<PlanFeatures> {
+  if (await isBetaModeEnabled()) return PLAN_FEATURES.club
+  return getFeaturesForPlan(plan)
 }

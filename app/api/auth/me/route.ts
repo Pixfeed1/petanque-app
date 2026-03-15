@@ -4,7 +4,7 @@
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
 import { queryOne } from '@/lib/db'
-import { getFeaturesForPlan } from '@/lib/plans'
+import { getFeaturesForPlanAsync, isBetaModeEnabled } from '@/lib/plans'
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,14 +34,16 @@ export async function GET(request: NextRequest) {
     )
 
     const plan = organisation?.settings?.plan || 'free'
-    const planFeatures = getFeaturesForPlan(plan)
+    const betaMode = await isBetaModeEnabled()
+    const planFeatures = await getFeaturesForPlanAsync(plan)
 
     return apiSuccess({
       user,
       organization: organisation,
       role: role?.role || 'member',
-      isPremium: ['essentiel', 'club'].includes(plan),
-      features: planFeatures
+      isPremium: betaMode || ['essentiel', 'club'].includes(plan),
+      features: planFeatures,
+      betaMode
     })
   } catch (error) {
     console.error('❌ Erreur /api/auth/me:', error)

@@ -4,7 +4,7 @@
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { queryMany, query, queryOne } from '@/lib/db'
-import { getOrgLimit } from '@/lib/plans'
+import { getOrgLimitAsync } from '@/lib/plans'
 
 // GET - Récupérer les équipes d'un tournoi
 export async function GET(request: NextRequest) {
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const maxEquipes = getOrgLimit(orgSettings, 'max_equipes')
+    const maxEquipes = await getOrgLimitAsync(orgSettings, 'max_equipes')
 
     // Transaction avec verrou pour éviter la race condition
     await query('BEGIN', [])
