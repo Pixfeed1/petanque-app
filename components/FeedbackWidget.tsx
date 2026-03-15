@@ -76,10 +76,10 @@ export function FeedbackWidget() {
   }
 
   const categories = [
-    { value: 'general', label: 'Retour general' },
-    { value: 'bug', label: 'Bug / Probleme' },
-    { value: 'feature', label: 'Suggestion' },
-    { value: 'ux', label: 'Interface / UX' },
+    { value: 'general', label: 'Avis general' },
+    { value: 'bug', label: 'Ca ne marche pas' },
+    { value: 'feature', label: 'Il manque quelque chose' },
+    { value: 'ux', label: 'Pas pratique a utiliser' },
   ]
 
   return (
@@ -91,7 +91,7 @@ export function FeedbackWidget() {
           className="fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-gradient-to-b from-amber-500 to-orange-500 text-white px-2 py-4 rounded-l-lg shadow-lg hover:px-3 transition-all"
           style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
         >
-          <span className="text-sm font-bold tracking-wide">Beta - Votre avis</span>
+          <span className="text-sm font-bold tracking-wide">Votre avis compte !</span>
         </button>
       )}
 
@@ -102,8 +102,8 @@ export function FeedbackWidget() {
           <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-lg">Mode Beta</h3>
-                <p className="text-sm text-amber-100">Aidez-nous a ameliorer l'outil</p>
+                <h3 className="font-bold text-lg">Donnez-nous votre avis</h3>
+                <p className="text-sm text-amber-100">Aidez-nous a rendre l'appli encore meilleure</p>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
@@ -155,7 +155,7 @@ export function FeedbackWidget() {
               <div className="space-y-4">
                 {/* Catégorie */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type de retour</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">C'est a quel sujet ?</label>
                   <div className="grid grid-cols-2 gap-2">
                     {categories.map(cat => (
                       <button
@@ -179,7 +179,7 @@ export function FeedbackWidget() {
                   <textarea
                     value={message}
                     onChange={e => setMessage(e.target.value)}
-                    placeholder="Decrivez ce que vous avez remarque, une suggestion, un bug..."
+                    placeholder="Dites-nous ce qui vous plait, ce qui manque, ce qui ne marche pas bien..."
                     rows={5}
                     maxLength={2000}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
@@ -189,7 +189,7 @@ export function FeedbackWidget() {
 
                 {/* Info user */}
                 <p className="text-xs text-gray-400">
-                  Envoye en tant que {user?.full_name || user?.email}
+                  Message envoye par {user?.full_name || user?.email}
                 </p>
 
                 {/* Bouton envoyer */}
@@ -198,12 +198,12 @@ export function FeedbackWidget() {
                   disabled={sending || message.trim().length < 5}
                   className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg font-medium hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
                 >
-                  {sending ? 'Envoi...' : sent ? 'Merci pour votre retour !' : 'Envoyer'}
+                  {sending ? 'Envoi...' : sent ? 'Merci, message bien recu !' : 'Envoyer mon message'}
                 </button>
 
                 {sent && (
                   <p className="text-center text-sm text-green-600 font-medium">
-                    Message envoye ! Nous le lirons attentivement.
+                    Merci ! On lit chaque message et on vous repond si besoin.
                   </p>
                 )}
               </div>
@@ -211,7 +211,7 @@ export function FeedbackWidget() {
               /* Historique */
               <div className="space-y-3">
                 {myFeedbacks.length === 0 ? (
-                  <p className="text-center text-gray-400 py-8 text-sm">Aucun message envoye</p>
+                  <p className="text-center text-gray-400 py-8 text-sm">Vous n'avez pas encore envoye de message</p>
                 ) : (
                   myFeedbacks.map(fb => (
                     <div key={fb.id} className="bg-gray-50 rounded-lg p-3 space-y-2">
@@ -221,8 +221,8 @@ export function FeedbackWidget() {
                           fb.status === 'read' ? 'bg-blue-100 text-blue-700' :
                           'bg-gray-200 text-gray-600'
                         }`}>
-                          {fb.status === 'replied' ? 'Repondu' :
-                           fb.status === 'read' ? 'Lu' : 'Envoye'}
+                          {fb.status === 'replied' ? 'On vous a repondu' :
+                           fb.status === 'read' ? 'Lu par l\'equipe' : 'Envoye'}
                         </span>
                         <span className="text-xs text-gray-400">
                           {new Date(fb.created_at).toLocaleDateString('fr-FR')}
@@ -231,7 +231,7 @@ export function FeedbackWidget() {
                       <p className="text-sm text-gray-700">{fb.message}</p>
                       {fb.admin_reply && (
                         <div className="bg-white rounded-lg p-3 border-l-4 border-amber-500">
-                          <p className="text-xs text-amber-600 font-medium mb-1">Reponse de l'equipe</p>
+                          <p className="text-xs text-amber-600 font-medium mb-1">Reponse de l'equipe Petanque Pro</p>
                           <p className="text-sm text-gray-700">{fb.admin_reply}</p>
                           <p className="text-xs text-gray-400 mt-1">
                             {fb.admin_replied_at && new Date(fb.admin_replied_at).toLocaleDateString('fr-FR')}

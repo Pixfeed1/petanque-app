@@ -46,7 +46,7 @@ export async function PUT(request: NextRequest) {
       [
         JSON.stringify({
           enabled: !!enabled,
-          message: message || "Nous sommes en phase de test ! Toutes les fonctionnalités sont gratuites. Vos retours nous aident à améliorer l'outil."
+          message: message || "L'appli est toute nouvelle et on a besoin de vous ! Toutes les fonctionnalites sont gratuites en ce moment. Dites-nous ce qui marche bien, ce qui manque ou ce qu'on peut ameliorer."
         }),
         user.id
       ]

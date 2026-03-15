@@ -29,10 +29,10 @@ interface FeedbackStats {
 }
 
 const categoryLabels: Record<string, string> = {
-  general: 'Retour',
-  bug: 'Bug',
-  feature: 'Suggestion',
-  ux: 'Interface / UX'
+  general: 'Avis',
+  bug: 'Ca marche pas',
+  feature: 'Il manque un truc',
+  ux: 'Pas pratique'
 }
 
 const categoryColors: Record<string, string> = {
@@ -219,7 +219,7 @@ export default function AdminFeedback() {
             <div>
               <h2 className="text-lg font-bold text-gray-900">Mode Beta</h2>
               <p className="text-sm text-gray-500">
-                Quand actif : toutes les fonctionnalites sont gratuites et le widget de feedback apparait
+                Quand actif : toutes les fonctionnalites sont gratuites pour les utilisateurs, et le bouton "Votre avis" apparait sur le cote droit de leur ecran
               </p>
             </div>
             <button

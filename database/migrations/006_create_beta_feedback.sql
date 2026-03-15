@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS app_settings (
 
 -- Insérer le paramètre beta_mode (désactivé par défaut)
 INSERT INTO app_settings (key, value) VALUES
-  ('beta_mode', '{"enabled": false, "message": "Nous sommes en phase de test ! Toutes les fonctionnalités sont gratuites. Vos retours nous aident à améliorer l''outil."}'::jsonb)
+  ('beta_mode', '{"enabled": false, "message": "L''appli est toute nouvelle et on a besoin de vous ! Toutes les fonctionnalites sont gratuites en ce moment. Dites-nous ce qui marche bien, ce qui manque ou ce qu''on peut ameliorer."}'::jsonb)
 ON CONFLICT (key) DO NOTHING;
 
 -- Table de feedback utilisateurs
