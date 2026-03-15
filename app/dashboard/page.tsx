@@ -52,7 +52,7 @@ export default function Dashboard() {
 
   // Détecter le paramètre ?upgrade=true pour ouvrir automatiquement la modal de paiement
   useEffect(() => {
-    const upgrade = searchParams.get('upgrade')
+    const upgrade = searchParams?.get('upgrade') ?? null
     if (upgrade === 'true' && user && !authLoading) {
       setShowUpgradeModal(true)
       // Nettoyer l'URL après ouverture de la modal
