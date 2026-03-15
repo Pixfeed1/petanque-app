@@ -76,7 +76,7 @@ export function FeedbackWidget() {
   }
 
   const categories = [
-    { value: 'general', label: 'Avis general' },
+    { value: 'general', label: 'Remarque generale' },
     { value: 'bug', label: 'Ca ne marche pas' },
     { value: 'feature', label: 'Il manque quelque chose' },
     { value: 'ux', label: 'Pas pratique a utiliser' },
@@ -91,7 +91,7 @@ export function FeedbackWidget() {
           className="fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-gradient-to-b from-amber-500 to-orange-500 text-white px-2 py-4 rounded-l-lg shadow-lg hover:px-3 transition-all"
           style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
         >
-          <span className="text-sm font-bold tracking-wide">Votre avis compte !</span>
+          <span className="text-sm font-bold tracking-wide">Un souci ? Une idee ?</span>
         </button>
       )}
 
@@ -102,8 +102,8 @@ export function FeedbackWidget() {
           <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-lg">Donnez-nous votre avis</h3>
-                <p className="text-sm text-amber-100">Aidez-nous a rendre l'appli encore meilleure</p>
+                <h3 className="font-bold text-lg">Aidez-nous a progresser</h3>
+                <p className="text-sm text-amber-100">Signalez un bug, suggerez une amelioration</p>
               </div>
               <button
                 onClick={() => setIsOpen(false)}

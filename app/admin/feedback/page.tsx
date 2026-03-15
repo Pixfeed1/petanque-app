@@ -219,7 +219,7 @@ export default function AdminFeedback() {
             <div>
               <h2 className="text-lg font-bold text-gray-900">Mode Beta</h2>
               <p className="text-sm text-gray-500">
-                Quand actif : toutes les fonctionnalites sont gratuites pour les utilisateurs, et le bouton "Votre avis" apparait sur le cote droit de leur ecran
+                Quand actif : toutes les fonctionnalites sont gratuites pour les utilisateurs, et le bouton "Un souci ? Une idee ?" apparait sur le cote droit de leur ecran
               </p>
             </div>
             <button
