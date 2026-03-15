@@ -93,19 +93,66 @@ export function calculateBracketMatches(nbTeams: number): {
 }
 
 /**
- * Génère les paires de matchs pour le premier tour d'élimination
- * Place intelligemment les BYE pour équilibrer le bracket
+ * Génère les positions de seeding standard pour un bracket.
+ *
+ * Pour un bracket de taille 8 :
+ *   [1, 8, 4, 5, 2, 7, 3, 6]
+ * → Match 1: Seed 1 vs Seed 8
+ * → Match 2: Seed 4 vs Seed 5
+ * → Match 3: Seed 2 vs Seed 7
+ * → Match 4: Seed 3 vs Seed 6
+ *
+ * Garantit que si les mieux classés gagnent, Seed 1 rencontre
+ * Seed 2 en finale (bracket équilibré).
+ */
+export function generateBracketSeeding(bracketSize: number): number[] {
+  if (bracketSize === 1) return [1]
+
+  const half = generateBracketSeeding(bracketSize / 2)
+  const result: number[] = []
+
+  for (const pos of half) {
+    result.push(pos)
+    result.push(bracketSize + 1 - pos)
+  }
+
+  return result
+}
+
+/**
+ * Génère les paires de matchs pour le premier tour d'élimination.
+ *
+ * Place les BYE aux bonnes positions : les têtes de série (mieux classées)
+ * sont exemptées au 1er tour et passent directement au tour suivant.
+ *
+ * Exemple avec 6 équipes (bracket de 8, 2 BYE) :
+ *   Seeding: [1,8,4,5,2,7,3,6]
+ *   Seed 7 et 8 n'existent pas → BYE
+ *   Match 1: Seed 1 vs BYE    → Seed 1 passe directement
+ *   Match 2: Seed 4 vs Seed 5 → match normal
+ *   Match 3: Seed 2 vs BYE    → Seed 2 passe directement
+ *   Match 4: Seed 3 vs Seed 6 → match normal
  */
 export function generateFirstRoundPairs(
   teams: Array<{ id: string; name: string }>
 ): BracketMatch[] {
   const { nbMatches, round } = calculateBracketMatches(teams.length)
+  const bracketSize = nbMatches * 2 // Puissance de 2
   const matches: BracketMatch[] = []
 
+  // Positions de seeding standard (ex: [1,8,4,5,2,7,3,6] pour 8)
+  const seeding = generateBracketSeeding(bracketSize)
+
   for (let i = 0; i < nbMatches; i++) {
-    const teamA = teams[i * 2] || null
-    const teamB = teams[i * 2 + 1] || null
-    const isBye = teamA !== null && teamB === null
+    const seedA = seeding[i * 2]     // Position seed du côté A
+    const seedB = seeding[i * 2 + 1] // Position seed du côté B
+
+    // Si le seed dépasse le nombre d'équipes → BYE
+    const teamA = seedA <= teams.length ? teams[seedA - 1] : null
+    const teamB = seedB <= teams.length ? teams[seedB - 1] : null
+
+    const isBye = (teamA !== null && teamB === null) ||
+                  (teamA === null && teamB !== null)
 
     matches.push({
       teamA,

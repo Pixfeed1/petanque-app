@@ -195,24 +195,29 @@ describe('Simulation Essentiel - 12 équipes, 3 poules de 4, quarts de finale', 
     expect(seeded[5].id).toBe('t10') // 2ème C
   })
 
-  it('bracket quarts avec 6 équipes : placement des matchs et slots', () => {
+  it('bracket quarts avec 6 équipes : BYE pour les têtes de série', () => {
     const seeded = makeTeams(6)
     const pairs = generateFirstRoundPairs(seeded)
 
     expect(pairs.length).toBe(4) // 4 quarts de finale
 
-    // Avec 6 équipes sur 4 slots :
-    // [t1 vs t2], [t3 vs t4], [t5 vs t6], [null vs null]
-    // → 3 matchs normaux, 1 slot vide
+    // Seeding standard pour bracket de 8 : [1,8,4,5,2,7,3,6]
+    // Avec 6 équipes : seeds 7 et 8 n'existent pas → BYE
+    // Match 1: Seed 1 vs BYE (seed 8)  → Seed 1 passe directement
+    // Match 2: Seed 4 vs Seed 5        → match normal
+    // Match 3: Seed 2 vs BYE (seed 7)  → Seed 2 passe directement
+    // Match 4: Seed 3 vs Seed 6        → match normal
     const normalMatches = pairs.filter(p => p.teamA !== null && p.teamB !== null)
     const byeMatches = pairs.filter(p => p.isBye)
-    const emptySlots = pairs.filter(p => p.teamA === null && p.teamB === null)
 
-    expect(normalMatches.length).toBe(3) // 6 équipes = 3 paires complètes
-    expect(byeMatches.length).toBe(0)    // Pas de BYE (nombre pair d'équipes)
-    expect(emptySlots.length).toBe(1)    // 1 slot vide (4 quarts - 3 paires)
-    // NOTE: le slot vide est un comportement connu de bracket.service
-    // qui ne gère pas le cas où nbMatches > teams.length/2
+    expect(normalMatches.length).toBe(2) // 2 matchs joués
+    expect(byeMatches.length).toBe(2)    // 2 BYE pour les 2 meilleurs seeds
+
+    // Vérifier que les têtes de série (Seed 1 et 2) ont les BYE
+    const byePairs = pairs.filter(p => p.isBye)
+    const byeTeamIds = byePairs.map(p => (p.teamA || p.teamB)!.id)
+    expect(byeTeamIds).toContain('t1') // Seed 1 a un BYE
+    expect(byeTeamIds).toContain('t2') // Seed 2 a un BYE
   })
 
   it('progression des rounds : quart → demi → finale', () => {
@@ -621,19 +626,29 @@ describe('Bracket avec BYE - Cas limites', () => {
     expect(bracket.nbByes).toBe(1)
   })
 
-  it('paires avec BYE : le dernier match est un BYE', () => {
+  it('paires avec BYE : les têtes de série sont exemptées', () => {
     const seeded = makeTeams(5) // 5 équipes, 4 quarts, 3 BYE
     const pairs = generateFirstRoundPairs(seeded)
 
     expect(pairs.length).toBe(4)
 
-    // Compter les matchs normaux et BYE
+    // Seeding bracket de 8 : [1,8,4,5,2,7,3,6]
+    // Avec 5 équipes : seeds 6,7,8 n'existent pas → 3 BYE
+    // Match 1: Seed 1 vs BYE (seed 8)
+    // Match 2: Seed 4 vs Seed 5
+    // Match 3: Seed 2 vs BYE (seed 7)
+    // Match 4: Seed 3 vs BYE (seed 6)
     const byes = pairs.filter(p => p.isBye)
     const normals = pairs.filter(p => !p.isBye && p.teamA && p.teamB)
 
-    // 5 équipes → pairs: [t1,t2], [t3,t4], [t5,null], [null,null]
-    expect(normals.length).toBe(2)
-    expect(byes.length).toBe(1) // t5 a un BYE
+    expect(normals.length).toBe(1) // Seul match: Seed 4 vs Seed 5
+    expect(byes.length).toBe(3)    // Seeds 1, 2, 3 ont des BYE
+
+    // Les 3 meilleurs seeds sont exemptés
+    const byeTeamIds = byes.map(p => (p.teamA || p.teamB)!.id)
+    expect(byeTeamIds).toContain('t1')
+    expect(byeTeamIds).toContain('t2')
+    expect(byeTeamIds).toContain('t3')
   })
 
   it('getMatchWinners identifie les vainqueurs et les BYE', () => {
