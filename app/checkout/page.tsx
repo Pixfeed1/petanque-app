@@ -10,7 +10,7 @@ export default function CheckoutPage() {
   const searchParams = useSearchParams()
   const { showError } = useToast()
   const [loading, setLoading] = useState(false)
-  const paymentStatus = searchParams.get('payment')
+  const paymentStatus = searchParams?.get('payment') ?? null
 
   const handleRetry = async () => {
     setLoading(true)
