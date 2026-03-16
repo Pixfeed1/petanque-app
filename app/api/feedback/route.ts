@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
     )
 
     return apiSuccess({ sent: true }, 201)
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Erreur POST /api/feedback:', error)
-    return apiError('Erreur serveur', 500)
+    return apiError(`Erreur serveur: ${error?.message || error}`, 500)
   }
 }
 
