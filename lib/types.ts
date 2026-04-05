@@ -141,7 +141,7 @@ export interface MatchRawDB {
 }
 
 // Types pour le mode et format de tournoi
-export type TournoiMode = 'choisi' | 'melee_tournante'
+export type TournoiMode = 'choisi' | 'melee_fixe' | 'melee_tournante'
 export type TournoiFormat = 'tete_a_tete' | 'doublette' | 'triplette'
 export type MeleeRotation = 'par_tour' | 'par_match'
 export type EliminationFormat = 'simple' | 'double'

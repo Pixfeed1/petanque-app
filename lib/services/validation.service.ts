@@ -16,7 +16,7 @@ export interface ValidationResult {
 export function validatePlayerCount(
   nbPlayers: number,
   format: 'tete_a_tete' | 'doublette' | 'triplette',
-  mode: 'choisi' | 'melee_tournante'
+  mode: 'choisi' | 'melee_fixe' | 'melee_tournante'
 ): ValidationResult {
   const playersPerTeam = format === 'tete_a_tete' ? 1 : format === 'doublette' ? 2 : 3
 
@@ -34,7 +34,7 @@ export function validatePlayerCount(
   }
 
   // Vérifier exclusion de joueurs en mêlée
-  if (mode === 'melee_tournante') {
+  if (mode === 'melee_fixe' || mode === 'melee_tournante') {
     const remainingPlayers = nbPlayers % playersPerTeam
 
     if (remainingPlayers > 0) {

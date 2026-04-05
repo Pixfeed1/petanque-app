@@ -26,19 +26,19 @@ describe('ValidationService', () => {
       expect(result.error).toContain('Minimum')
     })
 
-    it('devrait détecter les joueurs exclus en mêlée tournante', () => {
-      const result = validatePlayerCount(11, 'triplette', 'melee_tournante')
+    it('devrait détecter les joueurs exclus en mêlée fixe', () => {
+      const result = validatePlayerCount(11, 'triplette', 'melee_fixe')
       expect(result.valid).toBe(false)
       expect(result.error).toContain('2 joueur(s) seraient exclus')
     })
 
     it('devrait accepter un nombre exact de joueurs', () => {
-      const result = validatePlayerCount(12, 'triplette', 'melee_tournante')
+      const result = validatePlayerCount(12, 'triplette', 'melee_fixe')
       expect(result.valid).toBe(true)
     })
 
     it('devrait refuser un nombre insuffisant de joueurs', () => {
-      const result = validatePlayerCount(1, 'doublette', 'melee_tournante')
+      const result = validatePlayerCount(1, 'doublette', 'melee_fixe')
       expect(result.valid).toBe(false)
       expect(result.error).toContain('Minimum 2 joueur')
     })
