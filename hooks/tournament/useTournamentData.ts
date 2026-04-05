@@ -25,6 +25,9 @@ export interface TournamentSettings {
   recordMenes?: boolean
   timeLimit?: boolean
   timeLimitMinutes?: number
+  current_round?: number
+  melee_tournante_players?: string[]
+  poules_created?: boolean
   allowPhotos?: boolean
   sendNotifications?: boolean
   players: string[]
