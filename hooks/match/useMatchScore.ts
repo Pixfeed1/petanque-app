@@ -29,6 +29,7 @@ interface Match {
     format: string
     settings?: {
       maxPoints?: number
+      timeLimit?: boolean
     }
   }
 }
@@ -223,7 +224,8 @@ export function useMatchScore({
         return
       }
 
-      if (finalScoreA < maxPoints && finalScoreB < maxPoints) {
+      const timeLimit = match?.tournoi?.settings?.timeLimit === true
+      if (finalScoreA < maxPoints && finalScoreB < maxPoints && !timeLimit) {
         notify.error(`Le match doit se terminer quand une équipe atteint ${maxPoints} points.`)
         return
       }
