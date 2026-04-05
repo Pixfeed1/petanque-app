@@ -45,8 +45,8 @@ interface Match {
   tour: number
   type?: 'poule' | 'elimination' | 'finale' | 'bye' | 'demi' | 'quart' | 'huitieme' | 'petite_finale'
   poule?: string
-  manches_json?: Array<{ points: number; team: 'A' | 'B' }>
-  menes?: Array<{ points: number; team: 'A' | 'B' }>
+  manches_json?: Array<{ scoreA: number; scoreB: number }>
+  menes?: Array<{ scoreA: number; scoreB: number }>
 }
 
 interface Player {
