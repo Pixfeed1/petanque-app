@@ -81,6 +81,8 @@ export interface EquipeJoueur {
 export interface TournoiSimple {
   id: string
   name: string
+  format?: string | null
+  settings?: Record<string, unknown> | null
 }
 
 export interface Manche {
