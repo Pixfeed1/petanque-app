@@ -141,7 +141,7 @@ export interface MatchRawDB {
 }
 
 // Types pour le mode et format de tournoi
-export type TournoiMode = 'choisi' | 'melee_fixe' | 'melee_tournante'
+export type TournoiMode = 'choisi' | 'melee_tournante'
 export type TournoiFormat = 'tete_a_tete' | 'doublette' | 'triplette'
 export type MeleeRotation = 'par_tour' | 'par_match'
 export type EliminationFormat = 'simple' | 'double'
@@ -265,20 +265,6 @@ export interface ActionItem {
   label: string
   labelColor: string
   url: string
-}
-
-export interface PlayerStats {
-  id: string
-  nom: string
-  prenom: string
-  victories: number
-  defeats: number
-  matchsJoues: number
-  points: number
-  pointsMarques: number
-  pointsEncaisses: number
-  difference: number
-  equipes: string[]
 }
 
 export interface EquipeWithStats extends Equipe {

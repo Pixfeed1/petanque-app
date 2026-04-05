@@ -17,7 +17,7 @@ export interface PoolAssignment {
 /**
  * Shuffle Fisher-Yates (algorithme correct, contrairement à sort(() => Math.random() - 0.5))
  */
-function fisherYatesShuffle<T>(array: T[]): T[] {
+export function fisherYatesShuffle<T>(array: T[]): T[] {
   const shuffled = [...array]
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -124,19 +124,28 @@ export function bergerRoundRobin(
     const pairs: Array<[number, number]> = []
 
     // Première paire : équipe fixe (0) vs premier de la rotation
+    // Alternance domicile/extérieur : tours pairs → 0 reçoit, tours impairs → 0 se déplace
     if (indices[0] < teamCount) {
-      // Pas le fantôme
-      pairs.push([0, indices[0]])
+      if (round % 2 === 0) {
+        pairs.push([0, indices[0]])
+      } else {
+        pairs.push([indices[0], 0])
+      }
     }
 
     // Autres paires : indices[i] ↔ indices[n-1-i] (miroir symétrique)
+    // Même alternance appliquée
     for (let i = 1; i < n / 2; i++) {
       const a = indices[i]
       const b = indices[n - 1 - i]
 
       // Ignorer si une des deux est le fantôme (>= teamCount)
       if (a < teamCount && b < teamCount) {
-        pairs.push([a, b])
+        if (round % 2 === 0) {
+          pairs.push([a, b])
+        } else {
+          pairs.push([b, a])
+        }
       }
     }
 

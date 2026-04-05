@@ -95,8 +95,8 @@ export const createTournoiSchema = z.object({
   date_debut: z.string().datetime('Date de début invalide'),
   date_fin: z.string().datetime('Date de fin invalide').optional().nullable(),
   lieu: z.string().max(200).optional().nullable(),
-  mode: z.enum(['choisi', 'melee_fixe', 'melee_tournante'], {
-    message: 'Mode invalide (choisi, melee_fixe ou melee_tournante)'
+  mode: z.enum(['choisi', 'melee_tournante'], {
+    message: 'Mode invalide (choisi ou melee_tournante)'
   }),
   format: z.enum(['tete_a_tete', 'doublette', 'triplette'], {
     message: 'Format invalide (tete_a_tete, doublette ou triplette)'

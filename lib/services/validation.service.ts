@@ -16,7 +16,7 @@ export interface ValidationResult {
 export function validatePlayerCount(
   nbPlayers: number,
   format: 'tete_a_tete' | 'doublette' | 'triplette',
-  mode: 'choisi' | 'melee_fixe' | 'melee_tournante'
+  mode: 'choisi' | 'melee_tournante'
 ): ValidationResult {
   const playersPerTeam = format === 'tete_a_tete' ? 1 : format === 'doublette' ? 2 : 3
 
@@ -34,7 +34,7 @@ export function validatePlayerCount(
   }
 
   // Vérifier exclusion de joueurs en mêlée
-  if (mode === 'melee_fixe' || mode === 'melee_tournante') {
+  if (mode === 'melee_tournante') {
     const remainingPlayers = nbPlayers % playersPerTeam
 
     if (remainingPlayers > 0) {
@@ -181,12 +181,21 @@ export function validateMatchStart(match: {
 
 /**
  * Valide qu'un score est conforme aux règles FIPJP
+ *
+ * @param scoreA Score de l'équipe A
+ * @param scoreB Score de l'équipe B
+ * @param maxPoints Score maximum (ex: 13)
+ * @param options.allowTimeLimitEnd Si true, accepte un match terminé même si personne n'atteint maxPoints (temps limite FIPJP)
+ * @param options.isElimination Si true, refuse les égalités (pas de nul en phase éliminatoire)
  */
 export function validateScore(
   scoreA: number,
   scoreB: number,
-  maxPoints: number
+  maxPoints: number,
+  options: { allowTimeLimitEnd?: boolean; isElimination?: boolean } = {}
 ): ValidationResult {
+  const { allowTimeLimitEnd = true, isElimination = false } = options
+
   if (scoreA < 0 || scoreB < 0) {
     return {
       valid: false,
@@ -194,7 +203,7 @@ export function validateScore(
     }
   }
 
-  // En pétanque FIPJP : le match s'arrête dès qu'une équipe atteint maxPoints
+  // Les deux équipes ne peuvent pas atteindre maxPoints simultanément
   if (scoreA === maxPoints && scoreB === maxPoints) {
     return {
       valid: false,
@@ -209,18 +218,21 @@ export function validateScore(
     }
   }
 
-  // Si une équipe a atteint maxPoints, l'autre doit avoir moins
-  if (scoreA === maxPoints && scoreB >= maxPoints) {
-    return {
-      valid: false,
-      error: `Si une équipe atteint ${maxPoints} points, le match est terminé`
+  // Cas temps limite FIPJP : personne n'a atteint maxPoints
+  if (scoreA < maxPoints && scoreB < maxPoints) {
+    if (!allowTimeLimitEnd) {
+      return {
+        valid: false,
+        error: `Le match ne peut être terminé que si une équipe atteint ${maxPoints} points`
+      }
     }
-  }
 
-  if (scoreB === maxPoints && scoreA >= maxPoints) {
-    return {
-      valid: false,
-      error: `Si une équipe atteint ${maxPoints} points, le match est terminé`
+    // En élimination, pas d'égalité possible (même au temps limite, le meneur gagne)
+    if (isElimination && scoreA === scoreB) {
+      return {
+        valid: false,
+        error: 'Pas d\'égalité possible en phase éliminatoire. Le meneur au temps limite gagne.'
+      }
     }
   }
 
@@ -275,12 +287,23 @@ export function validateMixity(
   }
 
   if (format === 'triplette') {
-    // Besoin d'au moins 2 de chaque sexe (pour faire 2H+1F ou 1H+2F)
-    if (hommes < 2 || femmes < 2) {
+    // Besoin d'au moins 1H et 1F (l'algorithme forme des équipes 2H+1F ou 1H+2F)
+    if (hommes < 1 || femmes < 1) {
       return {
         valid: false,
-        error: 'Mixité obligatoire en triplette requiert au moins 2 hommes et 2 femmes'
+        error: 'Mixité obligatoire en triplette requiert au moins 1 homme et 1 femme'
       }
+    }
+  }
+
+  const total = hommes + femmes
+  const minorityRatio = Math.min(hommes, femmes) / total
+
+  if (total > 0 && minorityRatio < 0.3) {
+    const minority = hommes < femmes ? 'hommes' : 'femmes'
+    return {
+      valid: true,
+      warning: `Ratio H/F déséquilibré (${hommes}H / ${femmes}F). Moins de 30% de ${minority} : certaines équipes ne seront pas mixtes.`
     }
   }
 

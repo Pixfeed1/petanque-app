@@ -26,19 +26,19 @@ describe('ValidationService', () => {
       expect(result.error).toContain('Minimum')
     })
 
-    it('devrait détecter les joueurs exclus en mêlée fixe', () => {
-      const result = validatePlayerCount(11, 'triplette', 'melee_fixe')
+    it('devrait détecter les joueurs exclus en mêlée tournante', () => {
+      const result = validatePlayerCount(11, 'triplette', 'melee_tournante')
       expect(result.valid).toBe(false)
       expect(result.error).toContain('2 joueur(s) seraient exclus')
     })
 
     it('devrait accepter un nombre exact de joueurs', () => {
-      const result = validatePlayerCount(12, 'triplette', 'melee_fixe')
+      const result = validatePlayerCount(12, 'triplette', 'melee_tournante')
       expect(result.valid).toBe(true)
     })
 
     it('devrait refuser un nombre insuffisant de joueurs', () => {
-      const result = validatePlayerCount(1, 'doublette', 'melee_fixe')
+      const result = validatePlayerCount(1, 'doublette', 'melee_tournante')
       expect(result.valid).toBe(false)
       expect(result.error).toContain('Minimum 2 joueur')
     })
@@ -225,10 +225,16 @@ describe('ValidationService', () => {
       expect(result.valid).toBe(true)
     })
 
-    it('devrait refuser la mixité en triplette sans assez d\'hommes', () => {
-      const result = validateMixity(1, 10, 'triplette', true)
+    it('devrait refuser la mixité en triplette sans aucun homme', () => {
+      const result = validateMixity(0, 10, 'triplette', true)
       expect(result.valid).toBe(false)
-      expect(result.error).toContain('au moins 2 hommes et 2 femmes')
+      expect(result.error).toContain('au moins 1 homme et 1 femme')
+    })
+
+    it('devrait avertir si ratio H/F très déséquilibré en triplette', () => {
+      const result = validateMixity(1, 10, 'triplette', true)
+      expect(result.valid).toBe(true)
+      expect(result.warning).toContain('déséquilibré')
     })
   })
 })

@@ -3,11 +3,8 @@
  * Conforme aux règles FIPJP pour les tournois de pétanque
  */
 
-export interface Joueur {
-  id: string
-  gender?: 'H' | 'F'
-  [key: string]: any
-}
+import { fisherYatesShuffle } from './tirage.service'
+import type { Joueur } from '@/lib/types'
 
 export interface TeamComposition {
   joueur_ids: string[]
@@ -101,7 +98,7 @@ export class MixiteService {
 
     // Si mixité NON obligatoire : formation libre sans contrainte de genre
     if (!mixiteObligatoire) {
-      const shuffled = [...players].sort(() => Math.random() - 0.5)
+      const shuffled = fisherYatesShuffle(players)
       const nbEquipes = Math.floor(shuffled.length / playersPerTeam)
 
       for (let i = 0; i < nbEquipes; i++) {
@@ -142,8 +139,8 @@ export class MixiteService {
     }
 
     // Mélanger chaque genre pour randomiser
-    playersByGender.H.sort(() => Math.random() - 0.5)
-    playersByGender.F.sort(() => Math.random() - 0.5)
+    playersByGender.H = fisherYatesShuffle(playersByGender.H)
+    playersByGender.F = fisherYatesShuffle(playersByGender.F)
 
     if (playersPerTeam === 2) {
       // DOUBLETTE : 1H + 1F autant que possible
@@ -156,8 +153,7 @@ export class MixiteService {
       }
 
       // Équipes restantes (non-mixtes si nécessaire pour inclure tous)
-      const remaining = [...playersByGender.H, ...playersByGender.F]
-      remaining.sort(() => Math.random() - 0.5) // Mélanger
+      const remaining = fisherYatesShuffle([...playersByGender.H, ...playersByGender.F])
 
       while (remaining.length >= playersPerTeam) {
         const teamPlayerIds = remaining.splice(0, playersPerTeam).map(p => p.id)
@@ -199,8 +195,7 @@ export class MixiteService {
       }
 
       // Équipes restantes (non-mixtes si nécessaire pour inclure tous)
-      const remaining = [...playersByGender.H, ...playersByGender.F]
-      remaining.sort(() => Math.random() - 0.5) // Mélanger pour alterner H/F
+      const remaining = fisherYatesShuffle([...playersByGender.H, ...playersByGender.F])
 
       while (remaining.length >= playersPerTeam) {
         const teamPlayerIds = remaining.splice(0, playersPerTeam).map(p => p.id)

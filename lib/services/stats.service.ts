@@ -263,10 +263,73 @@ export function calculateAllPlayersStats(
 }
 
 /**
+ * Résout une égalité entre 3+ équipes par confrontation directe
+ * Filtre les matchs entre les équipes à égalité uniquement,
+ * recalcule un mini-classement (points FIPJP + différence) sur ces matchs-là
+ */
+export function resolveMultiWayTie(
+  tiedTeams: TeamStats[],
+  matches: Match[],
+  poule: string
+): TeamStats[] {
+  const tiedIds = new Set(tiedTeams.map(t => t.id))
+
+  // Filtrer les matchs entre les équipes à égalité uniquement
+  const directMatches = matches.filter(m =>
+    m.status === 'termine' &&
+    m.poule === poule &&
+    m.equipe_a_id && m.equipe_b_id &&
+    tiedIds.has(m.equipe_a_id) &&
+    tiedIds.has(m.equipe_b_id)
+  )
+
+  // Si pas de confrontations directes, ne pas départager
+  if (directMatches.length === 0) return tiedTeams
+
+  // Recalculer un mini-classement sur ces matchs
+  const miniStats = new Map<string, { points: number; diff: number; pointsFor: number }>()
+  for (const t of tiedTeams) {
+    miniStats.set(t.id, { points: 0, diff: 0, pointsFor: 0 })
+  }
+
+  for (const m of directMatches) {
+    const sa = m.score_a ?? 0
+    const sb = m.score_b ?? 0
+    const statsA = miniStats.get(m.equipe_a_id!)!
+    const statsB = miniStats.get(m.equipe_b_id!)!
+
+    statsA.pointsFor += sa
+    statsA.diff += sa - sb
+    statsB.pointsFor += sb
+    statsB.diff += sb - sa
+
+    if (sa > sb) {
+      statsA.points += 3
+    } else if (sb > sa) {
+      statsB.points += 3
+    } else {
+      statsA.points += 1
+      statsB.points += 1
+    }
+  }
+
+  return [...tiedTeams].sort((a, b) => {
+    const sa = miniStats.get(a.id)!
+    const sb = miniStats.get(b.id)!
+    if (sb.points !== sa.points) return sb.points - sa.points
+    if (sb.diff !== sa.diff) return sb.diff - sa.diff
+    if (sb.pointsFor !== sa.pointsFor) return sb.pointsFor - sa.pointsFor
+    return a.name.localeCompare(b.name)
+  })
+}
+
+/**
  * Trie les équipes selon les règles FIPJP officielles
  * 1. Nombre de points (victoires × 3 + nuls × 1)
  * 2. Différence de points (moyenne générale)
  * 3. Confrontation directe (si matchs et poule fournis)
+ *    - 2 équipes : résultat direct
+ *    - 3+ équipes : mini-classement sur les matchs entre elles
  * 4. Points marqués
  * 5. Ordre alphabétique (en cas d'égalité parfaite)
  *
@@ -279,35 +342,61 @@ export function sortTeamsByFIPJPRules(
   matches?: Match[],
   poule?: string
 ): TeamStats[] {
-  return [...teams].sort((a, b) => {
-    // 1. Nombre de points (victoires × 3 + nuls × 1)
+  // Première passe : tri par points, différence, points marqués, alphabétique
+  const sorted = [...teams].sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points
-
-    // 2. Différence de points (moyenne générale)
     if (b.difference !== a.difference) return b.difference - a.difference
+    if (b.pointsFor !== a.pointsFor) return b.pointsFor - a.pointsFor
+    return a.name.localeCompare(b.name)
+  })
 
-    // 3. Confrontation directe (règle FIPJP)
-    if (matches && poule) {
+  // Si pas de matchs ou poule, pas de confrontation directe
+  if (!matches || !poule) return sorted
+
+  // Deuxième passe : résoudre les égalités par confrontation directe
+  const result: TeamStats[] = []
+  let i = 0
+
+  while (i < sorted.length) {
+    // Trouver le groupe d'équipes à égalité (mêmes points + même différence)
+    let j = i + 1
+    while (j < sorted.length && sorted[j].points === sorted[i].points && sorted[j].difference === sorted[i].difference) {
+      j++
+    }
+
+    const tiedGroup = sorted.slice(i, j)
+
+    if (tiedGroup.length === 1) {
+      result.push(tiedGroup[0])
+    } else if (tiedGroup.length === 2) {
+      // 2 équipes : confrontation directe simple
       const directMatch = matches.find((m: Match) =>
         m.status === 'termine' && m.poule === poule &&
-        ((m.equipe_a_id === a.id && m.equipe_b_id === b.id) ||
-         (m.equipe_a_id === b.id && m.equipe_b_id === a.id))
+        ((m.equipe_a_id === tiedGroup[0].id && m.equipe_b_id === tiedGroup[1].id) ||
+         (m.equipe_a_id === tiedGroup[1].id && m.equipe_b_id === tiedGroup[0].id))
       )
 
       if (directMatch) {
-        const aWon = (directMatch.equipe_a_id === a.id && (directMatch.score_a ?? 0) > (directMatch.score_b ?? 0)) ||
-                     (directMatch.equipe_b_id === a.id && (directMatch.score_b ?? 0) > (directMatch.score_a ?? 0))
-        if (aWon) return -1 // a gagne
-        else return 1 // b gagne
+        const firstWon =
+          (directMatch.equipe_a_id === tiedGroup[0].id && (directMatch.score_a ?? 0) > (directMatch.score_b ?? 0)) ||
+          (directMatch.equipe_b_id === tiedGroup[0].id && (directMatch.score_b ?? 0) > (directMatch.score_a ?? 0))
+        if (firstWon) {
+          result.push(tiedGroup[0], tiedGroup[1])
+        } else {
+          result.push(tiedGroup[1], tiedGroup[0])
+        }
+      } else {
+        result.push(...tiedGroup)
       }
+    } else {
+      // 3+ équipes : mini-classement par confrontation directe
+      result.push(...resolveMultiWayTie(tiedGroup, matches, poule))
     }
 
-    // 4. Points marqués
-    if (b.pointsFor !== a.pointsFor) return b.pointsFor - a.pointsFor
+    i = j
+  }
 
-    // 5. Ordre alphabétique
-    return a.name.localeCompare(b.name)
-  })
+  return result
 }
 
 /**
