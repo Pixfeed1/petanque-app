@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import confetti from 'canvas-confetti'
-import type { Match, Equipe, Joueur } from '@/lib/types'
+import type { Match, Equipe, Match as MatchType, Joueur } from '@/lib/types'
+import { StatsService } from '@/lib/services'
 
 // ============================================================================
 // Types
@@ -27,12 +28,7 @@ export interface PodiumTeam {
   }
 }
 
-interface TeamClassement {
-  team: Equipe
-  victories: number
-  difference: number
-  pointsFor: number
-}
+// TeamClassement removed — using StatsService.TeamStats + sortTeamsByFIPJPRules
 
 interface UsePodiumProps {
   tournoiId: string | string[] | undefined
@@ -196,50 +192,21 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
     if (!equipesResponse.ok) return
 
     const equipesData = await equipesResponse.json()
-    const classement: TeamClassement[] = equipesData.map((team: Equipe) => {
-      const teamMatches = allMatches.filter((m: Match) =>
-        m.status === 'termine' && m.type === 'poule' &&
-        (m.equipe_a_id === team.id || m.equipe_b_id === team.id)
-      )
-      let victories = 0, pointsFor = 0, pointsAgainst = 0
-      teamMatches.forEach((m: Match) => {
-        if (m.equipe_a_id === team.id) {
-          if ((m.score_a ?? 0) > (m.score_b ?? 0)) victories++
-          pointsFor += m.score_a || 0
-          pointsAgainst += m.score_b || 0
-        } else if (m.equipe_b_id === team.id) {
-          if ((m.score_b ?? 0) > (m.score_a ?? 0)) victories++
-          pointsFor += m.score_b || 0
-          pointsAgainst += m.score_a || 0
-        }
-      })
-      return { team, victories, difference: pointsFor - pointsAgainst, pointsFor }
-    }).sort((a: TeamClassement, b: TeamClassement) => {
-      // 1. Nombre de victoires (regle FIPJP)
-      if (b.victories !== a.victories) return b.victories - a.victories
-      // 2. Difference de points
-      if (b.difference !== a.difference) return b.difference - a.difference
-      // 3. Confrontation directe
-      const directMatch = allMatches.find((m: Match) =>
-        m.status === 'termine' && m.type === 'poule' &&
-        ((m.equipe_a_id === a.team.id && m.equipe_b_id === b.team.id) ||
-         (m.equipe_a_id === b.team.id && m.equipe_b_id === a.team.id))
-      )
-      if (directMatch) {
-        const dmScoreA = directMatch.score_a ?? 0
-        const dmScoreB = directMatch.score_b ?? 0
-        const aWon = (directMatch.equipe_a?.id === a.team.id && dmScoreA > dmScoreB) ||
-                     (directMatch.equipe_b?.id === a.team.id && dmScoreB > dmScoreA)
-        if (aWon) return -1
-        else return 1
-      }
-      // 4. Nombre de points marques
-      return b.pointsFor - a.pointsFor
-    })
 
-    if (classement[0]) podiumData.push({ position: 1, team: classement[0].team, score: classement[0].pointsFor })
-    if (classement[1]) podiumData.push({ position: 2, team: classement[1].team, score: classement[1].pointsFor })
-    if (classement[2]) podiumData.push({ position: 3, team: classement[2].team, score: classement[2].pointsFor })
+    // Filtrer uniquement les matchs de poule pour le classement
+    const pouleMatches = allMatches.filter((m: Match) => m.type === 'poule')
+
+    // Calculer les stats FIPJP pour chaque équipe
+    const teamStats = equipesData.map((team: Equipe) =>
+      StatsService.calculateTeamStats(team.id, team.name, pouleMatches)
+    )
+
+    // Tri FIPJP officiel (points, différence, confrontation directe, multi-way ties)
+    const classement = StatsService.sortTeamsByFIPJPRules(teamStats, pouleMatches)
+
+    if (classement[0]) podiumData.push({ position: 1, team: { id: classement[0].id, name: classement[0].name }, score: classement[0].pointsFor })
+    if (classement[1]) podiumData.push({ position: 2, team: { id: classement[1].id, name: classement[1].name }, score: classement[1].pointsFor })
+    if (classement[2]) podiumData.push({ position: 3, team: { id: classement[2].id, name: classement[2].name }, score: classement[2].pointsFor })
   }
 
   const loadTeamStats = async (podiumData: PodiumTeam[], allMatches: Match[]) => {
