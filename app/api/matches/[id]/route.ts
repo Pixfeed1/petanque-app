@@ -23,7 +23,7 @@ export async function GET(
       `SELECT m.*,
               ea.id as equipe_a_id_check, ea.name as equipe_a_name, ea.joueur_ids as equipe_a_joueur_ids,
               eb.id as equipe_b_id_check, eb.name as equipe_b_name, eb.joueur_ids as equipe_b_joueur_ids,
-              t.id as tournoi_id_check, t.name as tournoi_name, t.org_id as tournoi_org_id
+              t.id as tournoi_id_check, t.name as tournoi_name, t.format as tournoi_format, t.settings as tournoi_settings, t.org_id as tournoi_org_id
        FROM matches m
        LEFT JOIN equipes ea ON m.equipe_a_id = ea.id
        LEFT JOIN equipes eb ON m.equipe_b_id = eb.id
@@ -61,7 +61,11 @@ export async function GET(
       tournoi_id: matchRaw.tournoi_id,
       tournoi: matchRaw.tournoi_id ? {
         id: matchRaw.tournoi_id,
-        name: matchRaw.tournoi_name || ''
+        name: matchRaw.tournoi_name || '',
+        format: (matchRaw as any).tournoi_format || null,
+        settings: typeof (matchRaw as any).tournoi_settings === 'string'
+          ? JSON.parse((matchRaw as any).tournoi_settings)
+          : (matchRaw as any).tournoi_settings || null
       } : null,
       equipe_a_id: matchRaw.equipe_a_id,
       equipe_b_id: matchRaw.equipe_b_id,
