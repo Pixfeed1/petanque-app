@@ -340,7 +340,7 @@ export async function DELETE(
     // Vérifier que l'utilisateur a accès à l'organisation
     if (match.tournoi_org_id) {
       const hasAccess = await queryOne(
-        'SELECT 1 FROM org_users WHERE user_id = $1 AND org_id = $2',
+        'SELECT 1 FROM user_roles WHERE user_id = $1 AND org_id = $2',
         [user.id, match.tournoi_org_id]
       )
       if (!hasAccess) {
