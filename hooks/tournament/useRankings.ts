@@ -155,7 +155,7 @@ export function useRankings({
 
       if (!joueursResponse.ok) return
       const joueursData = await joueursResponse.json()
-      const joueurs = Array.isArray(joueursData) ? joueursData : joueursData.joueurs || []
+      const allJoueurs: Joueur[] = Array.isArray(joueursData) ? joueursData : joueursData.joueurs || []
 
       // Charger toutes les équipes et matchs du tournoi
       const equipesResponse = await fetch(`/api/equipes?tournoi_id=${tournament.id}`, {
@@ -169,6 +169,19 @@ export function useRankings({
 
       const equipesData = await equipesResponse.json()
       const matchesData = await matchesResponse.json()
+
+      // Filtrer pour ne garder que les joueurs du tournoi
+      const tournamentPlayerIds = new Set<string>()
+      const settingsPlayers = (tournament.settings as Record<string, unknown>)?.melee_tournante_players as string[] | undefined
+      if (Array.isArray(settingsPlayers) && settingsPlayers.length > 0) {
+        settingsPlayers.forEach(id => tournamentPlayerIds.add(id))
+      } else {
+        // Déduire depuis les joueur_ids des équipes
+        equipesData.forEach((eq: Team) => {
+          (eq.joueur_ids || []).forEach((id: string) => tournamentPlayerIds.add(id))
+        })
+      }
+      const joueurs = allJoueurs.filter(j => tournamentPlayerIds.has(j.id))
 
       // Calculer les stats de tous les joueurs en batch (optimisé O(n) vs O(n*m))
       const teamsForStats = equipesData.map((eq: Team) => ({
