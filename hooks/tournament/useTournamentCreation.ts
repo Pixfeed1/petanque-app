@@ -8,7 +8,7 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
-import { ValidationService } from '@/lib/services'
+import { ValidationService, TirageService } from '@/lib/services'
 import { MixiteService } from '@/lib/services/mixite.service'
 import type { Joueur, Tournoi } from '@/lib/types'
 import type { TournamentFormData, NewPlayer } from './useCreateTournament'
@@ -167,7 +167,7 @@ export function useTournamentCreation({
   }, [formData, createTeamWithPlayers])
 
   /**
-   * Crée les matchs de poules
+   * Crée les matchs de poules avec snake draft + Berger + terrains intelligents
    */
   const createPoolMatches = useCallback(async (tournoi: Tournoi) => {
     const response = await fetch(`/api/equipes?tournoi_id=${tournoi.id}`, {
@@ -178,36 +178,46 @@ export function useTournamentCreation({
     const equipes = await response.json()
     if (!equipes?.length) throw new Error('Aucune équipe trouvée')
 
-    const shuffled = [...equipes].sort(() => Math.random() - 0.5)
-    const nbPoules = Math.ceil(shuffled.length / formData.pouleSize)
+    // Distribution serpentin (snake draft) pour des poules équilibrées
+    const poules = TirageService.snakeDraftDistribution(equipes, formData.pouleSize)
 
-    let globalMatchNum = 0
-    const matchesToCreate: any[] = []
+    const matchesToCreate: Array<Record<string, unknown>> = []
 
-    for (let pouleNum = 0; pouleNum < nbPoules; pouleNum++) {
-      const start = pouleNum * formData.pouleSize
-      const end = Math.min(start + formData.pouleSize, shuffled.length)
-      const pouleEquipes = shuffled.slice(start, end)
+    for (const [pouleName, pouleTeams] of Object.entries(poules)) {
+      // Scheduling Berger pour chaque poule (planning optimal)
+      const bergerMatches = TirageService.generateBergerMatches(pouleTeams, pouleName)
 
-      // Round-robin
-      for (let i = 0; i < pouleEquipes.length; i++) {
-        for (let j = i + 1; j < pouleEquipes.length; j++) {
-          matchesToCreate.push({
-            tournoi_id: tournoi.id,
-            equipe_a_id: pouleEquipes[i].id,
-            equipe_b_id: pouleEquipes[j].id,
-            terrain: (globalMatchNum % formData.terrains) + 1,
-            tour: Math.floor(globalMatchNum / formData.terrains) + 1,
-            type: 'poule',
-            poule: String.fromCharCode(65 + pouleNum),
-            status: 'a_jouer'
-          })
-          globalMatchNum++
-        }
+      // Assignation intelligente des terrains
+      let terrainAssignment: Map<string, number> | null = null
+      if (formData.terrains > 0) {
+        const matchesForTerrain = bergerMatches.map((m, idx) => ({
+          id: `${pouleName}_${idx}`,
+          equipe_a_id: m.teamA.id,
+          equipe_b_id: m.teamB.id,
+          tour: m.tour
+        }))
+        terrainAssignment = TirageService.smartTerrainAssignment(
+          matchesForTerrain,
+          formData.terrains
+        )
+      }
+
+      for (let idx = 0; idx < bergerMatches.length; idx++) {
+        const m = bergerMatches[idx]
+        matchesToCreate.push({
+          tournoi_id: tournoi.id,
+          equipe_a_id: m.teamA.id,
+          equipe_b_id: m.teamB.id,
+          tour: m.tour,
+          terrain: terrainAssignment?.get(`${pouleName}_${idx}`) || null,
+          type: 'poule',
+          poule: m.poule,
+          status: 'a_jouer'
+        })
       }
     }
 
-    // Créer tous les matchs en batch (1 seule requête au lieu de N)
+    // Créer tous les matchs en batch
     const matchesBatchResponse = await fetch('/api/matches/batch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
