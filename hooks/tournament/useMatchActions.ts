@@ -193,6 +193,44 @@ export function useMatchActions({
       return
     }
 
+    // Vérifier si des matchs de poule existent déjà
+    const existingPouleMatches = matches.filter(m => m.type === 'poule')
+
+    if (existingPouleMatches.length > 0) {
+      const hasPlayedMatches = existingPouleMatches.some(m => m.status === 'en_cours' || m.status === 'termine')
+
+      if (hasPlayedMatches) {
+        // Cas 3 : des matchs ont été joués → bloquer
+        notify.warning('Impossible de régénérer les poules : des matchs ont déjà été joués.')
+        return
+      }
+
+      // Cas 2 : tous les matchs sont a_jouer → demander confirmation
+      const message = 'Des poules existent déjà. Voulez-vous les supprimer et en régénérer de nouvelles ?'
+      const confirmed = onConfirmTerrainConflict
+        ? await onConfirmTerrainConflict(message)
+        : window.confirm(message)
+
+      if (!confirmed) return
+
+      // Supprimer tous les matchs de poule existants
+      try {
+        for (const match of existingPouleMatches) {
+          const deleteResponse = await fetch(`/api/matches/${match.id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          })
+          if (!deleteResponse.ok) {
+            throw new Error(`Échec suppression match ${match.id}`)
+          }
+        }
+      } catch (error) {
+        console.error('Erreur suppression matchs existants:', error)
+        notify.error('Erreur lors de la suppression des anciens matchs de poule')
+        return
+      }
+    }
+
     // Distribution serpentin (snake draft) pour des poules équilibrées
     const poules = TirageService.snakeDraftDistribution(teams, pouleSize)
 
@@ -212,7 +250,7 @@ export function useMatchActions({
       console.error('Erreur génération poules:', error)
       notify.error('Erreur lors de la génération des poules')
     }
-  }, [tournament, teams, isValidPoolConfiguration, createRoundRobinMatches, loadTournamentData])
+  }, [tournament, teams, matches, isValidPoolConfiguration, createRoundRobinMatches, loadTournamentData, onConfirmTerrainConflict])
 
   /**
    * Génère les phases éliminatoires après les poules
