@@ -182,25 +182,18 @@ export function useRankings({
         teamsForStats
       )
 
-      // Fusionner les stats avec les données joueurs
-      const playerStats: PlayerWithStats[] = joueurs.map((joueur: Joueur, index: number) => ({
-        ...joueur,
-        played: statsArray[index].played,
-        victories: statsArray[index].victories,
-        defeats: statsArray[index].defeats,
-        draws: statsArray[index].draws,
-        pointsFor: statsArray[index].pointsFor,
-        pointsAgainst: statsArray[index].pointsAgainst,
-        difference: statsArray[index].difference,
-        points: statsArray[index].points
-      }))
+      // Tri FIPJP officiel (points = victoires × 3 + nuls, différence, pointsFor)
+      const sortedStats = StatsService.sortPlayersByFIPJPRules(statsArray)
 
-      // Trier par règle FIPJP
-      playerStats.sort((a: PlayerWithStats, b: PlayerWithStats) => {
-        if (b.victories !== a.victories) return b.victories - a.victories
-        if (b.difference !== a.difference) return b.difference - a.difference
-        return b.pointsFor - a.pointsFor
-      })
+      // Mapper les stats triées avec les données joueurs complètes
+      const joueursMap = new Map(joueurs.map((j: Joueur) => [j.id, j]))
+      const playerStats: PlayerWithStats[] = sortedStats
+        .map(stats => {
+          const joueur = joueursMap.get(stats.id)
+          if (!joueur) return null
+          return { ...joueur, ...stats }
+        })
+        .filter((p): p is PlayerWithStats => p !== null)
 
       setIndividualRankings(playerStats)
     } catch (error) {
