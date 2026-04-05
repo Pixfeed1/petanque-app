@@ -55,9 +55,9 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
-    // Récupérer l'équipe avec le statut du tournoi
+    // Récupérer l'équipe avec le statut et mode du tournoi
     const existingEquipe = await queryOne(
-      `SELECT e.*, t.status as tournoi_status
+      `SELECT e.*, t.status as tournoi_status, t.mode as tournoi_mode
        FROM equipes e
        LEFT JOIN tournois t ON e.tournoi_id = t.id
        WHERE e.id = $1`,
@@ -68,9 +68,19 @@ export async function PUT(
       return apiError('Équipe introuvable', 404)
     }
 
-    // Ne permettre la modification que si le tournoi est en préparation
-    if (existingEquipe.tournoi_status !== 'preparation') {
+    const isMeleeTournante = existingEquipe.tournoi_mode === 'melee_tournante'
+    const isEnCours = existingEquipe.tournoi_status === 'en_cours'
+    const isPreparation = existingEquipe.tournoi_status === 'preparation'
+
+    // Bloquer toute modification si le tournoi est terminé
+    // En cours : autoriser le renommage en mêlée tournante, bloquer le reste
+    if (!isPreparation && !(isEnCours && isMeleeTournante)) {
       return apiError('Impossible de modifier une équipe une fois le tournoi démarré', 400)
+    }
+
+    // En mêlée tournante en cours, bloquer la modification des joueur_ids
+    if (isEnCours && isMeleeTournante && body.joueur_ids !== undefined) {
+      return apiError('Impossible de modifier la composition d\'une équipe en cours de tournoi', 400)
     }
 
     const updates: string[] = []
