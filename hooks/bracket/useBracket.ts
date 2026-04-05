@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Joueur } from '@/lib/types'
 
 // ============================================================================
@@ -61,6 +62,7 @@ interface UseBracketReturn {
 // ============================================================================
 
 export function useBracket({ tournoiId }: UseBracketProps): UseBracketReturn {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [tournament, setTournament] = useState<Tournament | null>(null)
   const [matches, setMatches] = useState<BracketMatch[]>([])
@@ -124,11 +126,7 @@ export function useBracket({ tournoiId }: UseBracketProps): UseBracketReturn {
   }
 
   const handleUpdateScore = (matchId: string) => {
-    // Navigation geree par le composant parent via router
-    // On retourne juste l'ID du match
-    if (typeof window !== 'undefined') {
-      window.location.href = `/match/${matchId}`
-    }
+    router.push(`/match/${matchId}`)
   }
 
   // Determiner les phases disponibles
