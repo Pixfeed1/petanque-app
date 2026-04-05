@@ -172,7 +172,7 @@ export function useRankings({
 
       // Filtrer pour ne garder que les joueurs du tournoi
       const tournamentPlayerIds = new Set<string>()
-      const settingsPlayers = (tournament.settings as Record<string, unknown>)?.melee_tournante_players as string[] | undefined
+      const settingsPlayers = tournament.settings.melee_tournante_players
       if (Array.isArray(settingsPlayers) && settingsPlayers.length > 0) {
         settingsPlayers.forEach(id => tournamentPlayerIds.add(id))
       } else {
