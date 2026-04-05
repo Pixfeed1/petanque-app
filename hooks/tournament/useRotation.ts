@@ -5,7 +5,7 @@
  * - Gestion des tours
  */
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { MixiteService } from '@/lib/services/mixite.service'
 import { TirageService } from '@/lib/services'
@@ -53,6 +53,36 @@ export function useRotation({
   }
 
   const [currentRotation, setCurrentRotation] = useState(1)
+
+  // Recalculer currentRotation depuis les données existantes au chargement
+  useEffect(() => {
+    if (!tournament || tournament.mode !== 'melee_tournante') return
+
+    // Priorité 1 : tournament.settings.current_round
+    if (tournament.settings.current_round && tournament.settings.current_round > 1) {
+      setCurrentRotation(tournament.settings.current_round)
+      return
+    }
+
+    // Priorité 2 : extraire le numéro de rotation le plus élevé des noms d'équipes (R{n}-...)
+    let maxRotation = 1
+    for (const team of teams) {
+      const match = team.name.match(/^R(\d+)-/)
+      if (match) {
+        const rotNum = parseInt(match[1], 10)
+        if (rotNum > maxRotation) maxRotation = rotNum
+      }
+    }
+
+    // Priorité 3 : tour le plus élevé dans les matchs
+    for (const m of matches) {
+      if (m.tour > maxRotation) maxRotation = m.tour
+    }
+
+    if (maxRotation !== currentRotation) {
+      setCurrentRotation(maxRotation)
+    }
+  }, [tournament, teams, matches])
 
   /**
    * Vérifie si la rotation est disponible (tous les matchs terminés selon le mode)
