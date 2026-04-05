@@ -154,19 +154,10 @@ Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.
         `.trim()
       })
 
-      console.log(`✅ Email de réinitialisation envoyé à: ${email}`)
     } catch (emailError) {
-      console.error('❌ Erreur envoi email:', emailError)
+      console.error('Erreur envoi email:', emailError)
 
-      // En dev: afficher le lien même si l'email échoue
-      if (process.env.NODE_ENV === 'development') {
-        console.log('='.repeat(80))
-        console.log('🔐 LIEN DE RÉINITIALISATION (email non envoyé)')
-        console.log('='.repeat(80))
-        console.log(`Email: ${email}`)
-        console.log(`Lien: ${resetUrl}`)
-        console.log('='.repeat(80))
-      } else {
+      if (process.env.NODE_ENV !== 'development') {
         // En production: ne pas exposer l'erreur
         throw new Error('Impossible d\'envoyer l\'email')
       }

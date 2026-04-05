@@ -2,13 +2,17 @@
 // API pour synchroniser les avis Google Play Store
 // DORMANT jusqu'à configuration des variables d'environnement
 
-import { NextRequest } from 'next/server'
-import { apiSuccess, apiError } from '@/lib/middleware'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireAdmin, apiSuccess, apiError } from '@/lib/middleware'
 import { query } from '@/lib/db'
 
 // GET - Synchroniser les avis depuis Google Play
 export async function GET(request: NextRequest) {
   try {
+    // Authentification admin requise
+    const auth = await requireAdmin(request)
+    if (auth instanceof NextResponse) return auth
+
     // Vérification des variables d'environnement
     const googlePlayAppId = process.env.GOOGLE_PLAY_APP_ID
     const googlePlayApiKey = process.env.GOOGLE_PLAY_API_KEY
@@ -21,15 +25,6 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Vérifier le secret d'admin pour sécuriser l'endpoint
-    const { searchParams } = new URL(request.url)
-    const secret = searchParams.get('secret')
-
-    if (secret !== process.env.SYNC_SECRET) {
-      return apiError('Accès non autorisé', 401)
-    }
-
-    console.log('🔄 Début synchronisation Google Play...')
 
     // Importer la bibliothèque Google APIs (sera installée plus tard)
     // const { google } = require('googleapis')
@@ -98,8 +93,6 @@ export async function GET(request: NextRequest) {
       syncedCount++
       */
     }
-
-    console.log(`✅ Synchronisation Google Play terminée: ${syncedCount} nouveaux, ${skippedCount} ignorés`)
 
     return apiSuccess({
       message: 'Synchronisation Google Play terminée',

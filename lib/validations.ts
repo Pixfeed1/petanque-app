@@ -95,8 +95,8 @@ export const createTournoiSchema = z.object({
   date_debut: z.string().datetime('Date de début invalide'),
   date_fin: z.string().datetime('Date de fin invalide').optional().nullable(),
   lieu: z.string().max(200).optional().nullable(),
-  mode: z.enum(['choisi', 'melee_tournante'], {
-    message: 'Mode invalide (choisi ou melee_tournante)'
+  mode: z.enum(['choisi', 'melee_fixe', 'melee_tournante'], {
+    message: 'Mode invalide (choisi, melee_fixe ou melee_tournante)'
   }),
   format: z.enum(['tete_a_tete', 'doublette', 'triplette'], {
     message: 'Format invalide (tete_a_tete, doublette ou triplette)'
@@ -124,11 +124,11 @@ export const tournoiIdSchema = z.object({
 // ============================================
 
 export const matchStatusEnum = z.enum(['a_jouer', 'en_cours', 'termine', 'en_attente_validation', 'valide'])
-export const matchTypeEnum = z.enum(['poule', 'elimination', 'petite_finale', 'finale'])
+export const matchTypeEnum = z.enum(['poule', 'elimination', 'petite_finale', 'finale', 'demi', 'quart', 'huitieme', 'bye'])
 
 export const mancheSchema = z.object({
-  equipe_a: z.number().int().min(0).max(50),
-  equipe_b: z.number().int().min(0).max(50)
+  scoreA: z.number().int().min(0).max(50),
+  scoreB: z.number().int().min(0).max(50)
 })
 
 export const createMatchSchema = z.object({

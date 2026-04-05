@@ -62,8 +62,6 @@ export async function POST(request: NextRequest) {
       [passwordHash, user.id]
     )
 
-    console.log(`✅ Mot de passe réinitialisé pour: ${user.email}`)
-
     return NextResponse.json({
       message: 'Mot de passe réinitialisé avec succès'
     })

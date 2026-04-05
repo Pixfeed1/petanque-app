@@ -130,9 +130,15 @@ CREATE TABLE matches (
   equipe_b_id UUID REFERENCES equipes(id) ON DELETE SET NULL,
   score_a INTEGER DEFAULT 0,
   score_b INTEGER DEFAULT 0,
-  status VARCHAR(50) DEFAULT 'a_jouer', -- 'a_jouer', 'en_cours', 'termine'
-  type VARCHAR(50), -- 'poule', 'huitieme', 'quart', 'demi', 'finale', 'petite_finale'
+  status VARCHAR(50) DEFAULT 'a_jouer', -- Statuts possibles :
+    -- 'a_jouer'                : match programmé, pas encore commencé
+    -- 'en_cours'               : match en cours de jeu
+    -- 'termine'                : match terminé, score enregistré
+    -- 'en_attente_validation'  : score proposé par un joueur, en attente de confirmation
+    -- 'valide'                 : score confirmé par les deux parties
+  type VARCHAR(50), -- 'poule', 'elimination', 'huitieme', 'quart', 'demi', 'finale', 'petite_finale', 'bye'
   poule VARCHAR(10), -- 'A', 'B', 'C', etc. (pour matches de poule)
+  round VARCHAR(50), -- Tour d'élimination : 'huitieme', 'quart', 'demi', 'finale', 'petite_finale'
   winner_id UUID REFERENCES equipes(id) ON DELETE SET NULL,
   manches_json JSONB DEFAULT '[]'::jsonb, -- Détails des manches jouées
   started_at TIMESTAMP, -- Quand le match a commencé
@@ -152,6 +158,7 @@ CREATE INDEX idx_matches_poule ON matches(poule);
 CREATE INDEX idx_matches_equipe_a_id ON matches(equipe_a_id);
 CREATE INDEX idx_matches_equipe_b_id ON matches(equipe_b_id);
 CREATE INDEX idx_matches_proposed_by ON matches(proposed_by);
+CREATE INDEX idx_matches_round ON matches(round);
 
 -- ===================================
 -- TABLE PAYMENT_ATTEMPTS (Stripe)

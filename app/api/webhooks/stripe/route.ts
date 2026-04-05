@@ -57,8 +57,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Webhook reçu:', event.type)
-
     // Gérer les différents types d'événements
     switch (event.type) {
       case 'customer.subscription.created':
@@ -83,7 +81,7 @@ export async function POST(request: NextRequest) {
         break
 
       default:
-        console.log(`Événement non géré: ${event.type}`)
+        break
     }
 
     return NextResponse.json({ received: true })
@@ -116,8 +114,6 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
   const currentPeriodEnd = (subscription as any).current_period_end
     ? new Date((subscription as any).current_period_end * 1000).toISOString()
     : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 an par défaut
-
-  console.log(`Abonnement ${subscription.status} pour user ${userId} → ${plan}`)
 
   try {
     // Mettre à jour l'utilisateur
@@ -167,7 +163,6 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
       [JSON.stringify(plan), JSON.stringify(features), userId]
     )
 
-    console.log(`✅ Utilisateur ${userId} mis à jour vers plan ${plan}`)
   } catch (error) {
     console.error('Erreur lors de la mise à jour de l\'abonnement:', error)
     throw error
@@ -184,8 +179,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     console.error('user_id manquant dans les métadonnées de l\'abonnement')
     return
   }
-
-  console.log(`Abonnement annulé pour user ${userId} → Retour au plan gratuit`)
 
   try {
     // Retour au plan gratuit
@@ -215,7 +208,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       [userId]
     )
 
-    console.log(`✅ Utilisateur ${userId} repassé en plan gratuit`)
   } catch (error) {
     console.error('Erreur lors de l\'annulation de l\'abonnement:', error)
     throw error
@@ -231,8 +223,6 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   if (!subscriptionId) {
     return // Pas un abonnement
   }
-
-  console.log(`Paiement réussi pour l'abonnement ${subscriptionId}`)
 
   try {
     // Récupérer l'abonnement pour obtenir le user_id
@@ -257,7 +247,6 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
         ]
       )
 
-      console.log(`✅ Paiement enregistré pour user ${subscription.metadata.user_id}`)
     }
   } catch (error) {
     console.error('Erreur lors du traitement du paiement réussi:', error)
@@ -273,8 +262,6 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   if (!subscriptionId) {
     return // Pas un abonnement
   }
-
-  console.log(`⚠️ Paiement échoué pour l'abonnement ${subscriptionId}`)
 
   try {
     if (!stripe) return
@@ -296,8 +283,6 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
         ]
       )
 
-      console.log(`⚠️ Échec de paiement enregistré pour user ${subscription.metadata.user_id}`)
-
       // TODO: Envoyer un email à l'utilisateur pour l'informer
     }
   } catch (error) {
@@ -316,11 +301,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return
   }
 
-  console.log(`Checkout complété pour user ${userId}`)
-
   // Si c'est un abonnement, on attend l'événement subscription.created
   if (session.mode === 'subscription') {
-    console.log('Mode subscription - En attente de l\'événement subscription.created')
     return
   }
 
@@ -355,7 +337,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       [JSON.stringify(checkoutPlan), userId]
     )
 
-    console.log(`✅ Plan ${checkoutPlan} activé pour user ${userId} (checkout session)`)
   } catch (error) {
     console.error('Erreur lors de l\'activation du plan après checkout:', error)
     throw error

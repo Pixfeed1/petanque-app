@@ -2,13 +2,17 @@
 // API pour synchroniser les avis Apple App Store
 // DORMANT jusqu'à configuration des variables d'environnement
 
-import { NextRequest } from 'next/server'
-import { apiSuccess, apiError } from '@/lib/middleware'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireAdmin, apiSuccess, apiError } from '@/lib/middleware'
 import { query } from '@/lib/db'
 
 // GET - Synchroniser les avis depuis App Store
 export async function GET(request: NextRequest) {
   try {
+    // Authentification admin requise
+    const auth = await requireAdmin(request)
+    if (auth instanceof NextResponse) return auth
+
     // Vérification des variables d'environnement
     const appStoreAppId = process.env.APP_STORE_APP_ID
     const appStoreToken = process.env.APP_STORE_TOKEN
@@ -21,15 +25,6 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Vérifier le secret d'admin pour sécuriser l'endpoint
-    const { searchParams } = new URL(request.url)
-    const secret = searchParams.get('secret')
-
-    if (secret !== process.env.SYNC_SECRET) {
-      return apiError('Accès non autorisé', 401)
-    }
-
-    console.log('🔄 Début synchronisation App Store...')
 
     // SIMULATION pour l'instant (à remplacer par vraie API)
     const mockReviews: any[] = []
@@ -96,8 +91,6 @@ export async function GET(request: NextRequest) {
       syncedCount++
       */
     }
-
-    console.log(`✅ Synchronisation App Store terminée: ${syncedCount} nouveaux, ${skippedCount} ignorés`)
 
     return apiSuccess({
       message: 'Synchronisation App Store terminée',

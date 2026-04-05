@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { query } from '@/lib/db'
+import { requireAuth } from '@/lib/middleware'
 import { createCheckoutSessionSchema, validateRequest } from '@/lib/validations'
 
 // Initialiser Stripe uniquement si la clé est disponible
@@ -13,6 +14,10 @@ const stripe = process.env.STRIPE_SECRET_KEY
 
 export async function POST(request: NextRequest) {
  try {
+   // Authentification requise
+   const auth = await requireAuth(request)
+   if (auth instanceof NextResponse) return auth
+
    // Vérifier que Stripe est initialisé
    if (!stripe) {
      return NextResponse.json(
@@ -181,13 +186,6 @@ export async function POST(request: NextRequest) {
      consent_collection: {
        terms_of_service: 'required'
      }
-   })
-
-   // Logger la création de session pour debug (sans données sensibles)
-   console.log('Session Checkout créée:', {
-     sessionId: session.id.slice(0, 8) + '...',  // Masquer partiellement
-     userId,
-     priceId: finalPriceId
    })
 
    // Créer un enregistrement de la tentative de paiement

@@ -124,7 +124,6 @@ export async function PUT(
       return apiError('Joueur introuvable', 404)
     }
 
-    console.log('✅ Joueur modifié:', id)
     return apiSuccess(result.rows[0])
   } catch (error) {
     console.error('❌ Erreur PUT /api/joueurs/[id]:', error)
@@ -182,7 +181,6 @@ export async function DELETE(
       return apiError('Joueur introuvable', 404)
     }
 
-    console.log('✅ Joueur supprimé:', id)
     return apiSuccess({ message: 'Joueur supprimé avec succès', joueur: result.rows[0] })
   } catch (error) {
     console.error('❌ Erreur DELETE /api/joueurs/[id]:', error)
