@@ -163,8 +163,30 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
     }
 
     // 2. Si le tournoi est "en_cours" et que tous les matchs sont terminés, passer à "termine"
+    // MAIS seulement si les phases finales sont bien terminées (pas juste les poules)
     if (tournamentData.status === 'en_cours') {
       const allMatchesFinished = matchesData.every(m => m.status === 'termine')
+
+      if (allMatchesFinished) {
+        const eliminationTypes = ['elimination', 'finale', 'petite_finale', 'demi', 'quart', 'huitieme']
+        const hasEliminationMatches = matchesData.some(m => eliminationTypes.includes(m.type || ''))
+        const hasFinaleTerminee = matchesData.some(m =>
+          (m.type === 'finale' || m.type === 'petite_finale') && m.status === 'termine'
+        )
+        const qualifiedPerPoule = tournamentData.settings?.qualifiedPerPoule ?? 0
+        const hasOnlyPouleMatches = matchesData.every(m => m.type === 'poule' || m.type === 'bye')
+
+        // Ne pas terminer si : il n'y a que des matchs de poule, des qualifiés sont prévus,
+        // mais aucun match d'élimination n'a encore été créé
+        if (hasOnlyPouleMatches && qualifiedPerPoule > 0) {
+          return tournamentData
+        }
+
+        // Ne pas terminer si des matchs d'élimination existent mais qu'aucune finale n'est terminée
+        if (hasEliminationMatches && !hasFinaleTerminee) {
+          return tournamentData
+        }
+      }
 
       if (allMatchesFinished) {
         try {
