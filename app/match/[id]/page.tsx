@@ -40,6 +40,7 @@ export default function MatchScorePage() {
     maxPoints,
     maxPointsPerManche,
     updateScore,
+    finishMatch,
     finishManche,
     undoLastManche,
     saveProgress,
@@ -123,16 +124,51 @@ export default function MatchScorePage() {
 
             {/* Zone de saisie des points */}
             {!winner && (
-              <ScoreInput
-                match={match}
-                currentManche={currentManche}
-                mancheScoreA={mancheScoreA}
-                mancheScoreB={mancheScoreB}
-                maxPointsPerManche={maxPointsPerManche}
-                saving={saving}
-                updateScore={updateScore}
-                finishManche={finishManche}
-              />
+              <>
+                <ScoreInput
+                  match={match}
+                  currentManche={currentManche}
+                  mancheScoreA={mancheScoreA}
+                  mancheScoreB={mancheScoreB}
+                  maxPointsPerManche={maxPointsPerManche}
+                  saving={saving}
+                  updateScore={updateScore}
+                  finishManche={finishManche}
+                />
+
+                {/* Bouton Terminer au temps */}
+                {match?.tournoi?.settings?.timeLimit === true && (
+                  <div className="mt-4 text-center">
+                    {scoreA !== scoreB && (scoreA > 0 || scoreB > 0) ? (
+                      <button
+                        onClick={async () => {
+                          const confirmed = await confirm({
+                            title: 'Fin au temps',
+                            message: 'Terminer le match avec le score actuel ?'
+                          })
+                          if (confirmed) {
+                            await finishMatch(scoreA, scoreB, manches)
+                          }
+                        }}
+                        disabled={saving}
+                        className="px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
+                      >
+                        <Clock className="w-5 h-5 mr-2" />
+                        <span>Terminer au temps</span>
+                      </button>
+                    ) : scoreA === scoreB && (scoreA > 0 || scoreB > 0) ? (
+                      <button
+                        disabled
+                        className="px-6 py-3 bg-gray-300 text-gray-500 rounded-2xl font-bold cursor-not-allowed inline-flex items-center"
+                        title="Impossible : égalité. Jouez une mène supplémentaire."
+                      >
+                        <Clock className="w-5 h-5 mr-2" />
+                        <span>Terminer au temps</span>
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+              </>
             )}
 
             {/* Message de victoire */}
