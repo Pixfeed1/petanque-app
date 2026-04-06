@@ -50,8 +50,8 @@ export async function GET(
     if (matchRaw.manches_json && typeof matchRaw.manches_json === 'string' && matchRaw.manches_json.trim().length > 0) {
       try {
         manchesData = JSON.parse(matchRaw.manches_json)
-      } catch (e) {
-        console.warn(`⚠️  JSON invalide pour match ${matchRaw.id}:`, matchRaw.manches_json)
+      } catch {
+        // JSON invalide — manchesData reste null
       }
     }
 
