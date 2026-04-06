@@ -183,13 +183,7 @@ export async function PUT(
             )
           }
 
-          // Au moins une équipe doit marquer
-          if (scoreA === 0 && scoreB === 0) {
-            return apiError(
-              `Mène ${i + 1} invalide (0-0). Au moins une équipe doit marquer.`,
-              400
-            )
-          }
+          // Mène 0-0 autorisée (cochonnet hors terrain, règle FIPJP)
         }
       }
 

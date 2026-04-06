@@ -463,7 +463,7 @@ function ScoreInput({
       <div className="mt-8 text-center">
         <button
           onClick={finishManche}
-          disabled={(mancheScoreA === 0 && mancheScoreB === 0) || saving}
+          disabled={saving}
           className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mx-auto"
         >
           {saving ? (
@@ -478,6 +478,9 @@ function ScoreInput({
             </>
           )}
         </button>
+        {mancheScoreA === 0 && mancheScoreB === 0 && (
+          <p className="mt-2 text-sm text-gray-500 italic">Mène annulée (cochonnet sorti)</p>
+        )}
       </div>
     </div>
   )

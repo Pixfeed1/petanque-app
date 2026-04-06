@@ -263,11 +263,6 @@ export function useMatchScore({
 
   // Finish manche
   const finishManche = useCallback(async () => {
-    if (mancheScoreA === 0 && mancheScoreB === 0) {
-      notify.warning('Vous devez saisir le score de la mène.')
-      return
-    }
-
     if (mancheScoreA > 0 && mancheScoreB > 0) {
       notify.error('En pétanque, une seule équipe marque par mène.')
       return
