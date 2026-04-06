@@ -91,7 +91,7 @@ export async function PUT(
       const allowedTransitions: Record<string, string[]> = {
         'preparation': ['en_cours'],
         'en_cours': ['termine'],
-        'termine': []
+        'termine': ['en_cours']
       }
       const currentStatus = existingTournoi.status as string
       if (!allowedTransitions[currentStatus]?.includes(body.status)) {
