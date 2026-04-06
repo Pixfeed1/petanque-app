@@ -116,6 +116,7 @@ export default function TournamentDetailPage() {
     generatePoules,
     generateEliminationPhases,
     generateFinales,
+    generateNextEliminationRound,
     assignTerrain
   } = useMatchActions({
     tournament,
@@ -351,6 +352,32 @@ export default function TournamentDetailPage() {
                 >
                   <Flag className="w-5 h-5" />
                   <span className="hidden sm:inline">Générer phases finales</span>
+                </button>
+              )}
+
+              {tournament.status === 'en_cours' && isOrganizer && (() => {
+                const huitiemes = matches.filter(m => m.type === 'huitieme')
+                const quarts = matches.filter(m => m.type === 'quart')
+                const allHuitTermine = huitiemes.length > 0 && huitiemes.every(m => m.status === 'termine')
+                const allQuartsTermine = quarts.length > 0 && quarts.every(m => m.status === 'termine')
+                const noQuarts = quarts.length === 0
+                const noDemis = matches.filter(m => m.type === 'demi').length === 0
+                if (allHuitTermine && noQuarts) return { show: true, label: 'Générer quarts de finale' }
+                if (allQuartsTermine && noDemis) return { show: true, label: 'Générer demi-finales' }
+                return { show: false, label: '' }
+              })().show && (
+                <button
+                  onClick={generateNextEliminationRound}
+                  className="px-2 sm:px-4 py-2 bg-gradient-to-r from-orange-600 to-yellow-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base"
+                >
+                  <Flag className="w-5 h-5" />
+                  <span className="hidden sm:inline">{
+                    matches.filter(m => m.type === 'huitieme').length > 0 &&
+                    matches.filter(m => m.type === 'huitieme').every(m => m.status === 'termine') &&
+                    matches.filter(m => m.type === 'quart').length === 0
+                      ? 'Générer quarts de finale'
+                      : 'Générer demi-finales'
+                  }</span>
                 </button>
               )}
 
