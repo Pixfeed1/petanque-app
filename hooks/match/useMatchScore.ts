@@ -62,6 +62,7 @@ interface UseMatchScoreReturn {
 
   // Actions
   updateScore: (team: 'A' | 'B', delta: number) => void
+  finishMatch: (finalScoreA: number, finalScoreB: number, allManches: Manche[]) => Promise<void>
   finishManche: () => Promise<void>
   undoLastManche: () => void
   saveProgress: (finalScoreA: number, finalScoreB: number, allManches: Manche[], isFinished: boolean) => Promise<void>
@@ -333,6 +334,7 @@ export function useMatchScore({
     maxPoints,
     maxPointsPerManche,
     updateScore,
+    finishMatch,
     finishManche,
     undoLastManche,
     saveProgress,
