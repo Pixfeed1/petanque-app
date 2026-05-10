@@ -149,8 +149,8 @@ export async function PUT(
       if (!Number.isInteger(body.score_a) || body.score_a < 0) {
         return apiError('Le score de l\'équipe A doit être un nombre entier positif ou zéro', 400)
       }
-      if (body.score_a > 99) {
-        return apiError('Le score de l\'équipe A est trop élevé (maximum 99)', 400)
+      if (body.score_a > 50) {
+        return apiError('Le score de l\'équipe A est trop élevé (maximum 50)', 400)
       }
       updates.push(`score_a = $${paramIndex++}`)
       values.push(body.score_a)
@@ -160,8 +160,8 @@ export async function PUT(
       if (!Number.isInteger(body.score_b) || body.score_b < 0) {
         return apiError('Le score de l\'équipe B doit être un nombre entier positif ou zéro', 400)
       }
-      if (body.score_b > 99) {
-        return apiError('Le score de l\'équipe B est trop élevé (maximum 99)', 400)
+      if (body.score_b > 50) {
+        return apiError('Le score de l\'équipe B est trop élevé (maximum 50)', 400)
       }
       updates.push(`score_b = $${paramIndex++}`)
       values.push(body.score_b)

@@ -107,7 +107,11 @@ export function validatePouleSize(
   if (lastPouleSize < 2 && nbPoules > 1) {
     return {
       valid: false,
-      warning: `La dernière poule n'aurait que ${lastPouleSize} équipe(s). Ajustez la taille des poules.`
+      // FIX BUG : utilisait 'warning' alors que valid:false → l'UI affiche
+      // typiquement 'error' uniquement quand invalide, donc le message ne
+      // s'affichait jamais. Passé en 'error' pour que l'utilisateur voie
+      // pourquoi sa configuration de poules est rejetée.
+      error: `La dernière poule n'aurait que ${lastPouleSize} équipe(s). Ajustez la taille des poules.`
     }
   }
 

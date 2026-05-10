@@ -17,9 +17,12 @@ const pool = new Pool({
 })
 
 // Gestion des erreurs de connexion
+// FIX BUG : ne pas process.exit() sur une erreur du pool. 'pool.on("error")'
+// est appelé pour des problèmes ponctuels sur des clients idle (réseau coupé,
+// PG redémarré...) — pg recreera des clients à la demande. process.exit tuait
+// systématiquement le service systemd à la moindre coupure.
 pool.on('error', (err) => {
   console.error('❌ Erreur PostgreSQL inattendue:', err)
-  process.exit(-1)
 })
 
 // Test de connexion au démarrage
