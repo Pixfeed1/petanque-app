@@ -1,69 +1,32 @@
-/**
- * Page de création d'un nouveau tournoi - Version refactorisée
- * Utilise les hooks extraits pour une meilleure maintenabilité
- */
-
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { useToast } from '@/components/ui/Toast'
-
-// Hooks
 import {
   useCreateTournament,
   usePlayerSelection,
   useTournamentCreation
 } from '@/hooks/tournament'
-
-// Composants
-import WizardSteps from '@/components/tournament/wizard/WizardSteps'
-
-// Icons
-import {
-  Petanque, X, Sparkles, Lightning, Users, User, Shuffle,
-  Plus, Check, ArrowRight, Loader, Clock, Grid, Info, Warning, Flag
-} from '@/components/Icons'
+import { Button, BouleSvg, FadeIn } from '@/components/ui'
+import { Loader, Plus, X, Check } from '@/components/Icons'
 
 export default function CreateTournamentPage() {
   const router = useRouter()
   const { user, organization, loading: authLoading } = useAuth()
   const { showError, showWarning } = useToast()
-  const [mounted, setMounted] = useState(false)
 
-  // Hook formulaire
   const {
-    formData,
-    currentStep,
-    validationError,
-    setFormData,
-    setCurrentStep,
-    setValidationError,
-    updateFormField,
-    canProceed,
-    handleContinue,
-    handleBack,
-    getTotalPlayers,
-    getMinPlayers,
-    getEstimatedTeams,
-    getEstimatedPools,
-    getPlayersPerTeam,
-    steps
+    formData, currentStep, validationError,
+    updateFormField, canProceed, handleContinue, handleBack,
+    getTotalPlayers, getMinPlayers, getEstimatedTeams, getEstimatedPools
   } = useCreateTournament()
 
-  // Hook sélection joueurs
   const {
-    availablePlayers,
-    loadingPlayers,
-    loadPlayers,
-    togglePlayer,
-    addNewPlayer,
-    updateNewPlayer,
-    removeNewPlayer,
-    selectAllPlayers,
-    deselectAllPlayers,
-    newPlayersRef
+    availablePlayers, loadingPlayers, loadPlayers,
+    togglePlayer, addNewPlayer, updateNewPlayer, removeNewPlayer,
+    selectAllPlayers, deselectAllPlayers, newPlayersRef
   } = usePlayerSelection({
     selectedPlayers: formData.selectedPlayers,
     newPlayers: formData.newPlayers,
@@ -71,27 +34,14 @@ export default function CreateTournamentPage() {
     onUpdateNewPlayers: (players) => updateFormField('newPlayers', players)
   })
 
-  // Hook création tournoi
-  const {
-    savingTournament,
-    successAnimation,
-    handleSubmit
-  } = useTournamentCreation({
-    formData,
-    availablePlayers,
-    getEstimatedTeams,
-    onError: showError,
-    onWarning: showWarning
+  const { savingTournament, successAnimation, handleSubmit } = useTournamentCreation({
+    formData, availablePlayers, getEstimatedTeams,
+    onError: showError, onWarning: showWarning
   })
-
-  // Effets
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   useEffect(() => {
     if (!authLoading && !organization && user) {
-      showError('Erreur: Aucune organisation trouvée')
+      showError('Erreur : aucune organisation trouvée')
       router.push('/dashboard')
     }
   }, [organization, user, authLoading, router, showError])
@@ -105,562 +55,632 @@ export default function CreateTournamentPage() {
     }
   }, [user, organization, authLoading, loadPlayers, router])
 
-  // Configs modes et formats
-  const modes = [
-    { value: 'choisi', title: 'Mode Choisi', description: 'Équipes choisies par les joueurs', icon: <Users className="w-6 h-6" />, gradient: 'from-blue-400 to-blue-600' },
-    { value: 'melee_fixe', title: 'Mêlée Fixe', description: 'Équipes tirées au sort', icon: <Lightning className="w-6 h-6" />, gradient: 'from-green-400 to-green-600', recommended: true },
-    { value: 'melee_tournante', title: 'Mêlée Tournante', description: 'Équipes changent à chaque tour', icon: <Shuffle className="w-6 h-6" />, gradient: 'from-purple-400 to-purple-600' }
-  ]
-
-  const formats = [
-    { value: 'tete_a_tete', title: 'Tête à tête', description: '1 joueur', icon: <User className="w-8 h-8" /> },
-    { value: 'doublette', title: 'Doublette', description: '2 joueurs', icon: <Users className="w-8 h-8" /> },
-    { value: 'triplette', title: 'Triplette', description: '3 joueurs', icon: <Users className="w-8 h-8" /> }
-  ]
-
-  // Loading auth
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30 flex items-center justify-center">
-        <div className="bg-white rounded-3xl p-12 shadow-2xl text-center">
-          <Loader className="w-12 h-12 animate-spin mx-auto text-green-600" />
-          <p className="mt-4 text-lg font-medium text-gray-600">Chargement...</p>
+      <div className="min-h-screen bg-petanque-sable-pale flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-7 h-7 animate-spin mx-auto text-petanque-vert" />
+          <p className="mt-4 text-sm text-petanque-bois">Chargement…</p>
         </div>
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30 overflow-x-hidden">
-      {/* Particules animées */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-green-200 to-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
-        <div className="absolute top-40 -left-40 w-80 h-80 bg-gradient-to-br from-green-200 to-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
-      </div>
+  const stepLabels = ['Le tournoi', 'Le format', 'Les joueurs', 'Options', 'Récap']
+  const totalSteps = 5
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <div className="p-1.5 sm:p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl text-white">
-                <Petanque className="w-6 h-6 sm:w-8 sm:h-8" />
-              </div>
-              <div>
-                <h1 className="text-sm sm:text-xl font-bold text-gray-900">Nouveau Tournoi</h1>
-                <p className="text-xs text-gray-500 hidden sm:block">Créez votre compétition</p>
-              </div>
-            </div>
+  // Hero contextuel
+  let heroContent: React.ReactNode
+  if (currentStep === 1) heroContent = <>D'abord, <span className="accent-italic text-petanque-vert">parle-nous du tournoi.</span></>
+  else if (currentStep === 2) heroContent = <>Maintenant, <span className="accent-italic text-petanque-vert">comment veux-tu jouer ?</span></>
+  else if (currentStep === 3) heroContent = <>Et qui <span className="accent-italic text-petanque-vert">joue avec nous ?</span></>
+  else if (currentStep === 4) heroContent = <>Quelques <span className="accent-italic text-petanque-vert">réglages avant de lancer.</span></>
+  else heroContent = <>Tout est prêt, <span className="accent-italic text-petanque-vert">on lance ?</span></>
+
+  const plan = (organization?.settings as Record<string, any>)?.plan
+  const isClubPlan = plan === 'club'
+
+  return (
+    <div className="min-h-screen bg-petanque-sable-pale">
+      <header className="sticky top-0 z-50 bg-petanque-sable-pale/85 backdrop-blur-xl border-b border-petanque-sable-bord/60">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-4 h-14">
             <button
               onClick={() => router.push('/dashboard')}
-              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl"
+              className="text-sm text-petanque-bois hover:text-petanque-vert-fonce font-medium flex items-center gap-1.5"
             >
-              <X className="w-5 h-5" />
-              <span className="hidden sm:inline">Annuler</span>
+              <span>←</span>
+              <span className="hidden sm:inline">Tableau de bord</span>
+            </button>
+            <span className="font-mono text-xs text-petanque-bois">Nouveau tournoi</span>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="text-sm text-petanque-bois hover:text-petanque-vert-fonce font-medium"
+            >
+              Annuler
             </button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        {/* Progress Steps */}
-        <div className={`transition-all duration-1000 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <WizardSteps steps={steps} currentStep={currentStep} />
-        </div>
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <FadeIn>
+          <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3">
+            Étape {currentStep} sur {totalSteps} · {stepLabels[currentStep - 1]}
+          </p>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.1] mb-10">
+            {heroContent}
+          </h1>
+        </FadeIn>
 
-        {/* Contenu des étapes */}
-        <div className="mt-16">
-          {/* Étape 1: Informations */}
-          {currentStep === 1 && (
-            <div className="bg-white rounded-3xl shadow-xl overflow-hidden animate-fadeIn">
-              <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50">
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                  <Sparkles className="w-6 h-6 mr-2" />
-                  Informations générales
-                </h2>
-              </div>
-              <div className="p-6 space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nom du tournoi *</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => updateFormField('name', e.target.value.slice(0, 100))}
-                    className="w-full h-14 px-5 border-2 border-gray-200 rounded-2xl focus:border-green-500 text-lg"
-                    placeholder="Ex: Tournoi de Printemps 2025"
-                    maxLength={100}
-                  />
-                  <p className="text-xs text-gray-400 mt-1">{formData.name.length}/100</p>
+        <FadeIn delay={60}>
+          <div className="grid grid-cols-5 gap-0 mb-12">
+            {stepLabels.map((label, i) => {
+              const stepNum = i + 1
+              const isActive = currentStep === stepNum
+              const isDone = currentStep > stepNum
+              return (
+                <div key={i} className="flex flex-col items-center gap-2 relative">
+                  {i < stepLabels.length - 1 && (
+                    <div className={`absolute left-1/2 right-[-50%] top-[9px] h-px ${isDone ? 'bg-petanque-vert' : 'bg-petanque-sable-bord'}`} />
+                  )}
+                  <div className={`relative z-10 w-[18px] h-[18px] rounded-full flex items-center justify-center ${
+                    isActive
+                      ? 'bg-petanque-vert border border-petanque-vert'
+                      : isDone
+                      ? 'bg-petanque-vert border border-petanque-vert'
+                      : 'bg-white border border-petanque-sable-bord'
+                  }`}>
+                    {isActive && <span className="w-1.5 h-1.5 rounded-full bg-petanque-sable-pale"></span>}
+                    {isDone && <span className="text-petanque-sable-pale text-[9px]">✓</span>}
+                  </div>
+                  <span className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.18em] mt-0.5">0{stepNum}</span>
+                  <span className={`text-[10px] md:text-[11px] text-center leading-tight ${isActive ? 'text-petanque-vert-fonce font-medium' : 'text-petanque-bois'}`}>
+                    {label}
+                  </span>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Date *</label>
-                    <input
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => updateFormField('date', e.target.value)}
-                      className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl focus:border-green-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Heure</label>
-                    <input
-                      type="time"
-                      value={formData.time}
-                      onChange={(e) => updateFormField('time', e.target.value)}
-                      className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl focus:border-green-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Lieu</label>
-                  <input
-                    type="text"
-                    value={formData.location}
-                    onChange={(e) => updateFormField('location', e.target.value.slice(0, 100))}
-                    className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl focus:border-green-500"
-                    placeholder="Ex: Boulodrome municipal"
-                    maxLength={100}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Grid className="w-4 h-4 inline mr-1" />
-                    Nombre de terrains
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.terrains}
-                    onChange={(e) => updateFormField('terrains', Math.max(1, parseInt(e.target.value) || 1))}
-                    min={1}
-                    max={20}
-                    className="w-32 h-12 px-4 border-2 border-gray-200 rounded-xl focus:border-green-500 text-center"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Étape 2: Format */}
-          {currentStep === 2 && (
-            <div className="bg-white rounded-3xl shadow-xl overflow-hidden animate-fadeIn">
-              <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50">
-                <h2 className="text-2xl font-bold text-gray-900">Configuration du tournoi</h2>
-              </div>
-              <div className="p-6 space-y-8">
-                {/* Mode */}
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Mode de jeu</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {modes.map((mode) => (
-                      <button
-                        key={mode.value}
-                        onClick={() => updateFormField('mode', mode.value as any)}
-                        className={`p-6 rounded-2xl border-2 transition-all ${
-                          formData.mode === mode.value
-                            ? 'border-green-500 bg-green-50 shadow-lg'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${mode.gradient} text-white flex items-center justify-center mb-3`}>
-                          {mode.icon}
-                        </div>
-                        <h4 className="font-bold text-gray-900">{mode.title}</h4>
-                        <p className="text-sm text-gray-500 mt-1">{mode.description}</p>
-                        {mode.recommended && (
-                          <span className="inline-block mt-2 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Recommandé</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Format */}
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Format d&apos;équipe</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    {formats.map((format) => (
-                      <button
-                        key={format.value}
-                        onClick={() => updateFormField('format', format.value as any)}
-                        className={`p-6 rounded-2xl border-2 transition-all text-center ${
-                          formData.format === format.value
-                            ? 'border-green-500 bg-green-50 shadow-lg'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <div className="text-green-600 mb-2 flex justify-center">{format.icon}</div>
-                        <h4 className="font-bold text-gray-900">{format.title}</h4>
-                        <p className="text-sm text-gray-500">{format.description}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Points max */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Points pour gagner</label>
-                  <select
-                    value={formData.maxPoints}
-                    onChange={(e) => updateFormField('maxPoints', parseInt(e.target.value))}
-                    className="w-40 h-12 px-4 border-2 border-gray-200 rounded-xl focus:border-green-500"
-                  >
-                    {[11, 13, 15, 21].map(pts => (
-                      <option key={pts} value={pts}>{pts} points</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Étape 3: Joueurs */}
-          {currentStep === 3 && (
-            <div className="bg-white rounded-3xl shadow-xl overflow-hidden animate-fadeIn">
-              <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50">
-                <h2 className="text-2xl font-bold text-gray-900">Sélection des joueurs</h2>
-                <p className="text-gray-600 mt-1">
-                  {formData.mode === 'choisi' ? 'Optionnel - composez les équipes après' : `Minimum ${getMinPlayers()} joueurs requis`}
-                </p>
-              </div>
-              <div className="p-6">
-                {/* Résumé */}
-                <div className="bg-gray-50 rounded-xl p-4 mb-6">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{getTotalPlayers()} joueur(s) sélectionné(s)</span>
-                    <span className="text-sm text-gray-500">
-                      ≈ {getEstimatedTeams()} équipe(s) • {getEstimatedPools()} poule(s)
-                    </span>
-                  </div>
-                </div>
-
-                {/* Joueurs existants */}
-                {loadingPlayers ? (
-                  <div className="text-center py-8">
-                    <Loader className="w-8 h-8 animate-spin mx-auto text-green-600" />
-                  </div>
-                ) : availablePlayers.length > 0 ? (
-                  <div className="mb-6">
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-bold text-gray-900">Joueurs de l&apos;organisation</h3>
-                      <div className="space-x-2">
-                        <button onClick={selectAllPlayers} className="text-sm text-green-600 hover:underline">Tout sélectionner</button>
-                        <button onClick={deselectAllPlayers} className="text-sm text-gray-500 hover:underline">Tout désélectionner</button>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
-                      {availablePlayers.map((player) => (
-                        <button
-                          key={player.id}
-                          onClick={() => togglePlayer(player.id)}
-                          className={`p-3 rounded-xl border-2 transition-all flex items-center ${
-                            formData.selectedPlayers.includes(player.id)
-                              ? 'border-green-500 bg-green-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2 ${
-                            player.gender === 'F' ? 'bg-pink-500' : 'bg-blue-500'
-                          }`}>
-                            {player.name?.charAt(0)}
-                          </div>
-                          <span className="text-sm truncate">{player.name}</span>
-                          {formData.selectedPlayers.includes(player.id) && (
-                            <Check className="w-4 h-4 text-green-500 ml-auto" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    Aucun joueur dans l&apos;organisation
-                  </div>
-                )}
-
-                {/* Nouveaux joueurs */}
-                <div ref={newPlayersRef}>
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-bold text-gray-900">Ajouter des joueurs</h3>
-                    <button
-                      onClick={addNewPlayer}
-                      className="flex items-center space-x-1 text-green-600 hover:text-green-700"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Ajouter</span>
-                    </button>
-                  </div>
-                  {formData.newPlayers.map((player, index) => (
-                    <div key={index} className="flex items-center space-x-3 mb-3 p-3 bg-gray-50 rounded-xl">
-                      <input
-                        type="text"
-                        value={player.name}
-                        onChange={(e) => updateNewPlayer(index, 'name', e.target.value)}
-                        placeholder="Nom"
-                        className="flex-1 h-10 px-3 border border-gray-200 rounded-lg"
-                      />
-                      <select
-                        value={player.gender}
-                        onChange={(e) => updateNewPlayer(index, 'gender', e.target.value)}
-                        className="h-10 px-3 border border-gray-200 rounded-lg"
-                      >
-                        <option value="H">Homme</option>
-                        <option value="F">Femme</option>
-                      </select>
-                      <button
-                        onClick={() => removeNewPlayer(index)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {validationError && (
-                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-start">
-                    <Warning className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>{validationError}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Étape 4: Options */}
-          {currentStep === 4 && (
-            <div className="bg-white rounded-3xl shadow-xl overflow-hidden animate-fadeIn">
-              <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50">
-                <h2 className="text-2xl font-bold text-gray-900">Options avancées</h2>
-              </div>
-              <div className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Taille des poules</label>
-                    <select
-                      value={formData.pouleSize}
-                      onChange={(e) => updateFormField('pouleSize', parseInt(e.target.value))}
-                      className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl"
-                    >
-                      {[3, 4, 5, 6].map(size => (
-                        <option key={size} value={size}>{size} équipes par poule</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Qualifiés par poule</label>
-                    <select
-                      value={formData.qualifiedPerPoule}
-                      onChange={(e) => updateFormField('qualifiedPerPoule', parseInt(e.target.value))}
-                      className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl"
-                    >
-                      {[1, 2, 3].map(n => (
-                        <option key={n} value={n}>{n} qualifié(s)</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {formData.mode === 'melee_tournante' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Rotation des équipes</label>
-                    <select
-                      value={formData.meleeRotation}
-                      onChange={(e) => updateFormField('meleeRotation', e.target.value as any)}
-                      className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl"
-                    >
-                      <option value="par_tour">Par tour (recommandé)</option>
-                      <option value="par_match">Par match</option>
-                    </select>
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  {[
-                    { key: 'mixiteObligatoire', label: 'Mixité obligatoire (H/F dans chaque équipe)' },
-                    { key: 'consolante', label: 'Petite finale (3ème place)' },
-                    { key: 'fairPlay', label: 'Mode Fair-Play' }
-                  ].map(({ key, label }) => (
-                    <label key={key} className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData[key as keyof typeof formData] as boolean}
-                        onChange={(e) => updateFormField(key as any, e.target.checked)}
-                        className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                      />
-                      <span className="text-gray-700">{label}</span>
-                    </label>
-                  ))}
-                </div>
-
-                {/* Options Club uniquement */}
-                {(() => {
-                  const plan = (organization?.settings as Record<string, any>)?.plan
-                  const isClubPlan = plan === 'club'
-                  return (
-                    <div className={`mt-6 p-4 rounded-xl border-2 ${isClubPlan ? 'border-amber-200 bg-amber-50/50' : 'border-gray-200 bg-gray-50/50'}`}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold rounded-full">CLUB</span>
-                        <span className="text-sm font-medium text-gray-700">Règles personnalisées</span>
-                      </div>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Points personnalisés</label>
-                          <input
-                            type="number"
-                            min={7}
-                            max={25}
-                            value={formData.maxPoints}
-                            onChange={(e) => updateFormField('maxPoints', parseInt(e.target.value) || 13)}
-                            disabled={!isClubPlan}
-                            className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            {isClubPlan ? 'Choisissez librement entre 7 et 25 points' : 'Disponible avec le plan Club — valeur standard : 13'}
-                          </p>
-                        </div>
-                        <label className={`flex items-center space-x-3 ${isClubPlan ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
-                          <input
-                            type="checkbox"
-                            checked={formData.timeLimit || false}
-                            onChange={(e) => updateFormField('timeLimit', e.target.checked)}
-                            disabled={!isClubPlan}
-                            className="w-5 h-5 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                          />
-                          <span className="text-gray-700">Limite de temps par match</span>
-                        </label>
-                        {formData.timeLimit && isClubPlan && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Minutes par match</label>
-                            <input
-                              type="number"
-                              min={15}
-                              max={120}
-                              value={formData.timeLimitMinutes || 60}
-                              onChange={(e) => updateFormField('timeLimitMinutes', parseInt(e.target.value) || 60)}
-                              className="w-full h-12 px-4 border-2 border-gray-200 rounded-xl"
-                            />
-                          </div>
-                        )}
-                        <label className={`flex items-center space-x-3 ${isClubPlan ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
-                          <input
-                            type="checkbox"
-                            checked={formData.eliminationFormat === 'double'}
-                            onChange={(e) => updateFormField('eliminationFormat', e.target.checked ? 'double' : 'simple')}
-                            disabled={!isClubPlan}
-                            className="w-5 h-5 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                          />
-                          <span className="text-gray-700">Double élimination</span>
-                        </label>
-                      </div>
-                    </div>
-                  )
-                })()}
-              </div>
-            </div>
-          )}
-
-          {/* Étape 5: Validation */}
-          {currentStep === 5 && (
-            <div className="bg-white rounded-3xl shadow-xl overflow-hidden animate-fadeIn">
-              <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50">
-                <h2 className="text-2xl font-bold text-gray-900">Récapitulatif</h2>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  {[
-                    { label: 'Nom', value: formData.name },
-                    { label: 'Date', value: formData.date },
-                    { label: 'Mode', value: formData.mode === 'choisi' ? 'Choisi' : formData.mode === 'melee_fixe' ? 'Mêlée fixe' : 'Mêlée tournante' },
-                    { label: 'Format', value: formData.format === 'tete_a_tete' ? 'Tête à tête' : formData.format === 'doublette' ? 'Doublette' : 'Triplette' },
-                    { label: 'Joueurs', value: `${getTotalPlayers()} joueur(s)` },
-                    { label: 'Équipes estimées', value: `${getEstimatedTeams()} équipe(s)` },
-                    { label: 'Terrains', value: `${formData.terrains}` },
-                    { label: 'Points max', value: `${formData.maxPoints}` }
-                  ].map(({ label, value }) => (
-                    <div key={label} className="bg-gray-50 rounded-xl p-4">
-                      <p className="text-sm text-gray-500">{label}</p>
-                      <p className="font-bold text-gray-900">{value}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {successAnimation && (
-                  <div className="text-center py-8">
-                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Check className="w-10 h-10 text-green-600" />
-                    </div>
-                    <p className="text-xl font-bold text-green-600">Tournoi créé avec succès !</p>
-                    <p className="text-gray-500 mt-2">Redirection en cours...</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Navigation */}
-          <div className="flex justify-between mt-8">
-            {currentStep > 1 ? (
-              <button
-                onClick={handleBack}
-                className="px-6 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-all"
-              >
-                ← Retour
-              </button>
-            ) : (
-              <div />
-            )}
-
-            {currentStep < 5 ? (
-              <button
-                onClick={handleContinue}
-                disabled={!canProceed()}
-                className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-              >
-                <span>Continuer</span>
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={savingTournament || successAnimation}
-                className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex items-center space-x-2"
-              >
-                {savingTournament ? (
-                  <>
-                    <Loader className="w-5 h-5 animate-spin" />
-                    <span>Création...</span>
-                  </>
-                ) : (
-                  <>
-                    <Flag className="w-5 h-5" />
-                    <span>Créer le tournoi</span>
-                  </>
-                )}
-              </button>
-            )}
+              )
+            })}
           </div>
+        </FadeIn>
+
+        {currentStep === 1 && (
+          <FadeIn delay={120} key="s1">
+            <Step1 formData={formData} updateFormField={updateFormField} />
+          </FadeIn>
+        )}
+        {currentStep === 2 && (
+          <FadeIn delay={120} key="s2">
+            <Step2 formData={formData} updateFormField={updateFormField} />
+          </FadeIn>
+        )}
+        {currentStep === 3 && (
+          <FadeIn delay={120} key="s3">
+            <Step3
+              formData={formData}
+              availablePlayers={availablePlayers}
+              loadingPlayers={loadingPlayers}
+              togglePlayer={togglePlayer}
+              addNewPlayer={addNewPlayer}
+              updateNewPlayer={updateNewPlayer}
+              removeNewPlayer={removeNewPlayer}
+              selectAllPlayers={selectAllPlayers}
+              deselectAllPlayers={deselectAllPlayers}
+              newPlayersRef={newPlayersRef}
+              getMinPlayers={getMinPlayers}
+              getTotalPlayers={getTotalPlayers}
+              getEstimatedTeams={getEstimatedTeams}
+              getEstimatedPools={getEstimatedPools}
+              validationError={validationError}
+            />
+          </FadeIn>
+        )}
+        {currentStep === 4 && (
+          <FadeIn delay={120} key="s4">
+            <Step4 formData={formData} updateFormField={updateFormField} isClubPlan={isClubPlan} />
+          </FadeIn>
+        )}
+        {currentStep === 5 && (
+          <FadeIn delay={120} key="s5">
+            <Step5
+              formData={formData}
+              getTotalPlayers={getTotalPlayers}
+              getEstimatedTeams={getEstimatedTeams}
+              getEstimatedPools={getEstimatedPools}
+              successAnimation={successAnimation}
+            />
+          </FadeIn>
+        )}
+
+        <div className="mt-12 pt-6 border-t border-petanque-sable-bord/50 flex items-center justify-between gap-3">
+          {currentStep > 1 ? (
+            <button
+              onClick={handleBack}
+              className="text-sm text-petanque-bois hover:text-petanque-vert-fonce font-medium flex items-center gap-1.5"
+            >
+              <span>←</span>
+              <span>Retour</span>
+            </button>
+          ) : (
+            <span></span>
+          )}
+
+          {currentStep < 5 ? (
+            <Button variant="primary" onClick={handleContinue} disabled={!canProceed()}>
+              Continuer →
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              onClick={handleSubmit}
+              disabled={savingTournament || successAnimation}
+              loading={savingTournament}
+            >
+              {savingTournament ? 'Création…' : successAnimation ? 'Tournoi créé ✓' : 'Créer le tournoi'}
+            </Button>
+          )}
+        </div>
+      </main>
+    </div>
+  )
+}
+
+// =============================================================
+// Étape 1 — Le tournoi
+// =============================================================
+function Step1({ formData, updateFormField }: any) {
+  return (
+    <div className="space-y-7">
+      <div>
+        <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">
+          Nom du tournoi *
+        </label>
+        <input
+          type="text"
+          value={formData.name}
+          onChange={(e) => updateFormField('name', e.target.value.slice(0, 100))}
+          className="w-full h-12 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:ring-2 focus:ring-petanque-vert/20 focus:outline-none text-base text-petanque-vert-fonce"
+          placeholder="Ex : Tournoi de printemps 2026"
+          maxLength={100}
+        />
+        <p className="text-[11px] text-petanque-bois mt-1.5 font-mono">{formData.name.length}/100</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Date *</label>
+          <input
+            type="date"
+            value={formData.date}
+            onChange={(e) => updateFormField('date', e.target.value)}
+            className="w-full h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:ring-2 focus:ring-petanque-vert/20 focus:outline-none text-sm text-petanque-vert-fonce"
+          />
+        </div>
+        <div>
+          <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Heure</label>
+          <input
+            type="time"
+            value={formData.time}
+            onChange={(e) => updateFormField('time', e.target.value)}
+            className="w-full h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:ring-2 focus:ring-petanque-vert/20 focus:outline-none text-sm text-petanque-vert-fonce"
+          />
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes blob {
-          0% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-          100% { transform: translate(0px, 0px) scale(1); }
-        }
-        .animate-blob { animation: blob 7s infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
-      `}</style>
+      <div>
+        <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Lieu</label>
+        <input
+          type="text"
+          value={formData.location}
+          onChange={(e) => updateFormField('location', e.target.value.slice(0, 100))}
+          className="w-full h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:ring-2 focus:ring-petanque-vert/20 focus:outline-none text-sm text-petanque-vert-fonce"
+          placeholder="Ex : boulodrome municipal"
+          maxLength={100}
+        />
+      </div>
+
+      <div>
+        <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Nombre de terrains</label>
+        <input
+          type="number"
+          value={formData.terrains}
+          onChange={(e) => updateFormField('terrains', Math.max(1, parseInt(e.target.value) || 1))}
+          min={1}
+          max={20}
+          className="w-32 h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:ring-2 focus:ring-petanque-vert/20 focus:outline-none text-center font-mono text-base text-petanque-vert-fonce"
+        />
+      </div>
+    </div>
+  )
+}
+
+// =============================================================
+// Étape 2 — Le format
+// =============================================================
+function Step2({ formData, updateFormField }: any) {
+  const modes = [
+    { value: 'choisi', title: 'Mode choisi', desc: "Tu composes les équipes toi-même.", variant: 'acier' as const },
+    { value: 'melee_fixe', title: 'Mêlée fixe', desc: 'Équipes tirées au sort, gardées tout le tournoi.', variant: 'vert' as const, recommended: true },
+    { value: 'melee_tournante', title: 'Mêlée tournante', desc: 'Équipes redistribuées à chaque tour.', variant: 'cochonnet' as const }
+  ]
+  const formats = [
+    { value: 'tete_a_tete', num: '1', title: 'Tête à tête', desc: '1 joueur' },
+    { value: 'doublette', num: '2', title: 'Doublette', desc: '2 joueurs' },
+    { value: 'triplette', num: '3', title: 'Triplette', desc: '3 joueurs' }
+  ]
+  const pointsOptions = [11, 13, 15, 21]
+
+  return (
+    <div className="space-y-9">
+      <div>
+        <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-4">Mode de jeu</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {modes.map((mode) => {
+            const sel = formData.mode === mode.value
+            return (
+              <button
+                key={mode.value}
+                onClick={() => updateFormField('mode', mode.value)}
+                className={`relative text-left p-5 rounded-2xl bg-white transition-colors ${
+                  sel
+                    ? 'border-[1.5px] border-petanque-vert bg-petanque-vert-pale/30'
+                    : 'border border-petanque-sable-bord hover:border-petanque-bois/50'
+                }`}
+              >
+                <BouleSvg size={36} variant={mode.variant} stries className="mb-3" />
+                <h4 className="font-medium text-petanque-vert-fonce text-base mb-1">{mode.title}</h4>
+                <p className="text-xs text-petanque-bois leading-relaxed">{mode.desc}</p>
+                {mode.recommended && (
+                  <span className="absolute top-3 right-3 font-mono text-[9px] text-petanque-vert uppercase tracking-[0.16em] font-medium">
+                    Recommandé
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-4">Format d'équipe</p>
+        <div className="grid grid-cols-3 gap-3">
+          {formats.map((f) => {
+            const sel = formData.format === f.value
+            return (
+              <button
+                key={f.value}
+                onClick={() => updateFormField('format', f.value)}
+                className={`text-center p-5 rounded-xl bg-white transition-colors ${
+                  sel
+                    ? 'border-[1.5px] border-petanque-vert bg-petanque-vert-pale/30'
+                    : 'border border-petanque-sable-bord hover:border-petanque-bois/50'
+                }`}
+              >
+                <p className={`font-mono text-2xl md:text-3xl font-medium leading-none ${sel ? 'text-petanque-vert' : 'text-petanque-vert-fonce'}`}>
+                  {f.num}
+                </p>
+                <h4 className="font-medium text-petanque-vert-fonce text-sm mt-2">{f.title}</h4>
+                <p className="text-[11px] text-petanque-bois mt-0.5">{f.desc}</p>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-4">Points pour gagner</p>
+        <div className="flex flex-wrap gap-2">
+          {pointsOptions.map((pts) => {
+            const sel = formData.maxPoints === pts
+            return (
+              <button
+                key={pts}
+                onClick={() => updateFormField('maxPoints', pts)}
+                className={`font-mono text-sm rounded-full px-4 py-2 transition-colors ${
+                  sel
+                    ? 'bg-petanque-vert text-petanque-sable border border-petanque-vert'
+                    : 'bg-white border border-petanque-sable-bord text-petanque-vert-fonce hover:border-petanque-bois/50'
+                }`}
+              >
+                {pts}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// =============================================================
+// Étape 3 — Les joueurs
+// =============================================================
+function Step3({
+  formData, availablePlayers, loadingPlayers,
+  togglePlayer, addNewPlayer, updateNewPlayer, removeNewPlayer,
+  selectAllPlayers, deselectAllPlayers, newPlayersRef,
+  getMinPlayers, getTotalPlayers, getEstimatedTeams, getEstimatedPools,
+  validationError
+}: any) {
+  const total = getTotalPlayers()
+  const min = getMinPlayers()
+  const teams = getEstimatedTeams()
+  const pools = getEstimatedPools()
+
+  return (
+    <div className="space-y-7">
+      <div className="bg-white border border-petanque-sable-bord rounded-xl p-4 flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-1">Total sélectionné</p>
+          <p className="font-mono text-2xl font-medium text-petanque-vert-fonce leading-none">
+            {total}<span className="text-sm text-petanque-bois ml-2 font-sans">joueur{total > 1 ? 's' : ''}</span>
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="font-mono text-xs text-petanque-bois">≈ {teams} équipe{teams > 1 ? 's' : ''} · {pools} poule{pools > 1 ? 's' : ''}</p>
+          {formData.mode !== 'choisi' && total < min && (
+            <p className="text-xs text-petanque-cochonnet mt-1">Minimum {min} requis</p>
+          )}
+        </div>
+      </div>
+
+      {loadingPlayers ? (
+        <div className="text-center py-8">
+          <Loader className="w-6 h-6 animate-spin mx-auto text-petanque-vert" />
+          <p className="text-sm text-petanque-bois mt-3">Chargement des joueurs…</p>
+        </div>
+      ) : availablePlayers.length > 0 ? (
+        <div>
+          <div className="flex justify-between items-baseline mb-3">
+            <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em]">Joueurs de l'organisation</p>
+            <div className="space-x-3">
+              <button onClick={selectAllPlayers} className="text-xs text-petanque-vert hover:text-petanque-vert-fonce font-medium">Tout sélectionner</button>
+              <button onClick={deselectAllPlayers} className="text-xs text-petanque-bois hover:text-petanque-vert-fonce font-medium">Désélectionner</button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 max-h-72 overflow-y-auto pr-1">
+            {availablePlayers.map((player: any) => {
+              const sel = formData.selectedPlayers.includes(player.id)
+              return (
+                <button
+                  key={player.id}
+                  onClick={() => togglePlayer(player.id)}
+                  className={`flex items-center gap-2 p-2.5 rounded-lg bg-white transition-colors text-left ${
+                    sel ? 'border-[1.5px] border-petanque-vert bg-petanque-vert-pale/30' : 'border border-petanque-sable-bord hover:border-petanque-bois/50'
+                  }`}
+                >
+                  <div className="w-7 h-7 rounded-full bg-petanque-vert-pale/40 text-petanque-vert-fonce text-xs font-medium flex-shrink-0 flex items-center justify-center">
+                    {player.name?.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-xs text-petanque-vert-fonce truncate flex-1">{player.name}</span>
+                  {sel && <Check className="w-3.5 h-3.5 text-petanque-vert flex-shrink-0" />}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      <div ref={newPlayersRef}>
+        <div className="flex justify-between items-baseline mb-3">
+          <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em]">Ajouter des joueurs</p>
+          <button onClick={addNewPlayer} className="text-xs text-petanque-vert hover:text-petanque-vert-fonce font-medium flex items-center gap-1">
+            <Plus className="w-3.5 h-3.5" />
+            Ajouter
+          </button>
+        </div>
+        {formData.newPlayers.length === 0 ? (
+          <p className="text-sm text-petanque-bois italic">Aucun joueur supplémentaire pour l'instant.</p>
+        ) : (
+          <div className="space-y-2">
+            {formData.newPlayers.map((player: any, i: number) => (
+              <div key={i} className="flex items-center gap-2 p-2 bg-white border border-petanque-sable-bord rounded-lg">
+                <input
+                  type="text"
+                  value={player.name}
+                  onChange={(e) => updateNewPlayer(i, 'name', e.target.value)}
+                  placeholder="Nom"
+                  className="flex-1 h-9 px-3 text-sm bg-transparent border border-petanque-sable-bord rounded focus:border-petanque-vert focus:outline-none"
+                />
+                <select
+                  value={player.gender}
+                  onChange={(e) => updateNewPlayer(i, 'gender', e.target.value)}
+                  className="h-9 px-2 text-sm bg-transparent border border-petanque-sable-bord rounded focus:border-petanque-vert focus:outline-none"
+                >
+                  <option value="H">H</option>
+                  <option value="F">F</option>
+                </select>
+                <button
+                  onClick={() => removeNewPlayer(i)}
+                  className="w-9 h-9 flex items-center justify-center text-petanque-bois hover:text-petanque-cochonnet rounded"
+                  aria-label="Supprimer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {validationError && (
+        <div className="p-3 bg-petanque-cochonnet-pale/30 border border-petanque-cochonnet/40 rounded-lg text-sm text-petanque-cochonnet-fonce">
+          {validationError}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// =============================================================
+// Étape 4 — Options avancées
+// =============================================================
+function Step4({ formData, updateFormField, isClubPlan }: any) {
+  const advancedOptions = [
+    { key: 'mixiteObligatoire', label: 'Mixité obligatoire', desc: 'H et F dans chaque équipe' },
+    { key: 'consolante', label: 'Petite finale', desc: 'Match pour la 3e place' },
+    { key: 'fairPlay', label: 'Mode fair-play', desc: 'Pénalités douces, esprit club' }
+  ]
+
+  return (
+    <div className="space-y-9">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Taille des poules</label>
+          <select
+            value={formData.pouleSize}
+            onChange={(e) => updateFormField('pouleSize', parseInt(e.target.value))}
+            className="w-full h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:outline-none text-sm text-petanque-vert-fonce"
+          >
+            {[3, 4, 5, 6].map(s => <option key={s} value={s}>{s} équipes</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Qualifiés par poule</label>
+          <select
+            value={formData.qualifiedPerPoule}
+            onChange={(e) => updateFormField('qualifiedPerPoule', parseInt(e.target.value))}
+            className="w-full h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:outline-none text-sm text-petanque-vert-fonce"
+          >
+            {[1, 2, 3].map(n => <option key={n} value={n}>{n} qualifié{n > 1 ? 's' : ''}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {formData.mode === 'melee_tournante' && (
+        <div>
+          <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Rotation des équipes</label>
+          <select
+            value={formData.meleeRotation}
+            onChange={(e) => updateFormField('meleeRotation', e.target.value)}
+            className="w-full md:w-1/2 h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:outline-none text-sm text-petanque-vert-fonce"
+          >
+            <option value="par_tour">Par tour (recommandé)</option>
+            <option value="par_match">Par match</option>
+          </select>
+        </div>
+      )}
+
+      <div className="space-y-3 border-t border-petanque-sable-bord/50 pt-6">
+        {advancedOptions.map(({ key, label, desc }) => (
+          <label key={key} className="flex items-start gap-3 cursor-pointer py-1">
+            <input
+              type="checkbox"
+              checked={formData[key] as boolean}
+              onChange={(e) => updateFormField(key, e.target.checked)}
+              className="w-4 h-4 mt-0.5 rounded border-petanque-sable-bord text-petanque-vert focus:ring-petanque-vert/30"
+            />
+            <div>
+              <p className="text-sm text-petanque-vert-fonce font-medium">{label}</p>
+              <p className="text-xs text-petanque-bois">{desc}</p>
+            </div>
+          </label>
+        ))}
+      </div>
+
+      <div className={`border-t border-petanque-sable-bord/50 pt-6 ${!isClubPlan ? 'opacity-60' : ''}`}>
+        <div className="flex items-center gap-2 mb-4">
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-petanque-cochonnet font-medium">Plan Club</span>
+          {!isClubPlan && <span className="text-xs text-petanque-bois italic">— passe au plan Club pour activer</span>}
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Points personnalisés (7–25)</label>
+            <input
+              type="number"
+              min={7}
+              max={25}
+              value={formData.maxPoints}
+              onChange={(e) => updateFormField('maxPoints', parseInt(e.target.value) || 13)}
+              disabled={!isClubPlan}
+              className="w-32 h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:outline-none disabled:cursor-not-allowed disabled:bg-petanque-sable-pale/50 text-center font-mono text-base text-petanque-vert-fonce"
+            />
+          </div>
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.timeLimit || false}
+              onChange={(e) => updateFormField('timeLimit', e.target.checked)}
+              disabled={!isClubPlan}
+              className="w-4 h-4 mt-0.5 rounded border-petanque-sable-bord text-petanque-vert focus:ring-petanque-vert/30 disabled:cursor-not-allowed"
+            />
+            <div>
+              <p className="text-sm text-petanque-vert-fonce font-medium">Limite de temps par match</p>
+              <p className="text-xs text-petanque-bois">Termine un match à la fin du temps imparti</p>
+            </div>
+          </label>
+          {formData.timeLimit && isClubPlan && (
+            <div className="ml-7">
+              <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Minutes par match</label>
+              <input
+                type="number"
+                min={15}
+                max={120}
+                value={formData.timeLimitMinutes || 60}
+                onChange={(e) => updateFormField('timeLimitMinutes', parseInt(e.target.value) || 60)}
+                className="w-32 h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:outline-none text-center font-mono text-base text-petanque-vert-fonce"
+              />
+            </div>
+          )}
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.eliminationFormat === 'double'}
+              onChange={(e) => updateFormField('eliminationFormat', e.target.checked ? 'double' : 'simple')}
+              disabled={!isClubPlan}
+              className="w-4 h-4 mt-0.5 rounded border-petanque-sable-bord text-petanque-vert focus:ring-petanque-vert/30 disabled:cursor-not-allowed"
+            />
+            <div>
+              <p className="text-sm text-petanque-vert-fonce font-medium">Double élimination</p>
+              <p className="text-xs text-petanque-bois">Une équipe doit perdre 2 matchs avant d'être éliminée</p>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// =============================================================
+// Étape 5 — Récap
+// =============================================================
+function Step5({ formData, getTotalPlayers, getEstimatedTeams, getEstimatedPools, successAnimation }: any) {
+  const items = [
+    { label: 'Nom', value: formData.name || '—' },
+    { label: 'Date', value: formData.date || '—' },
+    { label: 'Lieu', value: formData.location || '—' },
+    { label: 'Mode', value: formData.mode === 'choisi' ? 'Choisi' : formData.mode === 'melee_fixe' ? 'Mêlée fixe' : 'Mêlée tournante' },
+    { label: 'Format', value: formData.format === 'tete_a_tete' ? 'Tête à tête' : formData.format === 'doublette' ? 'Doublette' : 'Triplette' },
+    { label: 'Points max', value: formData.maxPoints },
+    { label: 'Joueurs', value: getTotalPlayers() },
+    { label: 'Équipes', value: getEstimatedTeams() },
+    { label: 'Poules', value: getEstimatedPools() },
+    { label: 'Terrains', value: formData.terrains }
+  ]
+
+  return (
+    <div className="space-y-7">
+      {!successAnimation ? (
+        <div>
+          <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-4">Vérifie les paramètres</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4 border-t border-petanque-sable-bord/50 pt-5">
+            {items.map(({ label, value }) => (
+              <div key={label} className="border-b border-petanque-sable-bord/40 pb-3">
+                <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.14em] mb-1">{label}</p>
+                <p className="text-sm md:text-base text-petanque-vert-fonce font-medium">{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 mx-auto mb-5 bg-petanque-vert-pale/40 rounded-full flex items-center justify-center">
+            <Check className="w-7 h-7 text-petanque-vert" />
+          </div>
+          <p className="text-2xl font-medium text-petanque-vert-fonce mb-2">Tournoi créé.</p>
+          <p className="text-sm text-petanque-bois italic">Redirection en cours…</p>
+        </div>
+      )}
     </div>
   )
 }
