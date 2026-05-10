@@ -1,9 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useBracket, BracketMatch } from '@/hooks/bracket'
 import { Button, BouleSvg, FadeIn } from '@/components/ui'
 import { Loader } from '@/components/Icons'
+import TournamentSubNav, { ViewRole, SubNavSection } from '@/components/tournament/TournamentSubNav'
 
 const COL_WIDTH = 220
 const HORIZONTAL_GAP = 60
@@ -99,6 +101,7 @@ export default function BracketPage() {
   const router = useRouter()
   const tournoiId = params?.id as string
 
+  const [viewRole, setViewRole] = useState<ViewRole>('organisateur')
   const { loading, tournament, bracketData, hasHuitiemes, hasQuarts, hasDemis } = useBracket({ tournoiId })
 
   if (loading) {
@@ -158,14 +161,14 @@ export default function BracketPage() {
     : ''
 
   // Sub-nav
-  const subNavLinks = [
-    { href: `/tournoi/${tournoiId}`, label: 'Aperçu' },
-    { href: `/tournoi/${tournoiId}#matchs`, label: 'Tous les matchs' },
-    { href: `/tournoi/${tournoiId}#classement`, label: 'Classement' },
-    { href: `/tournoi/${tournoiId}#equipes`, label: 'Équipes' },
-    { href: `/tournoi/${tournoiId}/bracket`, label: 'Bracket', active: true },
-    { href: `/tournoi/${tournoiId}#stats`, label: 'Stats' },
-    { href: `/tournoi/${tournoiId}/export`, label: 'Export' }
+  const subNavSections: SubNavSection[] = [
+    { id: 'apercu', label: 'Aperçu', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}`) },
+    { id: 'matchs', label: 'Tous les matchs', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}`) },
+    { id: 'classement', label: 'Classement', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}`) },
+    { id: 'equipes', label: 'Équipes', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}`) },
+    { id: 'bracket', label: 'Bracket', isActive: true, onClick: () => {} },
+    { id: 'stats', label: 'Stats', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}`) },
+    { id: 'export', label: 'Export', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}/export`) }
   ]
 
   const handleMatchClick = (match: BracketMatch | null | undefined) => {
@@ -195,38 +198,11 @@ export default function BracketPage() {
         </div>
       </header>
 
-      {/* Sub-nav */}
-      <nav className="sticky top-14 z-40 bg-petanque-sable-pale/85 backdrop-blur-xl border-b border-petanque-sable-bord/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 overflow-x-auto">
-          <div className="flex flex-shrink-0">
-            {subNavLinks.map((link) => (
-              <button
-                key={link.label}
-                onClick={() => router.push(link.href)}
-                className={`px-3.5 py-3.5 text-sm whitespace-nowrap border-b-[1.5px] transition-colors ${
-                  link.active
-                    ? 'text-petanque-vert-fonce border-petanque-vert font-medium'
-                    : 'text-petanque-bois border-transparent hover:text-petanque-vert-fonce'
-                }`}
-              >
-                {link.label}
-              </button>
-            ))}
-          </div>
-          <div className="inline-flex bg-white border border-petanque-sable-bord/60 rounded-full p-0.5 my-2 flex-shrink-0">
-            {(['Organisateur', 'Joueur', 'Spectateur'] as const).map((role, i) => (
-              <button
-                key={role}
-                className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-                  i === 0 ? 'bg-petanque-vert text-petanque-sable' : 'text-petanque-bois'
-                }`}
-              >
-                {role}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
+      <TournamentSubNav
+        sections={subNavSections}
+        viewRole={viewRole}
+        setViewRole={setViewRole}
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <FadeIn>
