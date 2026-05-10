@@ -42,7 +42,7 @@ export default function MatchScorePage() {
       <div className="min-h-screen bg-petanque-sable-pale flex items-center justify-center">
         <div className="text-center">
           <Loader className="w-7 h-7 animate-spin mx-auto text-petanque-vert" />
-          <p className="mt-4 text-sm text-petanque-bois">Chargement du match\u2026</p>
+          <p className="mt-4 text-sm text-petanque-bois">Chargement du match…</p>
         </div>
       </div>
     )
@@ -53,7 +53,7 @@ export default function MatchScorePage() {
       <div className="min-h-screen bg-petanque-sable-pale flex items-center justify-center">
         <div className="text-center max-w-sm">
           <p className="text-2xl font-medium text-petanque-vert-fonce mb-2">Match introuvable</p>
-          <p className="text-sm text-petanque-bois mb-6">Ce match n\u2019existe plus ou n\u2019est plus accessible.</p>
+          <p className="text-sm text-petanque-bois mb-6">Ce match n’existe plus ou n’est plus accessible.</p>
           <Button variant="primary" onClick={() => router.push('/dashboard')}>
             Retour au tableau de bord
           </Button>
@@ -65,8 +65,8 @@ export default function MatchScorePage() {
   const isAdmin = viewRole === 'organisateur'
   const teamAName = match.equipe_a?.name || 'Équipe A'
   const teamBName = match.equipe_b?.name || 'Équipe B'
-  const playersA = (match.equipe_a as any)?.equipes_joueurs?.map((ej: any) => ej.joueur?.name).filter(Boolean).join(' \u00b7 ') || ''
-  const playersB = (match.equipe_b as any)?.equipes_joueurs?.map((ej: any) => ej.joueur?.name).filter(Boolean).join(' \u00b7 ') || ''
+  const playersA = (match.equipe_a as any)?.equipes_joueurs?.map((ej: any) => ej.joueur?.name).filter(Boolean).join(' · ') || ''
+  const playersB = (match.equipe_b as any)?.equipes_joueurs?.map((ej: any) => ej.joueur?.name).filter(Boolean).join(' · ') || ''
   const isLeaderA = scoreA > scoreB
   const isLeaderB = scoreB > scoreA
   const remainingA = maxPoints - scoreA
@@ -80,17 +80,17 @@ export default function MatchScorePage() {
     const winnerName = winner === 'A' ? teamAName : teamBName
     const high = Math.max(scoreA, scoreB)
     const low = Math.min(scoreA, scoreB)
-    heroContent = <>{winnerName}, <span className="accent-italic text-petanque-vert">l\u2019emportent {high}\u2013{low}.</span></>
+    heroContent = <>{winnerName}, <span className="accent-italic text-petanque-vert">l’emportent {high}–{low}.</span></>
   } else if (matchPointA || matchPointB) {
     const team = matchPointA ? teamAName : teamBName
-    heroContent = <>Match point, <span className="accent-italic text-petanque-vert">{team} \u00e0 un point.</span></>
+    heroContent = <>Match point, <span className="accent-italic text-petanque-vert">{team} à un point.</span></>
   } else if (isLeaderA || isLeaderB) {
     const leader = isLeaderA ? teamAName : teamBName
-    heroContent = <>Premi\u00e8re \u00e0 {maxPoints} gagne, <span className="accent-italic text-petanque-vert">{leader} m\u00e8nent.</span></>
+    heroContent = <>Première à {maxPoints} gagne, <span className="accent-italic text-petanque-vert">{leader} mènent.</span></>
   } else if (scoreA > 0 || scoreB > 0) {
-    heroContent = <>Premi\u00e8re \u00e0 {maxPoints} gagne, <span className="accent-italic text-petanque-vert">\u00e0 \u00e9galit\u00e9.</span></>
+    heroContent = <>Première à {maxPoints} gagne, <span className="accent-italic text-petanque-vert">à égalité.</span></>
   } else {
-    heroContent = <>Match pr\u00eat \u00e0 d\u00e9marrer, <span className="accent-italic text-petanque-vert">la m\u00e8ne 1 t\u2019attend.</span></>
+    heroContent = <>Match prêt à démarrer, <span className="accent-italic text-petanque-vert">la mène 1 t’attend.</span></>
   }
 
   return (
@@ -108,9 +108,9 @@ export default function MatchScorePage() {
             </button>
             <div className="hidden md:flex items-center gap-2 font-mono text-xs text-petanque-bois truncate">
               <span>T{match.tour}</span>
-              <span className="text-petanque-sable-bord">\u00b7</span>
+              <span className="text-petanque-sable-bord">·</span>
               <span>Match</span>
-              <span className="text-petanque-sable-bord">\u00b7</span>
+              <span className="text-petanque-sable-bord">·</span>
               <span className="truncate max-w-[260px]">{match.tournoi?.name}</span>
             </div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-petanque-sable-bord/60 rounded-lg font-mono text-sm text-petanque-vert-fonce font-medium flex-shrink-0">
@@ -132,10 +132,10 @@ export default function MatchScorePage() {
                 En cours
               </span>
             ) : (
-              <span>Termin\u00e9</span>
+              <span>Terminé</span>
             )}
-            {match.terrain && (<><span className="text-petanque-sable-bord">\u00b7</span><span>Terrain {match.terrain}</span></>)}
-            {!winner && (<><span className="text-petanque-sable-bord">\u00b7</span><span>M\u00e8ne {currentManche}</span></>)}
+            {match.terrain && (<><span className="text-petanque-sable-bord">·</span><span>Terrain {match.terrain}</span></>)}
+            {!winner && (<><span className="text-petanque-sable-bord">·</span><span>Mène {currentManche}</span></>)}
           </p>
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.1] mb-8">
             {heroContent}
@@ -161,7 +161,7 @@ export default function MatchScorePage() {
                 {scoreA}
               </p>
               {/* Sep */}
-              <span className="text-petanque-sable-bord text-2xl md:text-3xl font-light">\u2014</span>
+              <span className="text-petanque-sable-bord text-2xl md:text-3xl font-light">—</span>
               {/* Score B */}
               <p className={`font-mono text-4xl md:text-5xl font-medium leading-none tracking-tight tabular-nums ${
                 isLeaderB ? 'text-petanque-vert' : isLeaderA ? 'text-petanque-bois' : 'text-petanque-vert-fonce'
@@ -191,10 +191,10 @@ export default function MatchScorePage() {
               <span>
                 {!winner && remainingA > 0 && remainingA < remainingB && <><strong className="text-petanque-vert font-medium">{remainingA} pts</strong> restants pour {teamAName}</>}
                 {!winner && remainingB > 0 && remainingB < remainingA && <><strong className="text-petanque-vert font-medium">{remainingB} pts</strong> restants pour {teamBName}</>}
-                {!winner && remainingA === remainingB && <>Premi\u00e8re \u00e0 {maxPoints} gagne</>}
-                {winner && <>Match termin\u00e9 en {formatTime(elapsedTime)}</>}
+                {!winner && remainingA === remainingB && <>Première à {maxPoints} gagne</>}
+                {winner && <>Match terminé en {formatTime(elapsedTime)}</>}
               </span>
-              <span className="font-mono">{scoreA} \u2013 {scoreB}</span>
+              <span className="font-mono">{scoreA} – {scoreB}</span>
             </div>
           </div>
         </FadeIn>
@@ -204,8 +204,8 @@ export default function MatchScorePage() {
           <FadeIn delay={140}>
             <div className="bg-white border border-petanque-sable-bord/60 rounded-2xl p-5 md:p-7 mb-6">
               <div className="flex items-baseline justify-between mb-6 gap-3 flex-wrap">
-                <span className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em]">M\u00e8ne {currentManche} en cours</span>
-                <span className="accent-italic text-petanque-bois text-sm">Saisis les points marqu\u00e9s pendant cette m\u00e8ne.</span>
+                <span className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em]">Mène {currentManche} en cours</span>
+                <span className="accent-italic text-petanque-bois text-sm">Saisis les points marqués pendant cette mène.</span>
               </div>
               <div className="grid grid-cols-2 gap-3 md:gap-5">
                 <div className="flex flex-col items-center gap-3 py-2">
@@ -217,7 +217,7 @@ export default function MatchScorePage() {
                       disabled={mancheScoreA === 0 || saving}
                       className="w-14 h-12 rounded-xl border border-petanque-sable-bord/60 bg-white font-mono text-lg text-petanque-bois hover:bg-petanque-sable-pale/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
-                      \u22121
+                      −1
                     </button>
                     <button
                       onClick={() => updateScore('A', 1)}
@@ -237,7 +237,7 @@ export default function MatchScorePage() {
                       disabled={mancheScoreB === 0 || saving}
                       className="w-14 h-12 rounded-xl border border-petanque-sable-bord/60 bg-white font-mono text-lg text-petanque-bois hover:bg-petanque-sable-pale/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
-                      \u22121
+                      −1
                     </button>
                     <button
                       onClick={() => updateScore('B', 1)}
@@ -250,7 +250,7 @@ export default function MatchScorePage() {
                 </div>
               </div>
               {mancheScoreA === 0 && mancheScoreB === 0 && (
-                <p className="text-center mt-4 text-xs text-petanque-bois italic">M\u00e8ne annul\u00e9e si valid\u00e9e \u00e0 0\u20130 (cochonnet sorti).</p>
+                <p className="text-center mt-4 text-xs text-petanque-bois italic">Mène annulée si validée à 0–0 (cochonnet sorti).</p>
               )}
               <div className="mt-6 pt-5 border-t border-petanque-sable-bord/50 flex items-center justify-between gap-3 flex-wrap">
                 <button
@@ -261,12 +261,12 @@ export default function MatchScorePage() {
                   {saving ? (
                     <>
                       <Loader className="w-4 h-4 animate-spin" />
-                      Enregistrement\u2026
+                      Enregistrement…
                     </>
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      Valider la m\u00e8ne {currentManche}
+                      Valider la mène {currentManche}
                     </>
                   )}
                 </button>
@@ -277,7 +277,7 @@ export default function MatchScorePage() {
                       className="inline-flex items-center gap-1.5 px-3 py-2 text-xs text-petanque-bois hover:text-petanque-vert-fonce hover:bg-petanque-sable-pale/60 rounded-lg transition-colors font-medium"
                     >
                       <Undo className="w-3.5 h-3.5" />
-                      Annuler la m\u00e8ne {manches.length}
+                      Annuler la mène {manches.length}
                     </button>
                   )}
                   {match?.tournoi?.settings?.timeLimit === true && (scoreA > 0 || scoreB > 0) && scoreA !== scoreB && (
@@ -310,11 +310,11 @@ export default function MatchScorePage() {
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-medium tracking-tight mb-3">
                 {winner === 'A' ? teamAName : teamBName}
               </h2>
-              <p className="font-mono text-2xl mb-1">{Math.max(scoreA, scoreB)} \u2013 {Math.min(scoreA, scoreB)}</p>
-              <p className="text-sm opacity-70">Match termin\u00e9 en {formatTime(elapsedTime)}</p>
+              <p className="font-mono text-2xl mb-1">{Math.max(scoreA, scoreB)} – {Math.min(scoreA, scoreB)}</p>
+              <p className="text-sm opacity-70">Match terminé en {formatTime(elapsedTime)}</p>
               {saving && (
                 <div className="flex items-center justify-center mt-5 text-sm opacity-80">
-                  <Loader className="w-4 h-4 animate-spin mr-2" /> Sauvegarde\u2026
+                  <Loader className="w-4 h-4 animate-spin mr-2" /> Sauvegarde…
                 </div>
               )}
             </div>
@@ -325,17 +325,17 @@ export default function MatchScorePage() {
         {(manches.length > 0 || (!winner && (mancheScoreA > 0 || mancheScoreB > 0))) && (
           <FadeIn delay={200}>
             <div>
-              <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3">D\u00e9tail des m\u00e8nes</p>
+              <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3">Détail des mènes</p>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                 {manches.map((manche: any, i: number) => {
                   const aWon = manche.scoreA > manche.scoreB
                   const bWon = manche.scoreB > manche.scoreA
                   return (
                     <div key={i} className="bg-white border border-petanque-sable-bord/60 rounded-lg p-3">
-                      <p className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.18em] mb-1.5">M\u00e8ne {i + 1}</p>
+                      <p className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.18em] mb-1.5">Mène {i + 1}</p>
                       <div className="flex justify-between items-center font-mono text-base">
                         <span className={aWon ? 'text-petanque-vert font-medium' : 'text-petanque-bois'}>{manche.scoreA}</span>
-                        <span className="text-petanque-sable-bord text-xs">\u2013</span>
+                        <span className="text-petanque-sable-bord text-xs">–</span>
                         <span className={bWon ? 'text-petanque-vert font-medium' : 'text-petanque-bois'}>{manche.scoreB}</span>
                       </div>
                     </div>
@@ -343,10 +343,10 @@ export default function MatchScorePage() {
                 })}
                 {!winner && (mancheScoreA > 0 || mancheScoreB > 0) && (
                   <div className="bg-petanque-vert-pale/30 border border-petanque-vert/30 border-dashed rounded-lg p-3">
-                    <p className="font-mono text-[9px] text-petanque-vert uppercase tracking-[0.18em] mb-1.5">M\u00e8ne {currentManche}</p>
+                    <p className="font-mono text-[9px] text-petanque-vert uppercase tracking-[0.18em] mb-1.5">Mène {currentManche}</p>
                     <div className="flex justify-between items-center font-mono text-base">
                       <span className={mancheScoreA > mancheScoreB ? 'text-petanque-vert font-medium' : 'text-petanque-bois'}>{mancheScoreA}</span>
-                      <span className="text-petanque-sable-bord text-xs">\u2013</span>
+                      <span className="text-petanque-sable-bord text-xs">–</span>
                       <span className={mancheScoreB > mancheScoreA ? 'text-petanque-vert font-medium' : 'text-petanque-bois'}>{mancheScoreB}</span>
                     </div>
                   </div>
