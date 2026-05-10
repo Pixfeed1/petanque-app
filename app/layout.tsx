@@ -1,15 +1,29 @@
 import type { Metadata, Viewport } from "next"
-// import { Inter } from "next/font/google"
+import { Geist, Geist_Mono, Cormorant_Garamond } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "./providers/AuthProvider"
 import { ToastProvider } from "@/components/ui/Toast"
 import { FeedbackWidget } from "@/components/FeedbackWidget"
 
-// Utiliser une police système au lieu de Google Fonts
-// const inter = Inter({
-//   subsets: ["latin"],
-//   variable: "--font-inter",
-// })
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist-sans",
+  display: "swap",
+})
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+  display: "swap",
+})
+
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["500"],
+  style: ["italic"],
+  variable: "--font-cormorant",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
   title: "Pétanque Pro - Gestion de Tournois",
@@ -23,10 +37,8 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     siteName: "Pétanque Pro",
   },
-  // Next.js détecte automatiquement icon.svg et apple-icon.svg dans app/
 }
 
-// Export séparé pour viewport
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -39,11 +51,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="fr">
-      <head>
-        {/* Utilisation de polices système */}
-      </head>
-      <body className="antialiased bg-gray-50 text-gray-900 font-sans overflow-x-hidden">
+    <html lang="fr" className={`${geist.variable} ${geistMono.variable} ${cormorant.variable}`}>
+      <body className="antialiased text-petanque-vert-fonce font-sans overflow-x-hidden">
         <AuthProvider>
           <ToastProvider>
             {children}
