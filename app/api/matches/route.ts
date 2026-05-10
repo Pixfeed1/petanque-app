@@ -1,8 +1,12 @@
 // app/api/matches/route.ts
-// API pour gérer les matches
+// FIX SÉCURITÉ : ajout du check d'org sur GET et POST.
+// Avant ce fix, GET /api/matches?tournoi_id=X renvoyait les matchs de
+// n'importe quel tournoi sans vérifier que l'utilisateur a accès à l'org
+// propriétaire. Idem pour POST qui vérifiait juste l'appartenance des
+// équipes au tournoi, pas l'accès à l'org.
 
 import { NextRequest } from 'next/server'
-import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
+import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { queryMany, query, queryOne } from '@/lib/db'
 import { MatchRawDB, MatchWithEquipes } from '@/lib/types'
 import { tournoiIdQuerySchema, validateRequest } from '@/lib/validations'
@@ -13,10 +17,10 @@ export async function GET(request: NextRequest) {
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
+    const { user } = authResult
 
     const { searchParams } = new URL(request.url)
 
-    // Validation Zod
     const validation = validateRequest(tournoiIdQuerySchema, {
       tournoi_id: searchParams.get('tournoi_id')
     })
@@ -25,6 +29,19 @@ export async function GET(request: NextRequest) {
     }
 
     const tournoiId = validation.data.tournoi_id
+
+    // FIX SÉCURITÉ : vérifier que le user a accès à l'org du tournoi
+    const tournoi = await queryOne<{ org_id: string | number }>(
+      'SELECT org_id FROM tournois WHERE id = $1',
+      [tournoiId]
+    )
+    if (!tournoi) {
+      return apiError('Tournoi introuvable', 404)
+    }
+    const hasAccess = await checkOrgAccess(user.id, String(tournoi.org_id))
+    if (!hasAccess) {
+      return apiError('Accès refusé', 403)
+    }
 
     const matchesRaw = await queryMany<MatchRawDB>(
       `SELECT m.*,
@@ -38,9 +55,7 @@ export async function GET(request: NextRequest) {
       [tournoiId]
     )
 
-    // Transform to nested format expected by frontend
     const matches: MatchWithEquipes[] = matchesRaw.map((match): MatchWithEquipes => {
-      // Parse manches_json seulement si c'est une chaîne non-vide
       let manchesData = null
       if (match.manches_json && typeof match.manches_json === 'string' && match.manches_json.trim().length > 0) {
         try {
@@ -98,11 +113,11 @@ export async function POST(request: NextRequest) {
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
+    const { user } = authResult
 
     const body = await request.json()
     const { tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status } = body
 
-    // Validation des champs requis
     if (!tournoi_id) {
       return apiError('tournoi_id est requis', 400)
     }
@@ -111,15 +126,26 @@ export async function POST(request: NextRequest) {
       return apiError('equipe_a_id est requis', 400)
     }
 
-    // 🔧 FIX Bug #5 : Permettre equipe_b_id null pour les matchs BYE (brackets impairs)
-    // Les matchs BYE sont utilisés quand nombre impair d'équipes : une équipe passe automatiquement
+    // FIX SÉCURITÉ : vérifier l'accès à l'org du tournoi
+    const tournoi = await queryOne<{ org_id: string | number }>(
+      'SELECT org_id FROM tournois WHERE id = $1',
+      [tournoi_id]
+    )
+    if (!tournoi) {
+      return apiError('Tournoi introuvable', 404)
+    }
+    const hasAccess = await checkOrgAccess(user.id, String(tournoi.org_id))
+    if (!hasAccess) {
+      return apiError('Accès refusé', 403)
+    }
+
+    // FIX Bug #5 : Permettre equipe_b_id null pour les matchs BYE (brackets impairs)
     const isByeMatch = type === 'bye' || equipe_b_id === null
 
     if (!isByeMatch && !equipe_b_id) {
       return apiError('equipe_b_id est requis pour les matchs normaux (non-BYE)', 400)
     }
 
-    // Vérifier que les deux équipes sont différentes (sauf BYE)
     if (!isByeMatch && equipe_a_id === equipe_b_id) {
       return apiError('Les deux équipes doivent être différentes', 400)
     }
@@ -134,11 +160,10 @@ export async function POST(request: NextRequest) {
       return apiError(`Équipe A (${equipe_a_id}) n'existe pas`, 404)
     }
 
-    if (equipeACheck.tournoi_id !== tournoi_id) {
+    if (String(equipeACheck.tournoi_id) !== String(tournoi_id)) {
       return apiError(`Équipe A n'appartient pas au tournoi ${tournoi_id}`, 400)
     }
 
-    // Vérifier que l'équipe B existe et appartient au bon tournoi (sauf BYE)
     if (!isByeMatch) {
       const equipeBCheck = await queryOne(
         'SELECT id, tournoi_id FROM equipes WHERE id = $1',
@@ -149,7 +174,7 @@ export async function POST(request: NextRequest) {
         return apiError(`Équipe B (${equipe_b_id}) n'existe pas`, 404)
       }
 
-      if (equipeBCheck.tournoi_id !== tournoi_id) {
+      if (String(equipeBCheck.tournoi_id) !== String(tournoi_id)) {
         return apiError(`Équipe B n'appartient pas au tournoi ${tournoi_id}`, 400)
       }
     }

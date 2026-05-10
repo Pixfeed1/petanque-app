@@ -1,5 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
+// app/api/joueurs/[id]/route.ts
+// FIX SÉCURITÉ : ajout des checks d'org sur GET/PUT/DELETE.
+// Avant ce fix, n'importe quel user authentifié pouvait lire/modifier/supprimer
+// les joueurs de n'importe quel club.
+// FIX BUG : la requête de vérification "joueur dans une équipe active" utilisait
+// joueur_ids @> $1::jsonb alors que la colonne est BIGINT[] → plantait silencieusement.
+
+import { NextRequest } from 'next/server'
+import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { query, queryOne } from '@/lib/db'
 import { SQLValue } from '@/lib/types'
 import { joueurIdSchema, updateJoueurSchema, validateRequest } from '@/lib/validations'
@@ -12,22 +19,28 @@ export async function GET(
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
+    const { user } = authResult
 
     const { id } = await params
 
-    // Validation Zod de l'ID
-    const validation = validateRequest(joueurIdSchema, { id })
-    if (!validation.success) {
-      return apiError(validation.errors.join(', '), 400)
+    const idValidation = validateRequest(joueurIdSchema, { id })
+    if (!idValidation.success) {
+      return apiError(idValidation.errors.join(', '), 400)
     }
 
-    const joueur = await queryOne(
+    const joueur = await queryOne<{ org_id: string | number }>(
       'SELECT * FROM joueurs WHERE id = $1',
       [id]
     )
 
     if (!joueur) {
       return apiError('Joueur introuvable', 404)
+    }
+
+    // FIX SÉCURITÉ : vérifier que le user a accès à l'org du joueur
+    const hasAccess = await checkOrgAccess(user.id, String(joueur.org_id))
+    if (!hasAccess) {
+      return apiError('Accès refusé', 403)
     }
 
     return apiSuccess(joueur)
@@ -45,10 +58,10 @@ export async function PUT(
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
+    const { user } = authResult
 
     const { id } = await params
 
-    // Validation Zod de l'ID
     const idValidation = validateRequest(joueurIdSchema, { id })
     if (!idValidation.success) {
       return apiError(idValidation.errors.join(', '), 400)
@@ -56,7 +69,6 @@ export async function PUT(
 
     const body = await request.json()
 
-    // Validation Zod du body
     const validation = validateRequest(updateJoueurSchema, body)
     if (!validation.success) {
       return apiError(validation.errors.join(', '), 400)
@@ -65,8 +77,7 @@ export async function PUT(
     const { name, gender, email, phone } = validation.data
     const stats = (body as any).stats
 
-    // Vérifier que le joueur existe
-    const joueur = await queryOne(
+    const joueur = await queryOne<{ org_id: string | number }>(
       'SELECT * FROM joueurs WHERE id = $1',
       [id]
     )
@@ -75,7 +86,12 @@ export async function PUT(
       return apiError('Joueur introuvable', 404)
     }
 
-    // Construire la requête UPDATE dynamiquement
+    // FIX SÉCURITÉ : vérifier l'org avant modification
+    const hasAccess = await checkOrgAccess(user.id, String(joueur.org_id))
+    if (!hasAccess) {
+      return apiError('Accès refusé', 403)
+    }
+
     const updates: string[] = []
     const values: SQLValue[] = []
     let paramIndex = 1
@@ -109,10 +125,7 @@ export async function PUT(
       return apiError('Aucune modification fournie', 400)
     }
 
-    // Ajouter updated_at
     updates.push(`updated_at = NOW()`)
-
-    // Ajouter l'ID à la fin
     values.push(id)
 
     const result = await query(
@@ -139,11 +152,11 @@ export async function DELETE(
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
+    const { user } = authResult
 
     const { id } = await params
 
-    // Vérifier que le joueur existe
-    const joueur = await queryOne(
+    const joueur = await queryOne<{ org_id: string | number }>(
       'SELECT * FROM joueurs WHERE id = $1',
       [id]
     )
@@ -152,26 +165,32 @@ export async function DELETE(
       return apiError('Joueur introuvable', 404)
     }
 
-    // Vérifier que le joueur n'est pas dans des équipes actives
-    // Note: Si joueur_ids est JSONB, on peut vérifier avec @>
+    // FIX SÉCURITÉ : vérifier l'org avant suppression
+    const hasAccess = await checkOrgAccess(user.id, String(joueur.org_id))
+    if (!hasAccess) {
+      return apiError('Accès refusé', 403)
+    }
+
+    // FIX BUG : joueur_ids est BIGINT[] pas JSONB. Avant : @> $1::jsonb plantait.
+    // Maintenant : on teste si l'id est dans le tableau via ANY().
     const activeTeams = await query(
-      `SELECT e.id, t.name as tournoi_name
+      `SELECT e.id, e.name as equipe_name, t.name as tournoi_name
        FROM equipes e
        JOIN tournois t ON e.tournoi_id = t.id
-       WHERE e.joueur_ids @> $1::jsonb
+       WHERE $1::bigint = ANY(e.joueur_ids)
        AND t.status IN ('preparation', 'en_cours')
        LIMIT 1`,
-      [JSON.stringify([id])]
+      [id]
     )
 
     if (activeTeams.rows.length > 0) {
+      const t = activeTeams.rows[0] as { equipe_name: string; tournoi_name: string }
       return apiError(
-        `Impossible de supprimer : le joueur est dans l'équipe "${activeTeams.rows[0].id}" du tournoi "${activeTeams.rows[0].tournoi_name}"`,
+        `Impossible de supprimer : le joueur est dans l'équipe "${t.equipe_name}" du tournoi "${t.tournoi_name}"`,
         400
       )
     }
 
-    // Supprimer le joueur
     const result = await query(
       'DELETE FROM joueurs WHERE id = $1 RETURNING *',
       [id]

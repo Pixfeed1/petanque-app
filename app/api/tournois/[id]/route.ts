@@ -2,7 +2,7 @@
 // API pour un tournoi spécifique
 
 import { NextRequest } from 'next/server'
-import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
+import { requireAuth, apiSuccess, apiError, checkOrgAccess, checkOrgAdmin } from '@/lib/middleware'
 import { queryOne, query } from '@/lib/db'
 import { SQLValue } from '@/lib/types'
 import { emitTournamentEvent } from '@/lib/tournament-events'
@@ -153,10 +153,10 @@ export async function DELETE(
       return apiError('Tournoi introuvable', 404)
     }
 
-    // Vérifier l'accès
-    const hasAccess = await checkOrgAccess(user.id, tournoi.org_id)
-    if (!hasAccess) {
-      return apiError('Accès refusé', 403)
+    // FIX SÉCURITÉ : DELETE réservé aux owners/admins (pas aux simples members)
+    const isAdmin = await checkOrgAdmin(user.id, tournoi.org_id)
+    if (!isAdmin) {
+      return apiError('Suppression réservée aux administrateurs de l\'organisation', 403)
     }
 
     // Vérifier qu'il n'y a pas de matchs en cours avant suppression
