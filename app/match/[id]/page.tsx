@@ -5,46 +5,28 @@ import { useRouter, useParams } from 'next/navigation'
 import { useMatchScore } from '@/hooks/match'
 import { useToast } from '@/components/ui/Toast'
 import { useConfirm } from '@/components/ui/ConfirmModal'
+import { Button, BouleSvg, FadeIn } from '@/components/ui'
 import {
   Trophy, Plus, Minus, Check, Clock, ArrowLeft,
-  Undo, Loader, Save, Petanque
+  Undo, Loader, Save, Play
 } from '@/components/Icons'
 
-/**
- * Page de scoring d'un match de pétanque
- * - Affichage des équipes et scores
- * - Saisie des points par mène
- * - Timer
- * - Historique des mènes
- */
+type ViewRole = 'organisateur' | 'joueur' | 'spectateur'
+
 export default function MatchScorePage() {
   const router = useRouter()
   const params = useParams()
   const [mounted, setMounted] = useState(false)
   const { showSuccess, showError, showWarning } = useToast()
   const { confirm, ConfirmModal } = useConfirm()
+  const [viewRole] = useState<ViewRole>('organisateur')
 
-  // Hook principal pour la gestion du match
   const {
-    match,
-    loading,
-    saving,
-    scoreA,
-    scoreB,
-    manches,
-    currentManche,
-    mancheScoreA,
-    mancheScoreB,
-    winner,
-    elapsedTime,
-    maxPoints,
-    maxPointsPerManche,
-    updateScore,
-    finishMatch,
-    finishManche,
-    undoLastManche,
-    saveProgress,
-    formatTime
+    match, loading, saving, scoreA, scoreB, manches,
+    currentManche, mancheScoreA, mancheScoreB, winner,
+    elapsedTime, maxPoints, maxPointsPerManche,
+    updateScore, finishMatch, finishManche, undoLastManche,
+    saveProgress, formatTime
   } = useMatchScore({
     matchId: params?.id,
     onSuccess: showSuccess,
@@ -53,571 +35,343 @@ export default function MatchScorePage() {
     onConfirm: confirm
   })
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  useEffect(() => { setMounted(true) }, [])
 
-  // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30 flex items-center justify-center">
+      <div className="min-h-screen bg-petanque-sable-pale flex items-center justify-center">
         <div className="text-center">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full blur-2xl opacity-20 animate-pulse"></div>
-            <div className="relative bg-white rounded-3xl p-12 shadow-2xl">
-              <Loader className="animate-spin h-6 w-6" />
-              <p className="mt-4 text-lg font-medium text-gray-600">Chargement du match...</p>
-            </div>
-          </div>
+          <Loader className="w-7 h-7 animate-spin mx-auto text-petanque-vert" />
+          <p className="mt-4 text-sm text-petanque-bois">Chargement du match\u2026</p>
         </div>
       </div>
     )
   }
 
-  // Match not found
   if (!match) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-2xl font-bold text-gray-900 mb-4">Match introuvable</p>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl hover:shadow-2xl transition-all transform hover:scale-105"
-          >
-            Retour au dashboard
-          </button>
+      <div className="min-h-screen bg-petanque-sable-pale flex items-center justify-center">
+        <div className="text-center max-w-sm">
+          <p className="text-2xl font-medium text-petanque-vert-fonce mb-2">Match introuvable</p>
+          <p className="text-sm text-petanque-bois mb-6">Ce match n\u2019existe plus ou n\u2019est plus accessible.</p>
+          <Button variant="primary" onClick={() => router.push('/dashboard')}>
+            Retour au tableau de bord
+          </Button>
         </div>
       </div>
     )
   }
 
+  const isAdmin = viewRole === 'organisateur'
+  const teamAName = match.equipe_a?.name || 'Équipe A'
+  const teamBName = match.equipe_b?.name || 'Équipe B'
+  const playersA = (match.equipe_a as any)?.equipes_joueurs?.map((ej: any) => ej.joueur?.name).filter(Boolean).join(' \u00b7 ') || ''
+  const playersB = (match.equipe_b as any)?.equipes_joueurs?.map((ej: any) => ej.joueur?.name).filter(Boolean).join(' \u00b7 ') || ''
+  const isLeaderA = scoreA > scoreB
+  const isLeaderB = scoreB > scoreA
+  const remainingA = maxPoints - scoreA
+  const remainingB = maxPoints - scoreB
+  const matchPointA = scoreA === maxPoints - 1
+  const matchPointB = scoreB === maxPoints - 1
+
+  // Hero contextuel
+  let heroContent: React.ReactNode
+  if (winner) {
+    const winnerName = winner === 'A' ? teamAName : teamBName
+    const high = Math.max(scoreA, scoreB)
+    const low = Math.min(scoreA, scoreB)
+    heroContent = <>{winnerName}, <span className="accent-italic text-petanque-vert">l\u2019emportent {high}\u2013{low}.</span></>
+  } else if (matchPointA || matchPointB) {
+    const team = matchPointA ? teamAName : teamBName
+    heroContent = <>Match point, <span className="accent-italic text-petanque-vert">{team} \u00e0 un point.</span></>
+  } else if (isLeaderA || isLeaderB) {
+    const leader = isLeaderA ? teamAName : teamBName
+    heroContent = <>Premi\u00e8re \u00e0 {maxPoints} gagne, <span className="accent-italic text-petanque-vert">{leader} m\u00e8nent.</span></>
+  } else if (scoreA > 0 || scoreB > 0) {
+    heroContent = <>Premi\u00e8re \u00e0 {maxPoints} gagne, <span className="accent-italic text-petanque-vert">\u00e0 \u00e9galit\u00e9.</span></>
+  } else {
+    heroContent = <>Match pr\u00eat \u00e0 d\u00e9marrer, <span className="accent-italic text-petanque-vert">la m\u00e8ne 1 t\u2019attend.</span></>
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30">
-      {/* Particules animées */}
-      <AnimatedBackground />
-
+    <div className="min-h-screen bg-petanque-sable-pale">
       {/* Header */}
-      <MatchHeader
-        match={match}
-        elapsedTime={elapsedTime}
-        formatTime={formatTime}
-        currentManche={currentManche}
-        winner={winner}
-        onBack={() => match?.tournoi?.id && router.push(`/tournoi/${match.tournoi.id}`)}
-      />
+      <header className="sticky top-0 z-50 bg-petanque-sable-pale/85 backdrop-blur-xl border-b border-petanque-sable-bord/60">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-4 h-14">
+            <button
+              onClick={() => match?.tournoi?.id && router.push(`/tournoi/${match.tournoi.id}`)}
+              className="text-sm text-petanque-bois hover:text-petanque-vert-fonce font-medium flex items-center gap-1.5 flex-shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Retour au tournoi</span>
+            </button>
+            <div className="hidden md:flex items-center gap-2 font-mono text-xs text-petanque-bois truncate">
+              <span>T{match.tour}</span>
+              <span className="text-petanque-sable-bord">\u00b7</span>
+              <span>Match</span>
+              <span className="text-petanque-sable-bord">\u00b7</span>
+              <span className="truncate max-w-[260px]">{match.tournoi?.name}</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-petanque-sable-bord/60 rounded-lg font-mono text-sm text-petanque-vert-fonce font-medium flex-shrink-0">
+              <Clock className="w-3.5 h-3.5 text-petanque-bois" />
+              {formatTime(elapsedTime)}
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Carte principale du match */}
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden mb-8">
-          {/* Barre de score en haut */}
-          <ScoreHeader scoreA={scoreA} scoreB={scoreB} maxPoints={maxPoints} />
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
 
-          {/* Zone principale */}
-          <div className="p-4 sm:p-8">
-            {/* Équipes */}
-            <TeamsDisplay
-              match={match}
-              scoreA={scoreA}
-              scoreB={scoreB}
-              winner={winner}
-            />
+        {/* Eyebrow + hero */}
+        <FadeIn>
+          <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+            {!winner ? (
+              <span className="text-petanque-vert flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-petanque-vert animate-pulse"></span>
+                En cours
+              </span>
+            ) : (
+              <span>Termin\u00e9</span>
+            )}
+            {match.terrain && (<><span className="text-petanque-sable-bord">\u00b7</span><span>Terrain {match.terrain}</span></>)}
+            {!winner && (<><span className="text-petanque-sable-bord">\u00b7</span><span>M\u00e8ne {currentManche}</span></>)}
+          </p>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.1] mb-8">
+            {heroContent}
+          </h1>
+        </FadeIn>
 
-            {/* Zone de saisie des points */}
-            {!winner && (
-              <>
-                <ScoreInput
-                  match={match}
-                  currentManche={currentManche}
-                  mancheScoreA={mancheScoreA}
-                  mancheScoreB={mancheScoreB}
-                  maxPointsPerManche={maxPointsPerManche}
-                  saving={saving}
-                  updateScore={updateScore}
-                  finishManche={finishManche}
-                />
+        {/* Récap match avec face-à-face */}
+        <FadeIn delay={80}>
+          <div className="bg-white border border-petanque-sable-bord/60 rounded-2xl p-5 md:p-7 mb-8">
+            <div className="grid grid-cols-[1fr_auto_auto_auto_1fr] gap-2 md:gap-5 items-center">
+              {/* Équipe A */}
+              <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                <BouleSvg size={40} variant="acier" stries className="flex-shrink-0 hidden sm:block" />
+                <div className="min-w-0">
+                  <p className="text-sm md:text-base font-medium text-petanque-vert-fonce truncate">{teamAName}</p>
+                  {playersA && <p className="text-[11px] text-petanque-bois truncate mt-0.5">{playersA}</p>}
+                </div>
+              </div>
+              {/* Score A */}
+              <p className={`font-mono text-4xl md:text-5xl font-medium leading-none tracking-tight tabular-nums ${
+                isLeaderA ? 'text-petanque-vert' : isLeaderB ? 'text-petanque-bois' : 'text-petanque-vert-fonce'
+              }`}>
+                {scoreA}
+              </p>
+              {/* Sep */}
+              <span className="text-petanque-sable-bord text-2xl md:text-3xl font-light">\u2014</span>
+              {/* Score B */}
+              <p className={`font-mono text-4xl md:text-5xl font-medium leading-none tracking-tight tabular-nums ${
+                isLeaderB ? 'text-petanque-vert' : isLeaderA ? 'text-petanque-bois' : 'text-petanque-vert-fonce'
+              }`}>
+                {scoreB}
+              </p>
+              {/* Équipe B */}
+              <div className="flex items-center gap-2 md:gap-3 min-w-0 justify-end text-right">
+                <div className="min-w-0">
+                  <p className="text-sm md:text-base font-medium text-petanque-vert-fonce truncate">{teamBName}</p>
+                  {playersB && <p className="text-[11px] text-petanque-bois truncate mt-0.5">{playersB}</p>}
+                </div>
+                <BouleSvg size={40} variant="cochonnet" stries className="flex-shrink-0 hidden sm:block" />
+              </div>
+            </div>
 
-                {/* Bouton Terminer au temps */}
-                {match?.tournoi?.settings?.timeLimit === true && (
-                  <div className="mt-4 text-center">
-                    {scoreA !== scoreB && (scoreA > 0 || scoreB > 0) ? (
-                      <button
-                        onClick={async () => {
-                          const confirmed = await confirm({
-                            title: 'Fin au temps',
-                            message: 'Terminer le match avec le score actuel ?'
-                          })
-                          if (confirmed) {
-                            await finishMatch(scoreA, scoreB, manches)
-                          }
-                        }}
-                        disabled={saving}
-                        className="px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
-                      >
-                        <Clock className="w-5 h-5 mr-2" />
-                        <span>Terminer au temps</span>
-                      </button>
-                    ) : scoreA === scoreB && (scoreA > 0 || scoreB > 0) ? (
-                      <button
-                        disabled
-                        className="px-6 py-3 bg-gray-300 text-gray-500 rounded-2xl font-bold cursor-not-allowed inline-flex items-center"
-                        title="Impossible : égalité. Jouez une mène supplémentaire."
-                      >
-                        <Clock className="w-5 h-5 mr-2" />
-                        <span>Terminer au temps</span>
-                      </button>
-                    ) : null}
+            {/* Barres de progression */}
+            <div className="flex gap-2 mt-5 md:mt-6">
+              <div className="flex-1 h-1 bg-petanque-sable-bord/40 rounded-full overflow-hidden">
+                <div className="h-full bg-petanque-vert rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (scoreA / maxPoints) * 100)}%` }} />
+              </div>
+              <div className="flex-1 h-1 bg-petanque-sable-bord/40 rounded-full overflow-hidden">
+                <div className="h-full bg-petanque-vert rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (scoreB / maxPoints) * 100)}%` }} />
+              </div>
+            </div>
+            <div className="flex justify-between items-center mt-3 text-xs text-petanque-bois">
+              <span>
+                {!winner && remainingA > 0 && remainingA < remainingB && <><strong className="text-petanque-vert font-medium">{remainingA} pts</strong> restants pour {teamAName}</>}
+                {!winner && remainingB > 0 && remainingB < remainingA && <><strong className="text-petanque-vert font-medium">{remainingB} pts</strong> restants pour {teamBName}</>}
+                {!winner && remainingA === remainingB && <>Premi\u00e8re \u00e0 {maxPoints} gagne</>}
+                {winner && <>Match termin\u00e9 en {formatTime(elapsedTime)}</>}
+              </span>
+              <span className="font-mono">{scoreA} \u2013 {scoreB}</span>
+            </div>
+          </div>
+        </FadeIn>
+
+        {/* SAISIE MÈNE EN COURS */}
+        {!winner && isAdmin && (
+          <FadeIn delay={140}>
+            <div className="bg-white border border-petanque-sable-bord/60 rounded-2xl p-5 md:p-7 mb-6">
+              <div className="flex items-baseline justify-between mb-6 gap-3 flex-wrap">
+                <span className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em]">M\u00e8ne {currentManche} en cours</span>
+                <span className="accent-italic text-petanque-bois text-sm">Saisis les points marqu\u00e9s pendant cette m\u00e8ne.</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 md:gap-5">
+                <div className="flex flex-col items-center gap-3 py-2">
+                  <p className="text-xs text-petanque-bois font-medium truncate max-w-full px-2">{teamAName}</p>
+                  <p className="font-mono text-5xl md:text-6xl font-medium text-petanque-vert-fonce leading-none tracking-tight tabular-nums">{mancheScoreA}</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => updateScore('A', -1)}
+                      disabled={mancheScoreA === 0 || saving}
+                      className="w-14 h-12 rounded-xl border border-petanque-sable-bord/60 bg-white font-mono text-lg text-petanque-bois hover:bg-petanque-sable-pale/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      \u22121
+                    </button>
+                    <button
+                      onClick={() => updateScore('A', 1)}
+                      disabled={mancheScoreA === maxPointsPerManche || saving}
+                      className="w-14 h-12 rounded-xl bg-petanque-vert text-petanque-sable font-mono text-lg font-medium hover:bg-petanque-vert-fonce disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                    >
+                      +1
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-col items-center gap-3 py-2">
+                  <p className="text-xs text-petanque-bois font-medium truncate max-w-full px-2">{teamBName}</p>
+                  <p className="font-mono text-5xl md:text-6xl font-medium text-petanque-vert-fonce leading-none tracking-tight tabular-nums">{mancheScoreB}</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => updateScore('B', -1)}
+                      disabled={mancheScoreB === 0 || saving}
+                      className="w-14 h-12 rounded-xl border border-petanque-sable-bord/60 bg-white font-mono text-lg text-petanque-bois hover:bg-petanque-sable-pale/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      \u22121
+                    </button>
+                    <button
+                      onClick={() => updateScore('B', 1)}
+                      disabled={mancheScoreB === maxPointsPerManche || saving}
+                      className="w-14 h-12 rounded-xl bg-petanque-vert text-petanque-sable font-mono text-lg font-medium hover:bg-petanque-vert-fonce disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                    >
+                      +1
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {mancheScoreA === 0 && mancheScoreB === 0 && (
+                <p className="text-center mt-4 text-xs text-petanque-bois italic">M\u00e8ne annul\u00e9e si valid\u00e9e \u00e0 0\u20130 (cochonnet sorti).</p>
+              )}
+              <div className="mt-6 pt-5 border-t border-petanque-sable-bord/50 flex items-center justify-between gap-3 flex-wrap">
+                <button
+                  onClick={finishManche}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-petanque-vert text-petanque-sable rounded-lg font-medium text-sm hover:bg-petanque-vert-fonce disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                >
+                  {saving ? (
+                    <>
+                      <Loader className="w-4 h-4 animate-spin" />
+                      Enregistrement\u2026
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Valider la m\u00e8ne {currentManche}
+                    </>
+                  )}
+                </button>
+                <div className="flex gap-2 flex-wrap">
+                  {manches.length > 0 && (
+                    <button
+                      onClick={undoLastManche}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-xs text-petanque-bois hover:text-petanque-vert-fonce hover:bg-petanque-sable-pale/60 rounded-lg transition-colors font-medium"
+                    >
+                      <Undo className="w-3.5 h-3.5" />
+                      Annuler la m\u00e8ne {manches.length}
+                    </button>
+                  )}
+                  {match?.tournoi?.settings?.timeLimit === true && (scoreA > 0 || scoreB > 0) && scoreA !== scoreB && (
+                    <button
+                      onClick={async () => {
+                        const confirmed = await confirm({ title: 'Fin au temps', message: 'Terminer le match avec le score actuel ?' })
+                        if (confirmed) await finishMatch(scoreA, scoreB, manches)
+                      }}
+                      disabled={saving}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-xs text-petanque-cochonnet hover:text-petanque-cochonnet-fonce hover:bg-petanque-cochonnet-pale/40 rounded-lg transition-colors font-medium"
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      Terminer au temps
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+        )}
+
+        {/* TERMINÉ */}
+        {winner && (
+          <FadeIn delay={140}>
+            <div className="bg-petanque-vert text-petanque-sable rounded-2xl p-7 md:p-10 mb-6 text-center">
+              <div className="flex justify-center mb-5">
+                <BouleSvg size={64} variant={winner === 'A' ? 'acier' : 'cochonnet'} stries />
+              </div>
+              <p className="text-[11px] uppercase tracking-[0.18em] font-medium opacity-70 mb-2">Vainqueur</p>
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-medium tracking-tight mb-3">
+                {winner === 'A' ? teamAName : teamBName}
+              </h2>
+              <p className="font-mono text-2xl mb-1">{Math.max(scoreA, scoreB)} \u2013 {Math.min(scoreA, scoreB)}</p>
+              <p className="text-sm opacity-70">Match termin\u00e9 en {formatTime(elapsedTime)}</p>
+              {saving && (
+                <div className="flex items-center justify-center mt-5 text-sm opacity-80">
+                  <Loader className="w-4 h-4 animate-spin mr-2" /> Sauvegarde\u2026
+                </div>
+              )}
+            </div>
+          </FadeIn>
+        )}
+
+        {/* HISTORIQUE DES MÈNES */}
+        {(manches.length > 0 || (!winner && (mancheScoreA > 0 || mancheScoreB > 0))) && (
+          <FadeIn delay={200}>
+            <div>
+              <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3">D\u00e9tail des m\u00e8nes</p>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                {manches.map((manche: any, i: number) => {
+                  const aWon = manche.scoreA > manche.scoreB
+                  const bWon = manche.scoreB > manche.scoreA
+                  return (
+                    <div key={i} className="bg-white border border-petanque-sable-bord/60 rounded-lg p-3">
+                      <p className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.18em] mb-1.5">M\u00e8ne {i + 1}</p>
+                      <div className="flex justify-between items-center font-mono text-base">
+                        <span className={aWon ? 'text-petanque-vert font-medium' : 'text-petanque-bois'}>{manche.scoreA}</span>
+                        <span className="text-petanque-sable-bord text-xs">\u2013</span>
+                        <span className={bWon ? 'text-petanque-vert font-medium' : 'text-petanque-bois'}>{manche.scoreB}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+                {!winner && (mancheScoreA > 0 || mancheScoreB > 0) && (
+                  <div className="bg-petanque-vert-pale/30 border border-petanque-vert/30 border-dashed rounded-lg p-3">
+                    <p className="font-mono text-[9px] text-petanque-vert uppercase tracking-[0.18em] mb-1.5">M\u00e8ne {currentManche}</p>
+                    <div className="flex justify-between items-center font-mono text-base">
+                      <span className={mancheScoreA > mancheScoreB ? 'text-petanque-vert font-medium' : 'text-petanque-bois'}>{mancheScoreA}</span>
+                      <span className="text-petanque-sable-bord text-xs">\u2013</span>
+                      <span className={mancheScoreB > mancheScoreA ? 'text-petanque-vert font-medium' : 'text-petanque-bois'}>{mancheScoreB}</span>
+                    </div>
                   </div>
                 )}
-              </>
-            )}
-
-            {/* Message de victoire */}
-            {winner && (
-              <VictoryMessage
-                match={match}
-                winner={winner}
-                scoreA={scoreA}
-                scoreB={scoreB}
-                elapsedTime={elapsedTime}
-                formatTime={formatTime}
-                saving={saving}
-              />
-            )}
-
-            {/* Historique des mènes */}
-            {manches.length > 0 && (
-              <ManchesHistory
-                manches={manches}
-                winner={winner}
-                undoLastManche={undoLastManche}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Bouton de sauvegarde flottant */}
-        {!winner && manches.length > 0 && (
-          <FloatingSaveButton
-            saving={saving}
-            onSave={() => saveProgress(scoreA, scoreB, manches, false)}
-          />
+              </div>
+            </div>
+          </FadeIn>
         )}
-      </div>
 
-      <style jsx>{`
-        @keyframes blob {
-          0% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-          100% { transform: translate(0px, 0px) scale(1); }
-        }
-        .animate-blob { animation: blob 7s infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
-      `}</style>
+        {/* Bouton sauvegarder progression */}
+        {!winner && isAdmin && manches.length > 0 && (
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={() => saveProgress(scoreA, scoreB, manches, false)}
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm text-petanque-bois hover:text-petanque-vert-fonce hover:bg-white border border-petanque-sable-bord/60 rounded-lg font-medium transition-colors disabled:opacity-50"
+            >
+              {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Sauvegarder la progression
+            </button>
+          </div>
+        )}
+      </main>
 
       {ConfirmModal}
-    </div>
-  )
-}
-
-// ============================================================================
-// Composants internes
-// ============================================================================
-
-function AnimatedBackground() {
-  return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-green-300 to-emerald-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-      <div className="absolute top-40 -left-40 w-96 h-96 bg-gradient-to-br from-blue-300 to-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-      <div className="absolute -bottom-40 right-40 w-96 h-96 bg-gradient-to-br from-purple-300 to-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-    </div>
-  )
-}
-
-interface MatchHeaderProps {
-  match: any
-  elapsedTime: number
-  formatTime: (s: number) => string
-  currentManche: number
-  winner: 'A' | 'B' | null
-  onBack: () => void
-}
-
-function MatchHeader({ match, elapsedTime, formatTime, currentManche, winner, onBack }: MatchHeaderProps) {
-  return (
-    <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-gray-200/50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-        <div className="flex justify-between items-center h-16 sm:h-20">
-          {/* Section gauche */}
-          <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
-            <button
-              onClick={onBack}
-              className="group flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 rounded-xl transition-all flex-shrink-0"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium hidden sm:inline">Retour</span>
-            </button>
-
-            <div className="hidden md:block h-10 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent flex-shrink-0"></div>
-
-            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-              <div className="p-1.5 sm:p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg sm:rounded-xl text-white flex-shrink-0">
-                <Petanque className="w-4 h-4 sm:w-8 sm:h-8" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-sm sm:text-xl font-bold text-gray-900 truncate">
-                  <span className="hidden sm:inline">Match - </span>T{match.tour}<span className="hidden sm:inline"> - Terrain</span><span className="sm:hidden"> T</span>{match.terrain || '?'}
-                </h1>
-                <p className="text-xs sm:text-sm text-gray-500 truncate">{match.tournoi?.name}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Section droite */}
-          <div className="flex items-center space-x-2 sm:space-x-4 lg:space-x-6 flex-shrink-0">
-            {/* Timer */}
-            <div className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-100 rounded-lg sm:rounded-xl">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="font-mono font-bold text-sm sm:text-lg">{formatTime(elapsedTime)}</span>
-            </div>
-
-            {/* Mène actuelle */}
-            {!winner && (
-              <div className="px-2 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg sm:rounded-xl">
-                <span className="text-xs sm:text-sm text-gray-600 hidden sm:inline">Mène </span>
-                <span className="sm:ml-2 font-bold text-sm sm:text-lg text-green-700">{currentManche}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </header>
-  )
-}
-
-interface ScoreHeaderProps {
-  scoreA: number
-  scoreB: number
-  maxPoints: number
-}
-
-function ScoreHeader({ scoreA, scoreB, maxPoints }: ScoreHeaderProps) {
-  return (
-    <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
-      <div className="text-center text-white">
-        <p className="text-sm opacity-90 mb-2">Score total - Premier a {maxPoints} points</p>
-        <div className="flex items-center justify-center space-x-8">
-          <span className="text-5xl font-bold">{scoreA}</span>
-          <span className="text-3xl opacity-70">-</span>
-          <span className="text-5xl font-bold">{scoreB}</span>
-        </div>
-
-        {/* Barres de progression */}
-        <div className="flex space-x-2 mt-4">
-          <div className="flex-1 h-3 bg-white/20 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-white rounded-full transition-all duration-500"
-              style={{ width: `${(scoreA / maxPoints) * 100}%` }}
-            />
-          </div>
-          <div className="flex-1 h-3 bg-white/20 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-white rounded-full transition-all duration-500"
-              style={{ width: `${(scoreB / maxPoints) * 100}%` }}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-interface TeamsDisplayProps {
-  match: any
-  scoreA: number
-  scoreB: number
-  winner: 'A' | 'B' | null
-}
-
-function TeamsDisplay({ match, scoreA, scoreB, winner }: TeamsDisplayProps) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-      {/* Équipe A */}
-      <div className="md:col-span-2">
-        <TeamCard
-          name={match.equipe_a?.name}
-          score={scoreA}
-          isWinner={winner === 'A'}
-          colorScheme="blue"
-        />
-      </div>
-
-      {/* VS au centre */}
-      <div className="md:col-span-1 flex justify-center">
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full blur-2xl opacity-20"></div>
-          <div className="relative bg-white rounded-full p-4 sm:p-8 shadow-2xl text-center">
-            <span className="text-3xl sm:text-5xl font-black bg-gradient-to-br from-gray-600 to-gray-800 bg-clip-text text-transparent">VS</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Équipe B */}
-      <div className="md:col-span-2">
-        <TeamCard
-          name={match.equipe_b?.name}
-          score={scoreB}
-          isWinner={winner === 'B'}
-          colorScheme="green"
-        />
-      </div>
-    </div>
-  )
-}
-
-interface TeamCardProps {
-  name: string
-  score: number
-  isWinner: boolean
-  colorScheme: 'blue' | 'green'
-}
-
-function TeamCard({ name, score, isWinner, colorScheme }: TeamCardProps) {
-  const bgClass = isWinner
-    ? 'bg-gradient-to-br from-yellow-50 to-orange-50 scale-105 shadow-2xl'
-    : colorScheme === 'blue'
-      ? 'bg-gradient-to-br from-blue-50 to-indigo-50'
-      : 'bg-gradient-to-br from-green-50 to-emerald-50'
-
-  const scoreClass = isWinner
-    ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-2xl animate-pulse'
-    : colorScheme === 'blue'
-      ? 'bg-gradient-to-br from-blue-100 to-indigo-200 text-blue-900'
-      : 'bg-gradient-to-br from-green-100 to-emerald-200 text-green-900'
-
-  return (
-    <div className={`p-4 sm:p-6 rounded-2xl text-center transition-all ${bgClass}`}>
-      <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">{name}</h2>
-      <div className={`inline-flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 rounded-full font-bold text-5xl sm:text-6xl mb-3 sm:mb-4 transition-all ${scoreClass}`}>
-        {score}
-      </div>
-      {isWinner && (
-        <div className="animate-bounce">
-          <Trophy className="w-12 h-12 sm:w-16 sm:h-16 text-yellow-500 mx-auto" />
-        </div>
-      )}
-    </div>
-  )
-}
-
-interface ScoreInputProps {
-  match: any
-  currentManche: number
-  mancheScoreA: number
-  mancheScoreB: number
-  maxPointsPerManche: number
-  saving: boolean
-  updateScore: (team: 'A' | 'B', delta: number) => void
-  finishManche: () => Promise<void>
-}
-
-function ScoreInput({
-  match, currentManche, mancheScoreA, mancheScoreB,
-  maxPointsPerManche, saving, updateScore, finishManche
-}: ScoreInputProps) {
-  return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-4 sm:p-6 mt-6 sm:mt-8">
-      <h3 className="text-center text-lg sm:text-xl font-bold text-gray-700 mb-4 sm:mb-6">
-        Points de la mene {currentManche}
-      </h3>
-
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-        {/* Contrôles Équipe A */}
-        <div className="md:col-span-2 text-center">
-          <p className="text-sm font-semibold text-blue-800 mb-2 md:hidden">{match.equipe_a?.name}</p>
-          <ScoreControls
-            score={mancheScoreA}
-            maxScore={maxPointsPerManche}
-            colorScheme="blue"
-            onUpdate={(delta) => updateScore('A', delta)}
-          />
-        </div>
-
-        {/* Espace central */}
-        <div className="hidden md:block md:col-span-1"></div>
-
-        {/* Contrôles Équipe B */}
-        <div className="md:col-span-2 text-center">
-          <p className="text-sm font-semibold text-green-800 mb-2 md:hidden">{match.equipe_b?.name}</p>
-          <ScoreControls
-            score={mancheScoreB}
-            maxScore={maxPointsPerManche}
-            colorScheme="green"
-            onUpdate={(delta) => updateScore('B', delta)}
-          />
-        </div>
-      </div>
-
-      {/* Bouton valider */}
-      <div className="mt-8 text-center">
-        <button
-          onClick={finishManche}
-          disabled={saving}
-          className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mx-auto"
-        >
-          {saving ? (
-            <>
-              <Loader className="animate-spin h-6 w-6" />
-              <span className="ml-2">Enregistrement...</span>
-            </>
-          ) : (
-            <>
-              <Check className="w-6 h-6" />
-              <span className="ml-2">Valider la mene {currentManche}</span>
-            </>
-          )}
-        </button>
-        {mancheScoreA === 0 && mancheScoreB === 0 && (
-          <p className="mt-2 text-sm text-gray-500 italic">Mène annulée (cochonnet sorti)</p>
-        )}
-      </div>
-    </div>
-  )
-}
-
-interface ScoreControlsProps {
-  score: number
-  maxScore: number
-  colorScheme: 'blue' | 'green'
-  onUpdate: (delta: number) => void
-}
-
-function ScoreControls({ score, maxScore, colorScheme, onUpdate }: ScoreControlsProps) {
-  const textClass = colorScheme === 'blue' ? 'text-blue-900' : 'text-green-900'
-
-  return (
-    <div className="bg-white rounded-2xl p-4 shadow-lg">
-      <div className={`text-4xl sm:text-5xl font-bold ${textClass} mb-4`}>
-        {score}
-      </div>
-      <div className="flex justify-center space-x-3">
-        <button
-          onClick={() => onUpdate(-1)}
-          className="p-3 sm:p-4 bg-white hover:bg-red-50 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
-          disabled={score === 0}
-        >
-          <Minus className="w-6 h-6 sm:w-8 sm:h-8 text-red-500" />
-        </button>
-        <button
-          onClick={() => onUpdate(1)}
-          className="p-3 sm:p-4 bg-white hover:bg-green-50 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all group hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
-          disabled={score === maxScore}
-        >
-          <Plus className="w-6 h-6 sm:w-8 sm:h-8 text-green-500" />
-        </button>
-      </div>
-    </div>
-  )
-}
-
-interface VictoryMessageProps {
-  match: any
-  winner: 'A' | 'B'
-  scoreA: number
-  scoreB: number
-  elapsedTime: number
-  formatTime: (s: number) => string
-  saving: boolean
-}
-
-function VictoryMessage({ match, winner, scoreA, scoreB, elapsedTime, formatTime, saving }: VictoryMessageProps) {
-  const winnerName = winner === 'A' ? match.equipe_a?.name : match.equipe_b?.name
-
-  return (
-    <div className="mt-6 sm:mt-8 text-center px-2">
-      <div className="inline-block bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl max-w-full">
-        <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">🎉</div>
-        <h2 className="text-xl sm:text-3xl font-bold text-white mb-2 px-2">
-          Victoire de {winnerName} !
-        </h2>
-        <p className="text-white/90 text-base sm:text-xl px-2">
-          Score final : {scoreA} - {scoreB}
-        </p>
-        <p className="text-white/80 text-xs sm:text-sm mt-3 sm:mt-4">
-          Match termine en {formatTime(elapsedTime)}
-        </p>
-        {saving && (
-          <div className="mt-3 sm:mt-4 flex items-center justify-center text-white">
-            <Loader className="animate-spin h-6 w-6" />
-            <span className="ml-2 text-sm sm:text-base">Retour au tournoi...</span>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-interface ManchesHistoryProps {
-  manches: Array<{ scoreA: number; scoreB: number }>
-  winner: 'A' | 'B' | null
-  undoLastManche: () => void
-}
-
-function ManchesHistory({ manches, winner, undoLastManche }: ManchesHistoryProps) {
-  return (
-    <div className="mt-8">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-bold text-gray-700">Detail des menes</h3>
-        {!winner && manches.length > 0 && (
-          <button
-            onClick={undoLastManche}
-            className="flex items-center px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
-          >
-            <Undo className="w-5 h-5" />
-            <span className="ml-2">Annuler derniere mene</span>
-          </button>
-        )}
-      </div>
-      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        {manches.map((manche, index) => (
-          <div key={index} className="bg-white rounded-xl p-3 shadow-md hover:shadow-lg transition-all">
-            <p className="text-xs text-gray-500 mb-1 text-center">Mene {index + 1}</p>
-            <div className="flex justify-around items-center text-lg font-bold">
-              <span className={manche.scoreA > manche.scoreB ? 'text-blue-600' : 'text-gray-600'}>
-                {manche.scoreA}
-              </span>
-              <span className="text-gray-400">-</span>
-              <span className={manche.scoreB > manche.scoreA ? 'text-green-600' : 'text-gray-600'}>
-                {manche.scoreB}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-interface FloatingSaveButtonProps {
-  saving: boolean
-  onSave: () => void
-}
-
-function FloatingSaveButton({ saving, onSave }: FloatingSaveButtonProps) {
-  return (
-    <div className="fixed bottom-8 right-8">
-      <button
-        onClick={onSave}
-        disabled={saving}
-        className="group p-4 bg-white rounded-2xl shadow-2xl hover:shadow-3xl transition-all transform hover:scale-110"
-        title="Sauvegarder la progression"
-      >
-        {saving ? <Loader className="animate-spin h-6 w-6" /> : <Save className="w-6 h-6" />}
-        <span className="absolute right-full mr-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-          Sauvegarder la progression
-        </span>
-      </button>
     </div>
   )
 }

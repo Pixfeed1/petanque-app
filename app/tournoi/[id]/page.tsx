@@ -41,6 +41,7 @@ export default function TournamentDetailPage() {
   const [viewRole, setViewRole] = useState<ViewRole>('organisateur')
   const [showRoleMenu, setShowRoleMenu] = useState(false)
   const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(new Set())
+  const [matchsFilter, setMatchsFilter] = useState<'all' | 'a_venir' | 'en_cours' | 'termine'>('all')
 
   const {
     tournament, setTournament, teams, matches,
@@ -316,7 +317,7 @@ export default function TournamentDetailPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
 
         {/* APERÇU */}
         {activeSection === 'apercu' && (
@@ -328,7 +329,7 @@ export default function TournamentDetailPage() {
                  tournament.status === 'en_cours' ? `En cours · ${currentPhase === 'poules' ? 'Phase de poules' : currentPhase === 'elimination' ? 'Phases finales' : 'Finale'}` :
                  'Tournoi terminé'}
               </p>
-              <h2 className="text-3xl md:text-4xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.05] mb-2">
+              <h2 className="text-4xl md:text-5xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.05] mb-3">
                 {tournament.status === 'preparation' && (
                   <>Tout est prêt, <span className="accent-italic text-petanque-vert">démarre quand tu veux.</span></>
                 )}
@@ -342,7 +343,7 @@ export default function TournamentDetailPage() {
                   <>Champions, <span className="accent-italic text-petanque-vert">le podium est fait.</span></>
                 )}
               </h2>
-              <p className="text-sm text-petanque-bois">
+              <p className="text-base text-petanque-bois">
                 Mode <span className="text-petanque-vert font-medium">{tournament.mode === 'choisi' ? 'choisi' : tournament.mode === 'melee_fixe' ? 'mêlée fixe' : 'mêlée tournante'}</span>
                 {' · '}{tournament.format === 'doublette' ? 'Doublettes' : 'Triplettes'}
                 {' · '}{teams.length} équipes
@@ -489,7 +490,7 @@ export default function TournamentDetailPage() {
             {/* EN CE MOMENT */}
             {tournament.status === 'en_cours' && liveMatches.length > 0 && (
               <FadeIn delay={160}>
-                <div className="mt-10">
+                <div className="mt-14">
                   <div className="flex items-baseline justify-between mb-4">
                     <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em]">En ce moment</p>
                     <button onClick={() => setActiveSection('matchs')} className="text-xs text-petanque-vert hover:text-petanque-vert-fonce">Tous les matchs →</button>
@@ -515,16 +516,16 @@ export default function TournamentDetailPage() {
             {/* LEADERS de chaque poule */}
             {tournament.status === 'en_cours' && currentPhase === 'poules' && tournament.mode !== 'melee_tournante' && leadersByPoule.length > 0 && (
               <FadeIn delay={200}>
-                <div className="mt-10">
+                <div className="mt-14">
                   <div className="flex items-baseline justify-between mb-4">
                     <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em]">Leaders de chaque poule</p>
                     <button onClick={() => setActiveSection('classement')} className="text-xs text-petanque-vert hover:text-petanque-vert-fonce">Classement complet →</button>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {leadersByPoule.map(({ poule, leader }) => (
-                      <div key={poule} className="bg-white border border-petanque-sable-bord/60 border-l-[3px] border-l-petanque-vert rounded-r-lg p-3">
+                      <div key={poule} className="bg-white border border-petanque-sable-bord/60 border-l-[3px] border-l-petanque-vert rounded-r-lg p-4">
                         <p className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.18em] mb-1">Poule {poule}</p>
-                        <p className="text-sm font-medium text-petanque-vert-fonce truncate mb-0.5">{leader.name}</p>
+                        <p className="text-base font-medium text-petanque-vert-fonce truncate mb-1">{leader.name}</p>
                         <p className="font-mono text-[10px] text-petanque-bois">
                           {leader.victories || 0}V {leader.draws ? `${leader.draws}N ` : ''}{leader.defeats || 0}D · {(leader.pointsFor || 0) - (leader.pointsAgainst || 0) >= 0 ? '+' : ''}{(leader.pointsFor || 0) - (leader.pointsAgainst || 0)}
                         </p>
@@ -538,16 +539,16 @@ export default function TournamentDetailPage() {
             {/* Mêlée tournante : top individuel */}
             {tournament.mode === 'melee_tournante' && tournament.status === 'en_cours' && individualRankings.length > 0 && (
               <FadeIn delay={200}>
-                <div className="mt-10">
+                <div className="mt-14">
                   <div className="flex items-baseline justify-between mb-4">
                     <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em]">Top 5 individuel</p>
                     <button onClick={() => setActiveSection('classement')} className="text-xs text-petanque-vert hover:text-petanque-vert-fonce">Classement complet →</button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                     {individualRankings.slice(0, 5).map((p, i) => (
-                      <div key={p.id} className="bg-white border border-petanque-sable-bord/60 border-l-[3px] border-l-petanque-vert rounded-r-lg p-3">
+                      <div key={p.id} className="bg-white border border-petanque-sable-bord/60 border-l-[3px] border-l-petanque-vert rounded-r-lg p-4">
                         <p className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.18em] mb-1">#{String(i + 1).padStart(2, '0')}</p>
-                        <p className="text-sm font-medium text-petanque-vert-fonce truncate mb-0.5">{p.name}</p>
+                        <p className="text-base font-medium text-petanque-vert-fonce truncate mb-1">{p.name}</p>
                         <p className="font-mono text-[10px] text-petanque-bois">{p.victories}V · {p.points} pts</p>
                       </div>
                     ))}
@@ -589,7 +590,7 @@ export default function TournamentDetailPage() {
             {/* ACTIVITE RECENTE */}
             {recentActivity.length > 0 && (
               <FadeIn delay={240}>
-                <div className="mt-10">
+                <div className="mt-14">
                   <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-4">Activité récente</p>
                   <div className="flex flex-col">
                     {recentActivity.map((m: any, i) => {
@@ -625,80 +626,156 @@ export default function TournamentDetailPage() {
           </div>
         )}
 
-        {/* TOUS LES MATCHS */}
-        {activeSection === 'matchs' && (
-          <div className="space-y-8">
-            {matches.length === 0 ? (
-              <div className="text-center py-16">
-                <Flag className="w-12 h-12 mx-auto text-petanque-sable-bord mb-4" />
-                <p className="text-petanque-bois mb-6">Aucun match généré pour l\u2019instant.</p>
-                {isAdmin && tournament.status === 'preparation' && (
-                  <Button variant="primary" onClick={generatePoules}>Générer les poules</Button>
-                )}
-              </div>
-            ) : (
-              Array.from(new Set(matches.map(m => m.tour))).sort((a, b) => a - b).map(tour => (
-                <div key={tour}>
-                  <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.15em] mb-4">Tour {tour}</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {matches.filter(m => m.tour === tour).map(match => (
-                      <MatchCard
-                        key={match.id}
-                        match={match}
-                        maxPoints={tournament.settings.maxPoints || 13}
-                        isOrganizer={isAdmin}
-                        getTeamPlayers={getTeamPlayers}
-                        onAssignTerrain={assignTerrain}
-                        availableTerrains={tournament.settings.terrains}
-                        onWarning={showWarning}
-                      />
-                    ))}
-                  </div>
+        {/* TOUS LES MATCHS - liste pro tailles agrandies */}
+        {activeSection === 'matchs' && (() => {
+          const isAvenir = (m: any) => m.status !== 'en_cours' && m.status !== 'termine'
+          const applyFilter = (list: any[]) => {
+            if (matchsFilter === 'all') return list
+            if (matchsFilter === 'a_venir') return list.filter(isAvenir)
+            return list.filter(m => m.status === matchsFilter)
+          }
+          const filtered = applyFilter(matches)
+          const counts = {
+            all: matches.length,
+            a_venir: matches.filter(isAvenir).length,
+            en_cours: matches.filter(m => m.status === 'en_cours').length,
+            termine: matches.filter(m => m.status === 'termine').length,
+          }
+          return (
+            <div>
+              {matches.length === 0 ? (
+                <div className="text-center py-16">
+                  <Flag className="w-14 h-14 mx-auto text-petanque-sable-bord mb-4" />
+                  <p className="text-petanque-bois mb-6 text-base">Aucun match généré pour le moment.</p>
+                  {isAdmin && tournament.status === 'preparation' && (
+                    <Button variant="primary" onClick={generatePoules}>Générer les poules</Button>
+                  )}
                 </div>
-              ))
-            )}
-          </div>
-        )}
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
+                    <div className="flex flex-wrap gap-2.5">
+                      {([
+                        { id: 'all', label: 'Tous' },
+                        { id: 'a_venir', label: 'À venir' },
+                        { id: 'en_cours', label: 'En cours' },
+                        { id: 'termine', label: 'Terminés' },
+                      ] as const).map(f => (
+                        <button
+                          key={f.id}
+                          onClick={() => setMatchsFilter(f.id)}
+                          className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                            matchsFilter === f.id
+                              ? 'bg-petanque-vert text-petanque-sable'
+                              : 'bg-white text-petanque-bois border border-petanque-sable-bord/60 hover:border-petanque-vert/40'
+                          }`}
+                        >
+                          {f.label}
+                          <span className={`font-mono text-xs ${matchsFilter === f.id ? 'text-petanque-sable/70' : 'text-petanque-bois/60'}`}>{counts[f.id]}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="font-mono text-sm text-petanque-bois">
+                      {filtered.length} affiché{filtered.length > 1 ? 's' : ''}
+                    </p>
+                  </div>
+
+                  <div className="bg-white border border-petanque-sable-bord/60 rounded-xl overflow-hidden">
+                    {Array.from(new Set(filtered.map((m: any) => m.tour))).sort((a, b) => (a as number) - (b as number)).map((tour, idx) => {
+                      const tourMatchs = filtered.filter((m: any) => m.tour === tour)
+                      if (tourMatchs.length === 0) return null
+                      const tT = tourMatchs.filter((m: any) => m.status === 'termine').length
+                      const tEC = tourMatchs.filter((m: any) => m.status === 'en_cours').length
+                      const tAV = tourMatchs.filter(isAvenir).length
+                      return (
+                        <div key={tour as any}>
+                          <div className={`bg-petanque-sable-pale px-6 py-3.5 flex items-center justify-between ${idx > 0 ? 'border-t border-petanque-sable-bord/60' : ''}`}>
+                            <span className="text-xs uppercase tracking-[0.16em] font-medium text-petanque-bois">Tour {tour as any}</span>
+                            <span className="font-mono text-xs text-petanque-bois">
+                              {tT > 0 && <>{tT} terminé{tT > 1 ? 's' : ''}</>}
+                              {tT > 0 && tEC > 0 && ' · '}
+                              {tEC > 0 && <span className="text-petanque-vert">{tEC} en cours</span>}
+                              {(tT > 0 || tEC > 0) && tAV > 0 && ' · '}
+                              {tAV > 0 && <>{tAV} à venir</>}
+                            </span>
+                          </div>
+                          {tourMatchs.map((match: any) => {
+                            const eqA = teams.find(t => t.id === match.equipe_a_id)?.name || 'Équipe A'
+                            const eqB = teams.find(t => t.id === match.equipe_b_id)?.name || 'Équipe B'
+                            const hasScore = match.score_a !== null && match.score_b !== null
+                            const aLead = hasScore && match.score_a > match.score_b
+                            const bLead = hasScore && match.score_b > match.score_a
+                            const statusLabel = match.status === 'en_cours' ? 'En cours' : match.status === 'termine' ? 'Terminé' : 'À venir'
+                            const statusColor = match.status === 'en_cours' ? 'text-petanque-vert' : match.status === 'termine' ? 'text-petanque-bois' : 'text-petanque-cochonnet'
+                            return (
+                              <button
+                                key={match.id}
+                                onClick={() => router.push(`/match/${match.id}`)}
+                                className="w-full px-6 py-5 flex items-center gap-5 border-t border-petanque-sable-bord/40 hover:bg-petanque-sable-pale/40 transition-colors text-left group"
+                              >
+                                <div className="font-mono text-sm text-petanque-bois w-12 flex-shrink-0">
+                                  {match.terrain ? `T${match.terrain}` : '—'}
+                                </div>
+                                <div className="flex-1 min-w-0 grid grid-cols-2 gap-x-8 gap-y-2">
+                                  <div className="flex items-center justify-between gap-3 min-w-0">
+                                    <span className={`text-base truncate text-petanque-vert-fonce ${aLead ? 'font-medium' : ''}`}>{eqA}</span>
+                                    <span className={`font-mono text-xl flex-shrink-0 ${aLead ? 'text-petanque-vert font-medium' : 'text-petanque-bois'}`}>
+                                      {match.score_a ?? '–'}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-3 min-w-0">
+                                    <span className={`text-base truncate text-petanque-vert-fonce ${bLead ? 'font-medium' : ''}`}>{eqB}</span>
+                                    <span className={`font-mono text-xl flex-shrink-0 ${bLead ? 'text-petanque-vert font-medium' : 'text-petanque-bois'}`}>
+                                      {match.score_b ?? '–'}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0 w-28 justify-end">
+                                  {match.status === 'en_cours' && <span className="w-1.5 h-1.5 rounded-full bg-petanque-vert animate-pulse"></span>}
+                                  <span className={`text-xs uppercase tracking-widest font-medium ${statusColor}`}>
+                                    {statusLabel}
+                                  </span>
+                                </div>
+                                <span className="text-petanque-bois/30 flex-shrink-0 group-hover:text-petanque-vert transition-colors text-lg">→</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          )
+        })()}
 
         {/* CLASSEMENT */}
         {activeSection === 'classement' && (
           <div>
             {tournament.mode === 'melee_tournante' ? (
-              <div className="bg-white border border-petanque-sable-bord/60 rounded-xl overflow-hidden">
-                <div className="bg-petanque-vert-fonce px-5 py-3">
-                  <h3 className="text-petanque-sable text-sm font-medium">Classement individuel</h3>
-                </div>
-                <div className="p-4">
-                  <PlayerRankingsTable players={individualRankings.map((player: any) => ({
-                    id: player.id, name: player.name, email: player.email,
-                    played: player.played, victories: player.victories,
-                    defeats: player.defeats, draws: player.draws,
-                    pointsFor: player.pointsFor, pointsAgainst: player.pointsAgainst,
-                    difference: player.difference, points: player.points
-                  }))} />
-                </div>
-              </div>
+              <PlayerRankingsTable players={individualRankings.map((player: any) => ({
+                id: player.id, name: player.name, email: player.email,
+                played: player.played, victories: player.victories,
+                defeats: player.defeats, draws: player.draws,
+                pointsFor: player.pointsFor, pointsAgainst: player.pointsAgainst,
+                difference: player.difference, points: player.points
+              }))} />
             ) : (
               <div className="space-y-6">
                 {Object.keys(teamsByPoule).sort().map(poule => (
-                  <div key={poule} className="bg-white border border-petanque-sable-bord/60 rounded-xl overflow-hidden">
-                    <div className="bg-petanque-vert-fonce px-5 py-3">
-                      <h3 className="text-petanque-sable text-sm font-medium">Poule {poule}</h3>
-                    </div>
-                    <div className="p-4">
-                      <StandingsTable
-                        poule={poule}
-                        teams={teamsByPoule[poule].map((t: any) => ({
-                          id: t.id, name: t.name, played: t.played || 0,
-                          victories: t.victories || 0, defeats: t.defeats || 0, draws: t.draws || 0,
-                          pointsFor: t.pointsFor || 0, pointsAgainst: t.pointsAgainst || 0,
-                          difference: t.difference || 0,
-                          points: (t.victories || 0) * 3 + (t.draws || 0)
-                        }))}
-                        qualifiedCount={tournament.settings.qualifiedPerPoule || 2}
-                      />
-                    </div>
-                  </div>
+                  <StandingsTable
+                    key={poule}
+                    poule={poule}
+                    teams={teamsByPoule[poule].map((t: any) => ({
+                      id: t.id, name: t.name, played: t.played || 0,
+                      victories: t.victories || 0, defeats: t.defeats || 0, draws: t.draws || 0,
+                      pointsFor: t.pointsFor || 0, pointsAgainst: t.pointsAgainst || 0,
+                      difference: t.difference || 0,
+                      points: (t.victories || 0) * 3 + (t.draws || 0)
+                    }))}
+                    qualifiedCount={tournament.settings.qualifiedPerPoule || 2}
+                  />
                 ))}
                 <div className="text-center pt-2">
                   <Button variant="ghost" onClick={() => refreshClassement(loadTournamentData)} disabled={refreshingClassement}>

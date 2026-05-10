@@ -1,149 +1,66 @@
-/**
- * Tableau de classement pour les poules
- * Affiche les équipes triées selon règles FIPJP
- */
-
 'use client'
 
-import { Trophy } from '@/components/Icons'
-
 export interface TeamStanding {
-  id: string
+  id: string | number
   name: string
   played: number
   victories: number
   defeats: number
-  draws: number
+  draws?: number
   pointsFor: number
   pointsAgainst: number
   difference: number
-  points: number // Points FIPJP (victoires × 3 + nuls × 1)
+  points: number
 }
 
-interface StandingsTableProps {
+interface Props {
   poule: string
   teams: TeamStanding[]
-  showQualifiedBadge?: boolean
   qualifiedCount?: number
-  onRenameTeam?: (teamId: string, newName: string) => void
-  isOrganizer?: boolean
 }
 
-export default function StandingsTable({
-  poule,
-  teams,
-  showQualifiedBadge = false,
-  qualifiedCount = 0,
-  onRenameTeam,
-  isOrganizer = false
-}: StandingsTableProps) {
+export default function StandingsTable({ poule, teams, qualifiedCount = 2 }: Props) {
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 text-white">
-        <h3 className="text-xl font-bold flex items-center">
-          <Trophy className="w-6 h-6 mr-2" />
-          {poule}
-        </h3>
+    <div className="bg-white border border-petanque-sable-bord/60 rounded-xl overflow-hidden">
+      <div className="px-5 py-3 bg-petanque-vert-fonce flex items-center justify-between">
+        <h3 className="text-petanque-sable text-sm font-medium">Poule {poule}</h3>
+        <span className="text-petanque-sable/70 text-[10px] uppercase tracking-widest">
+          {qualifiedCount} qualifié{qualifiedCount > 1 ? 's' : ''}
+        </span>
       </div>
-
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                #
-              </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Équipe
-              </th>
-              <th className="px-2 sm:px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <span className="hidden sm:inline">Joués</span>
-                <span className="sm:hidden">J</span>
-              </th>
-              <th className="px-2 sm:px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <span className="hidden sm:inline">Victoires</span>
-                <span className="sm:hidden">V</span>
-              </th>
-              <th className="px-2 sm:px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
-                Nuls
-              </th>
-              <th className="px-2 sm:px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
-                Défaites
-              </th>
-              <th className="px-2 sm:px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <span className="hidden sm:inline">Différence</span>
-                <span className="sm:hidden">Diff</span>
-              </th>
-              <th className="px-2 sm:px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <span className="hidden sm:inline">Points</span>
-                <span className="sm:hidden">Pts</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {teams.map((team, index) => {
-              const isQualified = showQualifiedBadge && index < qualifiedCount
-
-              return (
-                <tr
-                  key={team.id}
-                  className={`hover:bg-gray-50 transition-colors ${
-                    isQualified ? 'bg-green-50/50' : ''
-                  }`}
-                >
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <span className={`text-sm font-bold ${
-                        index === 0 ? 'text-yellow-600' :
-                        index === 1 ? 'text-gray-600' :
-                        index === 2 ? 'text-orange-600' :
-                        'text-gray-400'
-                      }`}>
-                        {index + 1}
-                      </span>
-                      {index === 0 && <span className="ml-1 text-lg">🥇</span>}
-                      {index === 1 && <span className="ml-1 text-lg">🥈</span>}
-                      {index === 2 && <span className="ml-1 text-lg">🥉</span>}
-                    </div>
-                  </td>
-                  <td className="px-3 sm:px-6 py-4">
-                    <div className="flex items-center space-x-2">
-                      <p className="text-sm font-medium text-gray-900">{team.name}</p>
-                      {isQualified && (
-                        <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                          Qualifié
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-2 sm:px-4 py-4 text-center text-sm text-gray-900">
-                    {team.played}
-                  </td>
-                  <td className="px-2 sm:px-4 py-4 text-center text-sm font-semibold text-green-600">
-                    {team.victories}
-                  </td>
-                  <td className="px-2 sm:px-4 py-4 text-center text-sm text-gray-600 hidden sm:table-cell">
-                    {team.draws}
-                  </td>
-                  <td className="px-2 sm:px-4 py-4 text-center text-sm text-red-600 hidden sm:table-cell">
-                    {team.defeats}
-                  </td>
-                  <td className="px-2 sm:px-4 py-4 text-center text-sm font-medium">
-                    <span className={team.difference >= 0 ? 'text-green-600' : 'text-red-600'}>
-                      {team.difference >= 0 ? '+' : ''}{team.difference}
-                    </span>
-                  </td>
-                  <td className="px-2 sm:px-4 py-4 text-center text-sm font-bold text-gray-900">
-                    {team.points}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
+      <table className="w-full">
+        <thead className="bg-petanque-sable-pale border-b border-petanque-sable-bord/60">
+          <tr>
+            <th className="px-5 py-2.5 text-left text-[10px] uppercase tracking-[0.14em] font-medium text-petanque-bois">#</th>
+            <th className="px-5 py-2.5 text-left text-[10px] uppercase tracking-[0.14em] font-medium text-petanque-bois">Équipe</th>
+            <th className="px-3 py-2.5 text-center text-[10px] uppercase tracking-[0.14em] font-medium text-petanque-bois">J</th>
+            <th className="px-3 py-2.5 text-center text-[10px] uppercase tracking-[0.14em] font-medium text-petanque-bois">V</th>
+            <th className="px-3 py-2.5 text-center text-[10px] uppercase tracking-[0.14em] font-medium text-petanque-bois">N</th>
+            <th className="px-3 py-2.5 text-center text-[10px] uppercase tracking-[0.14em] font-medium text-petanque-bois">D</th>
+            <th className="px-3 py-2.5 text-center text-[10px] uppercase tracking-[0.14em] font-medium text-petanque-bois">Diff</th>
+            <th className="px-5 py-2.5 text-right text-[10px] uppercase tracking-[0.14em] font-medium text-petanque-bois">Pts</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-petanque-sable-bord/40">
+          {teams.map((t, i) => {
+            const isQualified = i < qualifiedCount
+            return (
+              <tr key={t.id} className={`hover:bg-petanque-sable-pale/40 transition-colors ${isQualified ? 'border-l-[3px] border-l-petanque-vert' : ''}`}>
+                <td className="px-5 py-3.5 font-mono text-xs text-petanque-bois w-12">{String(i + 1).padStart(2, '0')}</td>
+                <td className="px-5 py-3.5 text-sm font-medium text-petanque-vert-fonce">{t.name}</td>
+                <td className="px-3 py-3.5 text-center text-sm text-petanque-bois">{t.played}</td>
+                <td className="px-3 py-3.5 text-center text-sm text-petanque-vert font-medium">{t.victories}</td>
+                <td className="px-3 py-3.5 text-center text-sm text-petanque-bois">{t.draws || 0}</td>
+                <td className="px-3 py-3.5 text-center text-sm text-petanque-rouge">{t.defeats}</td>
+                <td className={`px-3 py-3.5 text-center text-sm font-mono ${t.difference >= 0 ? 'text-petanque-vert' : 'text-petanque-rouge'}`}>
+                  {t.difference >= 0 ? '+' : ''}{t.difference}
+                </td>
+                <td className="px-5 py-3.5 text-right text-base font-medium text-petanque-vert-fonce font-mono">{t.points}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }
