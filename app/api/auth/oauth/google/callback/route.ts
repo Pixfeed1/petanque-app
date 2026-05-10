@@ -1,5 +1,8 @@
 // app/api/auth/oauth/google/callback/route.ts
-// Callback OAuth Google
+// FIX SÉCURITÉ 1 : vérification du state CSRF (RFC 6749 §10.12)
+// FIX SÉCURITÉ 2 : protection contre le détournement de compte
+//   Si un compte mot-de-passe existe pour cet email mais n'a jamais lié Google,
+//   on refuse le login (sinon n'importe qui ayant ce gmail vole le compte).
 
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
@@ -25,25 +28,34 @@ interface GoogleUserInfo {
 }
 
 export async function GET(request: NextRequest) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.url
+
   try {
     const searchParams = request.nextUrl.searchParams
     const code = searchParams.get('code')
     const error = searchParams.get('error')
+    const stateFromQuery = searchParams.get('state')
 
-    // URL de base pour les redirections (utilise NEXT_PUBLIC_APP_URL en priorité)
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.url
+    // FIX SÉCURITÉ : vérifier le state CSRF
+    const stateFromCookie = request.cookies.get('oauth_state_google')?.value
 
-    // Si l'utilisateur refuse l'accès
+    const buildErrorResponse = (errCode: string) => {
+      const resp = NextResponse.redirect(new URL(`/login?error=${errCode}`, baseUrl))
+      resp.cookies.delete('oauth_state_google')
+      return resp
+    }
+
     if (error) {
-      return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent('Connexion annulée')}`, baseUrl)
-      )
+      return buildErrorResponse(encodeURIComponent('Connexion annulée'))
     }
 
     if (!code) {
-      return NextResponse.redirect(
-        new URL('/login?error=missing_code', baseUrl)
-      )
+      return buildErrorResponse('missing_code')
+    }
+
+    if (!stateFromQuery || !stateFromCookie || stateFromQuery !== stateFromCookie) {
+      console.error('OAuth Google : state mismatch (CSRF possible)')
+      return buildErrorResponse('invalid_state')
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID
@@ -51,9 +63,7 @@ export async function GET(request: NextRequest) {
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/oauth/google/callback`
 
     if (!clientId || !clientSecret) {
-      return NextResponse.redirect(
-        new URL('/login?error=oauth_not_configured', baseUrl)
-      )
+      return buildErrorResponse('oauth_not_configured')
     }
 
     // 1. Échanger le code contre un access token
@@ -71,9 +81,7 @@ export async function GET(request: NextRequest) {
 
     if (!tokenResponse.ok) {
       console.error('Erreur échange token Google:', await tokenResponse.text())
-      return NextResponse.redirect(
-        new URL('/login?error=token_exchange_failed', baseUrl)
-      )
+      return buildErrorResponse('token_exchange_failed')
     }
 
     const tokens: GoogleTokenResponse = await tokenResponse.json()
@@ -85,12 +93,15 @@ export async function GET(request: NextRequest) {
 
     if (!userInfoResponse.ok) {
       console.error('Erreur récupération profil Google:', await userInfoResponse.text())
-      return NextResponse.redirect(
-        new URL('/login?error=profile_fetch_failed', baseUrl)
-      )
+      return buildErrorResponse('profile_fetch_failed')
     }
 
     const googleUser: GoogleUserInfo = await userInfoResponse.json()
+
+    // FIX SÉCURITÉ : refuser les emails non vérifiés (défense supplémentaire)
+    if (!googleUser.verified_email) {
+      return buildErrorResponse('email_not_verified')
+    }
 
     // 3. Vérifier si l'utilisateur existe déjà
     let user = await queryOne<any>(
@@ -98,37 +109,48 @@ export async function GET(request: NextRequest) {
       [googleUser.email]
     )
 
-    let orgId: number
+    let orgId: number | string | undefined
 
     if (user) {
-      // L'utilisateur existe - mettre à jour la date de dernière connexion
+      // FIX SÉCURITÉ : empêcher le détournement de compte
+      const linkedProvider = user.metadata?.oauth_provider
+      const hasPassword = user.password_hash && user.password_hash !== ''
+
+      if (linkedProvider !== 'google' && hasPassword) {
+        console.warn(`OAuth Google bloqué pour ${googleUser.email}: compte existant non lié à Google`)
+        return buildErrorResponse('account_exists_use_password')
+      }
+
+      if (linkedProvider && linkedProvider !== 'google') {
+        console.warn(`OAuth Google bloqué pour ${googleUser.email}: compte lié à ${linkedProvider}`)
+        return buildErrorResponse('account_linked_other_provider')
+      }
+
       await query(
         'UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1',
         [user.id]
       )
 
-      // Récupérer son organisation
       const userRole = await queryOne<any>(
         'SELECT org_id FROM user_roles WHERE user_id = $1 LIMIT 1',
         [user.id]
       )
       orgId = userRole?.org_id
     } else {
-      // 4. Créer un nouvel utilisateur
+      // 4. Créer un nouvel utilisateur (lié à Google)
       user = await queryOne<any>(
         `INSERT INTO users (email, password_hash, full_name, email_verified, email_verified_at, metadata)
          VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5)
          RETURNING *`,
         [
           googleUser.email,
-          '', // Pas de mot de passe pour OAuth
+          '',
           googleUser.name,
           googleUser.verified_email,
           JSON.stringify({ oauth_provider: 'google', google_id: googleUser.id, picture: googleUser.picture })
         ]
       )
 
-      // 5. Créer une organisation par défaut
       const org = await queryOne<any>(
         `INSERT INTO organisations (name, created_by, settings)
          VALUES ($1, $2, $3)
@@ -141,7 +163,6 @@ export async function GET(request: NextRequest) {
       )
       orgId = org.id
 
-      // 6. Lier l'utilisateur à son organisation
       await query(
         `INSERT INTO user_roles (user_id, org_id, role)
          VALUES ($1, $2, 'owner')`,
@@ -149,33 +170,31 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 7. Générer un token JWT
+    // 5. Générer un token JWT
     const token = generateToken({
-      userId: user.id.toString(),
+      userId: String(user.id),
       email: user.email
     })
 
-    // 8. Créer le cookie de session
-    // sameSite: 'strict' pour protection CSRF maximale
+    // 6. Cookie de session + nettoyage du state
     const cookie = serialize('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict', // Protection CSRF renforcée
-      maxAge: 60 * 60 * 24 * 7, // 7 jours
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7,
       path: '/'
     })
 
-    // 9. Rediriger vers le dashboard
     const response = NextResponse.redirect(new URL('/dashboard', baseUrl))
     response.headers.set('Set-Cookie', cookie)
+    response.cookies.delete('oauth_state_google')
 
     return response
 
   } catch (error) {
     console.error('Erreur OAuth Google:', error)
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.url
-    return NextResponse.redirect(
-      new URL('/login?error=oauth_error', baseUrl)
-    )
+    const resp = NextResponse.redirect(new URL('/login?error=oauth_error', baseUrl))
+    resp.cookies.delete('oauth_state_google')
+    return resp
   }
 }
