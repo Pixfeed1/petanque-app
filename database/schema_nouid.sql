@@ -112,7 +112,7 @@ CREATE TABLE equipes (
   id BIGSERIAL PRIMARY KEY,
   tournoi_id BIGINT NOT NULL REFERENCES tournois(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
-  joueur_ids JSONB DEFAULT '[]'::jsonb,
+  joueur_ids BIGINT[] DEFAULT '{}'::bigint[], -- migration 005 (était JSONB à la création)
   stats JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

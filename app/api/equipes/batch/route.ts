@@ -4,7 +4,7 @@
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { emitTournamentEvent } from '@/lib/tournament-events'
-import { query, queryOne } from '@/lib/db'
+import { query, queryOne, transaction } from '@/lib/db'
 import { getOrgLimitAsync } from '@/lib/plans'
 
 interface TeamInput {
@@ -24,7 +24,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { teams } = body as { teams: TeamInput[] }
 
-    // Validation
     if (!Array.isArray(teams) || teams.length === 0) {
       return apiError('teams doit être un tableau non-vide', 400)
     }
@@ -33,7 +32,6 @@ export async function POST(request: NextRequest) {
       return apiError('Maximum 100 équipes par requête', 400)
     }
 
-    // Valider que toutes les équipes ont le même tournoi_id
     const tournoiId = teams[0].tournoi_id
     if (!tournoiId) {
       return apiError('tournoi_id est requis', 400)
@@ -44,7 +42,6 @@ export async function POST(request: NextRequest) {
       return apiError('Toutes les équipes doivent appartenir au même tournoi', 400)
     }
 
-    // Vérifier accès au tournoi
     const tournoi = await queryOne<{ org_id: number }>(
       'SELECT org_id FROM tournois WHERE id = $1',
       [tournoiId]
@@ -59,7 +56,6 @@ export async function POST(request: NextRequest) {
       return apiError('Accès non autorisé à ce tournoi', 403)
     }
 
-    // Valider chaque équipe
     for (let i = 0; i < teams.length; i++) {
       const team = teams[i]
       if (!team.name || !team.name.trim()) {
@@ -67,7 +63,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Récupérer les settings pour vérifier les limites
     const orgResult = await query(
       `SELECT settings FROM organisations WHERE id = $1`,
       [tournoi.org_id]
@@ -75,7 +70,6 @@ export async function POST(request: NextRequest) {
     const orgSettings = orgResult.rows[0]?.settings || {}
     const maxEquipes = await getOrgLimitAsync(orgSettings, 'max_equipes')
 
-    // Construire la requête d'insertion en masse
     const values: any[] = []
     const valueStrings: string[] = []
 
@@ -98,32 +92,42 @@ export async function POST(request: NextRequest) {
       RETURNING *
     `
 
-    // Transaction avec verrou pour éviter la race condition sur la limite
-    await query('BEGIN', [])
+    // FIX BUG : transaction réelle via le helper transaction() qui partage
+    // un seul client PoolClient. Avant : query('BEGIN')/query('COMMIT')
+    // s'exécutaient sur des connexions différentes du pool, donc le verrou
+    // FOR UPDATE et la transaction étaient inopérants.
+    let existingCountForError = 0
     try {
-      if (maxEquipes !== null) {
-        const countResult = await query(
-          `SELECT COUNT(*) as count FROM equipes WHERE tournoi_id = $1 FOR UPDATE`,
-          [tournoiId]
-        )
-        const existingCount = parseInt(countResult.rows[0]?.count || '0')
-        if (existingCount + teams.length > maxEquipes) {
-          await query('ROLLBACK', [])
-          return apiError(`Votre plan est limité à ${maxEquipes} équipes par tournoi (${existingCount} existantes). Passez au plan supérieur pour des équipes illimitées.`, 403)
+      const inserted = await transaction(async (client) => {
+        if (maxEquipes !== null) {
+          const countResult = await client.query(
+            `SELECT COUNT(*) as count FROM equipes WHERE tournoi_id = $1 FOR UPDATE`,
+            [tournoiId]
+          )
+          const existingCount = parseInt(countResult.rows[0]?.count || '0')
+          existingCountForError = existingCount
+          if (existingCount + teams.length > maxEquipes) {
+            throw new Error('LIMIT_REACHED')
+          }
         }
-      }
 
-      const result = await query(insertQuery, values)
-      await query('COMMIT', [])
+        const result = await client.query(insertQuery, values)
+        return result.rows
+      })
 
-      emitTournamentEvent('team:created', tournoiId, { count: result.rows.length })
+      emitTournamentEvent('team:created', tournoiId, { count: inserted.length })
 
       return apiSuccess({
-        created: result.rows.length,
-        teams: result.rows
+        created: inserted.length,
+        teams: inserted
       }, 201)
-    } catch (txError) {
-      await query('ROLLBACK', [])
+    } catch (txError: any) {
+      if (txError?.message === 'LIMIT_REACHED') {
+        return apiError(
+          `Votre plan est limité à ${maxEquipes} équipes par tournoi (${existingCountForError} existantes). Passez au plan supérieur pour des équipes illimitées.`,
+          403
+        )
+      }
       throw txError
     }
   } catch (error) {

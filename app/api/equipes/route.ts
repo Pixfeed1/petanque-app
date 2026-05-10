@@ -3,7 +3,7 @@
 
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
-import { queryMany, query, queryOne } from '@/lib/db'
+import { queryMany, query, queryOne, transaction } from '@/lib/db'
 import { getOrgLimitAsync } from '@/lib/plans'
 
 // GET - Récupérer les équipes d'un tournoi
@@ -20,7 +20,6 @@ export async function GET(request: NextRequest) {
       return apiError('tournoi_id est requis', 400)
     }
 
-    // Vérifier que le tournoi existe et que l'utilisateur a accès à son organisation
     const tournoi = await queryOne<{ org_id: number }>(
       'SELECT org_id FROM tournois WHERE id = $1',
       [tournoiId]
@@ -79,7 +78,6 @@ export async function POST(request: NextRequest) {
       return apiError('Champs requis: tournoi_id, name', 400)
     }
 
-    // Vérifier accès au tournoi
     const tournoi = await queryOne<{ org_id: number }>(
       'SELECT org_id FROM tournois WHERE id = $1',
       [tournoi_id]
@@ -94,19 +92,16 @@ export async function POST(request: NextRequest) {
       return apiError('Accès non autorisé à ce tournoi', 403)
     }
 
-    // Récupérer les settings de l'organisation
     const orgResult = await query(
       `SELECT settings FROM organisations WHERE id = $1`,
       [tournoi.org_id]
     )
     const orgSettings = orgResult.rows[0]?.settings || {}
 
-    // Validation du nom
     if (!name.trim()) {
       return apiError('Le nom de l\'équipe ne peut pas être vide', 400)
     }
 
-    // Validation du nombre de joueurs par équipe
     if (Array.isArray(joueur_ids) && joueur_ids.length > 0) {
       const tournoiDetails = await queryOne<{ format: string }>(
         'SELECT format FROM tournois WHERE id = $1',
@@ -123,30 +118,37 @@ export async function POST(request: NextRequest) {
 
     const maxEquipes = await getOrgLimitAsync(orgSettings, 'max_equipes')
 
-    // Transaction avec verrou pour éviter la race condition
-    await query('BEGIN', [])
+    // FIX BUG : transaction réelle via le helper transaction() qui partage
+    // un seul client PoolClient. Avant : query('BEGIN') / query('COMMIT')
+    // s'exécutaient sur des connexions différentes du pool, donc le verrou
+    // FOR UPDATE et la transaction étaient inopérants.
     try {
-      if (maxEquipes !== null) {
-        const countResult = await query(
-          `SELECT COUNT(*) as count FROM equipes WHERE tournoi_id = $1 FOR UPDATE`,
-          [tournoi_id]
-        )
-        if (parseInt(countResult.rows[0]?.count || '0') >= maxEquipes) {
-          await query('ROLLBACK', [])
-          return apiError(`Votre plan est limité à ${maxEquipes} équipes par tournoi. Passez au plan supérieur pour des équipes illimitées.`, 403)
+      const created = await transaction(async (client) => {
+        if (maxEquipes !== null) {
+          const countResult = await client.query(
+            `SELECT COUNT(*) as count FROM equipes WHERE tournoi_id = $1 FOR UPDATE`,
+            [tournoi_id]
+          )
+          if (parseInt(countResult.rows[0]?.count || '0') >= maxEquipes) {
+            // throw pour rollback automatique par transaction()
+            throw new Error('LIMIT_REACHED')
+          }
         }
-      }
 
-      const result = await query(
-        `INSERT INTO equipes (tournoi_id, name, joueur_ids, stats, created_at)
-         VALUES ($1, $2, $3::bigint[], $4::jsonb, NOW())
-         RETURNING *`,
-        [tournoi_id, name.trim(), Array.isArray(joueur_ids) ? joueur_ids : [], JSON.stringify(stats || {})]
-      )
-      await query('COMMIT', [])
-      return apiSuccess(result.rows[0], 201)
-    } catch (txError) {
-      await query('ROLLBACK', [])
+        const result = await client.query(
+          `INSERT INTO equipes (tournoi_id, name, joueur_ids, stats, created_at)
+           VALUES ($1, $2, $3::bigint[], $4::jsonb, NOW())
+           RETURNING *`,
+          [tournoi_id, name.trim(), Array.isArray(joueur_ids) ? joueur_ids : [], JSON.stringify(stats || {})]
+        )
+        return result.rows[0]
+      })
+
+      return apiSuccess(created, 201)
+    } catch (txError: any) {
+      if (txError?.message === 'LIMIT_REACHED') {
+        return apiError(`Votre plan est limité à ${maxEquipes} équipes par tournoi. Passez au plan supérieur pour des équipes illimitées.`, 403)
+      }
       throw txError
     }
   } catch (error) {

@@ -3,7 +3,7 @@
 
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
-import { queryMany, query } from '@/lib/db'
+import { queryMany, query, transaction } from '@/lib/db'
 
 // GET - Récupérer les organisations de l'utilisateur
 export async function GET(request: NextRequest) {
@@ -45,22 +45,27 @@ export async function POST(request: NextRequest) {
       return apiError('Le nom de l\'organisation est requis', 400)
     }
 
-    // Créer l'organisation
-    const result = await query(
-      `INSERT INTO organisations (name, settings, created_by, created_at, updated_at)
-       VALUES ($1, $2, $3, NOW(), NOW())
-       RETURNING *`,
-      [name, JSON.stringify({ plan: 'free', features: { max_tournois: 1, max_equipes: 8 }, ...(settings || {}) }), user.id]
-    )
+    // FIX BUG : avant ce fix, les 2 INSERTs étaient hors transaction sur
+    // des connexions différentes du pool. Si l'INSERT user_roles plantait,
+    // l'organisation restait orpheline en base sans owner.
+    const organisation = await transaction(async (client) => {
+      const result = await client.query(
+        `INSERT INTO organisations (name, settings, created_by, created_at, updated_at)
+         VALUES ($1, $2, $3, NOW(), NOW())
+         RETURNING *`,
+        [name, JSON.stringify({ plan: 'free', features: { max_tournois: 1, max_equipes: 8 }, ...(settings || {}) }), user.id]
+      )
 
-    const organisation = result.rows[0]
+      const org = result.rows[0]
 
-    // Créer le rôle owner pour l'utilisateur
-    await query(
-      `INSERT INTO user_roles (user_id, org_id, role, granted_by, granted_at)
-       VALUES ($1, $2, 'owner', $1, NOW())`,
-      [user.id, organisation.id]
-    )
+      await client.query(
+        `INSERT INTO user_roles (user_id, org_id, role, granted_by, granted_at)
+         VALUES ($1, $2, 'owner', $1, NOW())`,
+        [user.id, org.id]
+      )
+
+      return org
+    })
 
     return apiSuccess(organisation, 201)
   } catch (error) {

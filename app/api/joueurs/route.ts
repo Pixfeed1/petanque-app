@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       return apiError(validation.errors.join(', '), 400)
     }
 
-    const { org_id, name, email, phone } = validation.data
+    const { org_id, name, gender, email, phone } = validation.data
     const stats = (body as any).stats
 
     const hasAccess = await checkOrgAccess(user.id, org_id)
@@ -97,11 +97,14 @@ export async function POST(request: NextRequest) {
       return apiError('Accès refusé', 403)
     }
 
+    // FIX BUG : gender était validé par Zod mais jamais inséré → tous les
+    // nouveaux joueurs avaient gender=NULL et la mixité ne pouvait pas
+    // s'appliquer. Ajout de la colonne et du paramètre.
     const result = await query(
-      `INSERT INTO joueurs (org_id, name, email, phone, stats, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      `INSERT INTO joueurs (org_id, name, gender, email, phone, stats, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
        RETURNING *`,
-      [org_id, name, email ?? null, phone ?? null, JSON.stringify(stats || {})]
+      [org_id, name, gender ?? null, email ?? null, phone ?? null, JSON.stringify(stats || {})]
     )
 
     return apiSuccess(result.rows[0], 201)
