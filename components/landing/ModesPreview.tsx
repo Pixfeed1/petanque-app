@@ -56,7 +56,7 @@ export function ModesPreview() {
                   <BouleSvg
                     size={56}
                     variant={mode.boule}
-                    stries={mode.boule !== 'cochonnet'}
+                    stries
                     className="group-hover:rotate-12 transition-transform duration-500"
                   />
                 </div>

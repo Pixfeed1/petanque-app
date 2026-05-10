@@ -39,7 +39,7 @@ export function HowItWorks() {
           {steps.map((step, i) => (
             <FadeIn key={step.num} delay={i * 120} className="relative">
               <div className="flex items-start gap-4 mb-4">
-                <BouleSvg size={48} variant={step.accent} stries={step.accent !== 'cochonnet'} />
+                <BouleSvg size={48} variant={step.accent} stries />
                 <span className="font-mono text-[11px] font-medium text-petanque-bois mt-1 tracking-widest">
                   {step.num}
                 </span>
