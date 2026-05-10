@@ -3,26 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
-import { User, Organization, Calendar, Crown, Infinity, Download, Archive, Logout, Check, SparklesAlt, ArrowRight, Loader, X, Back } from '@/components/Icons'
 import { useToast } from '@/components/ui/Toast'
-
-// Icônes SVG élégantes
-const Icons = {
-  user: <User className="w-5 h-5" />,
-  organization: <Organization className="w-5 h-5" />,
-  calendar: <Calendar className="w-5 h-5" />,
-  crown: <Crown className="w-6 h-6" />,
-  infinity: <Infinity className="w-5 h-5" />,
-  download: <Download className="w-5 h-5" />,
-  archive: <Archive className="w-5 h-5" />,
-  logout: <Logout className="w-5 h-5" />,
-  check: <Check className="w-5 h-5" />,
-  sparkles: <SparklesAlt className="w-5 h-5" />,
-  arrow: <ArrowRight className="w-5 h-5" />,
-  loader: <Loader className="animate-spin h-5 w-5" />,
-  x: <X className="w-5 h-5" />,
-  back: <Back className="w-5 h-5" />
-}
+import { Button, BouleSvg, FadeIn } from '@/components/ui'
+import { Loader, Check, X } from '@/components/Icons'
 
 export default function Parametres() {
   const router = useRouter()
@@ -32,21 +15,17 @@ export default function Parametres() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
   const [exportingData, setExportingData] = useState(false)
-  const [mounted, setMounted] = useState(false)
 
   // Club customization state
   const [clubName, setClubName] = useState('')
   const [logoUrl, setLogoUrl] = useState('')
-  const [primaryColor, setPrimaryColor] = useState('#16a34a')
-  const [secondaryColor, setSecondaryColor] = useState('#059669')
+  const [primaryColor, setPrimaryColor] = useState('#2d5530')
+  const [secondaryColor, setSecondaryColor] = useState('#97c459')
   const [savingCustomization, setSavingCustomization] = useState(false)
 
   const userPlan = (organization?.settings as Record<string, any>)?.plan || 'free'
   const isClub = userPlan === 'club'
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const planLabel = isClub ? 'Plan Club' : isPremium ? 'Plan Essentiel' : 'Plan Gratuit'
 
   // Load existing customization
   useEffect(() => {
@@ -56,8 +35,8 @@ export default function Parametres() {
       if (cust) {
         setClubName(cust.club_name || '')
         setLogoUrl(cust.logo_url || '')
-        setPrimaryColor(cust.primary_color || '#16a34a')
-        setSecondaryColor(cust.secondary_color || '#059669')
+        setPrimaryColor(cust.primary_color || '#2d5530')
+        setSecondaryColor(cust.secondary_color || '#97c459')
       }
     }
   }, [organization])
@@ -97,20 +76,11 @@ export default function Parametres() {
   const handleExportTournois = async () => {
     setExportingData(true)
     try {
-      // Récupérer tous les tournois via l'API
-      const response = await fetch('/api/tournois', {
-        credentials: 'include'
-      })
-
+      const response = await fetch('/api/tournois', { credentials: 'include' })
       if (!response.ok) throw new Error('Erreur de récupération des tournois')
-
       const tournois = await response.json()
-
-      // Créer un blob JSON
       const dataStr = JSON.stringify(tournois, null, 2)
       const dataBlob = new Blob([dataStr], { type: 'application/json' })
-
-      // Télécharger avec cleanup garanti
       const url = URL.createObjectURL(dataBlob)
       try {
         const link = document.createElement('a')
@@ -122,7 +92,7 @@ export default function Parametres() {
       }
     } catch (error) {
       console.error('Erreur export:', error)
-      showError('Erreur lors de l\'export')
+      showError('Erreur lors de l’export')
     } finally {
       setExportingData(false)
     }
@@ -131,32 +101,20 @@ export default function Parametres() {
   const handleExportRGPD = async () => {
     setExportingData(true)
     try {
-      // Récupérer toutes les données via les APIs
       const [tournoiResponse, joueurResponse] = await Promise.all([
         fetch('/api/tournois', { credentials: 'include' }),
         fetch('/api/joueurs', { credentials: 'include' })
       ])
-
       const tournois = tournoiResponse.ok ? await tournoiResponse.json() : []
       const joueurs = joueurResponse.ok ? await joueurResponse.json() : []
-
-      // Récupérer toutes les données de l'utilisateur
       const allData = {
-        user: {
-          email: user?.email,
-          id: user?.id,
-          created_at: user?.created_at
-        },
-        organization: organization,
+        user: { email: user?.email, id: user?.id, created_at: user?.created_at },
+        organization,
         tournois,
         joueurs
       }
-
-      // Créer un blob JSON
       const dataStr = JSON.stringify(allData, null, 2)
       const dataBlob = new Blob([dataStr], { type: 'application/json' })
-
-      // Télécharger avec cleanup garanti
       const url = URL.createObjectURL(dataBlob)
       try {
         const link = document.createElement('a')
@@ -168,7 +126,7 @@ export default function Parametres() {
       }
     } catch (error) {
       console.error('Erreur export RGPD:', error)
-      showError('Erreur lors de l\'export')
+      showError('Erreur lors de l’export')
     } finally {
       setExportingData(false)
     }
@@ -176,479 +134,353 @@ export default function Parametres() {
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmation !== 'SUPPRIMER') return
-
     setLoading(true)
     try {
-      // Note: La suppression de compte nécessite une API dédiée
-      showSuccess('Pour supprimer votre compte, contactez support@petanquepro.fr')
+      showSuccess('Pour supprimer ton compte, contacte support@petanquepro.fr')
       setShowDeleteModal(false)
       setDeleteConfirmation('')
-    } catch (error) {
-      console.error('Erreur suppression:', error)
+    } catch {
       showError('Erreur lors de la suppression du compte')
     } finally {
       setLoading(false)
     }
   }
 
+  const memberSince = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
+    : ''
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30">
-      {/* Particules animées en arrière-plan */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-green-200 to-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-200 to-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-40 right-40 w-80 h-80 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-      </div>
+    <div className="min-h-screen bg-petanque-sable-pale">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-petanque-sable-pale/85 backdrop-blur-xl border-b border-petanque-sable-bord/60">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-4 h-14">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="text-sm text-petanque-bois hover:text-petanque-vert-fonce font-medium flex items-center gap-1.5"
+            >
+              <span>←</span>
+              <span className="hidden sm:inline">Tableau de bord</span>
+            </button>
+            <span className="font-mono text-xs text-petanque-bois">Paramètres</span>
+            <span></span>
+          </div>
+        </div>
+      </header>
 
-      <div className="relative max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className={`mb-8 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="mb-6 inline-flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-white/50 rounded-xl transition-all"
-          >
-            {Icons.back}
-            <span>Retour au dashboard</span>
-          </button>
-
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
-            Paramètres
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <FadeIn>
+          <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3 flex flex-wrap gap-x-3 gap-y-1">
+            <span>Compte</span>
+            <span className="text-petanque-sable-bord">·</span>
+            <span>{planLabel}</span>
+          </p>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.05] mb-12">
+            Tes paramètres et <span className="accent-italic text-petanque-vert">préférences.</span>
           </h1>
-          <p className="text-gray-600">Gérez votre compte et vos préférences</p>
-        </div>
+        </FadeIn>
 
-        {/* Section Mon Compte */}
-        <div className={`mb-6 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '100ms' }}>
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-xl rounded-3xl"></div>
-            <div className="relative bg-white/60 backdrop-blur-md rounded-3xl shadow-xl border border-white/50 overflow-hidden">
-              <div className="p-6 border-b border-gray-100/50">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-                  {Icons.user}
-                  <span>Mon Compte</span>
-                </h2>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between py-3 px-4 bg-gradient-to-r from-gray-50/50 to-white/50 rounded-xl">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-gradient-to-br from-green-100 to-emerald-100 rounded-lg text-green-600">
-                      {Icons.user}
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Email</p>
-                      <p className="font-medium text-gray-900">{user?.email}</p>
-                    </div>
-                  </div>
-                  <span className="px-3 py-1 bg-green-100 text-green-600 text-xs font-medium rounded-full flex items-center space-x-1">
-                    {Icons.check}
-                    <span>Vérifié</span>
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between py-3 px-4 bg-gradient-to-r from-gray-50/50 to-white/50 rounded-xl">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg text-blue-600">
-                      {Icons.organization}
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Organisation</p>
-                      <p className="font-medium text-gray-900">{organization?.name}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between py-3 px-4 bg-gradient-to-r from-gray-50/50 to-white/50 rounded-xl">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg text-purple-600">
-                      {Icons.calendar}
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Membre depuis</p>
-                      <p className="font-medium text-gray-900">
-                        {new Date(user?.created_at || '').toLocaleDateString('fr-FR', { 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        {/* === Section Compte === */}
+        <FadeIn delay={80}>
+          <section className="mb-10 pb-10 border-b border-petanque-sable-bord/50">
+            <p className="font-mono text-[11px] text-petanque-bois uppercase tracking-[0.18em] font-medium mb-5">Compte</p>
+            <div>
+              <Row label="Email">
+                <span className="text-petanque-vert-fonce font-medium">{user?.email}</span>
+                <span className="ml-3 inline-flex items-center gap-1 px-2 py-0.5 bg-petanque-vert-pale/30 text-petanque-vert text-[10px] font-medium uppercase tracking-[0.14em] rounded-full">
+                  <Check className="w-3 h-3" />
+                  Vérifié
+                </span>
+              </Row>
+              <Row label="Organisation">
+                <span className="text-petanque-vert-fonce font-medium">{organization?.name}</span>
+              </Row>
+              <Row label="Membre depuis">
+                <span className="text-petanque-vert-fonce font-medium">{memberSince}</span>
+              </Row>
             </div>
-          </div>
-        </div>
+          </section>
+        </FadeIn>
 
-        {/* Section Mon Plan */}
-        <div className={`mb-6 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '200ms' }}>
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-xl rounded-3xl"></div>
-            <div className="relative bg-white/60 backdrop-blur-md rounded-3xl shadow-xl border border-white/50 overflow-hidden">
-              <div className="p-6 border-b border-gray-100/50">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-                  {Icons.crown}
-                  <span>Mon Plan</span>
-                </h2>
-              </div>
-
-              <div className="p-6">
-                {isPremium ? (
-                  <div className="relative overflow-hidden bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 rounded-2xl p-6">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-yellow-300/20 to-orange-300/20 rounded-full -translate-y-16 translate-x-16"></div>
-
-                    <div className="relative">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="text-2xl font-bold text-gray-900">Essentiel</span>
-                            <span className="px-2 py-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold rounded-full">
-                              ACTIF
-                            </span>
-                          </div>
-                          <p className="text-gray-600">Toutes les fonctionnalités débloquées</p>
-                        </div>
-                        <div className="text-yellow-500">
-                          {Icons.infinity}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2 text-sm">
-                          <span className="text-green-500">{Icons.check}</span>
-                          <span className="text-gray-700">Tournois illimités</span>
-                        </div>
-                        <div className="flex items-center space-x-2 text-sm">
-                          <span className="text-green-500">{Icons.check}</span>
-                          <span className="text-gray-700">Export PDF et partage</span>
-                        </div>
-                        <div className="flex items-center space-x-2 text-sm">
-                          <span className="text-green-500">{Icons.check}</span>
-                          <span className="text-gray-700">Historique des tournois</span>
-                        </div>
-                      </div>
-                    </div>
+        {/* === Section Abonnement === */}
+        <FadeIn delay={140}>
+          <section className="mb-10 pb-10 border-b border-petanque-sable-bord/50">
+            <p className="font-mono text-[11px] text-petanque-bois uppercase tracking-[0.18em] font-medium mb-5">Abonnement</p>
+            {isPremium ? (
+              <div className="flex gap-5 items-start">
+                <BouleSvg size={42} variant="acier" stries className="flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <div className="flex items-baseline gap-3 mb-1.5 flex-wrap">
+                    <span className="text-xl font-medium text-petanque-vert-fonce">{planLabel}</span>
+                    <span className="font-mono text-[10px] text-petanque-vert bg-petanque-vert-pale/30 px-2.5 py-0.5 rounded-full uppercase tracking-[0.18em] font-semibold">Actif</span>
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-4">
-                      {Icons.sparkles}
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Plan Gratuit</h3>
-                    <p className="text-gray-600 mb-6">1 tournoi, 8 équipes max — Passez à Essentiel pour tout débloquer</p>
-                    <button
-                      onClick={() => router.push('/dashboard?upgrade=true')}
-                      className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-medium hover:shadow-lg transition-all transform hover:scale-105"
-                    >
-                      Voir les plans - à partir de 9,99€/an
-                    </button>
-                  </div>
-                )}
+                  <p className="text-sm text-petanque-bois mb-4">Toutes les fonctionnalités débloquées.</p>
+                  <ul className="space-y-1.5">
+                    {(isClub
+                      ? ['Tournois illimités', 'Personnalisation du club', 'Règles personnalisées', 'Export PDF et partage', 'Historique des tournois']
+                      : ['Tournois illimités', 'Export PDF et partage', 'Historique des tournois']
+                    ).map((feat) => (
+                      <li key={feat} className="text-sm text-petanque-vert-fonce flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-petanque-vert flex-shrink-0" />
+                        {feat}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
+            ) : (
+              <div>
+                <p className="text-base text-petanque-vert-fonce font-medium mb-1">Plan Gratuit</p>
+                <p className="text-sm text-petanque-bois mb-5">1 tournoi, 8 équipes max — passe à Essentiel pour tout débloquer.</p>
+                <Button variant="primary" onClick={() => router.push('/dashboard?upgrade=true')}>
+                  Voir les plans · à partir de 9,99€/an
+                </Button>
+              </div>
+            )}
+          </section>
+        </FadeIn>
 
-        {/* Section Personnalisation Club (Club uniquement) */}
+        {/* === Section Personnalisation Club === */}
         {isClub && (
-          <div className={`mb-6 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '250ms' }}>
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-xl rounded-3xl"></div>
-              <div className="relative bg-white/60 backdrop-blur-md rounded-3xl shadow-xl border border-white/50 overflow-hidden">
-                <div className="p-6 border-b border-gray-100/50">
-                  <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-                    <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm0 2h12v3H4V4zm0 5h5v7H4V9zm7 0h5v7h-5V9z"/></svg>
-                    <span>Personnalisation Club</span>
-                    <span className="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold rounded-full">CLUB</span>
-                  </h2>
-                </div>
+          <FadeIn delay={200}>
+            <section className="mb-10 pb-10 border-b border-petanque-sable-bord/50">
+              <p className="font-mono text-[11px] text-petanque-bois uppercase tracking-[0.18em] font-medium mb-5 flex items-center gap-3">
+                <span>Personnalisation</span>
+                <span className="font-mono text-[9px] text-petanque-cochonnet border border-petanque-cochonnet/40 px-2 py-0.5 rounded-full uppercase tracking-[0.16em] font-medium">Club</span>
+              </p>
 
-                <div className="p-6 space-y-5">
-                  {/* Nom du club */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom du club</label>
+              <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Nom du club</label>
+              <input
+                type="text"
+                value={clubName}
+                onChange={(e) => setClubName(e.target.value)}
+                placeholder={organization?.name || 'Mon club de pétanque'}
+                className="w-full h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:ring-2 focus:ring-petanque-vert/20 focus:outline-none text-sm text-petanque-vert-fonce"
+              />
+
+              <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2 mt-5">URL du logo</label>
+              <input
+                type="url"
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                placeholder="https://exemple.com/logo.png"
+                className="w-full h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:ring-2 focus:ring-petanque-vert/20 focus:outline-none text-sm text-petanque-vert-fonce"
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
+                <div>
+                  <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Couleur principale</label>
+                  <div className="flex items-center gap-2.5">
+                    <input
+                      type="color"
+                      value={primaryColor}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      className="w-10 h-10 rounded-lg border border-petanque-sable-bord cursor-pointer flex-shrink-0"
+                    />
                     <input
                       type="text"
-                      value={clubName}
-                      onChange={(e) => setClubName(e.target.value)}
-                      placeholder={organization?.name || 'Mon Club de Pétanque'}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white"
+                      value={primaryColor}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      className="flex-1 h-10 px-3 bg-white border border-petanque-sable-bord rounded-lg focus:border-petanque-vert focus:outline-none text-xs font-mono text-petanque-vert-fonce"
                     />
                   </div>
-
-                  {/* Logo URL */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">URL du logo</label>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Couleur secondaire</label>
+                  <div className="flex items-center gap-2.5">
                     <input
-                      type="url"
-                      value={logoUrl}
-                      onChange={(e) => setLogoUrl(e.target.value)}
-                      placeholder="https://exemple.com/logo.png"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white"
+                      type="color"
+                      value={secondaryColor}
+                      onChange={(e) => setSecondaryColor(e.target.value)}
+                      className="w-10 h-10 rounded-lg border border-petanque-sable-bord cursor-pointer flex-shrink-0"
                     />
-                    {logoUrl && (
-                      <div className="mt-2 flex items-center gap-3">
-                        <img
-                          src={logoUrl}
-                          alt="Logo preview"
-                          className="w-12 h-12 rounded-lg object-contain border border-gray-200"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                        />
-                        <span className="text-xs text-gray-500">Aperçu du logo</span>
-                      </div>
-                    )}
+                    <input
+                      type="text"
+                      value={secondaryColor}
+                      onChange={(e) => setSecondaryColor(e.target.value)}
+                      className="flex-1 h-10 px-3 bg-white border border-petanque-sable-bord rounded-lg focus:border-petanque-vert focus:outline-none text-xs font-mono text-petanque-vert-fonce"
+                    />
                   </div>
-
-                  {/* Couleurs */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Couleur principale</label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="color"
-                          value={primaryColor}
-                          onChange={(e) => setPrimaryColor(e.target.value)}
-                          className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer"
-                        />
-                        <input
-                          type="text"
-                          value={primaryColor}
-                          onChange={(e) => setPrimaryColor(e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono bg-white"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Couleur secondaire</label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="color"
-                          value={secondaryColor}
-                          onChange={(e) => setSecondaryColor(e.target.value)}
-                          className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer"
-                        />
-                        <input
-                          type="text"
-                          value={secondaryColor}
-                          onChange={(e) => setSecondaryColor(e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono bg-white"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Preview */}
-                  <div className="p-4 rounded-xl border border-gray-200" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
-                    <p className="text-sm text-gray-500 mb-2">Aperçu</p>
-                    <div className="flex items-center gap-3">
-                      {logoUrl ? (
-                        <img src={logoUrl} alt="Logo" className="w-10 h-10 rounded-lg object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}>
-                          {(clubName || organization?.name || 'C').charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-bold" style={{ color: primaryColor }}>{clubName || organization?.name || 'Mon Club'}</p>
-                        <p className="text-xs text-gray-500">Pétanque Pro</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Save button */}
-                  <button
-                    onClick={handleSaveCustomization}
-                    disabled={savingCustomization}
-                    className="w-full px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-medium hover:shadow-lg transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {savingCustomization ? (
-                      <>{Icons.loader} <span>Sauvegarde...</span></>
-                    ) : (
-                      <><span>{Icons.check}</span> <span>Sauvegarder la personnalisation</span></>
-                    )}
-                  </button>
                 </div>
               </div>
-            </div>
-          </div>
+
+              {/* Preview */}
+              <div
+                className="mt-5 p-4 rounded-xl border border-petanque-sable-bord/50 flex items-center gap-3.5"
+                style={{ background: `linear-gradient(135deg, ${primaryColor}10, ${secondaryColor}10)` }}
+              >
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt="Logo"
+                    className="w-10 h-10 rounded-lg object-contain border border-petanque-sable-bord/50 bg-white flex-shrink-0"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                  />
+                ) : (
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-medium text-base flex-shrink-0"
+                    style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
+                  >
+                    {(clubName || organization?.name || 'C').charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-medium" style={{ color: primaryColor }}>{clubName || organization?.name || 'Mon club'}</p>
+                  <p className="text-[11px] text-petanque-bois">Aperçu avec tes couleurs</p>
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <Button
+                  variant="primary"
+                  onClick={handleSaveCustomization}
+                  disabled={savingCustomization}
+                  loading={savingCustomization}
+                >
+                  {savingCustomization ? 'Sauvegarde…' : 'Sauvegarder la personnalisation'}
+                </Button>
+              </div>
+            </section>
+          </FadeIn>
         )}
 
-        {/* Section Mes Données */}
-        <div className={`mb-6 transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '300ms' }}>
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-xl rounded-3xl"></div>
-            <div className="relative bg-white/60 backdrop-blur-md rounded-3xl shadow-xl border border-white/50 overflow-hidden">
-              <div className="p-6 border-b border-gray-100/50">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-                  {Icons.archive}
-                  <span>Mes Données</span>
-                </h2>
-              </div>
+        {/* === Section Données === */}
+        <FadeIn delay={isClub ? 260 : 200}>
+          <section className="mb-10 pb-10 border-b border-petanque-sable-bord/50">
+            <p className="font-mono text-[11px] text-petanque-bois uppercase tracking-[0.18em] font-medium mb-5">Données</p>
+            <DataLink
+              title="Exporter mes tournois"
+              description="Téléchargement JSON de tous tes tournois."
+              onClick={handleExportTournois}
+              loading={exportingData}
+            />
+            <DataLink
+              title="Télécharger toutes mes données"
+              description="Conformité RGPD · export complet (compte, organisation, tournois, joueurs)."
+              onClick={handleExportRGPD}
+              loading={exportingData}
+            />
+          </section>
+        </FadeIn>
 
-              <div className="p-6 space-y-3">
-                <button
-                  onClick={handleExportTournois}
-                  disabled={exportingData}
-                  className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-xl transition-all group"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-white rounded-lg text-blue-600 group-hover:scale-110 transition-transform">
-                      {Icons.download}
-                    </div>
-                    <div className="text-left">
-                      <p className="font-medium text-gray-900">Exporter mes tournois</p>
-                      <p className="text-sm text-gray-600">Téléchargez tous vos tournois au format JSON</p>
-                    </div>
-                  </div>
-                  {exportingData ? Icons.loader : Icons.arrow}
-                </button>
-
-                <button
-                  onClick={handleExportRGPD}
-                  disabled={exportingData}
-                  className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-xl transition-all group"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-white rounded-lg text-purple-600 group-hover:scale-110 transition-transform">
-                      {Icons.archive}
-                    </div>
-                    <div className="text-left">
-                      <p className="font-medium text-gray-900">Télécharger toutes mes données</p>
-                      <p className="text-sm text-gray-600">Conformité RGPD - Export complet</p>
-                    </div>
-                  </div>
-                  {exportingData ? Icons.loader : Icons.arrow}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Section Fermer mon compte */}
-        <div className={`transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '400ms' }}>
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-100/80 to-gray-50/40 backdrop-blur-xl rounded-3xl"></div>
-            <div className="relative bg-gray-50/60 backdrop-blur-md rounded-3xl shadow-xl border border-gray-200/50 overflow-hidden">
-              <div className="p-6">
-                <h2 className="text-lg font-medium text-gray-700 mb-3">Fermer mon compte</h2>
-                <p className="text-sm text-gray-600 mb-4">
-                  Vous souhaitez nous quitter ? Vos données seront conservées 30 jours pour récupération.
-                  {isPremium && (
-                    <span className="block mt-2 text-green-600 font-medium">
-                      ✓ Votre abonnement sera conservé avec votre email
-                    </span>
-                  )}
-                </p>
-                <button
-                  onClick={() => setShowDeleteModal(true)}
-                  className="px-4 py-2 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                >
-                  Fermer définitivement mon compte
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        {/* === Section Fermer le compte === */}
+        <FadeIn delay={isClub ? 320 : 260}>
+          <section>
+            <p className="font-mono text-[11px] text-petanque-bois uppercase tracking-[0.18em] font-medium mb-4">Fermer le compte</p>
+            <p className="text-sm text-petanque-bois mb-5 leading-relaxed">
+              Tu souhaites nous quitter ? Tes données sont conservées <strong className="text-petanque-vert-fonce font-medium">30 jours</strong> pour récupération.
+              {isPremium && (
+                <> Ton abonnement {planLabel.toLowerCase()} est conservé avec ton email — si tu te réinscris, ton plan sera restauré automatiquement.</>
+              )}
+            </p>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="px-4 py-2 text-sm font-medium text-petanque-cochonnet-fonce border border-petanque-cochonnet/40 rounded-lg hover:bg-petanque-cochonnet-pale/40 hover:border-petanque-cochonnet/60 transition-colors"
+            >
+              Fermer définitivement mon compte
+            </button>
+          </section>
+        </FadeIn>
+      </main>
 
       {/* Modal de suppression */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-slideUp">
-            <div className="p-8">
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-100 to-orange-100 rounded-full mb-4">
-                  {Icons.logout}
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Fermer votre compte ?
-                </h2>
-                <p className="text-gray-600">
-                  Cette action est irréversible. Vos données seront supprimées après 30 jours.
-                </p>
-                {isPremium && (
-                  <div className="mt-4 p-3 bg-green-50 rounded-xl">
-                    <p className="text-sm text-green-800">
-                      <strong>Note :</strong> Votre abonnement sera conservé. Si vous vous réinscrivez avec {user?.email}, votre plan sera restauré automatiquement.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-4">
+        <div className="fixed inset-0 bg-petanque-vert-fonce/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="p-7">
+              <div className="flex items-start justify-between mb-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tapez <span className="font-bold">SUPPRIMER</span> pour confirmer
-                  </label>
-                  <input
-                    type="text"
-                    value={deleteConfirmation}
-                    onChange={(e) => setDeleteConfirmation(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="SUPPRIMER"
-                  />
+                  <p className="font-mono text-[10px] text-petanque-cochonnet uppercase tracking-[0.18em] font-medium mb-2">Action irréversible</p>
+                  <h2 className="text-xl font-medium text-petanque-vert-fonce">Fermer ton compte</h2>
                 </div>
+                <button
+                  onClick={() => { setShowDeleteModal(false); setDeleteConfirmation('') }}
+                  className="text-petanque-bois hover:text-petanque-vert-fonce p-1"
+                  aria-label="Fermer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-sm text-petanque-bois mb-1 leading-relaxed">
+                Tes données seront supprimées après 30 jours.
+              </p>
+              {isPremium && (
+                <p className="text-sm text-petanque-vert-fonce italic mb-5 leading-relaxed">
+                  Ton abonnement est conservé. Si tu te réinscris avec <strong className="font-medium">{user?.email}</strong>, ton plan sera restauré.
+                </p>
+              )}
 
-                <div className="flex space-x-3">
-                  <button
-                    onClick={() => {
-                      setShowDeleteModal(false)
-                      setDeleteConfirmation('')
-                    }}
-                    className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    onClick={handleDeleteAccount}
-                    disabled={deleteConfirmation !== 'SUPPRIMER' || loading}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all"
-                  >
-                    {loading ? (
-                      <span className="flex items-center justify-center">
-                        {Icons.loader}
-                        <span className="ml-2">Suppression...</span>
-                      </span>
-                    ) : (
-                      'Supprimer définitivement'
-                    )}
-                  </button>
-                </div>
+              <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2 mt-2">
+                Tape <span className="text-petanque-cochonnet-fonce font-mono">SUPPRIMER</span> pour confirmer
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                className="w-full h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-cochonnet focus:ring-2 focus:ring-petanque-cochonnet/20 focus:outline-none text-sm text-petanque-vert-fonce font-mono"
+                placeholder="SUPPRIMER"
+              />
+
+              <div className="flex gap-2 mt-6">
+                <button
+                  onClick={() => { setShowDeleteModal(false); setDeleteConfirmation('') }}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-petanque-bois border border-petanque-sable-bord rounded-lg hover:bg-petanque-sable-pale/60 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleteConfirmation !== 'SUPPRIMER' || loading}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-petanque-cochonnet rounded-lg hover:bg-petanque-cochonnet-fonce disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader className="w-4 h-4 animate-spin" />
+                      Suppression…
+                    </>
+                  ) : (
+                    'Fermer le compte'
+                  )}
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes blob {
-          0% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-          100% { transform: translate(0px, 0px) scale(1); }
-        }
-        
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-        
-        .animate-slideUp {
-          animation: slideUp 0.5s ease-out;
-        }
-      `}</style>
     </div>
+  )
+}
+
+// =============================================================
+// Helpers
+// =============================================================
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex justify-between items-baseline gap-4 py-3 border-b border-petanque-sable-bord/40 last:border-b-0">
+      <span className="text-sm text-petanque-bois flex-shrink-0">{label}</span>
+      <span className="text-sm md:text-base text-right">{children}</span>
+    </div>
+  )
+}
+
+function DataLink({ title, description, onClick, loading }: { title: string; description: string; onClick: () => void; loading: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      className="w-full flex items-center justify-between gap-4 p-4 bg-white border border-petanque-sable-bord rounded-xl mb-2 hover:border-petanque-bois/50 transition-colors disabled:opacity-50 text-left"
+    >
+      <div className="flex-1 min-w-0">
+        <p className="text-sm md:text-base font-medium text-petanque-vert-fonce">{title}</p>
+        <p className="text-xs text-petanque-bois mt-0.5">{description}</p>
+      </div>
+      {loading ? (
+        <Loader className="w-4 h-4 animate-spin text-petanque-vert flex-shrink-0" />
+      ) : (
+        <span className="text-petanque-vert flex-shrink-0">→</span>
+      )}
+    </button>
   )
 }

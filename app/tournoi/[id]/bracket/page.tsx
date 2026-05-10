@@ -1,538 +1,519 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import { useBracket, BracketMatch, BracketData } from '@/hooks/bracket'
-import { Trophy, Medal, Petanque, Crown, Arrow, Loader, Flag, Users, PlayLarge } from '@/components/Icons'
+import { useBracket, BracketMatch } from '@/hooks/bracket'
+import { Button, BouleSvg, FadeIn } from '@/components/ui'
+import { Loader } from '@/components/Icons'
 
-// Icones premium
-const Icons = {
-  trophy: <Trophy className="w-6 h-6" />,
-  medal: <Medal className="w-8 h-8" />,
-  petanque: <Petanque className="w-8 h-8" />,
-  crown: <Crown className="w-10 h-10" />,
-  arrow: <Arrow className="w-5 h-5" />,
-  loader: <Loader className="h-6 w-6" />,
-  flag: <Flag className="w-5 h-5" />,
-  users: <Users className="w-5 h-5" />,
-  play: <PlayLarge className="w-5 h-5" />
+const COL_WIDTH = 220
+const HORIZONTAL_GAP = 60
+const VERTICAL_GAP = 30
+
+type Phase = {
+  label: string
+  shortLabel: string
+  matches: (BracketMatch | null | undefined)[]
+  matchCount: number
+  isFinale?: boolean
 }
 
-/**
- * Page de l'arbre du tournoi (bracket)
- * - Affichage des phases finales
- * - Navigation vers les matchs
- */
+type PhaseWithLayout = Phase & {
+  positions: { top: number; center: number }[]
+  colLeft: number
+}
+
+// ========================================================
+// Layout calculation
+// ========================================================
+
+function buildPhases(bracketData: any, hasHuitiemes: boolean, hasQuarts: boolean, hasDemis: boolean): Phase[] {
+  const phases: Phase[] = []
+  if (hasHuitiemes) phases.push({ label: '1/8 finale', shortLabel: '1/8', matches: bracketData.huitiemes || [], matchCount: 8 })
+  if (hasQuarts) phases.push({ label: '1/4 finale', shortLabel: '1/4', matches: bracketData.quarts || [], matchCount: 4 })
+  if (hasDemis) phases.push({ label: '1/2 finale', shortLabel: '1/2', matches: bracketData.demis || [], matchCount: 2 })
+  phases.push({ label: 'Finale', shortLabel: 'Finale', matches: [bracketData.finale], matchCount: 1, isFinale: true })
+  return phases
+}
+
+function computeLayout(phases: Phase[]) {
+  const totalRows = phases[0].matchCount
+  const matchHeight = totalRows >= 8 ? 70 : 90
+  const totalHeight = totalRows * matchHeight + (totalRows - 1) * VERTICAL_GAP
+  const totalWidth = phases.length * COL_WIDTH + (phases.length - 1) * HORIZONTAL_GAP
+  const slotHeight = matchHeight + VERTICAL_GAP
+
+  const phasesWithLayout: PhaseWithLayout[] = phases.map((phase, phaseIdx) => {
+    const matchesPerSlot = totalRows / phase.matchCount
+    const positions = Array.from({ length: phase.matchCount }, (_, i) => {
+      const startY = i * matchesPerSlot * slotHeight
+      const center = startY + (matchesPerSlot * slotHeight - VERTICAL_GAP) / 2
+      return { top: center - matchHeight / 2, center }
+    })
+    return { ...phase, positions, colLeft: phaseIdx * (COL_WIDTH + HORIZONTAL_GAP) }
+  })
+
+  return { phasesWithLayout, totalHeight, totalWidth, matchHeight }
+}
+
+function buildConnectors(phasesWithLayout: PhaseWithLayout[]): { points: string }[] {
+  const connectors: { points: string }[] = []
+  for (let i = 0; i < phasesWithLayout.length - 1; i++) {
+    const current = phasesWithLayout[i]
+    const next = phasesWithLayout[i + 1]
+    const xExit = current.colLeft + COL_WIDTH
+    const xMid = xExit + HORIZONTAL_GAP / 2
+    const xEntry = next.colLeft
+
+    next.positions.forEach((nextPos, nextIdx) => {
+      const prevA = current.positions[nextIdx * 2]
+      const prevB = current.positions[nextIdx * 2 + 1]
+      if (!prevA || !prevB) return
+      connectors.push({
+        points: `${xExit},${prevA.center} ${xMid},${prevA.center} ${xMid},${nextPos.center} ${xEntry},${nextPos.center}`
+      })
+      connectors.push({
+        points: `${xExit},${prevB.center} ${xMid},${prevB.center} ${xMid},${nextPos.center}`
+      })
+    })
+  }
+  return connectors
+}
+
+function getEmptyTeamLabel(phaseIdx: number, matchIdx: number, side: 'a' | 'b', phases: Phase[]): string {
+  if (phaseIdx === 0) return 'À déterminer'
+  const prevPhase = phases[phaseIdx - 1]
+  const prevIdx = matchIdx * 2 + (side === 'a' ? 0 : 1)
+  const phaseShort = prevPhase.shortLabel
+  if (phaseShort === '1/8') return `Vainqueur 8e ${prevIdx + 1}`
+  if (phaseShort === '1/4') return `Vainqueur Q${prevIdx + 1}`
+  if (phaseShort === '1/2') return `Vainqueur D${prevIdx + 1}`
+  return 'Vainqueur'
+}
+
+// ========================================================
+// Main component
+// ========================================================
+
 export default function BracketPage() {
   const params = useParams()
   const router = useRouter()
+  const tournoiId = params?.id as string
 
-  const {
-    loading,
-    tournament,
-    bracketData,
-    hasHuitiemes,
-    hasQuarts,
-    hasDemis
-  } = useBracket({ tournoiId: params?.id })
-
-  const handleUpdateScore = (matchId: string) => {
-    router.push(`/match/${matchId}`)
-  }
+  const { loading, tournament, bracketData, hasHuitiemes, hasQuarts, hasDemis } = useBracket({ tournoiId })
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30 flex items-center justify-center">
+      <div className="min-h-screen bg-petanque-sable-pale flex items-center justify-center">
         <div className="text-center">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full blur-2xl opacity-20 animate-pulse"></div>
-            <div className="relative bg-white rounded-3xl p-12 shadow-2xl">
-              {Icons.loader}
-              <p className="mt-4 text-lg font-medium text-gray-600">Chargement de l'arbre...</p>
-            </div>
-          </div>
+          <Loader className="w-7 h-7 animate-spin mx-auto text-petanque-vert" />
+          <p className="mt-4 text-sm text-petanque-bois">Chargement du bracket…</p>
         </div>
       </div>
     )
   }
 
+  const phases = buildPhases(bracketData, hasHuitiemes, hasQuarts, hasDemis)
+  const { phasesWithLayout, totalHeight, totalWidth, matchHeight } = computeLayout(phases)
+  const connectors = buildConnectors(phasesWithLayout)
+
+  // Status global
+  const allMatches = phases.flatMap(p => p.matches.filter(Boolean) as BracketMatch[])
+  const liveMatches = allMatches.filter(m => m.status === 'en_cours')
+  const finishedMatches = allMatches.filter(m => m.status === 'termine')
+  const finaleMatch = bracketData.finale
+  const hasFinaleWinner = finaleMatch?.status === 'termine'
+
+  // Hero contextuel
+  let heroContent: React.ReactNode
+  if (hasFinaleWinner && finaleMatch) {
+    const winner: any = finaleMatch.score_a > finaleMatch.score_b ? finaleMatch.equipe_a : finaleMatch.equipe_b
+    heroContent = <>{winner?.name || 'Le vainqueur'} <span className="accent-italic text-petanque-vert">remporte les phases finales.</span></>
+  } else if (liveMatches.length > 0) {
+    heroContent = <>Les phases finales sont <span className="accent-italic text-petanque-vert">en cours.</span></>
+  } else if (finishedMatches.length > 0) {
+    heroContent = <>Les phases finales <span className="accent-italic text-petanque-vert">progressent.</span></>
+  } else {
+    heroContent = <>Les phases finales <span className="accent-italic text-petanque-vert">vont commencer.</span></>
+  }
+
+  // Status pill
+  let statusPill: React.ReactNode
+  if (hasFinaleWinner) statusPill = <span>Terminé</span>
+  else if (liveMatches.length > 0) statusPill = <span className="text-petanque-vert flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-petanque-vert animate-pulse"></span>En cours</span>
+  else statusPill = <span>À venir</span>
+
+  // Phase active pour eyebrow
+  let activePhaseLabel = ''
+  for (const phase of phasesWithLayout) {
+    const phaseMatches = phase.matches.filter(Boolean) as BracketMatch[]
+    if (phaseMatches.some(m => m.status === 'en_cours' || m.status === 'a_jouer')) {
+      activePhaseLabel = phase.label
+      break
+    }
+  }
+
+  // Date
+  const tournamentDate = (tournament?.settings as any)?.date
+    ? new Date((tournament!.settings as any).date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    : ''
+
+  // Sub-nav
+  const subNavLinks = [
+    { href: `/tournoi/${tournoiId}`, label: 'Aperçu' },
+    { href: `/tournoi/${tournoiId}#matchs`, label: 'Tous les matchs' },
+    { href: `/tournoi/${tournoiId}#classement`, label: 'Classement' },
+    { href: `/tournoi/${tournoiId}#equipes`, label: 'Équipes' },
+    { href: `/tournoi/${tournoiId}/bracket`, label: 'Bracket', active: true },
+    { href: `/tournoi/${tournoiId}#stats`, label: 'Stats' },
+    { href: `/tournoi/${tournoiId}/export`, label: 'Export' }
+  ]
+
+  const handleMatchClick = (match: BracketMatch | null | undefined) => {
+    if (match?.id) router.push(`/match/${match.id}`)
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30">
-      {/* Particules animees */}
-      <AnimatedBackground />
-
+    <div className="min-h-screen bg-petanque-sable-pale">
       {/* Header */}
-      <PageHeader
-        tournamentName={tournament?.name}
-        onBack={() => router.push(`/tournoi/${params?.id}`)}
-      />
-
-      {/* Arbre du tournoi */}
-      <div className="p-8 overflow-x-auto">
-        <div className="bracket-container min-w-max">
-          <div className="bracket-wrapper flex items-center justify-center gap-8">
-
-            {/* Huitiemes de finale */}
-            {hasHuitiemes && (
-              <BracketColumn
-                title="1/8 Finale"
-                matches={bracketData.huitiemes}
-                matchPrefix="huitieme"
-                count={8}
-                spacing="space-y-8"
-                onUpdateScore={handleUpdateScore}
-              />
-            )}
-
-            {/* Quarts de finale */}
-            {hasQuarts && (
-              <BracketColumn
-                title="1/4 Finale"
-                matches={bracketData.quarts}
-                matchPrefix="quart"
-                count={4}
-                spacing={hasHuitiemes ? 'space-y-32' : 'space-y-16'}
-                onUpdateScore={handleUpdateScore}
-              />
-            )}
-
-            {/* Demi-finales */}
-            {hasDemis && (
-              <BracketColumn
-                title="1/2 Finale"
-                matches={bracketData.demis}
-                matchPrefix="demi"
-                count={2}
-                spacing={hasQuarts ? 'space-y-64' : 'space-y-32'}
-                onUpdateScore={handleUpdateScore}
-              />
-            )}
-
-            {/* Finale et Petite finale */}
-            <FinaleColumn
-              finale={bracketData.finale}
-              petiteFinale={bracketData.petiteFinale}
-              hasConsolante={tournament?.settings?.consolante}
-              onUpdateScore={handleUpdateScore}
-            />
+      <header className="sticky top-0 z-50 bg-petanque-sable-pale/85 backdrop-blur-xl border-b border-petanque-sable-bord/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-4 h-14">
+            <button
+              onClick={() => router.push(`/tournoi/${tournoiId}`)}
+              className="text-sm text-petanque-bois hover:text-petanque-vert-fonce font-medium flex items-center gap-1.5"
+            >
+              <span>←</span>
+              <span className="hidden sm:inline">Retour au tournoi</span>
+            </button>
+            <span className="font-mono text-xs text-petanque-bois truncate max-w-[300px]">
+              {tournament?.name}
+            </span>
+            <span className="font-mono text-xs uppercase tracking-[0.16em] font-medium">
+              {statusPill}
+            </span>
           </div>
         </div>
-      </div>
+      </header>
 
-      <style jsx>{`
-        .bracket-container {
-          min-height: 80vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 2rem;
-        }
-        .bracket-wrapper { position: relative; }
-        .bracket-column {
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-        }
-        @keyframes blob {
-          0% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-          100% { transform: translate(0px, 0px) scale(1); }
-        }
-        .animate-blob { animation: blob 7s infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
-      `}</style>
-    </div>
-  )
-}
+      {/* Sub-nav */}
+      <nav className="sticky top-14 z-40 bg-petanque-sable-pale/85 backdrop-blur-xl border-b border-petanque-sable-bord/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 overflow-x-auto">
+          <div className="flex flex-shrink-0">
+            {subNavLinks.map((link) => (
+              <button
+                key={link.label}
+                onClick={() => router.push(link.href)}
+                className={`px-3.5 py-3.5 text-sm whitespace-nowrap border-b-[1.5px] transition-colors ${
+                  link.active
+                    ? 'text-petanque-vert-fonce border-petanque-vert font-medium'
+                    : 'text-petanque-bois border-transparent hover:text-petanque-vert-fonce'
+                }`}
+              >
+                {link.label}
+              </button>
+            ))}
+          </div>
+          <div className="inline-flex bg-white border border-petanque-sable-bord/60 rounded-full p-0.5 my-2 flex-shrink-0">
+            {(['Organisateur', 'Joueur', 'Spectateur'] as const).map((role, i) => (
+              <button
+                key={role}
+                className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                  i === 0 ? 'bg-petanque-vert text-petanque-sable' : 'text-petanque-bois'
+                }`}
+              >
+                {role}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
 
-// ============================================================================
-// Composants internes
-// ============================================================================
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <FadeIn>
+          <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span>Phases finales{tournamentDate ? ` · ${tournamentDate}` : ''}</span>
+            {activePhaseLabel && (
+              <>
+                <span className="text-petanque-sable-bord">·</span>
+                <span className="text-petanque-vert flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-petanque-vert animate-pulse"></span>
+                  {activePhaseLabel} en cours
+                </span>
+              </>
+            )}
+          </p>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.1] mb-10">
+            {heroContent}
+          </h1>
+        </FadeIn>
 
-function AnimatedBackground() {
-  return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-green-300 to-emerald-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-      <div className="absolute top-40 -left-40 w-96 h-96 bg-gradient-to-br from-blue-300 to-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-      <div className="absolute -bottom-40 right-40 w-96 h-96 bg-gradient-to-br from-purple-300 to-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-    </div>
-  )
-}
+        {/* Bracket arena */}
+        <FadeIn delay={120}>
+          <div className="overflow-x-auto pb-4">
+            {/* Labels au-dessus des colonnes */}
+            <div className="relative mx-auto mb-3" style={{ width: totalWidth }}>
+              {phasesWithLayout.map((phase, i) => (
+                <div
+                  key={phase.label}
+                  className="absolute font-mono text-[11px] uppercase tracking-[0.18em] font-medium flex items-center justify-center gap-2 h-5"
+                  style={{ left: phase.colLeft, width: COL_WIDTH, color: phase.isFinale ? '#2d5530' : '#8c6f4f' }}
+                >
+                  {phase.isFinale && <BouleSvg size={18} variant="acier" stries />}
+                  {phase.label}
+                </div>
+              ))}
+              <div style={{ height: 20 }}></div>
+            </div>
 
-interface PageHeaderProps {
-  tournamentName?: string
-  onBack: () => void
-}
-
-function PageHeader({ tournamentName, onBack }: PageHeaderProps) {
-  return (
-    <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-2xl border-b border-gray-200/50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={onBack}
-              className="group flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 rounded-xl transition-all"
+            {/* Bracket */}
+            <div
+              className="relative mx-auto rounded-xl border-[0.5px]"
+              style={{
+                width: totalWidth,
+                height: totalHeight,
+                background: 'rgba(244,237,224,0.4)',
+                borderColor: 'rgba(216,201,168,0.5)'
+              }}
             >
-              ← <span className="font-medium">Retour au tournoi</span>
-            </button>
+              {/* Connecteurs SVG */}
+              <svg
+                className="absolute inset-0 pointer-events-none"
+                viewBox={`0 0 ${totalWidth} ${totalHeight}`}
+                preserveAspectRatio="none"
+                style={{ width: '100%', height: '100%' }}
+              >
+                <g stroke="#8c6f4f" strokeWidth="1" fill="none" strokeOpacity="0.45">
+                  {connectors.map((c, i) => (
+                    <polyline key={i} points={c.points} />
+                  ))}
+                </g>
+              </svg>
 
-            <div className="h-10 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
-
-            <div className="flex items-center space-x-3">
-              <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl text-white shadow-lg">
-                {Icons.trophy}
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                  Phases finales
-                </h1>
-                <p className="text-sm text-gray-500">{tournamentName}</p>
-              </div>
+              {/* Cards */}
+              {phasesWithLayout.map((phase, phaseIdx) => (
+                <div key={phase.label} className="absolute top-0" style={{ left: phase.colLeft, width: COL_WIDTH }}>
+                  {Array.from({ length: phase.matchCount }, (_, matchIdx) => {
+                    const match = phase.matches[matchIdx] as BracketMatch | undefined
+                    const pos = phase.positions[matchIdx]
+                    const labelA = match?.equipe_a?.name || getEmptyTeamLabel(phaseIdx, matchIdx, 'a', phases)
+                    const labelB = match?.equipe_b?.name || getEmptyTeamLabel(phaseIdx, matchIdx, 'b', phases)
+                    return (
+                      <MatchCard
+                        key={matchIdx}
+                        match={match}
+                        labelA={labelA}
+                        labelB={labelB}
+                        isFinale={!!phase.isFinale}
+                        matchIdx={matchIdx}
+                        top={pos.top}
+                        height={matchHeight}
+                        onClick={() => handleMatchClick(match)}
+                      />
+                    )
+                  })}
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      </div>
-    </header>
-  )
-}
+        </FadeIn>
 
-interface BracketColumnProps {
-  title: string
-  matches: BracketMatch[]
-  matchPrefix: string
-  count: number
-  spacing: string
-  onUpdateScore: (matchId: string) => void
-}
-
-function BracketColumn({ title, matches, matchPrefix, count, spacing, onUpdateScore }: BracketColumnProps) {
-  return (
-    <div className="bracket-column">
-      <h3 className="text-center font-bold text-gray-700 mb-4">{title}</h3>
-      <div className={spacing}>
-        {Array.from({ length: count }).map((_, i) => (
-          <MatchCard
-            key={`${matchPrefix}-${i}`}
-            match={matches[i]}
-            position={`${matchPrefix}-${i}`}
-            onUpdateScore={onUpdateScore}
-          />
-        ))}
-      </div>
+        {/* Petite finale */}
+        {tournament?.settings?.consolante && (
+          <FadeIn delay={200}>
+            <div className="mt-10 pt-8 border-t border-petanque-sable-bord/50 max-w-md">
+              <p className="font-mono text-[11px] uppercase tracking-[0.18em] font-medium text-petanque-bois mb-4 flex items-center gap-2.5">
+                <BouleSvg size={16} variant="cochonnet" stries />
+                Petite finale · 3<sup>e</sup> place
+              </p>
+              <PetiteFinaleCard
+                match={bracketData.petiteFinale}
+                onClick={() => handleMatchClick(bracketData.petiteFinale)}
+              />
+            </div>
+          </FadeIn>
+        )}
+      </main>
     </div>
   )
 }
+
+// ========================================================
+// MatchCard
+// ========================================================
 
 interface MatchCardProps {
-  match?: BracketMatch | null
-  position: string
-  onUpdateScore: (matchId: string) => void
+  match?: BracketMatch
+  labelA: string
+  labelB: string
+  isFinale: boolean
+  matchIdx: number
+  top: number
+  height: number
+  onClick: () => void
 }
 
-function MatchCard({ match, position, onUpdateScore }: MatchCardProps) {
-  const router = useRouter()
+function MatchCard({ match, labelA, labelB, isFinale, matchIdx, top, height, onClick }: MatchCardProps) {
+  const isLive = match?.status === 'en_cours'
+  const isDone = match?.status === 'termine'
+  const isPending = !match || match.status === 'a_jouer'
 
-  if (!match) {
-    return (
-      <div className={`bracket-match empty ${position}`}>
-        <div className="match-card bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-4 opacity-50 min-w-[280px]">
-          <div className="text-center text-gray-400">
-            <p className="text-sm">En attente</p>
-            <p className="text-xs mt-1">Qualifie des poules</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const winnerA = isDone && match!.score_a > match!.score_b
+  const winnerB = isDone && match!.score_b > match!.score_a
+  const isLiveLeaderA = isLive && match!.score_a > match!.score_b
+  const isLiveLeaderB = isLive && match!.score_b > match!.score_a
 
-  const winner = match.status === 'termine'
-    ? (match.score_a > match.score_b ? 'A' : 'B')
-    : null
+  const matchLabel = isFinale
+    ? 'Grande finale'
+    : `${match?.terrain ? `T${match.terrain} · ` : ''}M${matchIdx + 1}`
 
   return (
-    <div className={`bracket-match ${position} relative min-w-[280px]`}>
-      <div className={`match-card relative bg-white rounded-xl shadow-lg overflow-hidden transition-all hover:shadow-2xl hover:scale-105 ${
-        match.status === 'en_cours' ? 'ring-2 ring-orange-500 animate-pulse' : ''
-      }`}>
-        {/* Badge statut */}
-        <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold ${
-          match.status === 'termine' ? 'bg-gray-100 text-gray-700' :
-          match.status === 'en_cours' ? 'bg-orange-100 text-orange-700' :
-          'bg-yellow-100 text-yellow-700'
-        }`}>
-          {match.status === 'termine' ? 'Termine' :
-           match.status === 'en_cours' ? 'En cours' : 'A jouer'}
-        </div>
-
-        {/* Equipes */}
-        <div className="p-4">
-          <TeamRow
-            team={match.equipe_a}
-            score={match.score_a}
-            isWinner={winner === 'A'}
-            showScore={match.status !== 'a_jouer'}
-          />
-          <TeamRow
-            team={match.equipe_b}
-            score={match.score_b}
-            isWinner={winner === 'B'}
-            showScore={match.status !== 'a_jouer'}
-            isLast
-          />
-        </div>
-
-        {/* Actions */}
-        {match.status === 'a_jouer' && (
-          <div className="px-4 pb-4">
-            <button
-              onClick={() => onUpdateScore(match.id)}
-              className="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center justify-center"
-            >
-              {Icons.play}
-              <span className="ml-2">Saisir le score</span>
-            </button>
-          </div>
+    <div
+      className={`absolute rounded-lg bg-white transition-colors ${
+        isLive ? 'border-[1.5px] border-petanque-vert' : 'border-[0.5px] border-petanque-sable-bord'
+      } ${match ? 'hover:border-petanque-bois/50 cursor-pointer' : ''}`}
+      style={{
+        top,
+        left: 0,
+        right: 0,
+        height,
+        padding: isLive ? '11px 14px' : '12px 15px'
+      }}
+      onClick={match ? onClick : undefined}
+    >
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em] truncate">
+          {matchLabel}
+        </span>
+        {isLive && (
+          <span className="font-mono text-[9px] text-petanque-vert uppercase tracking-[0.14em] font-medium flex items-center gap-1 flex-shrink-0">
+            <span className="w-1 h-1 rounded-full bg-petanque-vert animate-pulse"></span>
+            Live
+          </span>
         )}
-
-        {match.status === 'en_cours' && (
-          <div className="px-4 pb-4">
-            <button
-              onClick={() => router.push(`/match/${match.id}`)}
-              className="w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg animate-pulse flex items-center justify-center"
-            >
-              Match en cours...
-            </button>
-          </div>
+        {isDone && (
+          <span className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em] flex-shrink-0">
+            Terminé
+          </span>
+        )}
+        {isPending && match && (
+          <span className="font-mono text-[9px] text-petanque-cochonnet uppercase tracking-[0.14em] flex-shrink-0">
+            À jouer
+          </span>
+        )}
+        {!match && (
+          <span className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em] italic flex-shrink-0">
+            En attente
+          </span>
         )}
       </div>
-
-      {/* Ligne de connexion */}
-      <div className="connector absolute w-10 h-0.5 bg-gradient-to-r from-transparent via-gray-300 to-transparent top-1/2 -right-10 transform -translate-y-1/2"></div>
+      <TeamRow
+        label={labelA}
+        score={match?.score_a}
+        isWinner={winnerA}
+        isLiveLeader={isLiveLeaderA}
+        isLoser={isDone && !winnerA}
+        showScore={!!match && match.status !== 'a_jouer'}
+        isPlaceholder={!match}
+      />
+      <TeamRow
+        label={labelB}
+        score={match?.score_b}
+        isWinner={winnerB}
+        isLiveLeader={isLiveLeaderB}
+        isLoser={isDone && !winnerB}
+        showScore={!!match && match.status !== 'a_jouer'}
+        isPlaceholder={!match}
+      />
     </div>
   )
 }
 
 interface TeamRowProps {
-  team: any
-  score: number
+  label: string
+  score?: number
   isWinner: boolean
+  isLiveLeader: boolean
+  isLoser: boolean
   showScore: boolean
-  isLast?: boolean
+  isPlaceholder: boolean
 }
 
-function TeamRow({ team, score, isWinner, showScore, isLast }: TeamRowProps) {
+function TeamRow({ label, score, isWinner, isLiveLeader, isLoser, showScore, isPlaceholder }: TeamRowProps) {
+  const greenText = isWinner || isLiveLeader
   return (
-    <div className={`flex items-center justify-between p-3 rounded-lg ${!isLast ? 'mb-2' : ''} transition-all ${
-      isWinner
-        ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500'
-        : showScore && !isWinner
-        ? 'opacity-50'
-        : 'bg-gray-50'
-    }`}>
-      <div className="flex items-center">
-        {isWinner && (
-          <div className="text-green-600 mr-2 animate-bounce">
-            {Icons.trophy}
-          </div>
-        )}
-        <div>
-          <p className="font-bold text-gray-900">{team?.name || 'TBD'}</p>
-          <p className="text-xs text-gray-500">
-            {team?.players?.length || 0} joueurs
-          </p>
-        </div>
-      </div>
-      {showScore && (
-        <span className="text-2xl font-bold text-gray-900">{score}</span>
-      )}
+    <div className={`flex items-center justify-between gap-2 py-0.5 ${isLoser ? 'opacity-50' : ''}`}>
+      <span className={`text-sm flex items-center gap-1.5 min-w-0 flex-1 ${
+        greenText ? 'text-petanque-vert font-medium' : isPlaceholder ? 'text-petanque-bois italic' : 'text-petanque-vert-fonce'
+      }`}>
+        {greenText && <span className="w-1.5 h-1.5 rounded-full bg-petanque-vert flex-shrink-0"></span>}
+        <span className="truncate">{label}</span>
+      </span>
+      <span className={`font-mono text-base tabular-nums flex-shrink-0 ${
+        greenText ? 'text-petanque-vert font-medium' : 'text-petanque-bois'
+      }`}>
+        {showScore ? score : '—'}
+      </span>
     </div>
   )
 }
 
-interface FinaleColumnProps {
-  finale: BracketMatch | null
-  petiteFinale: BracketMatch | null
-  hasConsolante?: boolean
-  onUpdateScore: (matchId: string) => void
-}
-
-function FinaleColumn({ finale, petiteFinale, hasConsolante, onUpdateScore }: FinaleColumnProps) {
-  return (
-    <div className="bracket-column finale-column flex flex-col justify-center">
-      {/* Finale */}
-      <div className="finale-wrapper mb-16">
-        <h3 className="text-center font-bold text-xl text-gray-900 mb-4 flex items-center justify-center">
-          <div className="text-yellow-500 mr-2">{Icons.crown}</div>
-          FINALE
-        </h3>
-        <div className="finale-match scale-110">
-          {finale ? (
-            <FinaleCard match={finale} onUpdateScore={onUpdateScore} />
-          ) : (
-            <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center">
-              <div className="text-gray-400 mb-2">{Icons.trophy}</div>
-              <p className="text-gray-500">En attente des finalistes</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Petite finale */}
-      {hasConsolante && (
-        <div className="petite-finale-wrapper">
-          <h3 className="text-center font-bold text-gray-700 mb-4">3eme place</h3>
-          {petiteFinale ? (
-            <PetiteFinaleCard match={petiteFinale} onUpdateScore={onUpdateScore} />
-          ) : (
-            <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
-              <p className="text-gray-500 text-sm">En attente</p>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
-interface FinaleCardProps {
-  match: BracketMatch
-  onUpdateScore: (matchId: string) => void
-}
-
-function FinaleCard({ match, onUpdateScore }: FinaleCardProps) {
-  const winnerA = match.status === 'termine' && match.score_a > match.score_b
-  const winnerB = match.status === 'termine' && match.score_b > match.score_a
-
-  return (
-    <div className="relative">
-      {/* Effet brillant */}
-      <div className="absolute inset-0 bg-gradient-to-r from-yellow-200 via-yellow-300 to-yellow-200 rounded-2xl blur-xl opacity-30 animate-pulse"></div>
-
-      <div className="relative bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-400 rounded-2xl shadow-2xl p-6">
-        {/* Badge finale */}
-        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-          <div className="px-4 py-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-sm font-bold rounded-full">
-            🏆 GRANDE FINALE 🏆
-          </div>
-        </div>
-
-        {/* Statut */}
-        <div className={`text-center mb-4 px-3 py-1 rounded-full text-xs font-bold inline-block ${
-          match.status === 'termine' ? 'bg-green-100 text-green-700' :
-          match.status === 'en_cours' ? 'bg-orange-100 text-orange-700 animate-pulse' :
-          'bg-yellow-100 text-yellow-700'
-        }`}>
-          {match.status === 'termine' ? 'Match termine' :
-           match.status === 'en_cours' ? 'En cours' : 'A venir'}
-        </div>
-
-        {/* Equipes */}
-        <div className="space-y-3">
-          <FinaleTeamRow
-            team={match.equipe_a}
-            score={match.score_a}
-            isWinner={winnerA}
-            showScore={match.status !== 'a_jouer'}
-          />
-          <div className="text-center text-gray-400 font-bold">VS</div>
-          <FinaleTeamRow
-            team={match.equipe_b}
-            score={match.score_b}
-            isWinner={winnerB}
-            showScore={match.status !== 'a_jouer'}
-          />
-        </div>
-
-        {/* Action */}
-        {match.status === 'a_jouer' && (
-          <button
-            onClick={() => onUpdateScore(match.id)}
-            className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-bold hover:shadow-lg transition-all"
-          >
-            Commencer la finale
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
-
-interface FinaleTeamRowProps {
-  team: any
-  score: number
-  isWinner: boolean
-  showScore: boolean
-}
-
-function FinaleTeamRow({ team, score, isWinner, showScore }: FinaleTeamRowProps) {
-  return (
-    <div className={`p-4 rounded-xl transition-all ${
-      isWinner
-        ? 'bg-gradient-to-r from-green-100 to-emerald-100 border-2 border-green-500 transform scale-105'
-        : 'bg-white'
-    }`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          {isWinner && <div className="text-3xl mr-3">🥇</div>}
-          <div>
-            <p className="font-bold text-lg">{team?.name}</p>
-            <p className="text-sm text-gray-500">Finaliste</p>
-          </div>
-        </div>
-        {showScore && (
-          <span className="text-3xl font-bold">{score}</span>
-        )}
-      </div>
-    </div>
-  )
-}
+// ========================================================
+// Petite finale
+// ========================================================
 
 interface PetiteFinaleCardProps {
-  match: BracketMatch
-  onUpdateScore: (matchId: string) => void
+  match: BracketMatch | null
+  onClick: () => void
 }
 
-function PetiteFinaleCard({ match, onUpdateScore }: PetiteFinaleCardProps) {
-  const winnerA = match.status === 'termine' && match.score_a > match.score_b
-  const winnerB = match.status === 'termine' && match.score_b > match.score_a
+function PetiteFinaleCard({ match, onClick }: PetiteFinaleCardProps) {
+  if (!match) {
+    return (
+      <div className="rounded-lg bg-white border-[0.5px] border-petanque-sable-bord p-4">
+        <p className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em] mb-2">Match consolante</p>
+        <p className="text-sm text-petanque-bois italic">En attente des perdants des demi-finales.</p>
+      </div>
+    )
+  }
+
+  const isLive = match.status === 'en_cours'
+  const isDone = match.status === 'termine'
+  const winnerA = isDone && match.score_a > match.score_b
+  const winnerB = isDone && match.score_b > match.score_a
+  const liveA = isLive && match.score_a > match.score_b
+  const liveB = isLive && match.score_b > match.score_a
 
   return (
-    <div className="bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-300 rounded-xl shadow-lg p-4">
-      <div className="text-center mb-3">
-        <span className="text-2xl">🥉</span>
+    <div
+      onClick={onClick}
+      className={`rounded-lg bg-white p-4 cursor-pointer transition-colors ${
+        isLive ? 'border-[1.5px] border-petanque-vert' : 'border-[0.5px] border-petanque-sable-bord hover:border-petanque-bois/50'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em]">Match consolante</span>
+        {isLive && <span className="font-mono text-[9px] text-petanque-vert uppercase tracking-[0.14em] font-medium flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-petanque-vert animate-pulse"></span>Live</span>}
+        {isDone && <span className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em]">Terminé</span>}
+        {!isDone && !isLive && <span className="font-mono text-[9px] text-petanque-cochonnet uppercase tracking-[0.14em]">À jouer</span>}
       </div>
-
-      {/* Equipes */}
-      <div className="space-y-2">
-        <div className={`p-3 rounded-lg bg-white flex items-center justify-between ${
-          winnerA ? 'ring-2 ring-orange-400' : ''
-        }`}>
-          <span className="font-medium">{match.equipe_a?.name}</span>
-          {match.status !== 'a_jouer' && (
-            <span className="font-bold text-xl">{match.score_a}</span>
-          )}
-        </div>
-
-        <div className={`p-3 rounded-lg bg-white flex items-center justify-between ${
-          winnerB ? 'ring-2 ring-orange-400' : ''
-        }`}>
-          <span className="font-medium">{match.equipe_b?.name}</span>
-          {match.status !== 'a_jouer' && (
-            <span className="font-bold text-xl">{match.score_b}</span>
-          )}
-        </div>
-      </div>
-
-      {match.status === 'a_jouer' && (
-        <button
-          onClick={() => onUpdateScore(match.id)}
-          className="w-full mt-3 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all"
-        >
-          Saisir le score
-        </button>
-      )}
+      <TeamRow
+        label={match.equipe_a?.name || 'Perdant Demi 1'}
+        score={match.score_a}
+        isWinner={winnerA}
+        isLiveLeader={liveA}
+        isLoser={isDone && !winnerA}
+        showScore={match.status !== 'a_jouer'}
+        isPlaceholder={!match.equipe_a}
+      />
+      <TeamRow
+        label={match.equipe_b?.name || 'Perdant Demi 2'}
+        score={match.score_b}
+        isWinner={winnerB}
+        isLiveLeader={liveB}
+        isLoser={isDone && !winnerB}
+        showScore={match.status !== 'a_jouer'}
+        isPlaceholder={!match.equipe_b}
+      />
     </div>
   )
 }
