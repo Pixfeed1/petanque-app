@@ -30,7 +30,7 @@ export const loginSchema = z.object({
 
 export const signupSchema = z.object({
   email: z.string().email('Email invalide'),
-  password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères'),
+  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
   fullName: z.string().optional(),
   organizationName: z.string().optional()
 })
@@ -41,7 +41,7 @@ export const resetPasswordSchema = z.object({
 
 export const updatePasswordSchema = z.object({
   token: z.string().min(1, 'Token manquant'),
-  password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères')
+  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères')
 })
 
 // ============================================
