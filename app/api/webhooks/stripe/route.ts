@@ -1,8 +1,11 @@
 // /app/api/webhooks/stripe/route.ts
+// FIX BUSINESS : org_id lu depuis subscription.metadata.org_id (posé par
+// create-checkout-session). Plus de (SELECT org_id FROM users) cassé.
+// Fallback : si pas dans metadata, on retombe sur user_roles.
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { query } from '@/lib/db'
+import { query, queryOne } from '@/lib/db'
 import { getFeaturesForPlan } from '@/lib/plans'
 
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -14,72 +17,66 @@ const stripe = process.env.STRIPE_SECRET_KEY
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
 /**
- * Webhook Stripe pour gérer les événements d'abonnement
- *
- * Événements gérés :
- * - customer.subscription.created : Nouvel abonnement → Activer Premium
- * - customer.subscription.updated : Abonnement mis à jour → Vérifier le statut
- * - customer.subscription.deleted : Abonnement annulé → Retour au plan gratuit
- * - invoice.payment_succeeded : Paiement réussi → Maintenir Premium
- * - invoice.payment_failed : Paiement échoué → Notifier l'utilisateur
+ * Résout l'org_id à partir des metadata Stripe, avec fallback DB pour les
+ * abonnements créés avant ce fix (qui n'ont pas org_id dans metadata).
  */
+async function resolveOrgId(
+  metadata: Stripe.Metadata | null | undefined,
+  userId: string | null | undefined
+): Promise<string | null> {
+  if (metadata?.org_id) return String(metadata.org_id)
+  if (!userId) return null
+
+  const row = await queryOne<{ org_id: string | number }>(
+    `SELECT org_id FROM user_roles
+     WHERE user_id = $1 AND role = 'owner'
+     ORDER BY granted_at ASC
+     LIMIT 1`,
+    [userId]
+  )
+  return row?.org_id != null ? String(row.org_id) : null
+}
+
 export async function POST(request: NextRequest) {
   if (!stripe || !webhookSecret) {
     console.error('Stripe ou webhook secret non configuré')
-    return NextResponse.json(
-      { error: 'Configuration Stripe manquante' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Configuration Stripe manquante' }, { status: 500 })
   }
 
   try {
-    // Récupérer le corps de la requête
     const body = await request.text()
     const signature = request.headers.get('stripe-signature')
 
     if (!signature) {
-      return NextResponse.json(
-        { error: 'Signature manquante' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Signature manquante' }, { status: 400 })
     }
 
-    // Vérifier la signature du webhook
     let event: Stripe.Event
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       console.error('Erreur de vérification webhook:', errorMessage)
-      return NextResponse.json(
-        { error: `Webhook Error: ${errorMessage}` },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: `Webhook Error: ${errorMessage}` }, { status: 400 })
     }
 
-    // Gérer les différents types d'événements
     switch (event.type) {
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
         await handleSubscriptionChange(event.data.object as Stripe.Subscription)
         break
-
       case 'customer.subscription.deleted':
         await handleSubscriptionDeleted(event.data.object as Stripe.Subscription)
         break
-
       case 'invoice.payment_succeeded':
         await handlePaymentSucceeded(event.data.object as Stripe.Invoice)
         break
-
       case 'invoice.payment_failed':
         await handlePaymentFailed(event.data.object as Stripe.Invoice)
         break
-
       case 'checkout.session.completed':
         await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session)
         break
-
       default:
         break
     }
@@ -88,35 +85,34 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('Erreur webhook:', error)
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
-/**
- * Gère la création ou mise à jour d'un abonnement
- */
 async function handleSubscriptionChange(subscription: Stripe.Subscription) {
   const userId = subscription.metadata.user_id
-
   if (!userId) {
-    console.error('user_id manquant dans les métadonnées de l\'abonnement')
+    console.error('user_id manquant dans metadata', subscription.id)
+    return
+  }
+
+  const orgId = await resolveOrgId(subscription.metadata, userId)
+  if (!orgId) {
+    console.error(`Aucune org_id pour user ${userId} (subscription ${subscription.id})`)
     return
   }
 
   const isActive = subscription.status === 'active' || subscription.status === 'trialing'
   const product = subscription.metadata.product || 'essentiel'
-  const plan = isActive ? (['essentiel', 'club'].includes(product) ? product : 'essentiel') : 'free'
+  const plan = isActive
+    ? (['essentiel', 'club'].includes(product) ? product : 'essentiel')
+    : 'free'
 
-  // current_period_end peut ne pas être présent sur tous les types d'abonnement
   const currentPeriodEnd = (subscription as any).current_period_end
     ? new Date((subscription as any).current_period_end * 1000).toISOString()
-    : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 an par défaut
+    : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
 
   try {
-    // Mettre à jour l'utilisateur
     await query(
       `UPDATE users
        SET metadata = jsonb_set(
@@ -146,7 +142,6 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
       ]
     )
 
-    // Mettre à jour l'organisation (plan + features)
     const features = getFeaturesForPlan(plan)
     await query(
       `UPDATE organisations
@@ -159,29 +154,29 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
          '{features}',
          $2::jsonb
        )
-       WHERE id = (SELECT org_id FROM users WHERE id = $3)`,
-      [JSON.stringify(plan), JSON.stringify(features), userId]
+       WHERE id = $3`,
+      [JSON.stringify(plan), JSON.stringify(features), orgId]
     )
-
   } catch (error) {
     console.error('Erreur lors de la mise à jour de l\'abonnement:', error)
     throw error
   }
 }
 
-/**
- * Gère l'annulation d'un abonnement
- */
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const userId = subscription.metadata.user_id
-
   if (!userId) {
-    console.error('user_id manquant dans les métadonnées de l\'abonnement')
+    console.error('user_id manquant (subscription deleted)', subscription.id)
+    return
+  }
+
+  const orgId = await resolveOrgId(subscription.metadata, userId)
+  if (!orgId) {
+    console.error(`Aucune org_id pour user ${userId}`)
     return
   }
 
   try {
-    // Retour au plan gratuit
     await query(
       `UPDATE users
        SET metadata = jsonb_set(
@@ -197,40 +192,36 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       [userId]
     )
 
+    const features = getFeaturesForPlan('free')
     await query(
       `UPDATE organisations
        SET settings = jsonb_set(
-         COALESCE(settings, '{}'::jsonb),
-         '{plan}',
-         '"free"'::jsonb
+         jsonb_set(
+           COALESCE(settings, '{}'::jsonb),
+           '{plan}',
+           '"free"'::jsonb
+         ),
+         '{features}',
+         $1::jsonb
        )
-       WHERE id = (SELECT org_id FROM users WHERE id = $1)`,
-      [userId]
+       WHERE id = $2`,
+      [JSON.stringify(features), orgId]
     )
-
   } catch (error) {
     console.error('Erreur lors de l\'annulation de l\'abonnement:', error)
     throw error
   }
 }
 
-/**
- * Gère un paiement réussi (renouvellement)
- */
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   const subscriptionId = (invoice as any).subscription
-
-  if (!subscriptionId) {
-    return // Pas un abonnement
-  }
+  if (!subscriptionId) return
 
   try {
-    // Récupérer l'abonnement pour obtenir le user_id
     if (!stripe) return
     const subscription = await stripe.subscriptions.retrieve(subscriptionId as string)
 
     if (subscription.metadata.user_id) {
-      // Enregistrer le paiement dans la base de données
       await query(
         `INSERT INTO payment_attempts
          (user_id, stripe_session_id, stripe_customer_id, amount, currency, status, completed_at)
@@ -246,29 +237,21 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
           'completed'
         ]
       )
-
     }
   } catch (error) {
     console.error('Erreur lors du traitement du paiement réussi:', error)
   }
 }
 
-/**
- * Gère un échec de paiement
- */
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
   const subscriptionId = (invoice as any).subscription
-
-  if (!subscriptionId) {
-    return // Pas un abonnement
-  }
+  if (!subscriptionId) return
 
   try {
     if (!stripe) return
     const subscription = await stripe.subscriptions.retrieve(subscriptionId as string)
 
     if (subscription.metadata.user_id) {
-      // Enregistrer l'échec de paiement
       await query(
         `INSERT INTO payment_attempts
          (user_id, stripe_session_id, stripe_customer_id, amount, currency, status)
@@ -282,31 +265,28 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
           'failed'
         ]
       )
-
-      // TODO: Envoyer un email à l'utilisateur pour l'informer
     }
   } catch (error) {
     console.error('Erreur lors du traitement de l\'échec de paiement:', error)
   }
 }
 
-/**
- * Gère la fin d'une session checkout
- */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.user_id
-
   if (!userId) {
-    console.error('user_id manquant dans les métadonnées de la session')
+    console.error('user_id manquant (session)', session.id)
     return
   }
 
-  // Si c'est un abonnement, on attend l'événement subscription.created
-  if (session.mode === 'subscription') {
+  // Pour subscription, on laisse subscription.created faire le job
+  if (session.mode === 'subscription') return
+
+  const orgId = await resolveOrgId(session.metadata, userId)
+  if (!orgId) {
+    console.error(`Aucune org_id pour user ${userId}`)
     return
   }
 
-  // Pour un paiement unique (mode payment), on active directement
   const checkoutProduct = session.metadata?.product || 'essentiel'
   const checkoutPlan = ['essentiel', 'club'].includes(checkoutProduct) ? checkoutProduct : 'essentiel'
 
@@ -326,17 +306,21 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       [JSON.stringify(checkoutPlan), JSON.stringify(checkoutPlan + '_yearly'), userId]
     )
 
+    const features = getFeaturesForPlan(checkoutPlan)
     await query(
       `UPDATE organisations
        SET settings = jsonb_set(
-         COALESCE(settings, '{}'::jsonb),
-         '{plan}',
-         $1::jsonb
+         jsonb_set(
+           COALESCE(settings, '{}'::jsonb),
+           '{plan}',
+           $1::jsonb
+         ),
+         '{features}',
+         $2::jsonb
        )
-       WHERE id = (SELECT org_id FROM users WHERE id = $2)`,
-      [JSON.stringify(checkoutPlan), userId]
+       WHERE id = $3`,
+      [JSON.stringify(checkoutPlan), JSON.stringify(features), orgId]
     )
-
   } catch (error) {
     console.error('Erreur lors de l\'activation du plan après checkout:', error)
     throw error

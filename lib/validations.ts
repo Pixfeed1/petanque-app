@@ -164,9 +164,10 @@ export const matchIdSchema = z.object({
 // PAIEMENTS STRIPE
 // ============================================
 
+// FIX SÉCURITÉ : userId/userEmail retirés - lus depuis la session auth côté serveur
+// priceId accepté mais ignoré par le serveur (recalculé depuis planType)
 export const createCheckoutSessionSchema = z.object({
-  userId: idSchema,
-  userEmail: z.string().email('Email invalide'),
+  planType: z.enum(['essentiel', 'club']).optional().default('essentiel'),
   priceId: z.string().optional().nullable()
 })
 
