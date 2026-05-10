@@ -1,8 +1,21 @@
+// app/api/auth/reset-password/verify/route.ts
+// FIX SÉCURITÉ 1 : le token reçu de l'utilisateur est hashé en SHA-256
+//   avant d'être comparé à la DB (qui stocke maintenant le hash).
+// FIX SÉCURITÉ 2 : rate-limit sur cet endpoint pour empêcher le brute-force
+//   d'un token (un attaquant ayant ciblé un compte ne peut plus tester
+//   des millions de tokens).
+
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import bcrypt from 'bcrypt'
+import crypto from 'crypto'
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  // Rate limiting: 5 tentatives par IP toutes les 15 minutes
+  const rateLimitResponse = applyRateLimit(request, 'reset-verify', RATE_LIMITS.resetVerify)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const body = await request.json()
     const { token, password } = body
@@ -14,7 +27,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Valider la longueur du mot de passe
     if (password.length < 8) {
       return NextResponse.json(
         { error: 'Le mot de passe doit contenir au moins 8 caractères' },
@@ -22,12 +34,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Vérifier le token
+    // FIX SÉCURITÉ : on cherche par hash, pas par token brut.
+    // Le rawToken vient du lien email, le hash est en DB.
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex')
+
     const user = await queryOne(
       `SELECT id, email, full_name, reset_token_expires
        FROM users
        WHERE reset_token = $1`,
-      [token]
+      [tokenHash]
     )
 
     if (!user) {
@@ -37,7 +52,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Vérifier si le token n'est pas expiré
+    // Vérifier expiration
     const now = new Date()
     const expires = new Date(user.reset_token_expires)
 
@@ -51,7 +66,7 @@ export async function POST(request: NextRequest) {
     // Hasher le nouveau mot de passe
     const passwordHash = await bcrypt.hash(password, 10)
 
-    // Mettre à jour le mot de passe et supprimer le token
+    // Mettre à jour le mot de passe et invalider le token (single-use)
     await query(
       `UPDATE users
        SET password_hash = $1,

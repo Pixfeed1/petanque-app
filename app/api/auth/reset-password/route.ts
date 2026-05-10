@@ -36,14 +36,18 @@ export async function POST(request: NextRequest) {
 
     // Générer un token de réinitialisation
     const resetToken = crypto.randomBytes(32).toString('hex')
+    // FIX SÉCURITÉ : on stocke le hash SHA-256 en DB et le token brut est
+    // envoyé par email. Si la DB fuite, les tokens ne sont pas utilisables
+    // tels quels (l'attaquant n'aurait que les hashs).
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex')
     const resetTokenExpires = new Date(Date.now() + 3600000) // 1 heure
 
-    // Sauvegarder le token en base
+    // Sauvegarder le HASH du token en base (jamais le token brut)
     await query(
       `UPDATE users
        SET reset_token = $1, reset_token_expires = $2, updated_at = NOW()
        WHERE id = $3`,
-      [resetToken, resetTokenExpires, user.id]
+      [resetTokenHash, resetTokenExpires, user.id]
     )
 
     // Construire le lien de réinitialisation

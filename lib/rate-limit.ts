@@ -150,6 +150,16 @@ export const RATE_LIMITS = {
   } as RateLimitConfig,
 
   /**
+   * Reset verify: 5 tentatives par IP toutes les 15 minutes
+   * Protection contre le brute-force du token de reset
+   */
+  resetVerify: {
+    maxRequests: 5,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    message: 'Trop de tentatives. Veuillez réessayer dans 15 minutes.'
+  } as RateLimitConfig,
+
+  /**
    * API générale: 100 requêtes par IP toutes les 15 minutes
    * Protection générale contre les abus
    */
