@@ -53,7 +53,12 @@ export function Navbar() {
             href="/"
             className="flex items-center gap-2.5 group"
           >
-            <BouleSvg size={32} variant="acier" stries className="group-hover:rotate-12 transition-transform duration-500" />
+            <div className="relative flex-shrink-0">
+              <BouleSvg size={32} variant="acier" stries className="group-hover:rotate-12 transition-transform duration-500" />
+              <div className="absolute -bottom-0.5 -right-0.5">
+                <BouleSvg size={14} variant="vert" stries={false} />
+              </div>
+            </div>
             <span className="text-base font-medium text-petanque-vert-fonce tracking-tight">
               Petanque Pro
             </span>

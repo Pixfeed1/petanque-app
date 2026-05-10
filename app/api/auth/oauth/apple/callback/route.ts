@@ -162,18 +162,21 @@ export async function POST(request: NextRequest) {
     let orgId: number | string | undefined
 
     if (user) {
-      // FIX SÉCURITÉ : empêcher le détournement de compte
+      // FIX UX : auto-link au premier login OAuth (cf. google/callback).
       const linkedProvider = user.metadata?.oauth_provider
-      const hasPassword = user.password_hash && user.password_hash !== ''
-
-      if (linkedProvider !== 'apple' && hasPassword) {
-        console.warn(`OAuth Apple bloqué pour ${email}: compte mot-de-passe existant non lié à Apple`)
-        return buildErrorResponse('account_exists_use_password')
-      }
 
       if (linkedProvider && linkedProvider !== 'apple') {
         console.warn(`OAuth Apple bloqué pour ${email}: compte lié à ${linkedProvider}`)
         return buildErrorResponse('account_linked_other_provider')
+      }
+
+      if (!linkedProvider) {
+        await query(
+          `UPDATE users
+           SET metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{oauth_provider}', '"apple"')
+           WHERE id = $1`,
+          [user.id]
+        )
       }
 
       await query(

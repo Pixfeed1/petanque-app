@@ -7,7 +7,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { generateToken } from '@/lib/auth'
-import { serialize } from 'cookie'
 
 interface GoogleTokenResponse {
   access_token: string
@@ -112,18 +111,28 @@ export async function GET(request: NextRequest) {
     let orgId: number | string | undefined
 
     if (user) {
-      // FIX SÉCURITÉ : empêcher le détournement de compte
+      // FIX UX : auto-link au premier login OAuth.
+      // Avant : on refusait tout compte ayant password_hash sans
+      // oauth_provider explicitement = 'google'. Cela bloquait tous les
+      // comptes créés avant le patch CSRF.
+      // Maintenant : si pas encore lié à un provider, on auto-link Google
+      // (Google a vérifié l'email, donc le user contrôle bien la boîte).
+      // Si déjà lié à un autre provider (Apple), on refuse pour éviter
+      // le détournement entre providers.
       const linkedProvider = user.metadata?.oauth_provider
-      const hasPassword = user.password_hash && user.password_hash !== ''
-
-      if (linkedProvider !== 'google' && hasPassword) {
-        console.warn(`OAuth Google bloqué pour ${googleUser.email}: compte existant non lié à Google`)
-        return buildErrorResponse('account_exists_use_password')
-      }
 
       if (linkedProvider && linkedProvider !== 'google') {
         console.warn(`OAuth Google bloqué pour ${googleUser.email}: compte lié à ${linkedProvider}`)
         return buildErrorResponse('account_linked_other_provider')
+      }
+
+      if (!linkedProvider) {
+        await query(
+          `UPDATE users
+           SET metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{oauth_provider}', '"google"')
+           WHERE id = $1`,
+          [user.id]
+        )
       }
 
       await query(
@@ -177,16 +186,17 @@ export async function GET(request: NextRequest) {
     })
 
     // 6. Cookie de session + nettoyage du state
-    const cookie = serialize('auth-token', token, {
+    // FIX : utiliser response.cookies.set au lieu de headers.set('Set-Cookie',...)
+    // sinon le 'cookies.delete' suivant écrase le Set-Cookie précédent et
+    // le auth-token n'est jamais posé côté navigateur.
+    const response = NextResponse.redirect(new URL('/dashboard', baseUrl))
+    response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
       path: '/'
     })
-
-    const response = NextResponse.redirect(new URL('/dashboard', baseUrl))
-    response.headers.set('Set-Cookie', cookie)
     response.cookies.delete('oauth_state_google')
 
     return response

@@ -34,13 +34,14 @@ export function Hero() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.05] mb-6">
-              L\'<span className="accent-italic">art</span> du tournoi,<br />
-              tenu à la <span className="accent-italic">main</span>.
+              Choisi, mêlée fixe,<br />
+              mêlée tournante.<br />
+              <span className="accent-italic text-petanque-vert">Une seule app.</span>
             </h1>
 
             <p className="text-base md:text-lg text-petanque-bois leading-relaxed mb-8 max-w-xl">
-              Tirages, mêlées tournantes, podiums. Pétanque Pro gère vos tournois
-              avec le respect des règles FIPJP, sans Excel et sans tableau noir.
+              L'application tout-en-un pour les organisateurs de tournois de pétanque.
+              Tirages automatiques, gestion temps réel, règles FIPJP. Sans Excel, sans tableau noir.
             </p>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-10">
