@@ -1,12 +1,13 @@
-// app/dashboard/historique/page.tsx
-// Page d'historique des tournois terminés (Plan Gratuit)
-
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '../../providers/AuthProvider'
-import { Petanque, Trophy, Search, Back, Loader } from '@/components/Icons'
+import { useAuth } from '@/app/providers/AuthProvider'
+import {
+  FadeIn, BouleSvg,
+  PageHeader, SearchInput, EmptyState
+} from '@/components/ui'
+import { Loader, Trophy } from '@/components/Icons'
 
 interface TournoiHistorique {
   id: string
@@ -26,12 +27,12 @@ interface TournoiHistorique {
 
 const formatLabels: Record<string, string> = {
   tete_a_tete: 'Tête à tête',
-  doublette: 'Doublette',
-  triplette: 'Triplette',
+  doublette: 'Doublettes',
+  triplette: 'Triplettes',
 }
 
 const modeLabels: Record<string, string> = {
-  choisi: 'Équipes choisies',
+  choisi: 'Choisi',
   melee_fixe: 'Mêlée fixe',
   melee_tournante: 'Mêlée tournante',
 }
@@ -46,7 +47,7 @@ function formatDate(dateStr: string): string {
 
 export default function HistoriquePage() {
   const router = useRouter()
-  const { user, organization, loading: authLoading } = useAuth()
+  const { organization, loading: authLoading } = useAuth()
 
   const [tournois, setTournois] = useState<TournoiHistorique[]>([])
   const [loading, setLoading] = useState(true)
@@ -98,7 +99,6 @@ export default function HistoriquePage() {
     }
   }, [organization?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Recherche avec debounce
   useEffect(() => {
     const timer = setTimeout(() => {
       if (organization?.id) {
@@ -111,140 +111,128 @@ export default function HistoriquePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader className="w-8 h-8 text-green-600 animate-spin" />
-          <p className="text-sm text-gray-600">Chargement...</p>
+      <div className="min-h-screen bg-petanque-sable-pale flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-7 h-7 animate-spin mx-auto text-petanque-vert" />
+          <p className="mt-4 text-sm text-petanque-bois">Chargement…</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div
-              onClick={() => router.push('/')}
-              className="flex items-center space-x-3 cursor-pointer group"
-            >
-              <Petanque className="w-10 h-10" />
-              <span className="hidden sm:block text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                Pétanque Pro
-              </span>
-            </div>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
-            >
-              <Back className="w-5 h-5" />
-              <span className="text-sm">Dashboard</span>
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-petanque-sable-pale">
+      <PageHeader
+        backHref="/dashboard"
+        backLabel="Tableau de bord"
+        title="Historique"
+      />
 
-      {/* Content */}
-      <main className="pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {/* Titre + recherche */}
-          <div className="mb-12">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-2">
-              <div>
-                <h1 className="text-5xl font-semibold text-gray-900 tracking-tight mb-3">
-                  Historique
-                </h1>
-                <p className="text-lg text-gray-600">
-                  Retrouvez tous vos tournois terminés
-                </p>
-              </div>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Rechercher un tournoi..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent w-full sm:w-64"
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              </div>
-            </div>
-          </div>
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <FadeIn>
+          <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3 flex flex-wrap gap-x-3 gap-y-1">
+            <span>Historique</span>
+            {tournois.length > 0 && (
+              <>
+                <span className="text-petanque-sable-bord">·</span>
+                <span>
+                  {tournois.length}{hasMore ? '+' : ''} {tournois.length > 1 ? 'tournois terminés' : 'tournoi terminé'}
+                </span>
+              </>
+            )}
+          </p>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.05] mb-10">
+            Tes tournois <span className="accent-italic text-petanque-vert">passés.</span>
+          </h1>
+        </FadeIn>
 
-          {/* Liste des tournois */}
-          {!loading && tournois.length === 0 ? (
-            <div className="py-24 text-center bg-gray-50 rounded-2xl">
-              <Trophy className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600 text-lg mb-2">Aucun tournoi terminé</p>
-              <p className="text-gray-400 text-sm">
-                {searchQuery
-                  ? 'Aucun résultat pour cette recherche'
-                  : 'Vos tournois terminés apparaîtront ici'}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
+        <FadeIn delay={80}>
+          <div className="mb-7 max-w-md">
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Rechercher un tournoi…"
+            />
+          </div>
+        </FadeIn>
+
+        {!loading && tournois.length === 0 ? (
+          <EmptyState
+            icon={<Trophy className="w-6 h-6" />}
+            title={searchQuery ? 'Aucun résultat' : 'Aucun tournoi terminé'}
+            description={searchQuery
+              ? 'Aucun tournoi ne correspond à ta recherche. Essaie un autre mot-clé.'
+              : 'Tes tournois terminés apparaîtront ici. Lance ton premier !'}
+            cta={!searchQuery ? { label: '+ Créer un tournoi', onClick: () => router.push('/tournoi/nouveau') } : undefined}
+          />
+        ) : (
+          <FadeIn delay={140}>
+            <div className="divide-y divide-petanque-sable-bord/40">
               {tournois.map((tournoi) => (
                 <button
                   key={tournoi.id}
                   onClick={() => router.push(`/tournoi/${tournoi.id}`)}
-                  className="w-full text-left bg-gray-50 hover:bg-gray-100 rounded-2xl p-6 sm:p-8 transition-all group"
+                  className="group w-full text-left flex items-center gap-4 py-5 px-1 hover:bg-petanque-sable/30 transition-colors"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors truncate">
-                        {tournoi.name}
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mb-3">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-200 text-gray-700 font-medium">
-                          {formatLabels[tournoi.format] || tournoi.format}
-                        </span>
-                        <span className="text-gray-300">·</span>
-                        <span>{modeLabels[tournoi.mode] || tournoi.mode}</span>
-                        <span className="text-gray-300">·</span>
-                        <span>{formatDate(tournoi.updated_at)}</span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                        <span>{tournoi.nb_joueurs} joueur{tournoi.nb_joueurs > 1 ? 's' : ''}</span>
-                        <span>{tournoi.nb_equipes} équipe{tournoi.nb_equipes > 1 ? 's' : ''}</span>
-                        <span>{tournoi.nb_matchs_joues} match{tournoi.nb_matchs_joues > 1 ? 's' : ''}</span>
-                      </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-base md:text-lg font-medium text-petanque-vert-fonce group-hover:text-petanque-vert transition-colors mb-1.5">
+                      {tournoi.name}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.14em] bg-white border border-petanque-sable-bord/60 text-petanque-bois px-2 py-0.5 rounded-md">
+                        {modeLabels[tournoi.mode] || tournoi.mode}
+                      </span>
+                      <span className="font-mono text-[10px] uppercase tracking-[0.14em] bg-white border border-petanque-sable-bord/60 text-petanque-bois px-2 py-0.5 rounded-md">
+                        {formatLabels[tournoi.format] || tournoi.format}
+                      </span>
                     </div>
-                    {tournoi.vainqueur && (
-                      <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl">
-                        <Trophy className="w-5 h-5 text-amber-500" />
-                        <span className="text-sm font-semibold text-amber-800">
-                          {tournoi.vainqueur}
-                        </span>
-                      </div>
-                    )}
+                    <p className="text-xs text-petanque-bois flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <span>{tournoi.nb_joueurs} joueur{tournoi.nb_joueurs > 1 ? 's' : ''}</span>
+                      <span className="text-petanque-sable-bord">·</span>
+                      <span>{tournoi.nb_equipes} équipe{tournoi.nb_equipes > 1 ? 's' : ''}</span>
+                      <span className="text-petanque-sable-bord">·</span>
+                      <span>{tournoi.nb_matchs_joues} match{tournoi.nb_matchs_joues > 1 ? 's' : ''}</span>
+                      <span className="text-petanque-sable-bord">·</span>
+                      <span>{formatDate(tournoi.updated_at)}</span>
+                    </p>
                   </div>
+                  {tournoi.vainqueur && (
+                    <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+                      <BouleSvg size={18} variant="acier" stries />
+                      <span className="text-sm font-medium text-petanque-vert-fonce">
+                        {tournoi.vainqueur}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-lg text-petanque-bois group-hover:text-petanque-vert transition-colors flex-shrink-0">→</span>
                 </button>
               ))}
 
-              {/* Loader pendant chargement */}
-              {loading && (
-                <div className="py-8 flex justify-center">
-                  <Loader className="w-6 h-6 text-green-600 animate-spin" />
-                </div>
-              )}
-
-              {/* Bouton charger plus */}
-              {hasMore && !loading && (
-                <div className="pt-4 flex justify-center">
-                  <button
-                    onClick={() => loadHistorique(false)}
-                    className="px-6 py-3 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-xl font-medium transition-all"
-                  >
-                    Charger plus de tournois
-                  </button>
+              {loading && tournois.length > 0 && (
+                <div className="py-6 flex justify-center">
+                  <Loader className="w-5 h-5 animate-spin text-petanque-vert" />
                 </div>
               )}
             </div>
-          )}
-        </div>
+
+            {hasMore && !loading && (
+              <div className="mt-8 flex justify-center">
+                <button
+                  onClick={() => loadHistorique(false)}
+                  className="text-sm font-medium text-petanque-vert hover:text-petanque-vert-fonce border border-petanque-sable-bord hover:border-petanque-vert/40 bg-white px-5 py-2.5 rounded-xl transition-colors"
+                >
+                  Charger plus de tournois
+                </button>
+              </div>
+            )}
+          </FadeIn>
+        )}
+
+        {loading && tournois.length === 0 && (
+          <div className="py-12 flex justify-center">
+            <Loader className="w-6 h-6 animate-spin text-petanque-vert" />
+          </div>
+        )}
       </main>
     </div>
   )
