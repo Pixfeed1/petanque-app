@@ -1,27 +1,13 @@
-// app/avis/page.tsx
-// Page publique affichant tous les avis avec filtres
-
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import Navbar from '../components/Navbar'
-import Footer from '../components/footer'
-import { StarRating } from '@/components/StarRating'
-
-// Icônes
-const Icons = {
-  star: (
-    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-    </svg>
-  ),
-  filter: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-    </svg>
-  )
-}
+import {
+  FadeIn,
+  PageHeader, EmptyState, PlayerAvatar
+} from '@/components/ui'
+import { Loader } from '@/components/Icons'
+import Footer from '@/app/components/footer'
 
 interface Review {
   id: number
@@ -33,9 +19,22 @@ interface Review {
   created_at: string
 }
 
+const sourceLabels: Record<string, string> = {
+  web: 'Web',
+  google_play: 'Google Play',
+  app_store: 'App Store'
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
+}
+
 export default function AvisPage() {
   const router = useRouter()
-
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({ average: 0, total: 0 })
@@ -44,11 +43,9 @@ export default function AvisPage() {
   const [totalReviews, setTotalReviews] = useState(0)
   const limit = 12
 
-  // Charger les avis
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setLoading(true)
-
       const params = new URLSearchParams({
         approved: 'true',
         limit: String(limit),
@@ -56,196 +53,194 @@ export default function AvisPage() {
         order_by: 'created_at',
         order_dir: 'DESC'
       })
-
       if (filterRating) {
         params.set('rating', String(filterRating))
       }
-
-      const response = await fetch(`/api/reviews?${params.toString()}`)
+      const response = await fetch('/api/reviews?' + params.toString())
       if (!response.ok) throw new Error('Erreur chargement')
-
       const data = await response.json()
-      setReviews(data.reviews)
-      setTotalReviews(data.total)
+      setReviews(data.reviews || [])
+      setTotalReviews(data.total || 0)
       setStats({
-        average: data.stats.average,
-        total: data.stats.total_approved
+        average: data.stats?.average || 0,
+        total: data.stats?.total_approved || 0
       })
     } catch (error) {
       console.error('Erreur:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, filterRating])
 
   useEffect(() => {
     fetchReviews()
-  }, [page, filterRating])
-
-  // Badge source
-  const renderSourceBadge = (source: string) => {
-    const badges = {
-      web: { text: 'Web', color: 'bg-blue-100 text-blue-700' },
-      google_play: { text: 'Google Play', color: 'bg-green-100 text-green-700' },
-      app_store: { text: 'App Store', color: 'bg-gray-100 text-gray-700' }
-    }
-
-    const badge = badges[source as keyof typeof badges] || badges.web
-
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${badge.color}`}>
-        {badge.text}
-      </span>
-    )
-  }
+  }, [fetchReviews])
 
   const scrollToSection = (sectionId: string) => {
-    router.push(`/#${sectionId}`)
+    router.push('/#' + sectionId)
   }
 
+  const totalPages = Math.ceil(totalReviews / limit)
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      {/* Navbar */}
-      <Navbar />
+    <div className="min-h-screen bg-petanque-sable-pale">
+      <PageHeader
+        backHref="/"
+        backLabel="Accueil"
+        title="Tous les avis"
+      />
 
-      {/* Header */}
-      <div className="bg-gradient-to-br from-green-600 to-emerald-700 text-white pt-24 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Tous les avis
-          </h1>
-          <p className="text-xl text-green-100">
-            Découvrez l'expérience de nos utilisateurs
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <FadeIn>
+          <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3 flex flex-wrap gap-x-3 gap-y-1">
+            <span>Témoignages</span>
+            {stats.total > 0 && (
+              <>
+                <span className="text-petanque-sable-bord">·</span>
+                <span>{stats.total} {stats.total > 1 ? 'avis vérifiés' : 'avis vérifié'}</span>
+              </>
+            )}
           </p>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.05] mb-3">
+            Ce qu'en disent <span className="accent-italic text-petanque-vert">les Provençaux.</span>
+          </h1>
+          <p className="text-base text-petanque-bois leading-relaxed mb-10 max-w-2xl">
+            L'expérience des clubs et joueurs qui utilisent Pétanque Pro au quotidien pour gérer leurs tournois.
+          </p>
+        </FadeIn>
 
-          {/* Stats globales */}
-          <div className="mt-8 flex flex-wrap items-center gap-6">
-            <div className="flex items-center space-x-2">
-              <StarRating rating={Math.round(stats.average)} size="large" />
-              <span className="text-3xl font-bold ml-3">{stats.average.toFixed(1)}/5</span>
+        {stats.total > 0 && (
+          <FadeIn delay={80}>
+            <div className="flex flex-wrap gap-x-8 gap-y-4 items-baseline pb-8 mb-8 border-b border-petanque-sable-bord/50">
+              <div className="flex items-baseline gap-2">
+                <span className="font-mono text-4xl md:text-5xl font-medium text-petanque-vert leading-none">
+                  {stats.average.toFixed(1)}
+                </span>
+                <span className="font-mono text-base text-petanque-bois">/ 5</span>
+              </div>
+              <Stars rating={Math.round(stats.average)} size="lg" />
+              <span className="font-mono text-[11px] text-petanque-bois uppercase tracking-[0.16em]">
+                Sources · Web, Google Play, App Store
+              </span>
             </div>
-            <div className="bg-white/20 rounded-full px-6 py-2">
-              <span className="font-semibold">{stats.total} avis vérifiés</span>
-            </div>
-          </div>
-        </div>
-      </div>
+          </FadeIn>
+        )}
 
-      {/* Filtres */}
-      <div className="bg-white border-b sticky top-16 z-10 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-gray-700 font-medium flex items-center">
-              {Icons.filter}
-              <span className="ml-2">Filtrer par note :</span>
+        <FadeIn delay={140}>
+          <div className="flex items-center gap-2 flex-wrap mb-8">
+            <span className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] mr-2">
+              Filtrer par note
             </span>
-            <button
-              onClick={() => setFilterRating(null)}
-              className={`px-4 py-2 rounded-full transition ${
-                filterRating === null
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
+            <RatingPill active={filterRating === null} onClick={() => { setFilterRating(null); setPage(1) }}>
               Tous
-            </button>
-            {[5, 4, 3, 2, 1].map((rating) => (
-              <button
-                key={rating}
-                onClick={() => setFilterRating(rating)}
-                className={`px-4 py-2 rounded-full transition flex items-center ${
-                  filterRating === rating
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {rating} {Icons.star}
-              </button>
+            </RatingPill>
+            {[5, 4, 3, 2, 1].map(r => (
+              <RatingPill key={r} active={filterRating === r} onClick={() => { setFilterRating(r); setPage(1) }}>
+                {r}<span className="ml-0.5">★</span>
+              </RatingPill>
             ))}
           </div>
-        </div>
-      </div>
+        </FadeIn>
 
-      {/* Liste des avis */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Chargement des avis...</p>
+          <div className="py-16 flex justify-center">
+            <Loader className="w-7 h-7 animate-spin text-petanque-vert" />
           </div>
         ) : reviews.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">Aucun avis trouvé pour ce filtre</p>
-          </div>
+          <EmptyState
+            title="Aucun avis trouvé"
+            description={filterRating
+              ? 'Aucun avis ne correspond à cette note. Essaie un autre filtre.'
+              : 'Aucun avis pour le moment.'}
+          />
         ) : (
-          <>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <FadeIn delay={200}>
+            <div className="grid md:grid-cols-2 gap-5">
               {reviews.map((review) => (
-                <div
-                  key={review.id}
-                  className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <StarRating rating={review.rating} />
-                    {renderSourceBadge(review.source)}
-                  </div>
-
-                  <p className="text-gray-700 mb-4 italic min-h-[80px]">"{review.content}"</p>
-
-                  <div className="border-t pt-4">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {review.name[0]}
-                      </div>
-                      <div className="ml-3">
-                        <p className="font-bold text-gray-900">{review.name}</p>
-                        {review.role && (
-                          <p className="text-sm text-gray-600">{review.role}</p>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      {new Date(review.created_at).toLocaleDateString('fr-FR', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                </div>
+                <ReviewCard key={review.id} review={review} />
               ))}
             </div>
 
-            {/* Pagination */}
-            {totalReviews > limit && (
-              <div className="flex justify-center items-center space-x-4 mt-12">
+            {totalPages > 1 && (
+              <div className="mt-10 flex justify-center items-center gap-4 text-sm text-petanque-bois">
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-4 py-2 bg-white text-gray-700 rounded-lg border hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-petanque-vert hover:text-petanque-vert-fonce border border-petanque-sable-bord hover:border-petanque-vert/40 bg-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Précédent
+                  ← Précédent
                 </button>
-
-                <span className="text-gray-600">
-                  Page {page} sur {Math.ceil(totalReviews / limit)}
+                <span className="font-mono text-xs uppercase tracking-[0.14em]">
+                  Page {page} sur {totalPages}
                 </span>
-
                 <button
                   onClick={() => setPage(p => p + 1)}
-                  disabled={page >= Math.ceil(totalReviews / limit)}
-                  className="px-4 py-2 bg-white text-gray-700 rounded-lg border hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={page >= totalPages}
+                  className="text-petanque-vert hover:text-petanque-vert-fonce border border-petanque-sable-bord hover:border-petanque-vert/40 bg-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Suivant
+                  Suivant →
                 </button>
               </div>
             )}
-          </>
+          </FadeIn>
         )}
-      </div>
+      </main>
 
-      {/* Footer */}
       <Footer scrollToSection={scrollToSection} />
+    </div>
+  )
+}
+
+function Stars({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md' | 'lg' }) {
+  const sizeClass = size === 'lg' ? 'text-xl' : size === 'md' ? 'text-base' : 'text-sm'
+  return (
+    <span className={'inline-flex gap-0.5 ' + sizeClass}>
+      {[1, 2, 3, 4, 5].map(i => (
+        <span key={i} className={i <= rating ? 'text-petanque-vert' : 'text-petanque-sable-bord'}>★</span>
+      ))}
+    </span>
+  )
+}
+
+function RatingPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  const cls = active
+    ? 'bg-petanque-vert text-petanque-sable border-petanque-vert'
+    : 'bg-white text-petanque-bois border-petanque-sable-bord hover:border-petanque-bois/40'
+  return (
+    <button
+      onClick={onClick}
+      className={'inline-flex items-center gap-0.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ' + cls}
+    >
+      {children}
+    </button>
+  )
+}
+
+function ReviewCard({ review }: { review: Review }) {
+  const sourceLabel = sourceLabels[review.source] || 'Web'
+  return (
+    <div className="flex flex-col gap-4 p-5 bg-white border border-petanque-sable-bord/60 rounded-xl">
+      <div className="flex items-center justify-between">
+        <Stars rating={review.rating} size="md" />
+        <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-petanque-bois border border-petanque-sable-bord/60 px-2 py-0.5 rounded-full font-semibold">
+          {sourceLabel}
+        </span>
+      </div>
+      <p className="text-sm text-petanque-vert-fonce/85 leading-relaxed italic flex-1">
+        « {review.content} »
+      </p>
+      <div className="flex items-center gap-3 pt-3 border-t border-petanque-sable-bord/50">
+        <PlayerAvatar name={review.name} size={34} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-petanque-vert-fonce truncate">{review.name}</p>
+          {review.role && (
+            <p className="text-xs text-petanque-bois truncate">{review.role}</p>
+          )}
+        </div>
+        <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-petanque-bois flex-shrink-0">
+          {formatDate(review.created_at)}
+        </span>
+      </div>
     </div>
   )
 }
