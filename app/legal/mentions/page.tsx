@@ -1,125 +1,67 @@
 // app/legal/mentions/page.tsx
-// Mentions légales
+// Mentions légales — refonte V4
 
 'use client'
 
-import Navbar from '@/app/components/Navbar'
-import Footer from '@/app/components/footer'
+import { LegalLayout, LegalSection, Callout, LegalP, LegalList, LegalLI, LegalKV, LegalLink } from '@/components/legal'
 
 export default function MentionsLegales() {
-  const scrollToSection = (sectionId: string) => {
-    window.location.href = `/#${sectionId}`
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <Navbar />
+    <LegalLayout
+      pageTitle="Mentions légales"
+      eyebrow="Mentions · légales"
+      titleStart="Qui édite"
+      titleAccent="Pétanque Pro."
+      intro="Conformément à la loi pour la confiance dans l'économie numérique (LCEN), voici les informations légales relatives à l'éditeur, à l'hébergeur et aux conditions d'utilisation du site petanquepro.fr."
+      crossLink={{ label: 'Voir les CGV', href: '/legal/terms' }}
+    >
+      <LegalSection num="01" title="Éditeur du site">
+        <LegalKV label="Raison sociale" value="PixFeed EI" />
+        <LegalKV label="Forme juridique" value="Entreprise individuelle (micro-entrepreneur)" />
+        <LegalKV label="SIRET" value="852 393 735 00018" />
+        <LegalKV label="Directeur de la publication" value="Marc Gueffie" />
+        <LegalKV label="Adresse" value="Franconville (95130), France" />
+        <LegalKV label="E-mail" value={<LegalLink href="mailto:contact@petanquepro.fr">contact@petanquepro.fr</LegalLink>} />
+        <LegalKV label="TVA" value="Non applicable, art. 293 B du CGI (franchise en base)" />
+      </LegalSection>
 
-      {/* Header */}
-      <div className="bg-gradient-to-br from-green-600 to-emerald-700 text-white pt-24 pb-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Mentions légales
-          </h1>
-          <p className="text-xl text-green-100">
-            Informations légales sur l'éditeur et l'hébergeur du site
-          </p>
-        </div>
-      </div>
+      <LegalSection num="02" title="Hébergement">
+        <LegalP>
+          Le site petanquepro.fr est hébergé sur un serveur dédié géré par <LegalLink href="https://www.ovhcloud.com/fr/" external>OVH SAS</LegalLink>, 2 rue Kellermann, 59100 Roubaix, France.
+        </LegalP>
+        <Callout label="Localisation des données">
+          Les données traitées par Pétanque Pro sont stockées exclusivement sur des serveurs situés dans l'Union européenne (Roubaix, France).
+        </Callout>
+      </LegalSection>
 
-      {/* Contenu */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12">
-          {/* Éditeur */}
-          <section className="mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-3 border-b-2 border-green-600">
-              Éditeur du site
-            </h2>
-            <div className="space-y-3 text-gray-700">
-              <p><strong>Raison sociale :</strong> Pixfeed</p>
-              <p><strong>Adresse :</strong> [Votre adresse complète]</p>
-              <p><strong>SIRET :</strong> [Votre numéro SIRET]</p>
-              <p><strong>Email :</strong> <a href="mailto:contact@petanquepro.fr" className="text-green-600 hover:text-green-700">contact@petanquepro.fr</a></p>
-              <p><strong>Téléphone :</strong> [Votre téléphone]</p>
-              <p><strong>Directeur de publication :</strong> [Nom du directeur]</p>
-            </div>
-          </section>
+      <LegalSection num="03" title="Propriété intellectuelle">
+        <LegalP>
+          L'ensemble du site (textes, illustrations, identité visuelle, code source, marque « Pétanque Pro ») est protégé par le droit français de la propriété intellectuelle. Toute reproduction, représentation, modification ou exploitation, totale ou partielle, sans autorisation écrite préalable de PixFeed EI est interdite.
+        </LegalP>
+        <LegalP>
+          Les marques et logos cités (Stripe, OVH, etc.) demeurent la propriété de leurs détenteurs respectifs.
+        </LegalP>
+      </LegalSection>
 
-          {/* Hébergeur */}
-          <section className="mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-3 border-b-2 border-green-600">
-              Hébergeur du site
-            </h2>
-            <div className="space-y-3 text-gray-700">
-              <p><strong>Raison sociale :</strong> [Nom hébergeur]</p>
-              <p><strong>Adresse :</strong> [Adresse hébergeur]</p>
-              <p><strong>Téléphone :</strong> [Téléphone hébergeur]</p>
-            </div>
-          </section>
+      <LegalSection num="04" title="Limitation de responsabilité">
+        <LegalP>
+          PixFeed EI met tout en œuvre pour garantir la fiabilité et la disponibilité du service. Toutefois, l'éditeur ne saurait être tenu responsable :
+        </LegalP>
+        <LegalList>
+          <LegalLI>des interruptions temporaires liées à la maintenance ou aux opérations de l'hébergeur</LegalLI>
+          <LegalLI>des conséquences d'une mauvaise utilisation du service par un utilisateur</LegalLI>
+          <LegalLI>des contenus saisis par les utilisateurs (noms d'équipes, résultats, etc.)</LegalLI>
+        </LegalList>
+      </LegalSection>
 
-          {/* Propriété intellectuelle */}
-          <section className="mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-3 border-b-2 border-green-600">
-              Propriété intellectuelle
-            </h2>
-            <div className="space-y-4 text-gray-700">
-              <p>
-                L'ensemble du contenu du site Pétanque Pro (textes, images, logos, icônes, vidéos, etc.)
-                est la propriété exclusive de Pixfeed, sauf mention contraire.
-              </p>
-              <p>
-                Toute reproduction, distribution, modification ou utilisation à des fins commerciales
-                sans autorisation écrite préalable est strictement interdite.
-              </p>
-            </div>
-          </section>
-
-          {/* Responsabilité */}
-          <section className="mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-3 border-b-2 border-green-600">
-              Limitation de responsabilité
-            </h2>
-            <div className="space-y-4 text-gray-700">
-              <p>
-                Pixfeed met tout en œuvre pour offrir aux utilisateurs des informations et outils fiables.
-                Toutefois, Pixfeed ne peut être tenu responsable des erreurs, d'une absence de disponibilité
-                des informations ou de la présence de virus sur son site.
-              </p>
-              <p>
-                Les informations fournies le sont à titre indicatif et ne sauraient dispenser l'utilisateur
-                d'une analyse complémentaire et personnalisée.
-              </p>
-            </div>
-          </section>
-
-          {/* Médiation */}
-          <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-3 border-b-2 border-green-600">
-              Médiation
-            </h2>
-            <div className="space-y-4 text-gray-700">
-              <p>
-                Conformément à l'article L.612-1 du Code de la consommation, nous proposons un dispositif
-                de médiation de la consommation.
-              </p>
-              <p>
-                L'entité de médiation retenue est : [Nom du médiateur]<br />
-                Adresse : [Adresse du médiateur]<br />
-                Site web : [Site du médiateur]
-              </p>
-            </div>
-          </section>
-
-          {/* Dernière mise à jour */}
-          <div className="mt-12 pt-8 border-t border-gray-200">
-            <p className="text-sm text-gray-500 text-center">
-              Dernière mise à jour : 13 novembre 2025
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <Footer scrollToSection={scrollToSection} />
-    </div>
+      <LegalSection num="05" title="Médiation de la consommation">
+        <LegalP>
+          Conformément à l'article L.612-1 du Code de la consommation, en cas de litige non résolu à l'amiable, vous pouvez recourir gratuitement au médiateur de la consommation référencé par PixFeed EI :
+        </LegalP>
+        <Callout label="Médiateur conso">
+          Plateforme européenne de règlement en ligne des litiges (RLL) : <LegalLink href="https://ec.europa.eu/consumers/odr" external>ec.europa.eu/consumers/odr</LegalLink>
+        </Callout>
+      </LegalSection>
+    </LegalLayout>
   )
 }
