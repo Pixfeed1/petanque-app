@@ -3,7 +3,22 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { BouleSvg } from '@/components/ui'
+
+// Logo Icon
+const LogoIcon = (
+  <svg className="w-10 h-10" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="32" r="30" fill="url(#metalGradient)" stroke="#5a6978" strokeWidth="2"/>
+    <circle cx="26" cy="26" r="3" fill="#ffffff" opacity="0.8"/>
+    <circle cx="38" cy="38" r="2" fill="#2d3748" opacity="0.3"/>
+    <circle cx="40" cy="28" r="2" fill="#2d3748" opacity="0.3"/>
+    <defs>
+      <radialGradient id="metalGradient">
+        <stop offset="0%" stopColor="#a8b2c3"/>
+        <stop offset="100%" stopColor="#8e9aaf"/>
+      </radialGradient>
+    </defs>
+  </svg>
+)
 
 interface FooterProps {
   scrollToSection?: (sectionId: string) => void
@@ -16,100 +31,105 @@ export default function Footer({ scrollToSection }: FooterProps) {
     if (scrollToSection) {
       scrollToSection(sectionId)
     } else {
-      router.push('/#' + sectionId)
+      router.push(`/#${sectionId}`)
     }
   }
 
-  const year = new Date().getFullYear()
-
   return (
-    <footer className="bg-petanque-sable border-t border-petanque-sable-bord/60 text-petanque-vert-fonce/85 py-10 px-4">
-      <div className="max-w-6xl mx-auto">
-
-        <div className="grid grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-x-8 gap-y-10 pb-8 border-b border-petanque-sable-bord/50">
-
-          <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2.5 mb-3 group">
-              <BouleSvg size={26} variant="acier" stries />
-              <span className="text-base font-medium text-petanque-vert-fonce tracking-tight group-hover:text-petanque-vert transition-colors">
+    <footer className="bg-gray-900 text-gray-400 py-12 px-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+          <div>
+            <Link href="/" className="flex items-center space-x-3 mb-4 group">
+              {LogoIcon}
+              <span className="text-xl font-bold text-white group-hover:text-green-400 transition-colors">
                 Pétanque Pro
               </span>
             </Link>
-            <p className="text-sm text-petanque-bois leading-relaxed max-w-xs">
-              L'application des organisateurs de tournois. Mêlées, équipes choisies, podium imprimable.
+            <p className="text-sm">
+              L'application de référence pour organiser vos tournois de pétanque.
             </p>
           </div>
-
+          
           <div>
-            <h4 className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] font-medium mb-4">
-              Produit
-            </h4>
-            <ul className="flex flex-col gap-2">
+            <h4 className="text-white font-semibold mb-4">Produit</h4>
+            <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/modes" className="text-sm text-petanque-vert-fonce/85 hover:text-petanque-vert transition-colors">
+                <Link href="/modes" className="hover:text-white transition">
                   Modes de jeu
                 </Link>
               </li>
               <li>
-                <button onClick={() => handleNavigation('pricing')} className="text-sm text-petanque-vert-fonce/85 hover:text-petanque-vert transition-colors text-left">
+                <button
+                  onClick={() => handleNavigation('pricing')}
+                  className="hover:text-white transition text-left"
+                >
                   Tarifs
                 </button>
               </li>
               <li>
-                <Link href="/dashboard" className="text-sm text-petanque-vert-fonce/85 hover:text-petanque-vert transition-colors">
-                  Tableau de bord
+                <Link href="/dashboard" className="hover:text-white transition">
+                  Dashboard
                 </Link>
               </li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="text-white font-semibold mb-4">Support</h4>
+            <ul className="space-y-2 text-sm">
               <li>
-                <button onClick={() => handleNavigation('testimonials')} className="text-sm text-petanque-vert-fonce/85 hover:text-petanque-vert transition-colors text-left">
+                <a href="mailto:support@petanquepro.fr" className="hover:text-white transition">
+                  Contact
+                </a>
+              </li>
+              <li>
+                <button
+                  onClick={() => handleNavigation('testimonials')}
+                  className="hover:text-white transition text-left"
+                >
                   Témoignages
                 </button>
               </li>
             </ul>
           </div>
-
+          
           <div>
-            <h4 className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] font-medium mb-4">
-              Support
-            </h4>
-            <ul className="flex flex-col gap-2">
+            <h4 className="text-white font-semibold mb-4">Légal</h4>
+            <ul className="space-y-2 text-sm">
               <li>
-                <a href="mailto:support@petanquepro.fr" className="text-sm text-petanque-vert-fonce/85 hover:text-petanque-vert transition-colors">Contact</a>
+                <Link href="/legal/mentions" className="hover:text-white transition">
+                  Mentions légales
+                </Link>
               </li>
               <li>
-                <Link href="/avis" className="text-sm text-petanque-vert-fonce/85 hover:text-petanque-vert transition-colors">Avis utilisateurs</Link>
+                <Link href="/legal/privacy" className="hover:text-white transition">
+                  Politique de confidentialité
+                </Link>
+              </li>
+              <li>
+                <Link href="/legal/terms" className="hover:text-white transition">
+                  Conditions d'utilisation
+                </Link>
               </li>
             </ul>
           </div>
-
-          <div>
-            <h4 className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] font-medium mb-4">
-              Légal
-            </h4>
-            <ul className="flex flex-col gap-2">
-              <li>
-                <Link href="/legal/mentions" className="text-sm text-petanque-vert-fonce/85 hover:text-petanque-vert transition-colors">Mentions légales</Link>
-              </li>
-              <li>
-                <Link href="/legal/privacy" className="text-sm text-petanque-vert-fonce/85 hover:text-petanque-vert transition-colors">Confidentialité</Link>
-              </li>
-              <li>
-                <Link href="/legal/terms" className="text-sm text-petanque-vert-fonce/85 hover:text-petanque-vert transition-colors">CGV</Link>
-              </li>
-            </ul>
-          </div>
-
         </div>
-
-        <div className="pt-6 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-petanque-bois">
-            © {year} Pétanque Pro · une création <a href="https://pixfeed.net" target="_blank" rel="noopener noreferrer" className="text-petanque-vert hover:text-petanque-vert-fonce font-medium transition-colors">PixFeed</a>
-          </p>
-          <p className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.14em]">
-            Fait à Franconville
+        
+        <div className="border-t border-gray-800 pt-8 text-center text-sm">
+          <p>
+            © {new Date().getFullYear()} Pétanque Pro - Fait avec ❤️ par{' '}
+            <a 
+              href="https://pixfeed.net" 
+              target="_blank"
+              rel="noopener noreferrer follow" 
+              className="text-green-400 hover:text-green-300 transition-colors font-medium"
+            >
+              Pixfeed
+            </a>
+            {' '}pour les passionnés de pétanque
           </p>
         </div>
-
       </div>
     </footer>
   )
