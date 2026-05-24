@@ -1,11 +1,14 @@
 // app/admin/feedback/page.tsx
-// Boîte de réception feedback + toggle mode beta
+// Boîte de réception feedback + toggle mode beta — refonte V4
 
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
+import { AdminLayout } from '@/components/admin'
+import { FadeIn, PillToggle } from '@/components/ui'
+import { Loader } from '@/components/Icons'
 
 interface Feedback {
   id: number
@@ -30,52 +33,38 @@ interface FeedbackStats {
 
 const categoryLabels: Record<string, string> = {
   general: 'Avis',
-  bug: 'Ca marche pas',
-  feature: 'Il manque un truc',
-  ux: 'Pas pratique'
-}
-
-const categoryColors: Record<string, string> = {
-  general: 'bg-gray-100 text-gray-700',
-  bug: 'bg-red-100 text-red-700',
-  feature: 'bg-purple-100 text-purple-700',
-  ux: 'bg-blue-100 text-blue-700'
+  bug: 'Bug',
+  feature: 'Demande',
+  ux: 'UX'
 }
 
 const statusLabels: Record<string, string> = {
   new: 'Nouveau',
   read: 'Lu',
-  replied: 'Repondu',
-  archived: 'Archive'
+  replied: 'Répondu',
+  archived: 'Archivé'
 }
 
-const statusColors: Record<string, string> = {
-  new: 'bg-orange-100 text-orange-700',
-  read: 'bg-blue-100 text-blue-700',
-  replied: 'bg-green-100 text-green-700',
-  archived: 'bg-gray-100 text-gray-500'
-}
+type FilterKey = 'all' | 'new' | 'read' | 'replied'
 
 export default function AdminFeedback() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
 
-  // Beta mode
   const [betaEnabled, setBetaEnabled] = useState(false)
   const [betaMessage, setBetaMessage] = useState('')
   const [togglingBeta, setTogglingBeta] = useState(false)
+  const [savedHint, setSavedHint] = useState(false)
 
-  // Feedback
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
   const [stats, setStats] = useState<FeedbackStats>({ total: 0, new: 0, read: 0, replied: 0 })
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'new' | 'read' | 'replied'>('new')
+  const [filter, setFilter] = useState<FilterKey>('new')
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null)
   const [replyText, setReplyText] = useState('')
   const [replying, setReplying] = useState(false)
   const [filterEmail, setFilterEmail] = useState<string | null>(null)
 
-  // Charger le statut beta
   useEffect(() => {
     if (!authLoading && user) {
       fetchBetaStatus()
@@ -83,7 +72,6 @@ export default function AdminFeedback() {
     }
   }, [authLoading, user])
 
-  // Recharger les feedbacks quand le filtre change
   useEffect(() => {
     if (user) fetchFeedbacks()
   }, [filter, filterEmail])
@@ -108,9 +96,7 @@ export default function AdminFeedback() {
         credentials: 'include',
         body: JSON.stringify({ enabled: !betaEnabled, message: betaMessage })
       })
-      if (res.ok) {
-        setBetaEnabled(!betaEnabled)
-      }
+      if (res.ok) setBetaEnabled(!betaEnabled)
     } catch {}
     setTogglingBeta(false)
   }
@@ -123,15 +109,16 @@ export default function AdminFeedback() {
         credentials: 'include',
         body: JSON.stringify({ enabled: betaEnabled, message: betaMessage })
       })
+      setSavedHint(true)
+      setTimeout(() => setSavedHint(false), 2000)
     } catch {}
   }
 
   const fetchFeedbacks = async () => {
     setLoading(true)
     try {
-      let url = `/api/admin/feedback?status=${filter}`
-      if (filterEmail) url += `&user_email=${encodeURIComponent(filterEmail)}`
-
+      let url = '/api/admin/feedback?status=' + filter
+      if (filterEmail) url += '&user_email=' + encodeURIComponent(filterEmail)
       const res = await fetch(url, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
@@ -144,7 +131,6 @@ export default function AdminFeedback() {
 
   const handleReply = async () => {
     if (!selectedFeedback || !replyText.trim()) return
-
     setReplying(true)
     try {
       const res = await fetch('/api/admin/feedback', {
@@ -156,7 +142,6 @@ export default function AdminFeedback() {
           admin_reply: replyText.trim()
         })
       })
-
       if (res.ok) {
         setReplyText('')
         setSelectedFeedback(null)
@@ -185,269 +170,290 @@ export default function AdminFeedback() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-petanque-sable-pale flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-7 h-7 animate-spin mx-auto text-petanque-vert" />
+          <p className="mt-4 text-sm text-petanque-bois">Chargement…</p>
+        </div>
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={() => router.push('/admin')} className="text-gray-500 hover:text-gray-700">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Feedbacks & Mode Beta</h1>
-              <p className="text-sm text-gray-500">
-                {stats.new > 0 ? `${stats.new} nouveau(x) message(s)` : 'Aucun nouveau message'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
+  const filterOptions: { value: FilterKey; label: string }[] = [
+    { value: 'new', label: 'Nouveaux · ' + stats.new },
+    { value: 'read', label: 'Lus' },
+    { value: 'replied', label: 'Répondus' },
+    { value: 'all', label: 'Tous' }
+  ]
 
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-        {/* ── Section Mode Beta ── */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">Mode Beta</h2>
-              <p className="text-sm text-gray-500">
-                Quand actif : toutes les fonctionnalites sont gratuites pour les utilisateurs, et le bouton "Donnez-nous votre avis" apparait sur le cote droit de leur ecran
+  return (
+    <AdminLayout activeTab="feedback">
+      <FadeIn>
+        <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3">
+          Administration · feedbacks
+        </p>
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.05] mb-3">
+          Boîte de <span className="accent-italic text-petanque-vert">feedback.</span>
+        </h1>
+        <p className="text-base text-petanque-bois leading-relaxed mb-12 max-w-2xl">
+          {stats.new > 0 ? stats.new + ' nouveau' + (stats.new > 1 ? 'x messages' : ' message') + ' à traiter.' : 'Aucun nouveau message.'}
+        </p>
+      </FadeIn>
+
+      {/* SECTION 01 : Mode Beta */}
+      <FadeIn delay={80}>
+        <section className="pb-10 mb-10 border-b border-petanque-sable-bord/50">
+          <p className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] mb-1.5">01</p>
+          <div className="flex items-start justify-between gap-6 mb-5">
+            <div className="flex-1">
+              <h2 className="text-lg md:text-xl font-medium text-petanque-vert-fonce mb-2 tracking-tight">
+                Mode beta
+              </h2>
+              <p className="text-sm text-petanque-bois leading-relaxed max-w-2xl">
+                Quand actif, toutes les fonctionnalités sont gratuites pour les utilisateurs et le bouton « Donnez-nous votre avis » apparaît à droite de leur écran.
               </p>
             </div>
             <button
               onClick={toggleBeta}
               disabled={togglingBeta}
-              className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors ${
-                betaEnabled ? 'bg-amber-500' : 'bg-gray-300'
-              }`}
+              className={'relative inline-flex h-7 w-14 items-center rounded-full transition-colors flex-shrink-0 ' + (
+                betaEnabled ? 'bg-petanque-vert' : 'bg-petanque-sable-bord'
+              )}
             >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                  betaEnabled ? 'translate-x-8' : 'translate-x-1'
-                }`}
-              />
+              <span className={'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ' + (
+                betaEnabled ? 'translate-x-8' : 'translate-x-1'
+              )} />
             </button>
           </div>
 
           {betaEnabled && (
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">
-                Message affiche aux utilisateurs
-              </label>
+              <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em]">
+                Message affiché aux utilisateurs
+              </p>
               <textarea
                 value={betaMessage}
                 onChange={e => setBetaMessage(e.target.value)}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                className="w-full px-3 py-2 border border-petanque-sable-bord rounded-lg text-sm resize-none focus:ring-2 focus:ring-petanque-vert/30 focus:border-petanque-vert bg-white text-petanque-vert-fonce placeholder:text-petanque-bois/60"
               />
-              <button
-                onClick={saveBetaMessage}
-                className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition"
-              >
-                Sauvegarder le message
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* ── Stats feedback ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-sm text-gray-500 mb-1">Nouveaux</p>
-            <p className="text-3xl font-bold text-orange-600">{stats.new}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-sm text-gray-500 mb-1">Lus</p>
-            <p className="text-3xl font-bold text-blue-600">{stats.read}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-sm text-gray-500 mb-1">Repondus</p>
-            <p className="text-3xl font-bold text-green-600">{stats.replied}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-sm text-gray-500 mb-1">Total</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
-          </div>
-        </div>
-
-        {/* ── Filtres ── */}
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-            {(['new', 'read', 'replied', 'all'] as const).map(f => (
-              <button
-                key={f}
-                onClick={() => { setFilter(f); setFilterEmail(null) }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                  filter === f && !filterEmail
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                {f === 'new' ? `Nouveaux (${stats.new})` :
-                 f === 'read' ? 'Lus' :
-                 f === 'replied' ? 'Repondus' : 'Tous'}
-              </button>
-            ))}
-          </div>
-
-          {filterEmail && (
-            <div className="flex items-center gap-2 bg-amber-100 rounded-lg px-3 py-2">
-              <span className="text-sm text-amber-800">
-                Conversation avec <strong>{filterEmail}</strong>
-              </span>
-              <button
-                onClick={() => { setFilterEmail(null); setFilter('new') }}
-                className="text-amber-600 hover:text-amber-800"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* ── Liste des feedbacks ── */}
-        <div className="space-y-3">
-          {feedbacks.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-              <p className="text-gray-400">Aucun feedback a afficher</p>
-            </div>
-          ) : (
-            feedbacks.map(fb => (
-              <div
-                key={fb.id}
-                className={`bg-white rounded-xl border p-5 transition ${
-                  fb.status === 'new'
-                    ? 'border-orange-200 bg-orange-50/30'
-                    : 'border-gray-200'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    {/* Header du feedback */}
-                    <div className="flex items-center gap-2 flex-wrap mb-2">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${statusColors[fb.status] || statusColors.new}`}>
-                        {statusLabels[fb.status] || fb.status}
-                      </span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${categoryColors[fb.category] || categoryColors.general}`}>
-                        {categoryLabels[fb.category] || fb.category}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {new Date(fb.created_at).toLocaleDateString('fr-FR', {
-                          day: '2-digit', month: '2-digit', year: 'numeric',
-                          hour: '2-digit', minute: '2-digit'
-                        })}
-                      </span>
-                    </div>
-
-                    {/* User info */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <button
-                        onClick={() => viewUserConversation(fb.user_email)}
-                        className="text-sm font-medium text-amber-700 hover:text-amber-900 hover:underline"
-                      >
-                        {fb.user_full_name || fb.user_name || 'Anonyme'}
-                      </button>
-                      <span className="text-xs text-gray-400">{fb.user_email}</span>
-                    </div>
-
-                    {/* Message */}
-                    <p className="text-sm text-gray-800 whitespace-pre-wrap">{fb.message}</p>
-
-                    {/* Réponse admin */}
-                    {fb.admin_reply && (
-                      <div className="mt-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
-                        <p className="text-xs text-green-600 font-medium mb-1">Votre reponse</p>
-                        <p className="text-sm text-gray-700">{fb.admin_reply}</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {fb.admin_replied_at && new Date(fb.admin_replied_at).toLocaleDateString('fr-FR')}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-col gap-2">
-                    {fb.status === 'new' && (
-                      <button
-                        onClick={() => markAsRead(fb.id)}
-                        className="px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
-                      >
-                        Marquer lu
-                      </button>
-                    )}
-                    {fb.status !== 'replied' && (
-                      <button
-                        onClick={() => { setSelectedFeedback(fb); setReplyText('') }}
-                        className="px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition"
-                      >
-                        Repondre
-                      </button>
-                    )}
-                    <button
-                      onClick={() => viewUserConversation(fb.user_email)}
-                      className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 rounded-lg hover:bg-amber-100 transition"
-                    >
-                      Voir echanges
-                    </button>
-                  </div>
-                </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={saveBetaMessage}
+                  className="px-4 py-2 bg-petanque-vert text-petanque-sable rounded-lg text-sm font-medium hover:bg-petanque-vert-fonce transition-colors"
+                >
+                  Sauvegarder
+                </button>
+                {savedHint && (
+                  <span className="text-xs text-petanque-vert font-mono">✓ Sauvegardé</span>
+                )}
               </div>
-            ))
+            </div>
           )}
-        </div>
-      </main>
+        </section>
+      </FadeIn>
 
-      {/* ── Modal de réponse ── */}
+      {/* SECTION 02 : Stats */}
+      <FadeIn delay={140}>
+        <section className="pb-10 mb-10 border-b border-petanque-sable-bord/50">
+          <p className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] mb-1.5">02</p>
+          <h2 className="text-lg md:text-xl font-medium text-petanque-vert-fonce mb-5 tracking-tight">
+            Chiffres clés
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6">
+            <FeedbackStat label="Nouveaux" value={stats.new} />
+            <FeedbackStat label="Lus" value={stats.read} />
+            <FeedbackStat label="Répondus" value={stats.replied} />
+            <FeedbackStat label="Total" value={stats.total} />
+          </div>
+        </section>
+      </FadeIn>
+
+      {/* SECTION 03 : Liste */}
+      <FadeIn delay={200}>
+        <section>
+          <p className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] mb-1.5">03</p>
+          <h2 className="text-lg md:text-xl font-medium text-petanque-vert-fonce mb-5 tracking-tight">
+            Messages
+          </h2>
+
+          <div className="mb-6 flex items-center gap-4 flex-wrap">
+            <PillToggle
+              options={filterOptions}
+              value={filterEmail ? 'all' : filter}
+              onChange={(v) => { setFilter(v); setFilterEmail(null) }}
+            />
+            {filterEmail && (
+              <div className="flex items-center gap-2 bg-petanque-vert-pale/20 border border-petanque-vert/30 rounded-lg px-3 py-1.5">
+                <span className="text-xs text-petanque-vert-fonce">
+                  Conversation · <span className="font-mono">{filterEmail}</span>
+                </span>
+                <button
+                  onClick={() => { setFilterEmail(null); setFilter('new') }}
+                  className="text-petanque-vert-fonce/60 hover:text-petanque-vert-fonce ml-1"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </div>
+
+          {feedbacks.length === 0 ? (
+            <p className="text-sm text-petanque-bois italic py-12 text-center">
+              Aucun feedback à afficher.
+            </p>
+          ) : (
+            <div className="divide-y divide-petanque-sable-bord/40">
+              {feedbacks.map(fb => (
+                <FeedbackRow
+                  key={fb.id}
+                  fb={fb}
+                  onMarkRead={() => markAsRead(fb.id)}
+                  onReply={() => { setSelectedFeedback(fb); setReplyText('') }}
+                  onViewConversation={() => viewUserConversation(fb.user_email)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </FadeIn>
+
+      {/* Modal reply */}
       {selectedFeedback && (
         <>
           <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setSelectedFeedback(null)} />
-          <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 max-w-lg mx-auto bg-white rounded-2xl shadow-2xl z-50 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Repondre a {selectedFeedback.user_full_name || selectedFeedback.user_email}
+          <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 max-w-lg mx-auto bg-white rounded-2xl border border-petanque-sable-bord z-50 p-6 shadow-lg">
+            <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">
+              Réponse · {selectedFeedback.user_email}
+            </p>
+            <h3 className="text-xl font-medium text-petanque-vert-fonce mb-4 tracking-tight">
+              Répondre à <span className="accent-italic text-petanque-vert">{selectedFeedback.user_full_name || selectedFeedback.user_name || 'l\'utilisateur'}.</span>
             </h3>
 
-            <div className="bg-gray-50 rounded-lg p-3 mb-4">
-              <p className="text-xs text-gray-500 mb-1">Message original :</p>
-              <p className="text-sm text-gray-700">{selectedFeedback.message}</p>
+            <div className="bg-petanque-sable-pale border-l-2 border-petanque-sable-bord rounded-r-md p-3 mb-4">
+              <p className="text-[10px] font-mono text-petanque-bois uppercase tracking-[0.12em] mb-1">Message original</p>
+              <p className="text-sm text-petanque-vert-fonce/90 whitespace-pre-wrap">{selectedFeedback.message}</p>
             </div>
 
             <textarea
               value={replyText}
               onChange={e => setReplyText(e.target.value)}
-              placeholder="Votre reponse..."
+              placeholder="Votre réponse…"
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-green-500 focus:border-green-500 mb-4"
+              className="w-full px-3 py-2 border border-petanque-sable-bord rounded-lg text-sm resize-none focus:ring-2 focus:ring-petanque-vert/30 focus:border-petanque-vert mb-4 bg-white"
               autoFocus
             />
 
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setSelectedFeedback(null)}
-                className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition text-sm font-medium"
+                className="px-4 py-2 text-petanque-vert-fonce bg-petanque-sable-pale border border-petanque-sable-bord rounded-lg hover:bg-petanque-sable transition-colors text-sm font-medium"
               >
                 Annuler
               </button>
               <button
                 onClick={handleReply}
                 disabled={replying || !replyText.trim()}
-                className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition text-sm font-medium disabled:opacity-50"
+                className="px-4 py-2 text-petanque-sable bg-petanque-vert rounded-lg hover:bg-petanque-vert-fonce transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {replying ? 'Envoi...' : 'Envoyer la reponse'}
+                {replying ? 'Envoi…' : 'Envoyer la réponse'}
               </button>
             </div>
           </div>
         </>
       )}
+    </AdminLayout>
+  )
+}
+
+function FeedbackStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-1.5">{label}</p>
+      <p className="font-mono text-2xl md:text-3xl font-medium leading-none text-petanque-vert-fonce">{value}</p>
     </div>
+  )
+}
+
+function FeedbackRow({ fb, onMarkRead, onReply, onViewConversation }: {
+  fb: Feedback
+  onMarkRead: () => void
+  onReply: () => void
+  onViewConversation: () => void
+}) {
+  const dateStr = new Date(fb.created_at).toLocaleDateString('fr-FR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  })
+
+  return (
+    <article className="py-6">
+      <div className="flex items-center gap-3 flex-wrap mb-3">
+        <span className={'font-mono text-[10px] uppercase tracking-[0.12em] font-medium ' + (
+          fb.status === 'new' ? 'text-petanque-cochonnet-fonce' :
+          fb.status === 'replied' ? 'text-petanque-vert' :
+          'text-petanque-bois'
+        )}>
+          {statusLabels[fb.status] || fb.status}
+        </span>
+        <span className="text-petanque-sable-bord">·</span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-petanque-bois">
+          {categoryLabels[fb.category] || fb.category}
+        </span>
+        <span className="text-petanque-sable-bord">·</span>
+        <span className="font-mono text-[10px] text-petanque-bois">{dateStr}</span>
+      </div>
+
+      <div className="flex items-baseline gap-2 mb-2">
+        <button
+          onClick={onViewConversation}
+          className="text-sm font-medium text-petanque-vert-fonce hover:text-petanque-vert hover:underline decoration-petanque-vert/40 underline-offset-2"
+        >
+          {fb.user_full_name || fb.user_name || 'Anonyme'}
+        </button>
+        <span className="text-xs text-petanque-bois font-mono">{fb.user_email}</span>
+      </div>
+
+      <p className="text-sm text-petanque-vert-fonce/90 whitespace-pre-wrap leading-relaxed mb-3">
+        {fb.message}
+      </p>
+
+      {fb.admin_reply && (
+        <div className="bg-petanque-vert-pale/15 border-l-2 border-petanque-vert rounded-r-md p-3 mb-3">
+          <p className="text-[10px] font-mono text-petanque-vert uppercase tracking-[0.12em] mb-1">Votre réponse</p>
+          <p className="text-sm text-petanque-vert-fonce/90 whitespace-pre-wrap">{fb.admin_reply}</p>
+          {fb.admin_replied_at && (
+            <p className="text-[10px] font-mono text-petanque-bois mt-2">
+              {new Date(fb.admin_replied_at).toLocaleDateString('fr-FR')}
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="flex gap-3 mt-3">
+        {fb.status === 'new' && (
+          <button
+            onClick={onMarkRead}
+            className="text-xs font-medium text-petanque-bois hover:text-petanque-vert transition-colors"
+          >
+            Marquer lu
+          </button>
+        )}
+        {fb.status !== 'replied' && (
+          <button
+            onClick={onReply}
+            className="text-xs font-medium text-petanque-vert hover:text-petanque-vert-fonce transition-colors"
+          >
+            Répondre →
+          </button>
+        )}
+        <button
+          onClick={onViewConversation}
+          className="text-xs font-medium text-petanque-bois hover:text-petanque-vert-fonce transition-colors"
+        >
+          Voir échanges
+        </button>
+      </div>
+    </article>
   )
 }

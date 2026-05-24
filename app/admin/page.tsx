@@ -1,57 +1,47 @@
-// app/admin/page.tsx
-// Tableau de bord administrateur
-
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
+import { AdminLayout } from '@/components/admin'
+import { FadeIn, PillToggle } from '@/components/ui'
+import { Loader } from '@/components/Icons'
 
-interface AdminStats {
+const planLabels: Record<string, string> = {
+  free: 'Gratuit',
+  essentiel: 'Essentiel',
+  club: 'Club'
+}
+
+const statusLabels: Record<string, string> = {
+  preparation: 'En préparation',
+  en_cours: 'En cours',
+  termine: 'Terminé'
+}
+
+interface Stats {
   users: { total: number; today: number; thisWeek: number; thisMonth: number }
-  tournois: { total: number; enCours: number; preparation: number; termine: number; today: number; thisMonth: number }
+  tournois: { total: number; thisMonth: number; enCours: number; preparation: number }
   plans: { plan: string; count: number }[]
   recentUsers: any[]
   recentTournois: any[]
   topOrgs: any[]
 }
 
-const planLabels: Record<string, string> = {
-  free: 'Gratuit',
-  essentiel: 'Essentiel',
-  club: 'Club',
-  premium: 'Premium (legacy)',
-}
-
-const planColors: Record<string, string> = {
-  free: 'bg-gray-100 text-gray-700',
-  essentiel: 'bg-green-100 text-green-700',
-  club: 'bg-amber-100 text-amber-700',
-  premium: 'bg-purple-100 text-purple-700',
-}
-
-const statusColors: Record<string, string> = {
-  preparation: 'bg-blue-100 text-blue-700',
-  en_cours: 'bg-green-100 text-green-700',
-  termine: 'bg-gray-100 text-gray-700',
-}
-
-const statusLabels: Record<string, string> = {
-  preparation: 'Préparation',
-  en_cours: 'En cours',
-  termine: 'Terminé',
-}
+type TabKey = 'users' | 'tournois' | 'orgs'
 
 export default function AdminDashboard() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
-  const [stats, setStats] = useState<AdminStats | null>(null)
+  const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'tournois' | 'orgs'>('overview')
+  const [activeTab, setActiveTab] = useState<TabKey>('users')
 
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && !user) {
+      router.push('/login')
+    } else if (user) {
       fetchStats()
     }
   }, [authLoading, user])
@@ -78,23 +68,29 @@ export default function AdminDashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-petanque-sable-pale flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-7 h-7 animate-spin mx-auto text-petanque-vert" />
+          <p className="mt-4 text-sm text-petanque-bois">Chargement…</p>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4 flex justify-center">
-            <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">{error}</h1>
-          <button onClick={() => router.push('/dashboard')} className="text-green-600 hover:underline">
+      <div className="min-h-screen bg-petanque-sable-pale flex items-center justify-center px-4">
+        <div className="max-w-md text-center">
+          <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3">
+            Accès · refusé
+          </p>
+          <h1 className="text-3xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.05] mb-6">
+            <span className="accent-italic text-petanque-vert">{error}.</span>
+          </h1>
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="inline-flex items-center gap-2 bg-petanque-vert text-petanque-sable px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-petanque-vert-fonce transition-colors"
+          >
             Retour au dashboard
           </button>
         </div>
@@ -104,233 +100,209 @@ export default function AdminDashboard() {
 
   if (!stats) return null
 
+  const tabOptions: { value: TabKey; label: string }[] = [
+    { value: 'users', label: 'Utilisateurs' },
+    { value: 'tournois', label: 'Tournois' },
+    { value: 'orgs', label: 'Organisations' }
+  ]
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={() => router.push('/dashboard')} className="text-gray-500 hover:text-gray-700">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Administration</h1>
-              <p className="text-sm text-gray-500">Connecté en tant que {user?.email}</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => router.push('/admin/feedback')}
-              className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition text-sm font-medium"
-            >
-              Feedbacks & Beta
-            </button>
-            <button
-              onClick={() => router.push('/admin/reviews')}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium"
-            >
-              Moderer les avis
-            </button>
-          </div>
-        </div>
-      </header>
+    <AdminLayout activeTab="dashboard">
+      <FadeIn>
+        <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3">
+          Administration · Pétanque Pro
+        </p>
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.05] mb-3">
+          Vue <span className="accent-italic text-petanque-vert">d'ensemble.</span>
+        </h1>
+        <p className="text-base text-petanque-bois leading-relaxed mb-12 max-w-2xl">
+          Connecté en tant que {user?.email}. Tu peux suivre l'activité, modérer le contenu et gérer le mode beta.
+        </p>
+      </FadeIn>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Cards stats principales */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard
-            label="Utilisateurs"
-            value={stats.users.total}
-            sub={`+${stats.users.thisMonth} ce mois`}
-            color="blue"
-          />
-          <StatCard
-            label="Tournois"
-            value={stats.tournois.total}
-            sub={`${stats.tournois.enCours} en cours`}
-            color="green"
-          />
-          <StatCard
-            label="Inscrits aujourd'hui"
-            value={stats.users.today}
-            sub={`+${stats.users.thisWeek} cette semaine`}
-            color="purple"
-          />
-          <StatCard
-            label="Tournois ce mois"
-            value={stats.tournois.thisMonth}
-            sub={`${stats.tournois.preparation} en préparation`}
-            color="amber"
-          />
-        </div>
+      <FadeIn delay={80}>
+        <section className="pb-10 mb-10 border-b border-petanque-sable-bord/50">
+          <p className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] mb-1.5">01</p>
+          <h2 className="text-lg md:text-xl font-medium text-petanque-vert-fonce mb-5 tracking-tight">
+            Chiffres clés
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6">
+            <StatInline label="Utilisateurs" value={stats.users.total} sub={'+' + stats.users.thisMonth + ' ce mois'} />
+            <StatInline label="Inscrits aujourd'hui" value={stats.users.today} sub={'+' + stats.users.thisWeek + ' cette semaine'} />
+            <StatInline label="Tournois total" value={stats.tournois.total} sub={stats.tournois.enCours + ' en cours'} />
+            <StatInline label="Tournois ce mois" value={stats.tournois.thisMonth} sub={stats.tournois.preparation + ' en préparation'} />
+          </div>
+        </section>
+      </FadeIn>
 
-        {/* Répartition des plans */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Répartition des plans</h2>
-          <div className="flex flex-wrap gap-4">
+      <FadeIn delay={140}>
+        <section className="pb-10 mb-10 border-b border-petanque-sable-bord/50">
+          <p className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] mb-1.5">02</p>
+          <h2 className="text-lg md:text-xl font-medium text-petanque-vert-fonce mb-5 tracking-tight">
+            Répartition des plans
+          </h2>
+          <div className="flex flex-wrap gap-x-10 gap-y-4">
             {stats.plans.map((p) => (
-              <div key={p.plan} className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-3">
-                <span className={`px-2 py-1 rounded-full text-xs font-bold ${planColors[p.plan] || 'bg-gray-100 text-gray-700'}`}>
+              <div key={p.plan}>
+                <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-1.5">
                   {planLabels[p.plan] || p.plan}
-                </span>
-                <span className="text-2xl font-bold text-gray-900">{p.count}</span>
+                </p>
+                <p className="font-mono text-2xl md:text-3xl font-medium leading-none text-petanque-vert-fonce">
+                  {p.count}
+                </p>
               </div>
             ))}
           </div>
-        </div>
+        </section>
+      </FadeIn>
 
-        {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
-          {[
-            { key: 'users', label: 'Utilisateurs récents' },
-            { key: 'tournois', label: 'Tournois récents' },
-            { key: 'orgs', label: 'Top organisations' },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                activeTab === tab.key
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <FadeIn delay={200}>
+        <section>
+          <p className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] mb-1.5">03</p>
+          <h2 className="text-lg md:text-xl font-medium text-petanque-vert-fonce mb-5 tracking-tight">
+            Activité récente
+          </h2>
 
-        {/* Tab content */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          {activeTab === 'users' && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Utilisateur</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Organisation</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Plan</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Tournois</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Inscrit le</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Dernière connexion</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {stats.recentUsers.map((u: any) => (
-                    <tr key={u.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <div>
-                          <p className="font-medium text-gray-900">{u.full_name || '—'}</p>
-                          <p className="text-xs text-gray-500">{u.email}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-gray-700">{u.org_name || '—'}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${planColors[u.plan] || planColors.free}`}>
-                          {planLabels[u.plan] || 'Gratuit'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-700">{u.nb_tournois || 0}</td>
-                      <td className="px-4 py-3 text-gray-500">{formatDate(u.created_at)}</td>
-                      <td className="px-4 py-3 text-gray-500">{u.last_login_at ? formatDate(u.last_login_at) : '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <div className="mb-6">
+            <PillToggle options={tabOptions} value={activeTab} onChange={setActiveTab} />
+          </div>
 
-          {activeTab === 'tournois' && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Tournoi</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Organisation</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Format</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Statut</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Équipes</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Matchs</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Créé par</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {stats.recentTournois.map((t: any) => (
-                    <tr key={t.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-900">{t.name}</td>
-                      <td className="px-4 py-3 text-gray-700">{t.org_name || '—'}</td>
-                      <td className="px-4 py-3 text-gray-700">{t.format} / {t.mode}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${statusColors[t.status] || 'bg-gray-100 text-gray-700'}`}>
-                          {statusLabels[t.status] || t.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-700">{t.nb_equipes || 0}</td>
-                      <td className="px-4 py-3 text-gray-700">{t.nb_matchs || 0}</td>
-                      <td className="px-4 py-3">
-                        <p className="text-gray-700">{t.created_by_name || '—'}</p>
-                        <p className="text-xs text-gray-500">{t.created_by_email}</p>
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">{formatDate(t.created_at)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {activeTab === 'users' && <UsersTable users={stats.recentUsers} />}
+          {activeTab === 'tournois' && <TournoisTable tournois={stats.recentTournois} />}
+          {activeTab === 'orgs' && <OrgsTable orgs={stats.topOrgs} />}
+        </section>
+      </FadeIn>
+    </AdminLayout>
+  )
+}
 
-          {activeTab === 'orgs' && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Organisation</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Propriétaire</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Plan</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Tournois</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Créée le</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {stats.topOrgs.map((o: any) => (
-                    <tr key={o.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-900">{o.name}</td>
-                      <td className="px-4 py-3 text-gray-700">{o.owner_email || '—'}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${planColors[o.plan] || planColors.free}`}>
-                          {planLabels[o.plan] || 'Gratuit'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-700 font-medium">{o.nb_tournois || 0}</td>
-                      <td className="px-4 py-3 text-gray-500">{formatDate(o.created_at)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </main>
+function StatInline({ label, value, sub }: { label: string; value: number; sub: string }) {
+  return (
+    <div>
+      <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-1.5">{label}</p>
+      <p className="font-mono text-2xl md:text-3xl font-medium leading-none text-petanque-vert-fonce">{value}</p>
+      <p className="text-xs text-petanque-bois mt-2">{sub}</p>
     </div>
   )
 }
 
-function StatCard({ label, value, sub, color }: { label: string; value: number; sub: string; color: string }) {
-  const colors: Record<string, string> = {
-    blue: 'from-blue-500 to-blue-600',
-    green: 'from-green-500 to-green-600',
-    purple: 'from-purple-500 to-purple-600',
-    amber: 'from-amber-500 to-amber-600',
-  }
+const thCls = "text-left px-4 py-3 font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] font-medium"
+const trCls = "border-b border-petanque-sable-bord/40 hover:bg-petanque-sable/40 transition-colors"
 
+function UsersTable({ users }: { users: any[] }) {
+  if (users.length === 0) {
+    return <p className="text-sm text-petanque-bois italic py-8">Aucun utilisateur récent.</p>
+  }
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <p className="text-sm text-gray-500 mb-1">{label}</p>
-      <p className="text-3xl font-bold text-gray-900">{value}</p>
-      <p className="text-xs text-gray-500 mt-1">{sub}</p>
+    <div className="overflow-x-auto -mx-4 sm:mx-0">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-petanque-sable-bord">
+            <th className={thCls}>Utilisateur</th>
+            <th className={thCls}>Organisation</th>
+            <th className={thCls}>Plan</th>
+            <th className={thCls}>Tournois</th>
+            <th className={thCls}>Inscrit le</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((u: any) => (
+            <tr key={u.id} className={trCls}>
+              <td className="px-4 py-3">
+                <p className="font-medium text-petanque-vert-fonce">{u.full_name || '—'}</p>
+                <p className="text-xs text-petanque-bois mt-0.5">{u.email}</p>
+              </td>
+              <td className="px-4 py-3 text-petanque-vert-fonce/80">{u.org_name || '—'}</td>
+              <td className="px-4 py-3">
+                <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-petanque-vert font-medium">
+                  {planLabels[u.plan] || 'Gratuit'}
+                </span>
+              </td>
+              <td className="px-4 py-3 text-petanque-vert-fonce/80 font-mono text-xs">{u.nb_tournois || 0}</td>
+              <td className="px-4 py-3 text-petanque-bois font-mono text-xs">{formatDate(u.created_at)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function TournoisTable({ tournois }: { tournois: any[] }) {
+  if (tournois.length === 0) {
+    return <p className="text-sm text-petanque-bois italic py-8">Aucun tournoi récent.</p>
+  }
+  return (
+    <div className="overflow-x-auto -mx-4 sm:mx-0">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-petanque-sable-bord">
+            <th className={thCls}>Tournoi</th>
+            <th className={thCls}>Organisation</th>
+            <th className={thCls}>Format</th>
+            <th className={thCls}>Statut</th>
+            <th className={thCls}>Équipes · Matchs</th>
+            <th className={thCls}>Créé le</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tournois.map((t: any) => (
+            <tr key={t.id} className={trCls}>
+              <td className="px-4 py-3">
+                <p className="font-medium text-petanque-vert-fonce">{t.name}</p>
+                <p className="text-xs text-petanque-bois mt-0.5">{t.created_by_email || '—'}</p>
+              </td>
+              <td className="px-4 py-3 text-petanque-vert-fonce/80">{t.org_name || '—'}</td>
+              <td className="px-4 py-3 text-petanque-vert-fonce/80 font-mono text-xs">{t.format} · {t.mode}</td>
+              <td className="px-4 py-3">
+                <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-petanque-vert font-medium">
+                  {statusLabels[t.status] || t.status}
+                </span>
+              </td>
+              <td className="px-4 py-3 text-petanque-vert-fonce/80 font-mono text-xs">
+                {t.nb_equipes || 0} · {t.nb_matchs || 0}
+              </td>
+              <td className="px-4 py-3 text-petanque-bois font-mono text-xs">{formatDate(t.created_at)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function OrgsTable({ orgs }: { orgs: any[] }) {
+  if (orgs.length === 0) {
+    return <p className="text-sm text-petanque-bois italic py-8">Aucune organisation.</p>
+  }
+  return (
+    <div className="overflow-x-auto -mx-4 sm:mx-0">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-petanque-sable-bord">
+            <th className={thCls}>Organisation</th>
+            <th className={thCls}>Propriétaire</th>
+            <th className={thCls}>Plan</th>
+            <th className={thCls}>Tournois</th>
+            <th className={thCls}>Créée le</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orgs.map((o: any) => (
+            <tr key={o.id} className={trCls}>
+              <td className="px-4 py-3 font-medium text-petanque-vert-fonce">{o.name}</td>
+              <td className="px-4 py-3 text-petanque-vert-fonce/80">{o.owner_email || '—'}</td>
+              <td className="px-4 py-3">
+                <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-petanque-vert font-medium">
+                  {planLabels[o.plan] || 'Gratuit'}
+                </span>
+              </td>
+              <td className="px-4 py-3 text-petanque-vert-fonce font-mono text-base font-medium">{o.nb_tournois || 0}</td>
+              <td className="px-4 py-3 text-petanque-bois font-mono text-xs">{formatDate(o.created_at)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
