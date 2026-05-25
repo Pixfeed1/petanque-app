@@ -30,8 +30,6 @@ interface UseRotationReturn {
 
   // Actions
   reformTeamsForRotation: () => Promise<void>
-  createNewTeamsWithAlgorithm: () => Promise<void>
-  createMatchesForRotation: (rotationNumber: number) => Promise<void>
 }
 
 export function useRotation({
@@ -108,49 +106,41 @@ export function useRotation({
    * Crée de nouvelles équipes avec anti-rematch et mixité
    * Utilise l'historique des rotations précédentes pour minimiser les doublons
    */
-  const createNewTeamsWithAlgorithm = useCallback(async () => {
-    if (!organization || !tournament?.settings.players) return
+  // Fix Bug #4 : calcule les équipes en mémoire (sans POST), retourne le tableau
+  const buildNewTeams = useCallback(async (): Promise<Array<{ name: string; joueur_ids: string[] }> | null> => {
+    if (!organization || !tournament?.settings.players) return null
 
     try {
-      // Charger tous les joueurs de l'organisation
       const joueursResponse = await fetch(`/api/joueurs?org_id=${organization.id}`, {
         credentials: 'include'
       })
+      if (!joueursResponse.ok) return null
 
-      if (!joueursResponse.ok) return
       const data = await joueursResponse.json()
       const allPlayers = Array.isArray(data) ? data : data.joueurs || []
-
-      // Filtrer pour obtenir seulement les joueurs du tournoi
       const players = allPlayers.filter((p: Joueur) =>
         tournament.settings.players.includes(p.id)
       )
-
-      if (players.length === 0) return
+      if (players.length === 0) return null
 
       const teamSize = tournament.format === 'doublette' ? 2 : 3
       const newRotation = currentRotation + 1
       let teamNumber = 1
 
-      // Si c'est la première rotation ou mixité obligatoire, utiliser MixiteService
-      // Sinon, utiliser l'algorithme anti-rematch
       let teamCompositions: Array<{ joueur_ids: string[] }>
 
       const isFirstRotation = currentRotation === 1 && teams.filter(t => t.name.startsWith('R')).length === 0
       const needsMixite = tournament.settings.mixiteObligatoire || false
 
       if (isFirstRotation || needsMixite) {
-        // Fix Bug #3 : valider que tous les joueurs ont un genre AVANT la création
-        // (sinon joueurs sans genre traités silencieusement comme H)
         if (needsMixite) {
           const genderValidation = MixiteService.validatePlayerGenders(players, true)
           if (!genderValidation.valid) {
             notify.error(genderValidation.error || 'Certains joueurs n\'ont pas de genre défini')
-            return
+            return null
           }
         }
 
-        // Mixité obligatoire : utiliser le service dédié
         const mixiteResult = MixiteService.createTeamsWithMixite(
           players,
           teamSize as 2 | 3,
@@ -162,21 +152,16 @@ export function useRotation({
           console.warn(`${mixiteResult.unassignedPlayerIds.length} joueur(s) non assigné(s):`, mixiteResult.warnings)
         }
       } else {
-        // Anti-rematch : analyser l'historique des rotations précédentes
         const previousTeams = teams
-          .filter(t => t.name.match(/^R\d+-/)) // Équipes de rotation
+          .filter(t => t.name.match(/^R\d+-/))
           .map(t => ({ joueur_ids: t.joueur_ids || [] }))
           .filter(t => t.joueur_ids.length > 0)
 
-        // Reconstruire les confrontations précédentes
         const previousMatches: Array<{ equipe_a_joueur_ids: string[]; equipe_b_joueur_ids: string[] }> = []
-
         for (const match of matches) {
           if (!match.equipe_a_id || !match.equipe_b_id) continue
-
           const teamA = teams.find(t => t.id === match.equipe_a_id)
           const teamB = teams.find(t => t.id === match.equipe_b_id)
-
           if (teamA?.joueur_ids?.length && teamB?.joueur_ids?.length) {
             previousMatches.push({
               equipe_a_joueur_ids: teamA.joueur_ids,
@@ -193,135 +178,64 @@ export function useRotation({
         )
       }
 
-      const newTeams = teamCompositions.map(team => ({
+      return teamCompositions.map(team => ({
         name: `R${newRotation}-Équipe ${teamNumber++}`,
         joueur_ids: team.joueur_ids
       }))
-
-      // Créer les équipes en batch
-      const teamsToCreate = newTeams.map(team => ({
-        tournoi_id: tournament.id,
-        name: team.name,
-        joueur_ids: team.joueur_ids,
-        stats: {
-          victoires: 0,
-          defaites: 0,
-          points_pour: 0,
-          points_contre: 0
-        }
-      }))
-
-      const teamsBatchResponse = await fetch('/api/equipes/batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ teams: teamsToCreate })
-      })
-
-      if (!teamsBatchResponse.ok) {
-        const error = await teamsBatchResponse.json()
-        throw new Error(`Échec création équipes: ${error.error || 'Erreur inconnue'}`)
-      }
-
-      // Recharger les données
-      await loadTournamentData()
     } catch (error) {
-      console.error('Erreur création équipes:', error)
+      console.error('Erreur calcul équipes:', error)
+      return null
     }
-  }, [organization, tournament, teams, matches, currentRotation, loadTournamentData])
+  }, [organization, tournament, teams, matches, currentRotation])
 
   /**
    * Crée les matchs round-robin pour les équipes du tour de rotation
    */
-  const createMatchesForRotation = useCallback(async (rotationNumber: number) => {
-    if (!tournament) return
+  // Fix Bug #4 : calcule les matchs en mémoire avec team_a_index (référence par index, pas UUID)
+  const buildMatchesForRotation = useCallback((
+    rotationNumber: number,
+    newTeams: Array<{ name: string; joueur_ids: string[] }>
+  ): Array<{
+    tour: number
+    terrain: number | null
+    team_a_index: number
+    team_b_index: number | null
+    type: string
+    poule: string | null
+    status: string
+  }> => {
+    if (!tournament || newTeams.length === 0) return []
 
-    try {
-      // Recharger les équipes fraîches depuis la BD
-      const teamsResponse = await fetch(`/api/equipes?tournoi_id=${tournament.id}`, {
-        credentials: 'include'
-      })
+    // Équipes virtuelles avec id = index (le serveur résoudra en UUID après création)
+    const virtualTeams = newTeams.map((t, idx) => ({
+      id: String(idx),
+      name: t.name
+    }))
 
-      if (!teamsResponse.ok) {
-        throw new Error('Échec chargement équipes depuis la BD')
-      }
+    const bergerMatches = TirageService.generateBergerMatches(virtualTeams, null)
 
-      const freshTeams = await teamsResponse.json()
-
-      // Récupérer toutes les équipes du tour actuel
-      const rotationTeams = freshTeams.filter((t: Team) =>
-        t.name.startsWith(`R${rotationNumber}-`)
-      )
-
-      if (rotationTeams.length === 0) {
-        console.warn(`Aucune équipe trouvée pour rotation ${rotationNumber}`)
-        return
-      }
-
-      // Générer matchs round-robin avec scheduling Berger (planning équilibré)
-      const bergerMatches = TirageService.generateBergerMatches(rotationTeams, null)
-
-      // Assignation intelligente des terrains
-      const terrains = tournament.settings.terrains || 0
-      let terrainMap: Map<string, number> | null = null
-
-      if (terrains > 0) {
-        const matchesForTerrain = bergerMatches.map((m, idx) => ({
-          id: `rot_${idx}`,
-          equipe_a_id: m.teamA.id,
-          equipe_b_id: m.teamB.id,
-          tour: m.tour
-        }))
-        terrainMap = TirageService.smartTerrainAssignment(matchesForTerrain, terrains)
-      }
-
-      const matchesToCreate = bergerMatches.map((m, idx) => ({
-        tournoi_id: tournament.id,
+    const terrains = tournament.settings.terrains || 0
+    let terrainMap: Map<string, number> | null = null
+    if (terrains > 0) {
+      const matchesForTerrain = bergerMatches.map((m, idx) => ({
+        id: `rot_${idx}`,
         equipe_a_id: m.teamA.id,
         equipe_b_id: m.teamB.id,
-        tour: rotationNumber,
-        terrain: terrainMap?.get(`rot_${idx}`) || null,
-        type: 'poule',
-        poule: null,
-        status: 'a_jouer'
+        tour: m.tour
       }))
-
-      // Créer tous les matchs en batch (1 seule requête au lieu de N²)
-      const matchesBatchResponse = await fetch('/api/matches/batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ matches: matchesToCreate })
-      })
-
-      if (!matchesBatchResponse.ok) {
-        // Fallback : créer les matchs un par un si le batch échoue
-        console.warn(`Batch API échouée (${matchesBatchResponse.status}), fallback individuel`)
-        for (const match of matchesToCreate) {
-          const singleResponse = await fetch('/api/matches', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(match)
-          })
-          if (!singleResponse.ok) {
-            const error = await singleResponse.json().catch(() => ({ error: 'Erreur inconnue' }))
-            throw new Error(error.error || `Échec création match`)
-          }
-        }
-        console.log(`✅ ${matchesToCreate.length} matchs créés (fallback) pour rotation ${rotationNumber}`)
-      } else {
-        const matchesResult = await matchesBatchResponse.json()
-        console.log(`✅ ${matchesResult.created} matchs créés pour rotation ${rotationNumber}`)
-      }
-
-      // Recharger les données
-      await loadTournamentData()
-    } catch (error) {
-      console.error('Erreur création matchs rotation:', error)
-      notify.error('Erreur lors de la création des matchs de rotation')
+      terrainMap = TirageService.smartTerrainAssignment(matchesForTerrain, terrains)
     }
-  }, [tournament, loadTournamentData])
+
+    return bergerMatches.map((m, idx) => ({
+      tour: rotationNumber,
+      terrain: terrainMap?.get(`rot_${idx}`) || null,
+      team_a_index: parseInt(m.teamA.id, 10),
+      team_b_index: parseInt(m.teamB.id, 10),
+      type: 'poule',
+      poule: null,
+      status: 'a_jouer'
+    }))
+  }, [tournament])
 
   /**
    * Reformule les équipes pour une nouvelle rotation
@@ -412,42 +326,50 @@ export function useRotation({
     try {
       const newRotation = currentRotation + 1
 
-      // Vérifier que les matchs n'existent pas déjà
       const existingMatches = matches.filter(m => m.tour === newRotation)
       if (existingMatches.length > 0) {
         notify.warning(`Les matchs pour la rotation ${newRotation} existent déjà.`)
         return
       }
 
-      // Créer les nouvelles équipes
-      await createNewTeamsWithAlgorithm()
+      // Fix Bug #4 : calcul des équipes ET matchs EN MÉMOIRE
+      const newTeams = await buildNewTeams()
+      if (!newTeams || newTeams.length === 0) {
+        notify.error('Échec du calcul des équipes pour la rotation')
+        return
+      }
 
-      // Vérifier que les équipes ont bien été créées
-      const verifyResponse = await fetch(`/api/equipes?tournoi_id=${tournament.id}`, {
-        credentials: 'include'
+      const newMatches = buildMatchesForRotation(newRotation, newTeams)
+      if (newMatches.length === 0) {
+        notify.error('Échec du calcul des matchs pour la rotation')
+        return
+      }
+
+      // 1 SEUL POST transactionnel : équipes + matchs créés ensemble (rollback auto si erreur)
+      const response = await fetch(`/api/tournois/${tournament.id}/new-rotation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          rotation_number: newRotation,
+          teams: newTeams,
+          matches: newMatches
+        })
       })
-      if (!verifyResponse.ok) {
-        throw new Error('Échec vérification création équipes')
-      }
-      const allTeams = await verifyResponse.json()
-      const newTeams = allTeams.filter((t: Team) => t.name.startsWith(`R${newRotation}-`))
 
-      if (newTeams.length === 0) {
-        throw new Error('Aucune équipe créée pour la nouvelle rotation')
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Erreur serveur' }))
+        throw new Error(err.error || `HTTP ${response.status}`)
       }
 
-      // Incrémenter le state
       setCurrentRotation(newRotation)
-
-      // Créer les matchs pour cette rotation
-      await createMatchesForRotation(newRotation)
-
-      notify.success(`Rotation ${newRotation} créée avec succès ! ${newTeams.length} équipes et leurs matchs sont prêts.`)
+      await loadTournamentData()
+      notify.success(`Rotation ${newRotation} créée avec succès ! ${newTeams.length} équipes et ${newMatches.length} matchs prêts.`)
     } catch (error) {
       console.error('Erreur rotation:', error)
       notify.error(`Erreur lors de la création de la rotation: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
-  }, [tournament, teams, matches, currentRotation, organization, createNewTeamsWithAlgorithm, createMatchesForRotation])
+  }, [tournament, teams, matches, currentRotation, organization, buildNewTeams, buildMatchesForRotation, loadTournamentData])
 
   return {
     // States
@@ -456,9 +378,7 @@ export function useRotation({
     isRotationAvailable,
 
     // Actions
-    reformTeamsForRotation,
-    createNewTeamsWithAlgorithm,
-    createMatchesForRotation
+    reformTeamsForRotation
   }
 }
 
