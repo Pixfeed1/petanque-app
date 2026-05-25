@@ -186,70 +186,113 @@ export function useMatchActions({
 
     const pouleSize = tournament.settings.pouleSize || 4
 
-    // Validation de la configuration avant génération
     if (!isValidPoolConfiguration(teams.length, pouleSize)) {
       notify.error(`Configuration invalide: ${teams.length} équipes en poules de ${pouleSize} créerait des poules déséquilibrées`)
       return
     }
 
-    // Vérifier si des matchs de poule existent déjà
     const existingPouleMatches = matches.filter(m => m.type === 'poule')
+    const hasExistingMatches = existingPouleMatches.length > 0
 
-    if (existingPouleMatches.length > 0) {
+    if (hasExistingMatches) {
       const hasPlayedMatches = existingPouleMatches.some(m => m.status === 'en_cours' || m.status === 'termine')
-
       if (hasPlayedMatches) {
-        // Cas 3 : des matchs ont été joués → bloquer
         notify.warning('Impossible de régénérer les poules : des matchs ont déjà été joués.')
         return
       }
-
-      // Cas 2 : tous les matchs sont a_jouer → demander confirmation
       const message = 'Des poules existent déjà. Voulez-vous les supprimer et en régénérer de nouvelles ?'
       const confirmed = onConfirmTerrainConflict
         ? await onConfirmTerrainConflict(message)
         : window.confirm(message)
-
       if (!confirmed) return
-
-      // Supprimer tous les matchs de poule existants
-      try {
-        for (const match of existingPouleMatches) {
-          const deleteResponse = await fetch(`/api/matches/${match.id}`, {
-            method: 'DELETE',
-            credentials: 'include'
-          })
-          if (!deleteResponse.ok) {
-            throw new Error(`Échec suppression match ${match.id}`)
-          }
-        }
-      } catch (error) {
-        console.error('Erreur suppression matchs existants:', error)
-        notify.error('Erreur lors de la suppression des anciens matchs de poule')
-        return
-      }
     }
 
     // Distribution serpentin (snake draft) pour des poules équilibrées
     const poules = TirageService.snakeDraftDistribution(teams, pouleSize)
 
-    // Générer les matchs de poule (round-robin avec Berger)
+    // Fix Bug #4 : construire TOUS les matchs en mémoire puis 1 seul appel transactionnel
+    const allMatches: Array<{
+      equipe_a_id: string
+      equipe_b_id: string
+      tour: number
+      terrain: number | null
+      type: 'poule'
+      poule: string
+      status: 'a_jouer'
+    }> = []
+
+    const terrains = tournament.settings.terrains || 0
+    const occupiedTerrains = matches
+      .filter(m => m.status === 'en_cours' && m.terrain)
+      .map(m => m.terrain!)
+
+    for (const [pouleName, pouleTeams] of Object.entries(poules)) {
+      const bergerMatches = TirageService.generateBergerMatches(pouleTeams, pouleName)
+
+      let terrainAssignment: Map<string, number> | null = null
+      if (terrains > 0) {
+        const matchesForTerrain = bergerMatches.map((m, idx) => ({
+          id: `temp_${pouleName}_${idx}`,
+          equipe_a_id: m.teamA.id,
+          equipe_b_id: m.teamB.id,
+          tour: m.tour
+        }))
+        terrainAssignment = TirageService.smartTerrainAssignment(
+          matchesForTerrain,
+          terrains,
+          occupiedTerrains
+        )
+      }
+
+      bergerMatches.forEach((m, idx) => {
+        allMatches.push({
+          equipe_a_id: m.teamA.id,
+          equipe_b_id: m.teamB.id,
+          tour: m.tour,
+          terrain: terrainAssignment?.get(`temp_${pouleName}_${idx}`) || null,
+          type: 'poule',
+          poule: pouleName,
+          status: 'a_jouer'
+        })
+      })
+    }
+
     try {
-      for (const [pouleName, pouleTeams] of Object.entries(poules)) {
-        await createRoundRobinMatches(pouleTeams, 1, pouleName)
+      if (hasExistingMatches) {
+        // Endpoint transactionnel : supprime anciens + crée nouveaux en 1 transaction PG
+        const response = await fetch(`/api/tournois/${tournament.id}/regenerate-poules`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ matches: allMatches })
+        })
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ error: 'Erreur serveur' }))
+          throw new Error(err.error || `HTTP ${response.status}`)
+        }
+      } else {
+        const matchesToCreate = allMatches.map(m => ({ ...m, tournoi_id: tournament.id }))
+        const response = await fetch('/api/matches/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ matches: matchesToCreate })
+        })
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ error: 'Erreur serveur' }))
+          throw new Error(err.error || `HTTP ${response.status}`)
+        }
       }
 
       const nbPoules = Object.keys(poules).length
       const sizes = Object.values(poules).map(p => p.length).join('-')
       notify.success(`${nbPoules} poules générées (${sizes}) avec tirage serpentin`)
-
-      // Recharger les données
       await loadTournamentData()
     } catch (error) {
       console.error('Erreur génération poules:', error)
-      notify.error('Erreur lors de la génération des poules')
+      notify.error(`Erreur génération poules: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
-  }, [tournament, teams, matches, isValidPoolConfiguration, createRoundRobinMatches, loadTournamentData, onConfirmTerrainConflict])
+  }, [tournament, teams, matches, isValidPoolConfiguration, loadTournamentData, onConfirmTerrainConflict])
 
   /**
    * Génère les phases éliminatoires après les poules
