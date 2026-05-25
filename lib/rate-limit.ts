@@ -167,6 +167,35 @@ export const RATE_LIMITS = {
     maxRequests: 100,
     windowMs: 15 * 60 * 1000, // 15 minutes
     message: 'Trop de requêtes. Veuillez réessayer plus tard.'
+  } as RateLimitConfig,
+
+  /**
+   * Write (POST/PUT/DELETE) : 60 requêtes par IP toutes les 15 minutes
+   * Protection contre le spam de création/modification
+   */
+  write: {
+    maxRequests: 60,
+    windowMs: 15 * 60 * 1000,
+    message: 'Trop de modifications. Veuillez réessayer dans quelques minutes.'
+  } as RateLimitConfig,
+
+  /**
+   * Batch operations : 10 requêtes par IP toutes les 15 minutes
+   * Pour les opérations lourdes (batch create/update)
+   */
+  batch: {
+    maxRequests: 10,
+    windowMs: 15 * 60 * 1000,
+    message: 'Trop d\'opérations en lot. Veuillez patienter.'
+  } as RateLimitConfig,
+
+  /**
+   * Review submission : 5 avis par IP toutes les 24h
+   */
+  review: {
+    maxRequests: 5,
+    windowMs: 24 * 60 * 60 * 1000,
+    message: 'Trop d\'avis soumis. Veuillez réessayer demain.'
   } as RateLimitConfig
 }
 

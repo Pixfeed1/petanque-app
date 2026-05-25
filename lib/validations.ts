@@ -214,3 +214,60 @@ export function validateRequest<T>(
     return { success: false, errors: ['Erreur de validation inconnue'] }
   }
 }
+
+// ============================================
+// REVIEWS
+// ============================================
+
+export const submitReviewSchema = z.object({
+  rating: z.number().int().min(1, 'Note minimum 1').max(5, 'Note maximum 5'),
+  content: z.string().min(10, 'Au moins 10 caractères').max(500, 'Maximum 500 caractères'),
+  name: z.string().min(1, 'Le nom est obligatoire').max(100),
+  role: z.string().max(100).optional().nullable()
+})
+
+export const moderateReviewSchema = z.object({
+  review_id: z.coerce.number().int().min(1),
+  action: z.enum(['approve', 'reject'])
+})
+
+// ============================================
+// BATCH OPERATIONS
+// ============================================
+
+export const batchCreateEquipesSchema = z.object({
+  tournoi_id: idSchema,
+  equipes: z.array(createEquipeSchema.omit({ tournoi_id: true })).min(1).max(100)
+})
+
+export const batchUpdateMatchesSchema = z.object({
+  updates: z.array(
+    z.object({
+      id: idSchema,
+      data: updateMatchSchema
+    })
+  ).min(1).max(50)
+})
+
+// ============================================
+// ORGANISATIONS
+// ============================================
+
+export const updateOrgSettingsSchema = z.object({
+  settings: z.record(z.string(), z.unknown())
+})
+
+// ============================================
+// FEEDBACK
+// ============================================
+
+export const submitFeedbackSchema = z.object({
+  message: z.string().min(5, 'Au moins 5 caractères').max(2000, 'Maximum 2000 caractères'),
+  category: z.enum(['general', 'bug', 'feature', 'ux']).optional().default('general')
+})
+
+export const replyFeedbackSchema = z.object({
+  feedback_id: z.coerce.number().int().min(1),
+  admin_reply: z.string().min(1).max(2000).optional(),
+  status: z.enum(['new', 'read', 'replied', 'archived']).optional()
+})

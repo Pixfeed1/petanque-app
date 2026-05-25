@@ -7,6 +7,7 @@
 
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { query, queryOne } from '@/lib/db'
 import { SQLValue } from '@/lib/types'
 import { joueurIdSchema, updateJoueurSchema, validateRequest } from '@/lib/validations'

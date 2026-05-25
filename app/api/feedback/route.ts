@@ -3,10 +3,15 @@
 
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, parseJsonBody } from '@/lib/middleware'
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { query, queryMany } from '@/lib/db'
 
 // POST : soumettre un feedback
 export async function POST(request: NextRequest) {
+  // Rate limiting
+  const rateLimitResponse = applyRateLimit(request, 'feedback-submit', RATE_LIMITS.review)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult

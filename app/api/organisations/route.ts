@@ -3,6 +3,7 @@
 
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { queryMany, query, transaction } from '@/lib/db'
 
 // GET - Récupérer les organisations de l'utilisateur
@@ -32,6 +33,10 @@ export async function GET(request: NextRequest) {
 
 // POST - Créer une nouvelle organisation
 export async function POST(request: NextRequest) {
+  // Rate limiting
+  const rateLimitResponse = applyRateLimit(request, 'org-create', RATE_LIMITS.write)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult

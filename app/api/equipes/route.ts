@@ -3,6 +3,7 @@
 
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { queryMany, query, queryOne, transaction } from '@/lib/db'
 import { getOrgLimitAsync } from '@/lib/plans'
 
@@ -66,6 +67,10 @@ export async function GET(request: NextRequest) {
 
 // POST - Créer une nouvelle équipe
 export async function POST(request: NextRequest) {
+  // Rate limiting
+  const rateLimitResponse = applyRateLimit(request, 'equipe-create', RATE_LIMITS.write)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult

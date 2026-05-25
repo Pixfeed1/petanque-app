@@ -3,6 +3,7 @@
 
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { queryOne, query } from '@/lib/db'
 import { MatchRawDB, MatchWithEquipes, SQLValue } from '@/lib/types'
 import { emitTournamentEvent } from '@/lib/tournament-events'

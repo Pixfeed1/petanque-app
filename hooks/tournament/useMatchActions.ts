@@ -65,11 +65,10 @@ export function useMatchActions({
   const isValidPoolConfiguration = useCallback((teamCount: number, poolSize: number): boolean => {
     if (teamCount < 4 || poolSize < 3) return false
 
-    const nbPoules = Math.ceil(teamCount / poolSize)
-    const lastPouleSize = teamCount - (nbPoules - 1) * poolSize
-
-    // La dernière poule doit avoir au moins 3 équipes
-    return lastPouleSize >= 3
+    // Fix Bug #2 : utiliser la distribution équilibrée du serveur
+    // Ex: 14 équipes en poules de 4 = [4,4,3,3] (valide) au lieu de [4,4,4,2] (rejeté)
+    const sizes = TirageService.calculateBalancedPoolSizes(teamCount, poolSize)
+    return sizes.length > 0 && sizes.every(size => size >= 3)
   }, [])
 
   /**
@@ -388,56 +387,32 @@ export function useMatchActions({
       .filter((team): team is Team => team !== undefined)
 
     try {
-      // Déterminer le nombre de matchs selon les qualifiés
-      const nbQualified = reorderedQualified.length
-      let matchType = 'finale'
-      let nbMatches = 1
+      // Fix Bug #1 : utiliser BracketService.generateFirstRoundPairs pour le seeding standard
+      // Gère correctement les BYE pour 3, 5, 6, 7, 9-15 qualifiés (le pairing manuel était cassé)
+      const bracketPairs = BracketService.generateFirstRoundPairs(
+        reorderedQualified.map(t => ({ id: t.id, name: t.name }))
+      )
 
-      if (nbQualified === 2) {
-        matchType = 'finale'
-        nbMatches = 1
-      } else if (nbQualified === 4) {
-        matchType = 'demi'
-        nbMatches = 2
-      } else if (nbQualified === 8) {
-        matchType = 'quart'
-        nbMatches = 4
-      } else if (nbQualified === 16) {
-        matchType = 'huitieme'
-        nbMatches = 8
-      } else {
-        const nextPower = Math.pow(2, Math.ceil(Math.log2(nbQualified)))
-        if (nextPower === 16) {
-          matchType = 'huitieme'
-          nbMatches = 8
-        } else if (nextPower === 8) {
-          matchType = 'quart'
-          nbMatches = 4
-        } else if (nextPower === 4) {
-          matchType = 'demi'
-          nbMatches = 2
-        } else {
-          matchType = 'finale'
-          nbMatches = 1
+      const matchType = bracketPairs[0]?.round || 'finale'
+      const nbMatches = bracketPairs.length
+      const nbByes = bracketPairs.filter(p => p.isBye).length
+
+      // Créer les matchs d'élimination dans l'ordre du seeding (BYE inclus aux bonnes positions)
+      for (const pair of bracketPairs) {
+        if (!pair.teamA) {
+          console.warn('⚠️ Paire sans équipe A ignorée', pair)
+          continue
         }
-      }
 
-      // Créer les matchs d'élimination
-      for (let i = 0; i < nbMatches; i++) {
-        const equipe_a = reorderedQualified[i * 2]
-        const equipe_b = reorderedQualified[i * 2 + 1]
-
-        if (!equipe_a) break
-
-        // Match BYE si pas d'équipe B
-        if (!equipe_b) {
+        if (pair.isBye) {
+          // Match BYE : équipe A qualifiée automatiquement (tête de série exemptée)
           const byeResponse = await fetch('/api/matches', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({
               tournoi_id: tournament.id,
-              equipe_a_id: equipe_a.id,
+              equipe_a_id: pair.teamA.id,
               equipe_b_id: null,
               tour: 1,
               terrain: null,
@@ -451,15 +426,15 @@ export function useMatchActions({
             const error = await byeResponse.json().catch(() => ({ error: 'Erreur serveur' }))
             throw new Error(`Échec création match BYE: ${error.error}`)
           }
-        } else {
+        } else if (pair.teamB) {
           const matchResponse = await fetch('/api/matches', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({
               tournoi_id: tournament.id,
-              equipe_a_id: equipe_a.id,
-              equipe_b_id: equipe_b.id,
+              equipe_a_id: pair.teamA.id,
+              equipe_b_id: pair.teamB.id,
               tour: 1,
               terrain: null,
               type: matchType,
@@ -468,12 +443,13 @@ export function useMatchActions({
           })
           if (!matchResponse.ok) {
             const error = await matchResponse.json().catch(() => ({ error: 'Erreur serveur' }))
-            throw new Error(`Échec création match ${equipe_a.name} vs ${equipe_b.name}: ${error.error}`)
+            throw new Error(`Échec création match ${pair.teamA.name} vs ${pair.teamB.name}: ${error.error}`)
           }
         }
       }
 
-      notify.success(`Phases éliminatoires générées : ${nbMatches} match(s) de ${matchType}`)
+      const byeMsg = nbByes > 0 ? ` (${nbByes} exempt${nbByes > 1 ? 's' : ''})` : ''
+      notify.success(`Phases éliminatoires générées : ${nbMatches} match(s) de ${matchType}${byeMsg}`)
       await loadTournamentData()
     } catch (error) {
       console.error('Erreur génération phases finales:', error)

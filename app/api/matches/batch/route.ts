@@ -3,6 +3,7 @@
 
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { query, queryOne } from '@/lib/db'
 import { emitTournamentEvent } from '@/lib/tournament-events'
 
@@ -19,6 +20,10 @@ interface MatchInput {
 
 // POST - Créer plusieurs matches en une seule requête
 export async function POST(request: NextRequest) {
+  // Rate limiting
+  const rateLimitResponse = applyRateLimit(request, 'match-batch', RATE_LIMITS.batch)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult

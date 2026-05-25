@@ -3,10 +3,15 @@
 
 import { NextRequest } from 'next/server'
 import { requireAuth, checkOrgAdmin, apiSuccess, apiError } from '@/lib/middleware'
+import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { query, queryOne } from '@/lib/db'
 
 // PUT - Mettre à jour la personnalisation club
 export async function PUT(request: NextRequest) {
+  // Rate limiting
+  const rateLimitResponse = applyRateLimit(request, 'org-settings', RATE_LIMITS.write)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
