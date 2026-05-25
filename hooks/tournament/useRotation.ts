@@ -140,6 +140,16 @@ export function useRotation({
       const needsMixite = tournament.settings.mixiteObligatoire || false
 
       if (isFirstRotation || needsMixite) {
+        // Fix Bug #3 : valider que tous les joueurs ont un genre AVANT la création
+        // (sinon joueurs sans genre traités silencieusement comme H)
+        if (needsMixite) {
+          const genderValidation = MixiteService.validatePlayerGenders(players, true)
+          if (!genderValidation.valid) {
+            notify.error(genderValidation.error || 'Certains joueurs n\'ont pas de genre défini')
+            return
+          }
+        }
+
         // Mixité obligatoire : utiliser le service dédié
         const mixiteResult = MixiteService.createTeamsWithMixite(
           players,
