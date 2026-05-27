@@ -24,7 +24,7 @@ import {
   Chart, Refresh, Grid
 } from '@/components/Icons'
 
-type ViewRole = 'organisateur' | 'joueur' | 'spectateur'
+import { useEffectiveRole, type ViewRole } from '@/hooks/useEffectiveRole'
 type ActiveSection = 'apercu' | 'matchs' | 'classement' | 'equipes' | 'stats'
 
 export default function TournamentDetailPage() {
@@ -38,7 +38,7 @@ export default function TournamentDetailPage() {
   const [selectedPoule, setSelectedPoule] = useState<string>('A')
   const [currentPhase, setCurrentPhase] = useState<'poules' | 'elimination' | 'finale'>('poules')
   const [showStartModal, setShowStartModal] = useState(false)
-  const [viewRole, setViewRole] = useState<ViewRole>('organisateur')
+  const [previewRole, setPreviewRole] = useState<ViewRole | null>(null)
   const [showRoleMenu, setShowRoleMenu] = useState(false)
   const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(new Set())
   const [matchsFilter, setMatchsFilter] = useState<'all' | 'a_venir' | 'en_cours' | 'termine'>('all')
@@ -47,6 +47,26 @@ export default function TournamentDetailPage() {
     tournament, setTournament, teams, matches,
     loading, isOrganizer, userPlan, realtimeConnected, loadTournamentData
   } = useTournamentData({ tournamentId: params?.id })
+
+  // Detection automatique du role (organisateur / joueur / spectateur)
+  // En mode 'joueur', identifie l'equipe du user via son email
+  const {
+    effectiveRole,
+    baseRole,
+    myEquipeId,
+    isPreviewMode,
+    canManage
+  } = useEffectiveRole({
+    tournamentId: tournament?.id,
+    orgId: tournament?.org_id,
+    teams,
+    isOrganizer,
+    previewRole,
+    selectedPlayerIds: (tournament?.settings?.players as string[] | undefined) ?? null
+  })
+
+  // Alias pour compat avec le code existant
+  const viewRole = effectiveRole
 
   const {
     availablePlayers, selectedPlayerIds, newTeamNameForCreation,
@@ -209,7 +229,7 @@ export default function TournamentDetailPage() {
     )
   }
 
-  const isAdmin = isOrganizer && viewRole === 'organisateur'
+  const isAdmin = canManage  // alias pour compat (fourni par useEffectiveRole)
   const statusLabel = tournament.status === 'preparation' ? 'Préparation' : tournament.status === 'en_cours' ? 'En cours' : 'Terminé'
 
   // Section helper
@@ -288,31 +308,42 @@ export default function TournamentDetailPage() {
                 Export
               </button>
             </div>
-            <div className="relative flex-shrink-0">
-              <button
-                onClick={() => setShowRoleMenu(!showRoleMenu)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-petanque-sable-bord/60 rounded-full text-[11px] text-petanque-vert-fonce hover:border-petanque-vert/40 transition-colors"
-              >
-                <span className="text-[9px] uppercase tracking-widest text-petanque-bois">Vue</span>
-                <span className="font-medium capitalize">{viewRole}</span>
-                <span className="text-petanque-bois text-[9px]">▾</span>
-              </button>
-              {showRoleMenu && (
-                <div className="absolute right-0 top-full mt-1 bg-white border border-petanque-sable-bord rounded-lg shadow-lg py-1 z-50 min-w-[160px]">
-                  {(['organisateur', 'joueur', 'spectateur'] as ViewRole[]).map(role => (
-                    <button
-                      key={role}
-                      onClick={() => { setViewRole(role); setShowRoleMenu(false) }}
-                      className={`w-full text-left px-3 py-2 text-xs hover:bg-petanque-sable-pale capitalize ${
-                        viewRole === role ? 'text-petanque-vert-fonce font-medium' : 'text-petanque-bois'
-                      }`}
-                    >
-                      {role === 'organisateur' ? 'Organisateur' : role === 'joueur' ? 'Joueur' : 'Spectateur'}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {baseRole === 'organisateur' && (
+              <div className="relative flex-shrink-0">
+                <button
+                  onClick={() => setShowRoleMenu(!showRoleMenu)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 bg-white border rounded-full text-[11px] transition-colors ${
+                    isPreviewMode
+                      ? 'border-petanque-cochonnet text-petanque-cochonnet-fonce'
+                      : 'border-petanque-sable-bord/60 text-petanque-vert-fonce hover:border-petanque-vert/40'
+                  }`}
+                >
+                  <span className="text-[9px] uppercase tracking-widest text-petanque-bois">
+                    {isPreviewMode ? 'Aperçu' : 'Vue'}
+                  </span>
+                  <span className="font-medium capitalize">{viewRole}</span>
+                  <span className="text-petanque-bois text-[9px]">▾</span>
+                </button>
+                {showRoleMenu && (
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-petanque-sable-bord rounded-lg shadow-lg py-1 z-50 min-w-[160px]">
+                    {(['organisateur', 'joueur', 'spectateur'] as ViewRole[]).map(role => (
+                      <button
+                        key={role}
+                        onClick={() => {
+                          setPreviewRole(role === 'organisateur' ? null : role)
+                          setShowRoleMenu(false)
+                        }}
+                        className={`w-full text-left px-3 py-2 text-xs hover:bg-petanque-sable-pale capitalize ${
+                          viewRole === role ? 'text-petanque-vert-fonce font-medium' : 'text-petanque-bois'
+                        }`}
+                      >
+                        {role === 'organisateur' ? 'Organisateur' : role === 'joueur' ? 'Joueur (aperçu)' : 'Spectateur (aperçu)'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </nav>

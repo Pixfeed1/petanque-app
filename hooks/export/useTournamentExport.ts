@@ -15,6 +15,7 @@ import type { Joueur, Equipe, EquipeJoueur } from '@/lib/types'
 interface Tournament {
   id: string
   name: string
+  org_id?: string
   mode: 'choisi' | 'melee_fixe' | 'melee_tournante'
   format: 'tete_a_tete' | 'doublette' | 'triplette'
   status: string

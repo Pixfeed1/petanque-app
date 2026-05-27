@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import { useAuth } from '@/app/providers/AuthProvider'
 import { useMatchScore } from '@/hooks/match'
 import { useToast } from '@/components/ui/Toast'
 import { useConfirm } from '@/components/ui/ConfirmModal'
@@ -11,7 +12,6 @@ import {
   Undo, Loader, Save, Play
 } from '@/components/Icons'
 
-type ViewRole = 'organisateur' | 'joueur' | 'spectateur'
 
 export default function MatchScorePage() {
   const router = useRouter()
@@ -19,7 +19,8 @@ export default function MatchScorePage() {
   const [mounted, setMounted] = useState(false)
   const { showSuccess, showError, showWarning } = useToast()
   const { confirm, ConfirmModal } = useConfirm()
-  const [viewRole] = useState<ViewRole>('organisateur')
+  const { organization } = useAuth()
+  const [tournamentOrgId, setTournamentOrgId] = useState<string | null>(null)
 
   const {
     match, loading, saving, scoreA, scoreB, manches,
@@ -35,7 +36,23 @@ export default function MatchScorePage() {
     onConfirm: confirm
   })
 
-  useEffect(() => { setMounted(true) }, [])
+  // Determination role : fetch du tournoi pour comparer org_id
+  useEffect(() => {
+    const tid = match?.tournoi?.id
+    if (!tid) return
+    let cancelled = false
+    fetch(`/api/tournois/${tid}`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (cancelled || !data) return
+        setTournamentOrgId(data.org_id ? String(data.org_id) : null)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [match?.tournoi?.id])
+
+  useEffect(() => {
+    setMounted(true) }, [])
 
   if (loading) {
     return (
@@ -62,7 +79,8 @@ export default function MatchScorePage() {
     )
   }
 
-  const isAdmin = viewRole === 'organisateur'
+  // isAdmin = user appartient a l'organisation du tournoi (phase 2 : autoriser joueurs aussi)
+  const isAdmin = !!tournamentOrgId && !!organization && String(organization.id) === tournamentOrgId
   const teamAName = match.equipe_a?.name || 'Équipe A'
   const teamBName = match.equipe_b?.name || 'Équipe B'
   const playersA = (match.equipe_a as any)?.equipes_joueurs?.map((ej: any) => ej.joueur?.name).filter(Boolean).join(' · ') || ''

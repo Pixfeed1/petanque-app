@@ -29,6 +29,7 @@ export interface BracketMatch {
 export interface Tournament {
   id: string
   name: string
+  org_id?: string
   settings: {
     consolante?: boolean
   }

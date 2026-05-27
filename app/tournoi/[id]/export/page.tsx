@@ -5,13 +5,16 @@ import { useParams, useRouter } from 'next/navigation'
 import { useTournamentExport, ExportOptions } from '@/hooks/export'
 import { FadeIn, BouleSvg, PageHeader } from '@/components/ui'
 import TournamentSubNav, { ViewRole } from '@/components/tournament/TournamentSubNav'
+import { useAuth } from '@/app/providers/AuthProvider'
+import { useEffectiveRole } from '@/hooks/useEffectiveRole'
 import { Loader } from '@/components/Icons'
 
 export default function ExportTournamentPage() {
   const params = useParams()
   const router = useRouter()
   const tournoiId = params?.id as string
-  const [viewRole, setViewRole] = useState<ViewRole>('organisateur')
+  const [previewRole, setPreviewRole] = useState<ViewRole | null>(null)
+  const { organization } = useAuth()
 
   const {
     loading,
@@ -27,6 +30,18 @@ export default function ExportTournamentPage() {
     exportToExcel,
     handlePrint
   } = useTournamentExport({ tournoiId })
+
+  // Detection role : organisateur seulement si user.org === tournament.org
+  const isOrganizer = !!tournament && !!organization && String(tournament.org_id) === String(organization.id)
+  const { effectiveRole, baseRole, isPreviewMode } = useEffectiveRole({
+    tournamentId: tournament?.id,
+    orgId: tournament?.org_id,
+    teams: teams ?? [],
+    isOrganizer,
+    previewRole,
+    selectedPlayerIds: null  // pas necessaire sur export (lecture seule)
+  })
+  const viewRole = effectiveRole
 
   if (loading) {
     return (
@@ -79,7 +94,9 @@ export default function ExportTournamentPage() {
       <TournamentSubNav
         sections={subNavSections}
         viewRole={viewRole}
-        setViewRole={setViewRole}
+        setViewRole={(role) => setPreviewRole(role === 'organisateur' ? null : role)}
+        baseRole={baseRole}
+        isPreviewMode={isPreviewMode}
       />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">

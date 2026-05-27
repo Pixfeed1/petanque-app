@@ -16,9 +16,19 @@ interface TournamentSubNavProps {
   sections: SubNavSection[]
   viewRole: ViewRole
   setViewRole: (role: ViewRole) => void
+  /** Le vrai role de l'utilisateur. Le toggle 'Vue' n'est affiche que si organisateur. */
+  baseRole?: ViewRole
+  /** True si l'organisateur est en mode preview (joueur ou spectateur) */
+  isPreviewMode?: boolean
 }
 
-export default function TournamentSubNav({ sections, viewRole, setViewRole }: TournamentSubNavProps) {
+export default function TournamentSubNav({
+  sections,
+  viewRole,
+  setViewRole,
+  baseRole = 'organisateur',  // par defaut : compat ascendante, toggle visible
+  isPreviewMode = false
+}: TournamentSubNavProps) {
   const [showRoleMenu, setShowRoleMenu] = useState(false)
 
   return (
@@ -44,12 +54,19 @@ export default function TournamentSubNav({ sections, viewRole, setViewRole }: To
               </button>
             ))}
           </div>
+          {baseRole === 'organisateur' && (
           <div className="relative flex-shrink-0">
             <button
               onClick={() => setShowRoleMenu(!showRoleMenu)}
-              className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-petanque-sable-bord/60 rounded-full text-[11px] text-petanque-vert-fonce hover:border-petanque-vert/40 transition-colors"
+              className={`inline-flex items-center gap-1.5 px-3 py-1 bg-white border rounded-full text-[11px] transition-colors ${
+                isPreviewMode
+                  ? 'border-petanque-cochonnet text-petanque-cochonnet-fonce'
+                  : 'border-petanque-sable-bord/60 text-petanque-vert-fonce hover:border-petanque-vert/40'
+              }`}
             >
-              <span className="text-[9px] uppercase tracking-widest text-petanque-bois">Vue</span>
+              <span className="text-[9px] uppercase tracking-widest text-petanque-bois">
+                {isPreviewMode ? 'Aperçu' : 'Vue'}
+              </span>
               <span className="font-medium capitalize">{viewRole}</span>
               <span className="text-petanque-bois text-[9px]">▾</span>
             </button>
@@ -69,6 +86,7 @@ export default function TournamentSubNav({ sections, viewRole, setViewRole }: To
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
     </nav>

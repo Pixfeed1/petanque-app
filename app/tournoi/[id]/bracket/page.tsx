@@ -6,6 +6,8 @@ import { useBracket, BracketMatch } from '@/hooks/bracket'
 import { Button, BouleSvg, FadeIn } from '@/components/ui'
 import { Loader } from '@/components/Icons'
 import TournamentSubNav, { ViewRole, SubNavSection } from '@/components/tournament/TournamentSubNav'
+import { useAuth } from '@/app/providers/AuthProvider'
+import { useEffectiveRole } from '@/hooks/useEffectiveRole'
 
 const COL_WIDTH = 220
 const HORIZONTAL_GAP = 60
@@ -101,8 +103,21 @@ export default function BracketPage() {
   const router = useRouter()
   const tournoiId = params?.id as string
 
-  const [viewRole, setViewRole] = useState<ViewRole>('organisateur')
+  const [previewRole, setPreviewRole] = useState<ViewRole | null>(null)
+  const { organization } = useAuth()
   const { loading, tournament, bracketData, hasHuitiemes, hasQuarts, hasDemis } = useBracket({ tournoiId })
+
+  // Detection role : organisateur seulement si user.org === tournament.org
+  const isOrganizer = !!tournament && !!organization && String(tournament.org_id) === String(organization.id)
+  const { effectiveRole, baseRole, isPreviewMode } = useEffectiveRole({
+    tournamentId: tournament?.id,
+    orgId: tournament?.org_id,
+    teams: [],  // pas de match equipe necessaire sur cette page (lecture seule)
+    isOrganizer,
+    previewRole,
+    selectedPlayerIds: null
+  })
+  const viewRole = effectiveRole
 
   if (loading) {
     return (
@@ -201,7 +216,9 @@ export default function BracketPage() {
       <TournamentSubNav
         sections={subNavSections}
         viewRole={viewRole}
-        setViewRole={setViewRole}
+        setViewRole={(role) => setPreviewRole(role === 'organisateur' ? null : role)}
+        baseRole={baseRole}
+        isPreviewMode={isPreviewMode}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
