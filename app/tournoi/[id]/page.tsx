@@ -849,15 +849,31 @@ export default function TournamentDetailPage() {
         {activeSection === 'equipes' && (
           <div className="space-y-6">
             {tournament.mode === 'choisi' && tournament.status === 'preparation' && isAdmin && (
-              <div className="bg-petanque-vert-pale/30 border border-petanque-vert/20 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-                <div>
-                  <p className="text-sm font-medium text-petanque-vert-fonce mb-0.5">Mode Choisi</p>
-                  <p className="text-sm text-petanque-bois">Compose les équipes manuellement avant le démarrage.</p>
+              teams.length === 0 ? (
+                <div className="bg-petanque-cochonnet/10 border border-petanque-cochonnet/40 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-petanque-cochonnet-fonce mb-0.5">Aucune équipe pour l&apos;instant</p>
+                    <p className="text-sm text-petanque-bois">Compose tes équipes manuellement — il en faut au moins 4 pour démarrer.</p>
+                  </div>
+                  <Button variant="primary" size="sm" onClick={() => setShowTeamFormation(true)}>
+                    Composer les équipes
+                  </Button>
                 </div>
-                <Button variant="primary" size="sm" onClick={() => setShowTeamFormation(true)}>
-                  Composer les équipes
-                </Button>
-              </div>
+              ) : (
+                <div className="bg-petanque-vert-pale/30 border border-petanque-vert/20 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-petanque-vert-fonce mb-0.5">{teams.length} équipe{teams.length > 1 ? 's' : ''} composée{teams.length > 1 ? 's' : ''}</p>
+                    <p className="text-sm text-petanque-bois">
+                      {teams.length < 4
+                        ? `Encore ${4 - teams.length} équipe${4 - teams.length > 1 ? 's' : ''} pour pouvoir démarrer.`
+                        : "Tu peux démarrer le tournoi, ou ajouter d'autres équipes."}
+                    </p>
+                  </div>
+                  <Button variant="primary" size="sm" onClick={() => setShowTeamFormation(true)}>
+                    + Ajouter une équipe
+                  </Button>
+                </div>
+              )
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {teams.map(team => (
