@@ -6,6 +6,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react'
+import { validateQualifiedPerPoule } from '@/lib/services/validation.service'
 
 export interface TournamentFormData {
   // Étape 1 - Informations
@@ -217,7 +218,7 @@ export function useCreateTournament(): UseCreateTournamentReturn {
     if (validationError) {
       setValidationError('')
     }
-  }, [formData.selectedPlayers.length, formData.newPlayers])
+  }, [formData.selectedPlayers.length, formData.newPlayers, formData.qualifiedPerPoule, formData.pouleSize])
 
   const handleContinue = useCallback(() => {
     setValidationError('')
@@ -249,6 +250,17 @@ export function useCreateTournament(): UseCreateTournamentReturn {
       }
     }
 
+    if (currentStep === 4) {
+      // Validation config poules : qualifiés < taille de poule (et >= 1)
+      const qualValidation = validateQualifiedPerPoule(
+        formData.qualifiedPerPoule,
+        formData.pouleSize
+      )
+      if (!qualValidation.valid) {
+        setValidationError(qualValidation.error || 'Configuration des poules invalide')
+        return
+      }
+    }
     if (canProceed()) {
       setCurrentStep(prev => prev + 1)
     }
