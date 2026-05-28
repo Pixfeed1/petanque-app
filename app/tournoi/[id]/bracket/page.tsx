@@ -363,7 +363,7 @@ function MatchCard({ match, labelA, labelB, isFinale, matchIdx, top, height, onC
     <div
       className={`absolute rounded-lg bg-white transition-colors ${
         isLive ? 'border-[1.5px] border-petanque-vert' : 'border-[0.5px] border-petanque-sable-bord'
-      } ${match ? 'hover:border-petanque-bois/50 cursor-pointer' : ''}`}
+      } ${match ? 'hover:border-petanque-vert/40 hover:bg-petanque-sable-pale/40 cursor-pointer' : ''}`}
       style={{
         top,
         left: 0,
