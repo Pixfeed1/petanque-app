@@ -38,12 +38,14 @@ export async function GET(
     }
 
     // Vérifier que l'utilisateur a accès à l'organisation du tournoi
-    if (matchRaw.tournoi_org_id) {
-      const { checkOrgAccess } = await import('@/lib/middleware')
-      const hasAccess = await checkOrgAccess(user.id, matchRaw.tournoi_org_id)
-      if (!hasAccess) {
-        return apiError('Accès refusé à ce match', 403)
-      }
+    // Fix faille : refus strict si tournoi_org_id absent (au lieu de skip silencieux)
+    if (!matchRaw.tournoi_org_id) {
+      return apiError('Match orphelin : aucun tournoi associé', 500)
+    }
+    const { checkOrgAccess: checkOrgAccess1 } = await import('@/lib/middleware')
+    const hasAccess1 = await checkOrgAccess1(user.id, matchRaw.tournoi_org_id)
+    if (!hasAccess1) {
+      return apiError('Accès refusé à ce match', 403)
     }
 
     // Parse manches_json seulement si c'est une chaîne non-vide
@@ -133,12 +135,14 @@ export async function PUT(
     }
 
     // Vérifier que l'utilisateur a accès à l'organisation du tournoi
-    if (existingMatch.tournoi_org_id) {
-      const { checkOrgAccess } = await import('@/lib/middleware')
-      const hasAccess = await checkOrgAccess(user.id, existingMatch.tournoi_org_id)
-      if (!hasAccess) {
-        return apiError('Accès refusé pour modifier ce match', 403)
-      }
+    // Fix faille : refus strict si tournoi_org_id absent
+    if (!existingMatch.tournoi_org_id) {
+      return apiError('Match orphelin : aucun tournoi associé', 500)
+    }
+    const { checkOrgAccess: checkOrgAccess2 } = await import('@/lib/middleware')
+    const hasAccess2 = await checkOrgAccess2(user.id, existingMatch.tournoi_org_id)
+    if (!hasAccess2) {
+      return apiError('Accès refusé pour modifier ce match', 403)
     }
 
     const updates: string[] = []
