@@ -230,6 +230,8 @@ export default function TournamentDetailPage() {
   }
 
   const isAdmin = canManage  // alias pour compat (fourni par useEffectiveRole)
+  // Mode choisi : guider vers la composition tant qu'il manque des équipes (min 4 pour démarrer)
+  const needsTeams = tournament.mode === 'choisi' && teams.length < 4
   const statusLabel = tournament.status === 'preparation' ? 'Préparation' : tournament.status === 'en_cours' ? 'En cours' : 'Terminé'
 
   // Section helper
@@ -362,7 +364,11 @@ export default function TournamentDetailPage() {
               </p>
               <h2 className="text-4xl md:text-5xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.05] mb-3">
                 {tournament.status === 'preparation' && (
-                  <>Tout est prêt, <span className="accent-italic text-petanque-vert">démarre quand tu veux.</span></>
+                  needsTeams ? (
+                    <>Compose tes équipes, <span className="accent-italic text-petanque-vert">puis lance la partie.</span></>
+                  ) : (
+                    <>Tout est prêt, <span className="accent-italic text-petanque-vert">démarre quand tu veux.</span></>
+                  )
                 )}
                 {tournament.status === 'en_cours' && liveMatches.length > 0 && (
                   <>{liveMatches.length} match{liveMatches.length > 1 ? 's' : ''} en parallèle, <span className="accent-italic text-petanque-vert">{currentPhase === 'poules' ? 'la phase de poules avance.' : 'phases finales.'}</span></>
@@ -409,18 +415,34 @@ export default function TournamentDetailPage() {
               </FadeIn>
             )}
 
-            {/* Action requise — préparation : démarrer */}
+            {/* Action requise — préparation : composer les équipes OU démarrer */}
             {tournament.status === 'preparation' && isAdmin && (
               <FadeIn delay={120}>
-                <div className="bg-petanque-vert-pale/30 border border-petanque-vert/30 rounded-xl px-5 py-4 mb-8 flex items-center justify-between gap-4 flex-wrap">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.16em] font-medium text-petanque-vert-fonce mb-1">Prêt à démarrer</p>
-                    <p className="text-sm text-petanque-vert-fonce">{teams.length} équipes inscrites · Mode et format paramétrés.</p>
+                {needsTeams ? (
+                  <div className="bg-petanque-cochonnet/10 border border-petanque-cochonnet/40 rounded-xl px-5 py-4 mb-8 flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.16em] font-medium text-petanque-cochonnet-fonce mb-1">Action requise</p>
+                      <p className="text-sm text-petanque-vert-fonce">
+                        {teams.length === 0
+                          ? "Aucune équipe pour l'instant. Compose tes équipes pour pouvoir démarrer."
+                          : `${teams.length} équipe${teams.length > 1 ? 's' : ''} composée${teams.length > 1 ? 's' : ''} · il en faut au moins 4 pour démarrer.`}
+                      </p>
+                    </div>
+                    <Button variant="primary" onClick={() => setActiveSection('equipes')}>
+                      <Users className="w-4 h-4 mr-1.5" />Créer les équipes
+                    </Button>
                   </div>
-                  <Button variant="primary" onClick={() => setShowStartModal(true)}>
-                    <Play className="w-4 h-4 mr-1.5" />Démarrer le tournoi
-                  </Button>
-                </div>
+                ) : (
+                  <div className="bg-petanque-vert-pale/30 border border-petanque-vert/30 rounded-xl px-5 py-4 mb-8 flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.16em] font-medium text-petanque-vert-fonce mb-1">Prêt à démarrer</p>
+                      <p className="text-sm text-petanque-vert-fonce">{teams.length} équipes inscrites · Mode et format paramétrés.</p>
+                    </div>
+                    <Button variant="primary" onClick={() => setShowStartModal(true)}>
+                      <Play className="w-4 h-4 mr-1.5" />Démarrer le tournoi
+                    </Button>
+                  </div>
+                )}
               </FadeIn>
             )}
 
@@ -650,7 +672,11 @@ export default function TournamentDetailPage() {
               <FadeIn delay={200}>
                 <div className="mt-10 text-center py-12 bg-white border border-petanque-sable-bord/60 rounded-xl">
                   <BouleSvg size={48} variant="acier" stries className="mx-auto mb-4" />
-                  <p className="text-petanque-bois text-sm">Les matchs seront générés automatiquement au démarrage du tournoi.</p>
+                  <p className="text-petanque-bois text-sm">
+                    {needsTeams
+                      ? "Crée tes équipes dans l'onglet Équipes, puis démarre le tournoi pour générer les matchs."
+                      : "Les matchs seront générés automatiquement au démarrage du tournoi."}
+                  </p>
                 </div>
               </FadeIn>
             )}
