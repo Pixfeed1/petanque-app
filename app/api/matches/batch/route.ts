@@ -104,9 +104,10 @@ export async function POST(request: NextRequest) {
     const valueStrings: string[] = []
 
     matches.forEach((match, i) => {
-      const baseIndex = i * 8
+      const isByeMatch = match.type === 'bye' || match.equipe_b_id === null
+      const baseIndex = i * 9
       valueStrings.push(
-        `($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6}, $${baseIndex + 7}, $${baseIndex + 8})`
+        `($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6}, $${baseIndex + 7}, $${baseIndex + 8}, $${baseIndex + 9})`
       )
       values.push(
         match.tournoi_id,
@@ -116,12 +117,13 @@ export async function POST(request: NextRequest) {
         match.equipe_b_id,
         match.type || 'poule',
         match.poule,
-        match.status || 'a_jouer'
+        isByeMatch ? 'termine' : (match.status || 'a_jouer'),
+        isByeMatch ? match.equipe_a_id : null
       )
     })
 
     const insertQuery = `
-      INSERT INTO matches (tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status)
+      INSERT INTO matches (tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status, winner_id)
       VALUES ${valueStrings.join(', ')}
       RETURNING *
     `

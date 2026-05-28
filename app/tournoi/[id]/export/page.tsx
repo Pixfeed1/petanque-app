@@ -69,7 +69,7 @@ export default function ExportTournamentPage() {
     { id: 'matchs', label: 'Tous les matchs', isActive: false, onClick: () => router.push('/tournoi/' + tournoiId) },
     { id: 'classement', label: 'Classement', isActive: false, onClick: () => router.push('/tournoi/' + tournoiId) },
     { id: 'equipes', label: 'Équipes', isActive: false, onClick: () => router.push('/tournoi/' + tournoiId) },
-    { id: 'bracket', label: 'Bracket', isActive: false, onClick: () => router.push('/tournoi/' + tournoiId + '/bracket') },
+    { id: 'bracket', label: 'Phase finale', isActive: false, onClick: () => router.push('/tournoi/' + tournoiId + '/bracket') },
     { id: 'export', label: 'Export', isActive: true, onClick: () => {} }
   ]
 

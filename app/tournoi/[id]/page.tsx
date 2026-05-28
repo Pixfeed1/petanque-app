@@ -506,6 +506,41 @@ export default function TournamentDetailPage() {
               )
             })()}
 
+            {/* Phase finale : matchs en attente d'etre joues */}
+            {tournament.status === 'en_cours' && isAdmin && (() => {
+              const finalsTypes = ['huitieme', 'quart', 'demi', 'finale']
+              const playable = matches.filter(m =>
+                finalsTypes.includes(m.type || '') && m.status === 'a_jouer'
+              )
+              if (playable.length === 0) return null
+              const phaseType = playable.some(m => m.type === 'finale') ? 'finale'
+                : playable.some(m => m.type === 'demi') ? 'demi'
+                : playable.some(m => m.type === 'quart') ? 'quart'
+                : 'huitieme'
+              const count = playable.filter(m => m.type === phaseType).length
+              const labels: Record<string, [string, string]> = {
+                huitieme: ['huitième de finale', 'huitièmes de finale'],
+                quart: ['quart de finale', 'quarts de finale'],
+                demi: ['demi-finale', 'demi-finales'],
+                finale: ['finale', 'finales']
+              }
+              const [singular, plural] = labels[phaseType]
+              const phaseLabel = count > 1 ? plural : singular
+              return (
+                <FadeIn delay={120}>
+                  <div className="bg-petanque-vert-pale/30 border border-petanque-vert/30 rounded-xl px-5 py-4 mb-8 flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.16em] font-medium text-petanque-vert-fonce mb-1">Matchs en attente</p>
+                      <p className="text-sm text-petanque-vert-fonce">{count} {phaseLabel} à jouer.</p>
+                    </div>
+                    <Button variant="primary" onClick={() => router.push(`/tournoi/${tournament.id}/bracket`)}>
+                      <Flag className="w-4 h-4 mr-1.5" />Voir la phase finale →
+                    </Button>
+                  </div>
+                </FadeIn>
+              )
+            })()}
+
             {/* Insight anti-rematch */}
             {antiRematchInsight && isAdmin && (
               <FadeIn delay={140}>

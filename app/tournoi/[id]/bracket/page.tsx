@@ -181,7 +181,7 @@ export default function BracketPage() {
     { id: 'matchs', label: 'Tous les matchs', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}`) },
     { id: 'classement', label: 'Classement', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}`) },
     { id: 'equipes', label: 'Équipes', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}`) },
-    { id: 'bracket', label: 'Bracket', isActive: true, onClick: () => {} },
+    { id: 'bracket', label: 'Phase finale', isActive: true, onClick: () => {} },
     { id: 'stats', label: 'Stats', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}`) },
     { id: 'export', label: 'Export', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}/export`) }
   ]
