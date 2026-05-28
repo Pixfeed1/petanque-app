@@ -392,8 +392,11 @@ export function useTournamentCreation({
 
       const tournoi = await tournoiRes.json()
 
-      // 3. Créer équipes et matchs (sauf mode choisi sans joueurs)
-      if (formData.mode !== 'choisi' || allPlayerIds.length > 0) {
+      // 3. Créer équipes et matchs : UNIQUEMENT en mode mêlée.
+      // En mode choisi, l'organisateur compose les équipes manuellement sur la
+      // page du tournoi puis génère les poules de là (pool de joueurs déjà stocké
+      // dans settings.players). Générer les poules ici throw "Aucune équipe trouvée".
+      if (formData.mode !== 'choisi') {
         const unassigned = await createTeamsWithMixity(tournoi, allPlayerIds, allPlayersUpdated)
 
         if (unassigned > 0) {
