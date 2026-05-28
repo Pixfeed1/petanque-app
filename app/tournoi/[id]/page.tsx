@@ -428,7 +428,7 @@ export default function TournamentDetailPage() {
                           : `${teams.length} équipe${teams.length > 1 ? 's' : ''} composée${teams.length > 1 ? 's' : ''} · il en faut au moins 4 pour démarrer.`}
                       </p>
                     </div>
-                    <Button variant="primary" onClick={() => setActiveSection('equipes')}>
+                    <Button variant="primary" onClick={() => { setActiveSection('equipes'); setShowTeamFormation(true) }}>
                       <Users className="w-4 h-4 mr-1.5" />Créer les équipes
                     </Button>
                   </div>

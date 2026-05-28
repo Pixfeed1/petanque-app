@@ -1,5 +1,5 @@
 /**
- * Modal de composition d'équipes (mode choisi)
+ * Modal de composition d'équipes (mode choisi) — V4
  */
 
 'use client'
@@ -36,22 +36,23 @@ export default function TeamFormationModal({
   const playersPerTeam = getPlayersPerTeam(tournament.format)
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-slideUp">
-        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6">
+    <div className="fixed inset-0 bg-petanque-bois/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-petanque-sable-pale rounded-xl border border-petanque-sable-bord max-w-2xl w-full max-h-[90vh] overflow-hidden animate-slideUp">
+        {/* Header flat V4 */}
+        <div className="bg-petanque-vert px-6 py-5">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-white flex items-center">
-              <Users className="w-6 h-6 mr-2" />
+            <h2 className="text-xl font-medium text-white flex items-center">
+              <Users className="w-5 h-5 mr-2" />
               Composer une nouvelle équipe
             </h2>
             <button
               onClick={onClose}
-              className="text-white hover:bg-white/20 rounded-lg p-2 transition-all"
+              className="text-white hover:bg-white/15 rounded-md p-1.5 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-blue-100 mt-2">
+          <p className="text-white/80 text-sm mt-1.5">
             Format : {tournament.format === 'tete_a_tete' ? 'Tête-à-tête (1 joueur)' :
                      tournament.format === 'doublette' ? 'Doublette (2 joueurs)' : 'Triplette (3 joueurs)'}
           </p>
@@ -60,45 +61,43 @@ export default function TeamFormationModal({
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
           {/* Nom de l'équipe */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-petanque-vert-fonce mb-2">
               Nom de l&apos;équipe *
             </label>
             <input
               type="text"
               value={newTeamName}
               onChange={(e) => onNameChange(e.target.value)}
-              placeholder="Ex: Les Champions, Team Rocket..."
+              placeholder="Ex: Les Champions, Team Rocket…"
               maxLength={50}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all"
+              className="w-full px-4 py-3 border border-petanque-sable-bord rounded-lg bg-white text-petanque-vert-fonce placeholder:text-petanque-bois/60 focus:border-petanque-vert focus:outline-none transition-colors"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-petanque-bois mt-1">
               {newTeamName.length}/50 caractères
             </p>
           </div>
 
           {/* Sélection des joueurs */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-petanque-vert-fonce mb-2">
               Sélectionner les joueurs *
-              <span className="ml-2 text-blue-600">
+              <span className="ml-2 text-petanque-vert">
                 ({selectedPlayerIds.length}/{playersPerTeam})
               </span>
             </label>
 
             {availablePlayers.length === 0 ? (
-              <div className="text-center py-8 bg-gray-50 rounded-xl border-2 border-gray-200">
-                <div className="text-4xl mb-3">
-                  {selectedPlayerIds.length > 0 ? '✅' : '👥'}
-                </div>
-                <p className="text-gray-700 font-medium mb-2">
+              <div className="text-center py-8 bg-white rounded-lg border border-petanque-sable-bord">
+                <Users className="w-8 h-8 mx-auto mb-3 text-petanque-bois" />
+                <p className="text-petanque-vert-fonce font-medium mb-2">
                   {selectedPlayerIds.length > 0
                     ? 'Tous les joueurs sont déjà assignés'
                     : 'Aucun joueur disponible'}
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-petanque-bois">
                   {selectedPlayerIds.length > 0
-                    ? 'Tous les joueurs de l\'organisation sont déjà dans des équipes.'
-                    : 'Ajoutez des joueurs dans l\'onglet "Joueurs" d\'abord'}
+                    ? "Tous les joueurs de l'organisation sont déjà dans des équipes."
+                    : "Ajoutez des joueurs dans l'onglet Joueurs d'abord"}
                 </p>
               </div>
             ) : (
@@ -112,32 +111,32 @@ export default function TeamFormationModal({
                       key={player.id}
                       onClick={() => !isDisabled && onTogglePlayer(player.id)}
                       disabled={isDisabled}
-                      className={`p-4 rounded-xl border-2 transition-all ${
+                      className={`p-4 rounded-lg border transition-colors ${
                         isSelected
-                          ? 'border-blue-500 bg-blue-50'
+                          ? 'border-petanque-vert bg-petanque-vert-pale'
                           : isDisabled
-                          ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
-                          : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                          ? 'border-petanque-sable-bord bg-petanque-sable-pale opacity-50 cursor-not-allowed'
+                          : 'border-petanque-sable-bord bg-white hover:border-petanque-vert/40 hover:bg-petanque-sable-pale'
                       }`}
                     >
                       <div className="flex items-center">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mr-3 ${
-                          player.gender === 'F' ? 'bg-gradient-to-br from-pink-500 to-rose-600' : 'bg-gradient-to-br from-blue-500 to-indigo-600'
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium mr-3 ${
+                          player.gender === 'F' ? 'bg-petanque-cochonnet' : 'bg-petanque-vert'
                         }`}>
                           {player.name?.charAt(0).toUpperCase()}
                         </div>
                         <div className="text-left flex-1">
-                          <p className="font-medium text-gray-900">{player.name}</p>
+                          <p className="font-medium text-petanque-vert-fonce">{player.name}</p>
                           <span className={`text-xs px-2 py-0.5 rounded-full ${
                             player.gender === 'F'
-                              ? 'bg-pink-100 text-pink-700'
-                              : 'bg-blue-100 text-blue-700'
+                              ? 'bg-petanque-cochonnet/15 text-petanque-cochonnet-fonce'
+                              : 'bg-petanque-vert-pale text-petanque-vert-fonce'
                           }`}>
                             {player.gender === 'F' ? 'F' : 'H'}
                           </span>
                         </div>
                         {isSelected && (
-                          <div className="text-blue-500">
+                          <div className="text-petanque-vert">
                             <Check className="w-5 h-5" />
                           </div>
                         )}
@@ -150,14 +149,14 @@ export default function TeamFormationModal({
           </div>
 
           {/* Info box */}
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+          <div className="bg-petanque-vert-pale border border-petanque-vert/20 rounded-lg p-4">
             <div className="flex items-start">
-              <div className="text-blue-600 mr-3">
+              <div className="text-petanque-vert mr-3">
                 <Info className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="font-bold text-blue-900 mb-1">Comment ça marche ?</h4>
-                <p className="text-sm text-blue-700">
+                <h4 className="font-medium text-petanque-vert-fonce mb-1">Comment ça marche ?</h4>
+                <p className="text-sm text-petanque-vert-fonce">
                   1. Donnez un nom à votre équipe<br/>
                   2. Sélectionnez {tournament.format === 'tete_a_tete' ? '1 joueur' :
                                    tournament.format === 'doublette' ? '2 joueurs' : '3 joueurs'}<br/>
@@ -172,19 +171,19 @@ export default function TeamFormationModal({
           <div className="flex space-x-3 mt-6">
             <button
               onClick={onClose}
-              className="flex-1 px-6 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+              className="flex-1 px-6 py-3 text-petanque-bois border border-petanque-sable-bord hover:text-petanque-vert-fonce hover:bg-petanque-sable-pale rounded-lg transition-colors"
             >
               Fermer
             </button>
             <button
               onClick={onCreate}
               disabled={creatingTeam || !newTeamName.trim() || selectedPlayerIds.length !== playersPerTeam}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="flex-1 px-6 py-3 bg-petanque-vert text-white rounded-lg font-semibold hover:bg-petanque-vert-fonce transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {creatingTeam ? (
                 <>
                   <Loader className="w-5 h-5 animate-spin" />
-                  <span className="ml-2">Création...</span>
+                  <span className="ml-2">Création…</span>
                 </>
               ) : (
                 <>
