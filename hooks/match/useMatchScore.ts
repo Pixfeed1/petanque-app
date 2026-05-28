@@ -155,6 +155,13 @@ export function useMatchScore({
         }
         if (data.status === 'termine') {
           setWinner(data.score_a > data.score_b ? 'A' : 'B')
+          // Restaurer la duree finale pour l'affichage (match deja termine au chargement)
+          if (data.started_at && data.ended_at) {
+            const duration = Math.floor(
+              (new Date(data.ended_at).getTime() - new Date(data.started_at).getTime()) / 1000
+            )
+            setElapsedTime(duration)
+          }
         }
       }
     } catch (error) {
@@ -171,11 +178,13 @@ export function useMatchScore({
   // Update score
   const updateScore = useCallback((team: 'A' | 'B', delta: number) => {
     if (team === 'A') {
-      setMancheScoreA(prev => Math.max(0, Math.min(maxPointsPerManche, prev + delta)))
+      const capA = Math.min(maxPointsPerManche, maxPoints - scoreA)
+      setMancheScoreA(prev => Math.max(0, Math.min(capA, prev + delta)))
     } else {
-      setMancheScoreB(prev => Math.max(0, Math.min(maxPointsPerManche, prev + delta)))
+      const capB = Math.min(maxPointsPerManche, maxPoints - scoreB)
+      setMancheScoreB(prev => Math.max(0, Math.min(capB, prev + delta)))
     }
-  }, [maxPointsPerManche])
+  }, [maxPointsPerManche, maxPoints, scoreA, scoreB])
 
   // Save progress
   const saveProgress = useCallback(async (
