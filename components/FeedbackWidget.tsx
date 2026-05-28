@@ -1,5 +1,5 @@
 // components/FeedbackWidget.tsx
-// Bandeau latéral de feedback visible en mode beta
+// Bandeau latéral de feedback visible en mode beta — V4
 
 'use client'
 
@@ -74,22 +74,22 @@ export function FeedbackWidget() {
   }
 
   const categories = [
-    { value: 'general', label: 'Avis general' },
-    { value: 'bug', label: 'Ca ne marche pas' },
+    { value: 'general', label: 'Avis général' },
+    { value: 'bug', label: 'Ça ne marche pas' },
     { value: 'feature', label: 'Il manque quelque chose' },
-    { value: 'ux', label: 'Pas pratique a utiliser' },
+    { value: 'ux', label: 'Pas pratique à utiliser' },
   ]
 
   const statusBadge = (status: string) => {
-    if (status === 'replied') return 'bg-green-100 text-green-700'
-    if (status === 'read') return 'bg-blue-100 text-blue-700'
-    return 'bg-gray-100 text-gray-600'
+    if (status === 'replied') return 'bg-petanque-vert-pale text-petanque-vert-fonce'
+    if (status === 'read') return 'bg-petanque-sable-pale text-petanque-bois'
+    return 'bg-petanque-sable-pale text-petanque-bois'
   }
 
   const statusLabel = (status: string) => {
-    if (status === 'replied') return 'On vous a repondu'
-    if (status === 'read') return "Lu par l'equipe"
-    return 'Envoye'
+    if (status === 'replied') return 'On vous a répondu'
+    if (status === 'read') return "Lu par l'équipe"
+    return 'Envoyé'
   }
 
   return (
@@ -98,30 +98,30 @@ export function FeedbackWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-gradient-to-b from-green-600 to-emerald-600 text-white px-3 py-6 rounded-l-xl shadow-lg hover:px-4 transition-all"
+          className="fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-petanque-vert text-white px-3 py-6 rounded-l-lg hover:bg-petanque-vert-fonce hover:px-4 transition-all"
           style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
         >
-          <span className="text-base font-bold tracking-wide">Donnez-nous votre avis</span>
+          <span className="text-sm font-medium tracking-wide">Donnez votre avis</span>
         </button>
       )}
 
       {/* Overlay */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setIsOpen(false)} />
+        <div className="fixed inset-0 bg-petanque-bois/20 z-40" onClick={() => setIsOpen(false)} />
       )}
 
       {/* Panneau latéral */}
       {isOpen && (
-        <div className="fixed right-0 top-0 h-full w-96 max-w-[90vw] bg-white shadow-2xl z-50 flex flex-col">
+        <div className="fixed right-0 top-0 h-full w-96 max-w-[90vw] bg-petanque-sable-pale border-l border-petanque-sable-bord z-50 flex flex-col">
           {/* Header */}
-          <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-5 text-white">
-            <div className="flex items-center justify-between">
+          <div className="bg-petanque-vert px-5 py-5 text-white">
+            <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-xl font-bold">Donnez-nous votre avis</h3>
-                <p className="text-base text-green-100">Aidez-nous a rendre l&apos;appli encore meilleure</p>
+                <h3 className="text-lg font-medium">Donnez votre avis</h3>
+                <p className="text-sm text-white/80 mt-0.5">Aidez-nous à améliorer l&apos;appli</p>
               </div>
-              <button onClick={() => setIsOpen(false)} className="rounded-lg p-2 transition hover:bg-white/20">
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button onClick={() => setIsOpen(false)} className="rounded-md p-1.5 transition-colors hover:bg-white/15 -mr-1 -mt-1">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -129,24 +129,24 @@ export function FeedbackWidget() {
           </div>
 
           {/* Message beta */}
-          <div className="border-b border-green-100 bg-green-50 p-5">
-            <p className="text-base text-green-800">{betaMessage}</p>
-            <p className="mt-2 text-sm text-green-600">
-              Ou ecrivez-nous directement : <a href="mailto:support@petanquepro.fr" className="font-medium underline">support@petanquepro.fr</a>
+          <div className="border-b border-petanque-sable-bord bg-petanque-vert-pale px-5 py-4">
+            <p className="text-sm text-petanque-vert-fonce">{betaMessage}</p>
+            <p className="mt-2 text-xs text-petanque-bois">
+              Ou écrivez-nous : <a href="mailto:support@petanquepro.fr" className="font-medium text-petanque-vert underline">support@petanquepro.fr</a>
             </p>
           </div>
 
           {/* Tabs */}
-          <div className="flex border-b border-gray-200">
+          <div className="flex border-b border-petanque-sable-bord bg-white">
             <button
               onClick={() => setShowHistory(false)}
-              className={`flex-1 py-4 text-base font-medium transition ${!showHistory ? 'border-b-2 border-green-600 text-green-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 py-3 text-sm font-medium transition-colors ${!showHistory ? 'border-b-2 border-petanque-vert text-petanque-vert-fonce' : 'text-petanque-bois hover:text-petanque-vert-fonce'}`}
             >
               Nouveau message
             </button>
             <button
               onClick={() => setShowHistory(true)}
-              className={`flex-1 py-4 text-base font-medium transition ${showHistory ? 'border-b-2 border-green-600 text-green-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 py-3 text-sm font-medium transition-colors ${showHistory ? 'border-b-2 border-petanque-vert text-petanque-vert-fonce' : 'text-petanque-bois hover:text-petanque-vert-fonce'}`}
             >
               Mes messages
             </button>
@@ -158,16 +158,16 @@ export function FeedbackWidget() {
               <div className="space-y-5">
                 {/* Catégorie */}
                 <div>
-                  <label className="mb-2 block text-base font-medium text-gray-700">C&apos;est a quel sujet ?</label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <label className="mb-2 block text-sm font-medium text-petanque-vert-fonce">C&apos;est à quel sujet ?</label>
+                  <div className="grid grid-cols-2 gap-2.5">
                     {categories.map(cat => (
                       <button
                         key={cat.value}
                         onClick={() => setCategory(cat.value)}
-                        className={`rounded-lg px-4 py-3 text-base font-medium transition ${
+                        className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors border ${
                           category === cat.value
-                            ? 'bg-green-100 text-green-800 ring-2 ring-green-500'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? 'bg-petanque-vert-pale text-petanque-vert-fonce border-petanque-vert'
+                            : 'bg-white text-petanque-bois border-petanque-sable-bord hover:border-petanque-vert/40'
                         }`}
                       >
                         {cat.label}
@@ -178,57 +178,57 @@ export function FeedbackWidget() {
 
                 {/* Message */}
                 <div>
-                  <label className="mb-2 block text-base font-medium text-gray-700">Votre message</label>
+                  <label className="mb-2 block text-sm font-medium text-petanque-vert-fonce">Votre message</label>
                   <textarea
                     value={message}
                     onChange={e => setMessage(e.target.value)}
-                    placeholder="Dites-nous ce qui vous plait, ce qui manque, ce qui ne marche pas bien..."
+                    placeholder="Dites-nous ce qui vous plaît, ce qui manque, ce qui ne marche pas bien…"
                     rows={6}
                     maxLength={2000}
-                    className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-green-500 focus:ring-2 focus:ring-green-500"
+                    className="w-full resize-none rounded-lg border border-petanque-sable-bord bg-white px-4 py-3 text-sm text-petanque-vert-fonce placeholder:text-petanque-bois/60 focus:border-petanque-vert focus:outline-none transition-colors"
                   />
-                  <p className="mt-1 text-right text-sm text-gray-400">{message.length}/2000</p>
+                  <p className="mt-1 text-right text-xs text-petanque-bois">{message.length}/2000</p>
                 </div>
 
-                <p className="text-sm text-gray-400">
-                  Message envoye par {user?.full_name || user?.email}
+                <p className="text-xs text-petanque-bois">
+                  Message envoyé par {user?.full_name || user?.email}
                 </p>
 
                 <button
                   onClick={handleSubmit}
                   disabled={sending || message.trim().length < 5}
-                  className="w-full rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 py-4 text-base font-semibold text-white transition hover:from-green-700 hover:to-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-lg bg-petanque-vert py-3 text-sm font-semibold text-white transition-colors hover:bg-petanque-vert-fonce disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {sending ? 'Envoi...' : sent ? 'Merci, message bien recu !' : 'Envoyer mon message'}
+                  {sending ? 'Envoi…' : sent ? 'Merci, message bien reçu !' : 'Envoyer mon message'}
                 </button>
 
                 {sent && (
-                  <p className="text-center text-base font-medium text-green-600">
-                    Merci ! On lit chaque message et on vous repond si besoin.
+                  <p className="text-center text-sm font-medium text-petanque-vert">
+                    Merci ! On lit chaque message et on vous répond si besoin.
                   </p>
                 )}
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {myFeedbacks.length === 0 ? (
-                  <p className="py-8 text-center text-base text-gray-400">Vous n&apos;avez pas encore envoye de message</p>
+                  <p className="py-8 text-center text-sm text-petanque-bois">Vous n&apos;avez pas encore envoyé de message</p>
                 ) : (
                   myFeedbacks.map(fb => (
-                    <div key={fb.id} className="space-y-2 rounded-xl bg-gray-50 p-4">
+                    <div key={fb.id} className="space-y-2 rounded-lg bg-white border border-petanque-sable-bord p-4">
                       <div className="flex items-center justify-between">
-                        <span className={`rounded-full px-3 py-1 text-sm font-medium ${statusBadge(fb.status)}`}>
+                        <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusBadge(fb.status)}`}>
                           {statusLabel(fb.status)}
                         </span>
-                        <span className="text-sm text-gray-400">
+                        <span className="text-xs text-petanque-bois">
                           {new Date(fb.created_at).toLocaleDateString('fr-FR')}
                         </span>
                       </div>
-                      <p className="text-base text-gray-700">{fb.message}</p>
+                      <p className="text-sm text-petanque-vert-fonce">{fb.message}</p>
                       {fb.admin_reply && (
-                        <div className="rounded-lg border-l-4 border-green-500 bg-white p-4">
-                          <p className="mb-1 text-sm font-medium text-green-600">Reponse de l&apos;equipe Petanque Pro</p>
-                          <p className="text-base text-gray-700">{fb.admin_reply}</p>
-                          <p className="mt-1 text-sm text-gray-400">
+                        <div className="rounded-lg border-l-2 border-petanque-vert bg-petanque-vert-pale p-3">
+                          <p className="mb-1 text-xs font-medium text-petanque-vert">Réponse de l&apos;équipe Pétanque Pro</p>
+                          <p className="text-sm text-petanque-vert-fonce">{fb.admin_reply}</p>
+                          <p className="mt-1 text-xs text-petanque-bois">
                             {fb.admin_replied_at && new Date(fb.admin_replied_at).toLocaleDateString('fr-FR')}
                           </p>
                         </div>
