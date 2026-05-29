@@ -64,15 +64,6 @@ export default function ExportTournamentPage() {
                       tournament?.format === 'triplette' ? 'Triplettes' :
                       tournament?.format === 'tete_a_tete' ? 'Tête à tête' : '—'
 
-  const subNavSections: any[] = [
-    { id: 'apercu', label: 'Aperçu', isActive: false, onClick: () => router.push('/tournoi/' + tournoiId) },
-    { id: 'matchs', label: 'Tous les matchs', isActive: false, onClick: () => router.push('/tournoi/' + tournoiId) },
-    { id: 'classement', label: 'Classement', isActive: false, onClick: () => router.push('/tournoi/' + tournoiId) },
-    { id: 'equipes', label: 'Équipes', isActive: false, onClick: () => router.push('/tournoi/' + tournoiId) },
-    { id: 'bracket', label: 'Phase finale', isActive: false, onClick: () => router.push('/tournoi/' + tournoiId + '/bracket') },
-    { id: 'export', label: 'Export', isActive: true, onClick: () => {} }
-  ]
-
   const optionsList: { key: keyof ExportOptions; label: string }[] = [
     { key: 'includeMatches', label: 'Les matchs' },
     { key: 'includeRankings', label: isMeleeTournante ? 'Le classement individuel' : 'Le classement' },
@@ -92,10 +83,11 @@ export default function ExportTournamentPage() {
       />
 
       <TournamentSubNav
-        sections={subNavSections}
+        tournoiId={tournoiId}
+        currentPage="export"
+        baseRole={baseRole}
         viewRole={viewRole}
         setViewRole={(role) => setPreviewRole(role === 'organisateur' ? null : role)}
-        baseRole={baseRole}
         isPreviewMode={isPreviewMode}
       />
 

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useBracket, BracketMatch } from '@/hooks/bracket'
 import { Button, BouleSvg, FadeIn } from '@/components/ui'
 import { Loader } from '@/components/Icons'
-import TournamentSubNav, { ViewRole, SubNavSection } from '@/components/tournament/TournamentSubNav'
+import TournamentSubNav, { ViewRole } from '@/components/tournament/TournamentSubNav'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { useEffectiveRole } from '@/hooks/useEffectiveRole'
 
@@ -175,17 +175,6 @@ export default function BracketPage() {
     ? new Date((tournament!.settings as any).date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
     : ''
 
-  // Sub-nav
-  const subNavSections: SubNavSection[] = [
-    { id: 'apercu', label: 'Aperçu', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}`) },
-    { id: 'matchs', label: 'Tous les matchs', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}`) },
-    { id: 'classement', label: 'Classement', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}`) },
-    { id: 'equipes', label: 'Équipes', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}`) },
-    { id: 'bracket', label: 'Phase finale', isActive: true, onClick: () => {} },
-    { id: 'stats', label: 'Stats', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}`) },
-    { id: 'export', label: 'Export', isActive: false, onClick: () => router.push(`/tournoi/${tournoiId}/export`) }
-  ]
-
   const handleMatchClick = (match: BracketMatch | null | undefined) => {
     if (match?.id) router.push(`/match/${match.id}`)
   }
@@ -214,10 +203,11 @@ export default function BracketPage() {
       </header>
 
       <TournamentSubNav
-        sections={subNavSections}
+        tournoiId={tournoiId}
+        currentPage="bracket"
+        baseRole={baseRole}
         viewRole={viewRole}
         setViewRole={(role) => setPreviewRole(role === 'organisateur' ? null : role)}
-        baseRole={baseRole}
         isPreviewMode={isPreviewMode}
       />
 

@@ -25,6 +25,7 @@ import {
 } from '@/components/Icons'
 
 import { useEffectiveRole, type ViewRole } from '@/hooks/useEffectiveRole'
+import TournamentSubNav from '@/components/tournament/TournamentSubNav'
 type ActiveSection = 'apercu' | 'matchs' | 'classement' | 'equipes' | 'stats'
 
 export default function TournamentDetailPage() {
@@ -275,80 +276,17 @@ export default function TournamentDetailPage() {
           </div>
         </div>
       </header>
-
-      {/* SUB-NAV avec rôle switcher */}
-      <nav className="sticky top-14 z-40 bg-petanque-sable border-b border-petanque-sable-bord/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-4 h-10">
-            <div className="flex gap-6 overflow-x-auto">
-              {sections.map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => setActiveSection(s.id)}
-                  className={`text-xs whitespace-nowrap py-2 transition-colors relative ${
-                    activeSection === s.id
-                      ? 'text-petanque-vert-fonce font-medium'
-                      : 'text-petanque-bois hover:text-petanque-vert-fonce'
-                  }`}
-                >
-                  {s.label}
-                  {activeSection === s.id && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-petanque-vert"></span>
-                  )}
-                </button>
-              ))}
-              <button
-                onClick={() => router.push(`/tournoi/${tournament.id}/bracket`)}
-                className="text-xs whitespace-nowrap py-2 text-petanque-bois hover:text-petanque-vert-fonce"
-              >
-                Bracket
-              </button>
-              <button
-                onClick={() => router.push(`/tournoi/${tournament.id}/export`)}
-                className="text-xs whitespace-nowrap py-2 text-petanque-bois hover:text-petanque-vert-fonce"
-              >
-                Export
-              </button>
-            </div>
-            {baseRole === 'organisateur' && (
-              <div className="relative flex-shrink-0">
-                <button
-                  onClick={() => setShowRoleMenu(!showRoleMenu)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 bg-white border rounded-full text-[11px] transition-colors ${
-                    isPreviewMode
-                      ? 'border-petanque-cochonnet text-petanque-cochonnet-fonce'
-                      : 'border-petanque-sable-bord/60 text-petanque-vert-fonce hover:border-petanque-vert/40'
-                  }`}
-                >
-                  <span className="text-[9px] uppercase tracking-widest text-petanque-bois">
-                    {isPreviewMode ? 'Aperçu' : 'Vue'}
-                  </span>
-                  <span className="font-medium capitalize">{viewRole}</span>
-                  <span className="text-petanque-bois text-[9px]">▾</span>
-                </button>
-                {showRoleMenu && (
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-petanque-sable-bord rounded-lg shadow-lg py-1 z-50 min-w-[160px]">
-                    {(['organisateur', 'joueur', 'spectateur'] as ViewRole[]).map(role => (
-                      <button
-                        key={role}
-                        onClick={() => {
-                          setPreviewRole(role === 'organisateur' ? null : role)
-                          setShowRoleMenu(false)
-                        }}
-                        className={`w-full text-left px-3 py-2 text-xs hover:bg-petanque-sable-pale capitalize ${
-                          viewRole === role ? 'text-petanque-vert-fonce font-medium' : 'text-petanque-bois'
-                        }`}
-                      >
-                        {role === 'organisateur' ? 'Organisateur' : role === 'joueur' ? 'Joueur (aperçu)' : 'Spectateur (aperçu)'}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
+      <TournamentSubNav
+        tournoiId={tournament.id}
+        currentPage="apercu"
+        currentSection={activeSection}
+        onSectionChange={(id) => setActiveSection(id as any)}
+        userPlan={userPlan}
+        baseRole={baseRole}
+        viewRole={viewRole}
+        setViewRole={(role) => setPreviewRole(role === 'organisateur' ? null : role)}
+        isPreviewMode={isPreviewMode}
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
 
@@ -393,7 +331,14 @@ export default function TournamentDetailPage() {
               <FadeIn delay={80}>
                 <div className="my-8 py-5 border-y border-petanque-sable-bord/50 flex items-center overflow-x-auto">
                   {phasesSteps.map((step, i) => (
-                    <div key={step.id} className="flex items-center flex-shrink-0">
+                    <div
+                      key={step.id}
+                      onClick={(step.done || step.current) ? () => {
+                        if (step.id === 'poules') setActiveSection('classement')
+                        else router.push(`/tournoi/${tournament.id}/bracket`)
+                      } : undefined}
+                      className={`flex items-center flex-shrink-0 ${(step.done || step.current) ? 'cursor-pointer hover:opacity-75 transition-opacity' : ''}`}
+                    >
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center font-mono text-[10px] font-medium ${
                         step.current ? 'bg-petanque-vert text-petanque-sable ring-4 ring-petanque-vert/20' :
                         step.done ? 'bg-petanque-vert text-petanque-sable' :
@@ -687,13 +632,22 @@ export default function TournamentDetailPage() {
                       const winner = m.score_a > m.score_b ? eqA : eqB
                       const score = m.score_a > m.score_b ? `${m.score_a}–${m.score_b}` : `${m.score_b}–${m.score_a}`
                       const loser = m.score_a > m.score_b ? eqB : eqA
+                      const phaseLabel = (() => {
+                        if (m.type === 'poule') return m.poule ? `Poule ${m.poule}` : 'Poule'
+                        if (m.type === 'huitieme') return '8e de finale'
+                        if (m.type === 'quart') return 'Quart de finale'
+                        if (m.type === 'demi') return 'Demi-finale'
+                        if (m.type === 'finale') return 'Finale'
+                        if (m.type === 'petite_finale') return 'Petite finale'
+                        return `Tour ${m.tour}`
+                      })()
                       return (
                         <div key={m.id} className="flex items-center justify-between py-3 border-b border-petanque-sable-bord/40 last:border-b-0 text-sm">
                           <span className="text-petanque-vert-fonce">
                             <span className="text-petanque-bois">Match terminé · </span>
                             <span className="font-medium">{winner}</span> {score} {loser}
                           </span>
-                          <span className="font-mono text-[11px] text-petanque-bois">tour {m.tour}</span>
+                          <span className="font-mono text-[11px] text-petanque-bois">{phaseLabel}</span>
                         </div>
                       )
                     })}
