@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 
 import { useParams, useRouter } from 'next/navigation'
 import { usePodium, PodiumTeam } from '@/hooks/podium'
@@ -10,6 +11,7 @@ export default function PodiumPage() {
   const params = useParams()
   const router = useRouter()
   const { showSuccess } = useToast()
+  const [showShareMenu, setShowShareMenu] = useState(false)
 
   const {
     loading,
@@ -175,9 +177,49 @@ export default function PodiumPage() {
         {/* Actions */}
         <FadeIn delay={280}>
           <div className="border-t border-petanque-sable-bord/50 mt-12 pt-8 flex flex-wrap items-center justify-center gap-3 print:hidden">
-            <Button variant="primary" onClick={handleShare}>
-              Partager le podium
-            </Button>
+            {(() => {
+              const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
+              const champName = (champion as any)?.team?.name || 'Le vainqueur'
+              const shareText = `${tournament?.name || 'Tournoi'} — ${champName} remporte le tournoi !`
+              const enc = encodeURIComponent
+              const links = [
+                { key: 'fb', label: 'Facebook', color: '#1877F2', initial: 'f', href: `https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}` },
+                { key: 'x', label: 'X (Twitter)', color: '#111111', initial: 'X', href: `https://twitter.com/intent/tweet?text=${enc(shareText)}&url=${enc(shareUrl)}` },
+                { key: 'wa', label: 'WhatsApp', color: '#25D366', initial: 'W', href: `https://wa.me/?text=${enc(shareText + ' ' + shareUrl)}` },
+                { key: 'mail', label: 'Email', color: '#8a6d4a', initial: '@', href: `mailto:?subject=${enc(tournament?.name || 'Podium du tournoi')}&body=${enc(shareText + '\n\n' + shareUrl)}` }
+              ]
+              const copyLink = async () => {
+                try { await navigator.clipboard.writeText(shareUrl); showSuccess('Lien copié dans le presse-papier !') }
+                catch { showSuccess('Copie impossible. Lien : ' + shareUrl) }
+                setShowShareMenu(false)
+              }
+              return (
+                <div className="relative">
+                  <Button variant="primary" onClick={() => setShowShareMenu(v => !v)}>
+                    Partager le podium
+                  </Button>
+                  {showShareMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowShareMenu(false)} />
+                      <div className="absolute z-50 bottom-full mb-2 left-1/2 -translate-x-1/2 w-60 bg-white border border-petanque-sable-bord rounded-xl shadow-lg p-2">
+                        {links.map(l => (
+                          <a key={l.key} href={l.href} target="_blank" rel="noopener noreferrer" onClick={() => setShowShareMenu(false)} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-petanque-sable-pale transition-colors text-sm text-petanque-vert-fonce">
+                            <span className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0" style={{ backgroundColor: l.color }}>{l.initial}</span>
+                            {l.label}
+                          </a>
+                        ))}
+                        <button onClick={copyLink} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-petanque-sable-pale transition-colors text-sm text-petanque-vert-fonce text-left">
+                          <span className="w-6 h-6 rounded-full flex items-center justify-center bg-petanque-vert flex-shrink-0">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+                          </span>
+                          Copier le lien
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )
+            })()}
             <Button variant="ghost" onClick={() => window.print()}>
               <Download className="w-4 h-4 mr-1.5" />
               Imprimer

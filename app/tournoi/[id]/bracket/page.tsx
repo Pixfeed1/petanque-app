@@ -32,8 +32,15 @@ type PhaseWithLayout = Phase & {
 
 function buildPhases(bracketData: any, hasHuitiemes: boolean, hasQuarts: boolean, hasDemis: boolean): Phase[] {
   const phases: Phase[] = []
-  if (hasHuitiemes) phases.push({ label: '1/8 finale', shortLabel: '1/8', matches: bracketData.huitiemes || [], matchCount: 8 })
-  if (hasQuarts) phases.push({ label: '1/4 finale', shortLabel: '1/4', matches: bracketData.quarts || [], matchCount: 4 })
+  const byes = bracketData.byes || []
+  // Les byes sont des matchs "gagnés d'office" : ils vont au premier tour d'élim existant
+  const huitiemesWithByes = hasHuitiemes ? [...(bracketData.huitiemes || []), ...byes] : []
+  const quartsWithByes = (hasQuarts && !hasHuitiemes)
+    ? [...(bracketData.quarts || []), ...byes]
+    : (bracketData.quarts || [])
+
+  if (hasHuitiemes) phases.push({ label: '1/8 finale', shortLabel: '1/8', matches: huitiemesWithByes, matchCount: 8 })
+  if (hasQuarts) phases.push({ label: '1/4 finale', shortLabel: '1/4', matches: quartsWithByes, matchCount: 4 })
   if (hasDemis) phases.push({ label: '1/2 finale', shortLabel: '1/2', matches: bracketData.demis || [], matchCount: 2 })
   phases.push({ label: 'Finale', shortLabel: 'Finale', matches: [bracketData.finale], matchCount: 1, isFinale: true })
   return phases
@@ -337,8 +344,9 @@ interface MatchCardProps {
 
 function MatchCard({ match, labelA, labelB, isFinale, matchIdx, top, height, onClick }: MatchCardProps) {
   const isLive = match?.status === 'en_cours'
-  const isDone = match?.status === 'termine'
-  const isPending = !match || match.status === 'a_jouer'
+  const isBye = match?.type === 'bye'
+  const isDone = !isBye && match?.status === 'termine'
+  const isPending = !match || (match.status === 'a_jouer' && !isBye)
 
   const winnerA = isDone && match!.score_a > match!.score_b
   const winnerB = isDone && match!.score_b > match!.score_a
@@ -349,11 +357,17 @@ function MatchCard({ match, labelA, labelB, isFinale, matchIdx, top, height, onC
     ? 'Grande finale'
     : `${match?.terrain ? `T${match.terrain} · ` : ''}M${matchIdx + 1}`
 
+  const isClickable = !!match && !isBye
+
   return (
     <div
-      className={`absolute rounded-lg bg-white transition-colors ${
-        isLive ? 'border-[1.5px] border-petanque-vert' : 'border-[0.5px] border-petanque-sable-bord'
-      } ${match ? 'hover:border-petanque-vert/40 hover:bg-petanque-sable-pale/40 cursor-pointer' : ''}`}
+      className={`absolute rounded-lg transition-colors ${
+        isLive
+          ? 'border-[1.5px] border-petanque-vert bg-white'
+          : isBye
+          ? 'border-[0.5px] border-petanque-vert/30 bg-petanque-vert-pale/20'
+          : 'border-[0.5px] border-petanque-sable-bord bg-white'
+      } ${isClickable ? 'hover:border-petanque-vert/40 hover:bg-petanque-sable-pale/40 cursor-pointer' : ''}`}
       style={{
         top,
         left: 0,
@@ -361,7 +375,7 @@ function MatchCard({ match, labelA, labelB, isFinale, matchIdx, top, height, onC
         height,
         padding: isLive ? '11px 14px' : '12px 15px'
       }}
-      onClick={match ? onClick : undefined}
+      onClick={isClickable ? onClick : undefined}
     >
       <div className="flex items-center justify-between gap-2 mb-2">
         <span className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em] truncate">
@@ -371,6 +385,11 @@ function MatchCard({ match, labelA, labelB, isFinale, matchIdx, top, height, onC
           <span className="font-mono text-[9px] text-petanque-vert uppercase tracking-[0.14em] font-medium flex items-center gap-1 flex-shrink-0">
             <span className="w-1 h-1 rounded-full bg-petanque-vert animate-pulse"></span>
             Live
+          </span>
+        )}
+        {isBye && (
+          <span className="font-mono text-[9px] text-petanque-vert uppercase tracking-[0.14em] font-medium flex-shrink-0">
+            Qualifié
           </span>
         )}
         {isDone && (
@@ -389,24 +408,38 @@ function MatchCard({ match, labelA, labelB, isFinale, matchIdx, top, height, onC
           </span>
         )}
       </div>
-      <TeamRow
-        label={labelA}
-        score={match?.score_a}
-        isWinner={winnerA}
-        isLiveLeader={isLiveLeaderA}
-        isLoser={isDone && !winnerA}
-        showScore={!!match && match.status !== 'a_jouer'}
-        isPlaceholder={!match}
-      />
-      <TeamRow
-        label={labelB}
-        score={match?.score_b}
-        isWinner={winnerB}
-        isLiveLeader={isLiveLeaderB}
-        isLoser={isDone && !winnerB}
-        showScore={!!match && match.status !== 'a_jouer'}
-        isPlaceholder={!match}
-      />
+      {isBye ? (
+        <>
+          <div className="flex items-center gap-1.5 py-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-petanque-vert flex-shrink-0"></span>
+            <span className="text-sm text-petanque-vert font-medium truncate">{labelA}</span>
+          </div>
+          <div className="py-0.5">
+            <span className="text-xs italic text-petanque-bois">Qualifié direct</span>
+          </div>
+        </>
+      ) : (
+        <>
+          <TeamRow
+            label={labelA}
+            score={match?.score_a}
+            isWinner={winnerA}
+            isLiveLeader={isLiveLeaderA}
+            isLoser={isDone && !winnerA}
+            showScore={!!match && match.status !== 'a_jouer'}
+            isPlaceholder={!match}
+          />
+          <TeamRow
+            label={labelB}
+            score={match?.score_b}
+            isWinner={winnerB}
+            isLiveLeader={isLiveLeaderB}
+            isLoser={isDone && !winnerB}
+            showScore={!!match && match.status !== 'a_jouer'}
+            isPlaceholder={!match}
+          />
+        </>
+      )}
     </div>
   )
 }

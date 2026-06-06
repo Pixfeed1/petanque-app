@@ -11,6 +11,7 @@ import {
 } from '@/hooks/tournament'
 import { Button, BouleSvg, FadeIn } from '@/components/ui'
 import { Loader, Plus, X, Check } from '@/components/Icons'
+import { computePouleDistributions } from '@/lib/tournament/pouleDistributions'
 
 export default function CreateTournamentPage() {
   const router = useRouter()
@@ -522,30 +523,77 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
     { key: 'fairPlay', label: 'Mode fair-play', desc: 'Pénalités douces, esprit club' }
   ]
 
+  const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : formData.format === 'doublette' ? 2 : 3
+  const totalPlayers = (formData.selectedPlayers?.length || 0) + ((formData.newPlayers || []).filter((p: any) => p.name?.trim()).length)
+  const nbEquipes = totalPlayers === 0 ? 0 : Math.floor(totalPlayers / playersPerTeam)
+  const distributions = computePouleDistributions(nbEquipes)
+  const selectedDist = distributions.find((d) => d.pouleSize === formData.pouleSize) || distributions.find((d) => d.recommended) || distributions[0] || null
+  const qualifies = formData.qualifiedPerPoule || 2
+  const nbQualifies = selectedDist ? selectedDist.nbPoules * qualifies : 0
+  const isPow2 = nbQualifies > 0 && (nbQualifies & (nbQualifies - 1)) === 0
+  const finalPhaseLabel = nbQualifies <= 2 ? 'finale directe' : nbQualifies <= 4 ? 'demi-finales' : nbQualifies <= 8 ? 'quarts de finale' : 'huitièmes de finale'
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (distributions.length > 0 && !distributions.some((d) => d.pouleSize === formData.pouleSize)) {
+      const rec = distributions.find((d) => d.recommended) || distributions[0]
+      if (rec) updateFormField('pouleSize', rec.pouleSize)
+    }
+  }, [nbEquipes])
+
   return (
     <div className="space-y-9">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Taille des poules</label>
-          <select
-            value={formData.pouleSize}
-            onChange={(e) => updateFormField('pouleSize', parseInt(e.target.value))}
-            className="w-full h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:outline-none text-sm text-petanque-vert-fonce"
-          >
-            {[3, 4, 5, 6].map(s => <option key={s} value={s}>{s} équipes</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Qualifiés par poule</label>
-          <select
-            value={formData.qualifiedPerPoule}
-            onChange={(e) => updateFormField('qualifiedPerPoule', parseInt(e.target.value))}
-            className="w-full h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:outline-none text-sm text-petanque-vert-fonce"
-          >
-            {[1, 2, 3].map(n => <option key={n} value={n}>{n} qualifié{n > 1 ? 's' : ''}</option>)}
-          </select>
-        </div>
+      <div className="space-y-3">
+        <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em]">Répartition des poules</label>
+        {nbEquipes < 3 ? (
+          <p className="text-sm text-petanque-bois italic">Sélectionne d'abord tes joueurs à l'étape précédente pour voir les répartitions possibles.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {distributions.map((d) => {
+              const active = !!selectedDist && d.pouleSize === selectedDist.pouleSize
+              return (
+                <button
+                  key={d.nbPoules}
+                  type="button"
+                  onClick={() => updateFormField('pouleSize', d.pouleSize)}
+                  className={`relative text-left p-4 rounded-xl transition-colors ${active ? 'border-2 border-petanque-vert bg-petanque-vert-pale/20' : 'border border-petanque-sable-bord bg-white hover:border-petanque-vert/40'}`}
+                >
+                  {d.recommended && (
+                    <span className="absolute -top-2 right-3 bg-petanque-vert text-white text-[9px] uppercase tracking-[0.1em] px-2 py-0.5 rounded">Recommandé</span>
+                  )}
+                  <span className="block text-base font-medium text-petanque-vert-fonce mb-2">{d.label}</span>
+                  <span className="flex flex-wrap gap-1.5">
+                    {d.sizes.map((s, i) => (
+                      <span key={i} className="text-[11px] bg-petanque-sable-pale text-petanque-bois px-2 py-0.5 rounded">
+                        {String.fromCharCode(65 + i)} · {s}
+                      </span>
+                    ))}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
+
+      <div>
+        <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Qualifiés par poule</label>
+        <select
+          value={formData.qualifiedPerPoule}
+          onChange={(e) => updateFormField('qualifiedPerPoule', parseInt(e.target.value))}
+          className="w-full md:w-1/2 h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:outline-none text-sm text-petanque-vert-fonce"
+        >
+          {[1, 2, 3].map(n => <option key={n} value={n}>{n} qualifié{n > 1 ? 's' : ''}</option>)}
+        </select>
+      </div>
+
+      {selectedDist && (
+        <div className="bg-petanque-vert-pale/30 border border-petanque-vert/30 rounded-xl px-5 py-3.5">
+          <span className="text-sm text-petanque-vert-fonce leading-relaxed">
+            <span className="font-medium">{selectedDist.label} · {qualifies} qualifié{qualifies > 1 ? 's' : ''}</span> = {nbQualifies} qualifiés → <span className="font-medium">{finalPhaseLabel}</span>{nbQualifies > 2 && !isPow2 ? ' (avec exempts)' : ''}.
+          </span>
+        </div>
+      )}
 
       {formData.mode === 'melee_tournante' && (
         <div>
