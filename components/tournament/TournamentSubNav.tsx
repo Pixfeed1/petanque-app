@@ -14,6 +14,7 @@ interface Tab {
 
 interface TournamentSubNavProps {
   tournoiId: string
+  mode?: string
   currentPage: 'apercu' | 'bracket' | 'export'
   currentSection?: string
   onSectionChange?: (sectionId: string) => void
@@ -26,6 +27,7 @@ interface TournamentSubNavProps {
 
 export default function TournamentSubNav({
   tournoiId,
+  mode,
   currentPage,
   currentSection,
   onSectionChange,
@@ -38,12 +40,16 @@ export default function TournamentSubNav({
   const router = useRouter()
   const [showRoleMenu, setShowRoleMenu] = useState(false)
 
+  // La mêlée tournante n'a pas de phase à élimination : le résultat est le classement
+  // individuel, donc on masque l'onglet « Phase finale » (bracket) dans ce mode.
+  const isMelee = mode === 'melee_tournante'
+
   const tabs: Tab[] = [
     { id: 'apercu', label: 'Aperçu', kind: 'section' },
     { id: 'matchs', label: 'Tous les matchs', kind: 'section' },
     { id: 'classement', label: 'Classement', kind: 'section' },
     { id: 'equipes', label: 'Équipes', kind: 'section' },
-    { id: 'bracket', label: 'Phase finale', kind: 'page', href: `/tournoi/${tournoiId}/bracket` },
+    ...(isMelee ? [] : [{ id: 'bracket', label: 'Phase finale', kind: 'page' as const, href: `/tournoi/${tournoiId}/bracket` }]),
     ...(userPlan === 'club' ? [{ id: 'stats', label: 'Stats', kind: 'section' as const }] : []),
     { id: 'export', label: 'Export', kind: 'page', href: `/tournoi/${tournoiId}/export` },
   ]

@@ -137,6 +137,25 @@ export default function BracketPage() {
     )
   }
 
+  // La mêlée tournante n'a pas de phase à élimination : pas de bracket. Le résultat est le
+  // classement individuel, consultable sur la page du tournoi.
+  if (tournament && tournament.mode === 'melee_tournante') {
+    return (
+      <div className="min-h-screen bg-petanque-sable-pale flex items-center justify-center">
+        <div className="text-center max-w-sm px-6">
+          <BouleSvg size={48} variant="cochonnet" stries className="mx-auto mb-4" />
+          <p className="text-2xl font-medium text-petanque-vert-fonce mb-2">Pas de phase finale</p>
+          <p className="text-sm text-petanque-bois mb-6">
+            En mêlée tournante, il n&apos;y a pas de bracket : le résultat est le classement individuel.
+          </p>
+          <Button variant="primary" onClick={() => router.push(`/tournoi/${tournoiId}`)}>
+            Voir le classement
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   const phases = buildPhases(bracketData, hasHuitiemes, hasQuarts, hasDemis)
   const { phasesWithLayout, totalHeight, totalWidth, matchHeight } = computeLayout(phases)
   const connectors = buildConnectors(phasesWithLayout)
@@ -211,6 +230,7 @@ export default function BracketPage() {
 
       <TournamentSubNav
         tournoiId={tournoiId}
+        mode={tournament?.mode}
         currentPage="bracket"
         baseRole={baseRole}
         viewRole={viewRole}

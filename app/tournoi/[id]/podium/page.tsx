@@ -48,7 +48,7 @@ export default function PodiumPage() {
   const championName = champion?.team?.name || ''
 
   const modeLabel = tournament?.mode === 'choisi' ? 'choisi' : tournament?.mode === 'melee_fixe' ? 'mêlée fixe' : tournament?.mode === 'melee_tournante' ? 'mêlée tournante' : ''
-  const formatLabel = tournament?.format === 'doublette' ? 'Doublettes' : 'Triplettes'
+  const formatLabel = tournament?.format === 'tete_a_tete' ? 'Tête-à-tête' : tournament?.format === 'doublette' ? 'Doublettes' : 'Triplettes'
 
   return (
     <div className="min-h-screen bg-petanque-sable-pale">
