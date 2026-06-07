@@ -22,7 +22,7 @@ export interface BracketMatch {
   score_b: number
   status: 'a_jouer' | 'en_cours' | 'termine'
   terrain?: number
-  type: 'poule' | 'huitieme' | 'quart' | 'demi' | 'finale' | 'petite_finale'
+  type: 'poule' | 'huitieme' | 'quart' | 'demi' | 'finale' | 'petite_finale' | 'bye'
   round?: string
 }
 
@@ -39,6 +39,7 @@ export interface BracketData {
   huitiemes: BracketMatch[]
   quarts: BracketMatch[]
   demis: BracketMatch[]
+  byes: BracketMatch[]
   finale: BracketMatch | null
   petiteFinale: BracketMatch | null
 }
@@ -71,6 +72,7 @@ export function useBracket({ tournoiId }: UseBracketProps): UseBracketReturn {
     huitiemes: [],
     quarts: [],
     demis: [],
+    byes: [],
     finale: null,
     petiteFinale: null
   })
@@ -102,17 +104,21 @@ export function useBracket({ tournoiId }: UseBracketProps): UseBracketReturn {
 
       // Filtrer pour garder seulement les phases finales
       const matchesData = allMatches.filter((m: BracketMatch) =>
-        ['huitieme', 'quart', 'demi', 'finale', 'petite_finale'].includes(m.type)
+        ['huitieme', 'quart', 'demi', 'finale', 'petite_finale', 'bye'].includes(m.type)
       )
 
       if (matchesData) {
         setMatches(matchesData)
 
+        // Tri stable par id (= ordre de creation) pour figer le placement dans le bracket
+        const sortById = (a: BracketMatch, b: BracketMatch) => Number(a.id) - Number(b.id)
+
         // Organiser les matchs par type
         const organized: BracketData = {
-          huitiemes: matchesData.filter((m: BracketMatch) => m.type === 'huitieme'),
-          quarts: matchesData.filter((m: BracketMatch) => m.type === 'quart'),
-          demis: matchesData.filter((m: BracketMatch) => m.type === 'demi'),
+          huitiemes: matchesData.filter((m: BracketMatch) => m.type === 'huitieme').sort(sortById),
+          quarts: matchesData.filter((m: BracketMatch) => m.type === 'quart').sort(sortById),
+          demis: matchesData.filter((m: BracketMatch) => m.type === 'demi').sort(sortById),
+          byes: matchesData.filter((m: BracketMatch) => m.type === 'bye').sort(sortById),
           finale: matchesData.find((m: BracketMatch) => m.type === 'finale') || null,
           petiteFinale: matchesData.find((m: BracketMatch) => m.type === 'petite_finale') || null
         }

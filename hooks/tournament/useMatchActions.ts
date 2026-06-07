@@ -605,100 +605,47 @@ export function useMatchActions({
   const generateNextEliminationRound = useCallback(async () => {
     if (!tournament) return
 
-    // Déterminer le tour d'élimination en cours (du plus tôt au plus tard)
-    const eliminationOrder: Array<'huitieme' | 'quart' | 'demi'> = ['huitieme', 'quart', 'demi']
-    let currentRoundType: 'huitieme' | 'quart' | 'demi' | null = null
+    const result = BracketService.nextRoundMatchups(matches as any)
 
-    for (const roundType of eliminationOrder) {
-      const roundMatches = matches.filter(m => m.type === roundType)
-      if (roundMatches.length > 0) {
-        currentRoundType = roundType
+    if (result.kind === 'error') {
+      switch (result.code) {
+        case 'no_current_round':    notify.warning("Aucun tour d'élimination en cours"); break
+        case 'round_unfinished':    notify.warning(`Tous les matchs de ${result.current} doivent être terminés`); break
+        case 'no_next_round':       notify.warning('Pas de tour suivant après la finale'); break
+        case 'next_already_exists': notify.warning('Les matchs du tour suivant sont déjà créés'); break
+        case 'not_enough_winners':  notify.error('Pas assez de gagnants pour créer le tour suivant'); break
       }
-    }
-
-    if (!currentRoundType) {
-      notify.warning('Aucun tour d\'élimination en cours')
       return
     }
 
-    // Vérifier que tous les matchs du tour en cours sont terminés
-    const currentRoundMatches = matches.filter(m => m.type === currentRoundType)
-    const allFinished = currentRoundMatches.every(m => m.status === 'termine' || m.type === 'bye')
-
-    if (!allFinished) {
-      notify.warning(`Tous les matchs de ${currentRoundType} doivent être terminés`)
-      return
-    }
-
-    // Déterminer le tour suivant via BracketService
-    const nextRound = BracketService.getNextRound(currentRoundType)
-    if (!nextRound) {
-      notify.warning('Pas de tour suivant après la finale')
-      return
-    }
-
-    // Vérifier que le tour suivant n'existe pas déjà
-    const nextRoundExists = matches.some(m => m.type === nextRound)
-    if (nextRoundExists) {
-      notify.warning(`Les matchs de ${nextRound} sont déjà créés`)
-      return
-    }
-
-    // Si demis→finale, réutiliser la logique de generateFinales
-    if (nextRound === 'finale') {
+    // demi → finale : on délègue (gère finale + petite finale + garde anti-égalité)
+    if (result.kind === 'finale') {
       await generateFinales()
       return
     }
 
-    // Récupérer les gagnants avec BracketService
-    const winners = BracketService.getMatchWinners(
-      currentRoundMatches.map(m => ({
-        equipe_a_id: m.equipe_a_id || null,
-        equipe_b_id: m.equipe_b_id || null,
-        score_a: m.score_a ?? 0,
-        score_b: m.score_b ?? 0,
-        type: m.type,
-        equipe_a: m.equipe_a ? { id: m.equipe_a.id, name: m.equipe_a.name } : undefined,
-        equipe_b: m.equipe_b ? { id: m.equipe_b.id, name: m.equipe_b.name } : undefined
-      }))
-    ).filter((w): w is { id: string; name: string } => w !== null)
-
-    if (winners.length < 2) {
-      notify.error('Pas assez de gagnants pour créer le tour suivant')
-      return
-    }
-
     try {
-      // Créer les matchs du tour suivant par paires
-      const nbMatches = Math.floor(winners.length / 2)
-      for (let i = 0; i < nbMatches; i++) {
-        const equipeA = winners[i * 2]
-        const equipeB = winners[i * 2 + 1]
-
-        if (!equipeA || !equipeB) continue
-
+      for (const pair of result.pairs) {
         const response = await fetch('/api/matches', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
             tournoi_id: tournament.id,
-            equipe_a_id: equipeA.id,
-            equipe_b_id: equipeB.id,
+            equipe_a_id: pair.a.id,
+            equipe_b_id: pair.b.id,
             tour: 1,
             terrain: null,
-            type: nextRound,
+            type: result.round,
             status: 'a_jouer'
           })
         })
-
         if (!response.ok) {
           const error = await response.json().catch(() => ({ error: 'Erreur serveur' }))
-          throw new Error(`Échec création match ${equipeA.name} vs ${equipeB.name}: ${error.error}`)
+          throw new Error(`Échec création match ${pair.a.name} vs ${pair.b.name}: ${error.error}`)
         }
       }
-
-      notify.success(`${nbMatches} match(s) de ${nextRound} générés`)
+      notify.success(`${result.pairs.length} match(s) de ${result.round} générés`)
       await loadTournamentData()
     } catch (error) {
       console.error('Erreur génération tour suivant:', error)

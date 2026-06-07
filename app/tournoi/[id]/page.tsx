@@ -157,18 +157,30 @@ export default function TournamentDetailPage() {
     const dDone = hasD && matches.filter(m => m.type === 'demi').every(m => m.status === 'termine')
     const fDone = hasF && matches.filter(m => m.type === 'finale').every(m => m.status === 'termine')
 
+    // Determiner le nombre de qualifies pour ne montrer que les tours qui existeront vraiment
+    const pouleMatchesForSteps = matches.filter(m => m.type === 'poule')
+    const poulesSet = new Set(pouleMatchesForSteps.map(m => m.poule).filter(Boolean))
+    const pouleSizeCfg = (tournament?.settings as any)?.pouleSize || 6
+    const nbPoules = poulesSet.size > 0 ? poulesSet.size : Math.max(1, Math.ceil(teams.length / pouleSizeCfg))
+    const qpp = (tournament?.settings as any)?.qualifiedPerPoule || 2
+    const nbQualifies = Math.max(2, nbPoules * qpp)
+    const bracketSize = Math.pow(2, Math.ceil(Math.log2(nbQualifies)))
+
+    // Un tour s'affiche s'il est prevu par la config OU s'il existe deja en base
+    const showHuit = bracketSize >= 16 || has8
+    const showQuart = bracketSize >= 8 || hasQ
+    const showDemi = bracketSize >= 4 || hasD
+    const anyFinalsStarted = has8 || hasQ || hasD || hasF
+
     const steps = [
-      { id: 'poules', label: 'Poules', done: poulesDone, current: !poulesDone && !has8 && !hasQ },
+      { id: 'poules', label: 'Poules', done: poulesDone, current: !poulesDone && !anyFinalsStarted },
     ]
-    if (has8 || matches.length === 0) {
-      const showHuit = has8 || teams.length >= 16
-      if (showHuit) steps.push({ id: 'huit', label: '8e', done: _8Done, current: has8 && !_8Done })
-    }
-    steps.push({ id: 'quarts', label: 'Quarts', done: qDone, current: hasQ && !qDone })
-    steps.push({ id: 'demis', label: 'Demis', done: dDone, current: hasD && !dDone })
+    if (showHuit) steps.push({ id: 'huit', label: '8e', done: _8Done, current: has8 && !_8Done })
+    if (showQuart) steps.push({ id: 'quarts', label: 'Quarts', done: qDone, current: hasQ && !qDone })
+    if (showDemi) steps.push({ id: 'demis', label: 'Demis', done: dDone, current: hasD && !dDone })
     steps.push({ id: 'finale', label: 'Finale', done: fDone, current: hasF && !fDone })
     return steps
-  }, [matches, teams.length])
+  }, [matches, teams.length, tournament?.settings])
 
   const antiRematchInsight = useMemo(() => {
     if (currentPhase !== 'poules' || tournament?.mode === 'melee_tournante') return null
@@ -402,7 +414,7 @@ export default function TournamentDetailPage() {
                     <p className="text-[10px] uppercase tracking-[0.16em] font-medium text-petanque-vert-fonce mb-1">Prochaine étape</p>
                     <p className="text-sm text-petanque-vert-fonce">Toutes les poules ont fini. Génère les phases finales pour continuer.</p>
                   </div>
-                  <Button variant="primary" onClick={generateEliminationPhases}>
+                  <Button variant="primary" onClick={async () => { await generateEliminationPhases(); router.push(`/tournoi/${tournament.id}/bracket`) }}>
                     <Flag className="w-4 h-4 mr-1.5" />Lancer les phases finales →
                   </Button>
                 </div>
@@ -443,7 +455,7 @@ export default function TournamentDetailPage() {
                       <p className="text-[10px] uppercase tracking-[0.16em] font-medium text-petanque-vert-fonce mb-1">Prochaine étape</p>
                       <p className="text-sm text-petanque-vert-fonce">Le tour précédent est terminé.</p>
                     </div>
-                    <Button variant="primary" onClick={next!.action}>
+                    <Button variant="primary" onClick={async () => { await next!.action(); router.push(`/tournoi/${tournament.id}/bracket`) }}>
                       <Flag className="w-4 h-4 mr-1.5" />{next!.label} →
                     </Button>
                   </div>
@@ -546,8 +558,32 @@ export default function TournamentDetailPage() {
               </FadeIn>
             )}
 
+            {tournament.status === 'en_cours' && currentPhase === 'poules' && tournament.mode !== 'melee_tournante' && leadersByPoule.length > 0 && teamsByPoule && !matches.some(m => m.type === 'poule' && m.status === 'termine') && (
+              <FadeIn delay={200}>
+                <div className="mt-14">
+                  <div className="flex items-baseline justify-between mb-4">
+                    <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em]">Composition des poules</p>
+                    <button onClick={() => setActiveSection('classement')} className="text-xs text-petanque-vert hover:text-petanque-vert-fonce">Voir les équipes →</button>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {Object.keys(teamsByPoule).sort().map(poule => (
+                      <div key={poule} className="bg-white border border-petanque-sable-bord/60 border-l-[3px] border-l-petanque-bois/40 rounded-r-lg p-4">
+                        <p className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.18em] mb-2">Poule {poule}</p>
+                        <ul className="space-y-1">
+                          {teamsByPoule[poule].map((t: any, i: number) => (
+                            <li key={i} className="text-sm text-petanque-vert-fonce truncate">{t.name}</li>
+                          ))}
+                        </ul>
+                        <p className="font-mono text-[9px] text-petanque-bois mt-2 italic">Aucun match joué</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </FadeIn>
+            )}
+
             {/* LEADERS de chaque poule */}
-            {tournament.status === 'en_cours' && currentPhase === 'poules' && tournament.mode !== 'melee_tournante' && leadersByPoule.length > 0 && (
+            {tournament.status === 'en_cours' && currentPhase === 'poules' && tournament.mode !== 'melee_tournante' && leadersByPoule.length > 0 && matches.some(m => m.type === 'poule' && m.status === 'termine') && (
               <FadeIn delay={200}>
                 <div className="mt-14">
                   <div className="flex items-baseline justify-between mb-4">

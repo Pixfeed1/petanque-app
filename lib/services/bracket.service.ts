@@ -253,3 +253,67 @@ export function getNextRound(
 
   return progression[currentRound]
 }
+
+/**
+ * Calcule les appariements du tour d'élimination suivant à partir de l'état courant des matchs.
+ *
+ * Corrige le bug des byes (9–15 qualifiés) :
+ *  - les byes (tour 1) ne sont consommés QU'UNE FOIS, à la transition du premier tour généré ;
+ *  - les vainqueurs sont pris DANS L'ORDRE DES MATCHS (= ordre de seeding posé par
+ *    generateFirstRoundPairs) et appariés consécutivement, sans alternance bye/réel.
+ *
+ * `kind: 'finale'` est un SIGNAL : le hook délègue à generateFinales() (finale + petite
+ * finale + garde anti-égalité). Le hook ne contient plus aucune logique de bracket.
+ */
+type MatchLike = {
+  type: string
+  status: string
+  equipe_a_id: string | null
+  equipe_b_id: string | null
+  score_a: number | null
+  score_b: number | null
+  equipe_a?: { id: string; name: string }
+  equipe_b?: { id: string; name: string }
+}
+
+export function nextRoundMatchups(matches: MatchLike[]):
+  | { kind: 'pairs'; round: 'quart' | 'demi'; current: string; pairs: Array<{ a: { id: string; name: string }; b: { id: string; name: string } }> }
+  | { kind: 'finale'; current: string }
+  | { kind: 'error'; code: 'no_current_round' | 'round_unfinished' | 'no_next_round' | 'next_already_exists' | 'not_enough_winners'; current?: string }
+{
+  const order: Array<'huitieme' | 'quart' | 'demi'> = ['huitieme', 'quart', 'demi']
+  let cur: 'huitieme' | 'quart' | 'demi' | null = null
+  for (const rt of order) if (matches.some(m => m.type === rt)) cur = rt
+  if (!cur) return { kind: 'error', code: 'no_current_round' }
+
+  // byes consommés UNE SEULE FOIS : seulement à la transition du PREMIER tour généré
+  const firstRound = order.find(rt => matches.some(m => m.type === rt))
+  const isFirstTransition = cur === firstRound
+  const crm = matches.filter(m => m.type === cur || (isFirstTransition && m.type === 'bye'))
+  if (!crm.every(m => m.status === 'termine')) return { kind: 'error', code: 'round_unfinished', current: cur }
+
+  const next = getNextRound(cur)
+  if (!next) return { kind: 'error', code: 'no_next_round', current: cur }
+  if (matches.some(m => m.type === next)) return { kind: 'error', code: 'next_already_exists', current: cur }
+
+  if (next === 'finale') return { kind: 'finale', current: cur }
+
+  // vainqueurs dans l'ordre des matchs, appariés consécutivement (pas d'alternance)
+  const winners = getMatchWinners(
+    crm.map(m => ({
+      equipe_a_id: m.equipe_a_id,
+      equipe_b_id: m.equipe_b_id,
+      score_a: m.score_a ?? 0,
+      score_b: m.score_b ?? 0,
+      type: m.type,
+      equipe_a: m.equipe_a,
+      equipe_b: m.equipe_b
+    }))
+  ).filter((x): x is { id: string; name: string } => x !== null)
+
+  if (winners.length < 2) return { kind: 'error', code: 'not_enough_winners', current: cur }
+
+  const pairs: Array<{ a: { id: string; name: string }; b: { id: string; name: string } }> = []
+  for (let i = 0; i + 1 < winners.length; i += 2) pairs.push({ a: winners[i], b: winners[i + 1] })
+  return { kind: 'pairs', round: next, current: cur, pairs }
+}

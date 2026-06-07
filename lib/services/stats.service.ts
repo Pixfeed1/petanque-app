@@ -263,9 +263,19 @@ export function calculateAllPlayersStats(
 }
 
 /**
- * Résout une égalité entre 3+ équipes par confrontation directe
- * Filtre les matchs entre les équipes à égalité uniquement,
- * recalcule un mini-classement (points FIPJP + différence) sur ces matchs-là
+ * Départage un groupe d'équipes à ÉGALITÉ DE POINTS par confrontation directe.
+ *
+ * Ordre appliqué (règlement « confrontation directe d'abord ») :
+ *   1. (en amont) victoires/points — identiques dans le groupe
+ *   2. confrontation directe : mini-classement sur les SEULS matchs entre ces équipes
+ *      (victoire = 3, nul = 1) ; pour 2 équipes = simplement le vainqueur du match direct
+ *   3. goal-average particulier : différence dans ces mêmes matchs
+ *   4. goal-average général : différence sur l'ensemble de la poule
+ *   5. points marqués (général)
+ *   6. ordre alphabétique (ultime recours)
+ *
+ * En cas de nul au match direct, la confrontation directe ne tranche pas : on passe
+ * au critère suivant (pas d'inversion arbitraire de la paire).
  */
 export function resolveMultiWayTie(
   tiedTeams: TeamStats[],
@@ -274,7 +284,7 @@ export function resolveMultiWayTie(
 ): TeamStats[] {
   const tiedIds = new Set(tiedTeams.map(t => t.id))
 
-  // Filtrer les matchs entre les équipes à égalité uniquement
+  // Matchs entre les équipes à égalité uniquement
   const directMatches = matches.filter(m =>
     m.status === 'termine' &&
     m.poule === poule &&
@@ -283,116 +293,71 @@ export function resolveMultiWayTie(
     tiedIds.has(m.equipe_b_id)
   )
 
-  // Si pas de confrontations directes, ne pas départager
-  if (directMatches.length === 0) return tiedTeams
-
-  // Recalculer un mini-classement sur ces matchs
-  const miniStats = new Map<string, { points: number; diff: number; pointsFor: number }>()
-  for (const t of tiedTeams) {
-    miniStats.set(t.id, { points: 0, diff: 0, pointsFor: 0 })
-  }
+  // Mini-classement : points de confrontation directe + goal-average particulier
+  const mini = new Map<string, { points: number; diff: number }>()
+  for (const t of tiedTeams) mini.set(t.id, { points: 0, diff: 0 })
 
   for (const m of directMatches) {
     const sa = m.score_a ?? 0
     const sb = m.score_b ?? 0
-    const statsA = miniStats.get(m.equipe_a_id!)!
-    const statsB = miniStats.get(m.equipe_b_id!)!
-
-    statsA.pointsFor += sa
+    const statsA = mini.get(m.equipe_a_id!)!
+    const statsB = mini.get(m.equipe_b_id!)!
     statsA.diff += sa - sb
-    statsB.pointsFor += sb
     statsB.diff += sb - sa
-
-    if (sa > sb) {
-      statsA.points += 3
-    } else if (sb > sa) {
-      statsB.points += 3
-    } else {
-      statsA.points += 1
-      statsB.points += 1
-    }
+    if (sa > sb) statsA.points += 3
+    else if (sb > sa) statsB.points += 3
+    else { statsA.points += 1; statsB.points += 1 }
   }
 
   return [...tiedTeams].sort((a, b) => {
-    const sa = miniStats.get(a.id)!
-    const sb = miniStats.get(b.id)!
-    if (sb.points !== sa.points) return sb.points - sa.points
-    if (sb.diff !== sa.diff) return sb.diff - sa.diff
-    if (sb.pointsFor !== sa.pointsFor) return sb.pointsFor - sa.pointsFor
-    return a.name.localeCompare(b.name)
+    const ma = mini.get(a.id)!
+    const mb = mini.get(b.id)!
+    if (mb.points !== ma.points) return mb.points - ma.points            // 2. confrontation directe
+    if (mb.diff !== ma.diff) return mb.diff - ma.diff                    // 3. goal-average particulier
+    if (b.difference !== a.difference) return b.difference - a.difference // 4. goal-average général
+    if (b.pointsFor !== a.pointsFor) return b.pointsFor - a.pointsFor     // 5. points marqués
+    return a.name.localeCompare(b.name)                                  // 6. alphabétique
   })
 }
 
 /**
- * Trie les équipes selon les règles FIPJP officielles
- * 1. Nombre de points (victoires × 3 + nuls × 1)
- * 2. Différence de points (moyenne générale)
- * 3. Confrontation directe (si matchs et poule fournis)
- *    - 2 équipes : résultat direct
- *    - 3+ équipes : mini-classement sur les matchs entre elles
- * 4. Points marqués
- * 5. Ordre alphabétique (en cas d'égalité parfaite)
+ * Trie les équipes d'une poule selon les règles de départage retenues.
  *
- * @param teams - Les équipes à trier
- * @param matches - Optionnel : les matchs pour gérer la confrontation directe
- * @param poule - Optionnel : le nom de la poule pour filtrer les confrontations directes
+ * Critère principal : nombre de points (victoires × 3 + nuls). À ÉGALITÉ DE POINTS,
+ * la CONFRONTATION DIRECTE prime sur la différence générale (cf. resolveMultiWayTie).
+ *
+ * Sans `matches`/`poule` (contexte hors poule), la confrontation directe est impossible :
+ * on retombe sur points -> différence générale -> points marqués -> alphabétique.
+ *
+ * @param teams   Les équipes à trier (stats déjà calculées)
+ * @param matches Optionnel : les matchs, pour la confrontation directe
+ * @param poule   Optionnel : le nom de la poule, pour filtrer les matchs directs
  */
 export function sortTeamsByFIPJPRules(
   teams: TeamStats[],
   matches?: Match[],
   poule?: string
 ): TeamStats[] {
-  // Première passe : tri par points, différence, points marqués, alphabétique
-  const sorted = [...teams].sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points
-    if (b.difference !== a.difference) return b.difference - a.difference
-    if (b.pointsFor !== a.pointsFor) return b.pointsFor - a.pointsFor
-    return a.name.localeCompare(b.name)
-  })
+  // Hors contexte de poule : pas de confrontation directe possible
+  if (!matches || !poule) {
+    return [...teams].sort((a, b) =>
+      (b.points - a.points) ||
+      (b.difference - a.difference) ||
+      (b.pointsFor - a.pointsFor) ||
+      a.name.localeCompare(b.name)
+    )
+  }
 
-  // Si pas de matchs ou poule, pas de confrontation directe
-  if (!matches || !poule) return sorted
-
-  // Deuxième passe : résoudre les égalités par confrontation directe
+  // 1. Regrouper par points égaux, puis départager chaque groupe par confrontation directe
+  const byPoints = [...teams].sort((a, b) => b.points - a.points)
   const result: TeamStats[] = []
   let i = 0
-
-  while (i < sorted.length) {
-    // Trouver le groupe d'équipes à égalité (mêmes points + même différence)
+  while (i < byPoints.length) {
     let j = i + 1
-    while (j < sorted.length && sorted[j].points === sorted[i].points && sorted[j].difference === sorted[i].difference) {
-      j++
-    }
-
-    const tiedGroup = sorted.slice(i, j)
-
-    if (tiedGroup.length === 1) {
-      result.push(tiedGroup[0])
-    } else if (tiedGroup.length === 2) {
-      // 2 équipes : confrontation directe simple
-      const directMatch = matches.find((m: Match) =>
-        m.status === 'termine' && m.poule === poule &&
-        ((m.equipe_a_id === tiedGroup[0].id && m.equipe_b_id === tiedGroup[1].id) ||
-         (m.equipe_a_id === tiedGroup[1].id && m.equipe_b_id === tiedGroup[0].id))
-      )
-
-      if (directMatch) {
-        const firstWon =
-          (directMatch.equipe_a_id === tiedGroup[0].id && (directMatch.score_a ?? 0) > (directMatch.score_b ?? 0)) ||
-          (directMatch.equipe_b_id === tiedGroup[0].id && (directMatch.score_b ?? 0) > (directMatch.score_a ?? 0))
-        if (firstWon) {
-          result.push(tiedGroup[0], tiedGroup[1])
-        } else {
-          result.push(tiedGroup[1], tiedGroup[0])
-        }
-      } else {
-        result.push(...tiedGroup)
-      }
-    } else {
-      // 3+ équipes : mini-classement par confrontation directe
-      result.push(...resolveMultiWayTie(tiedGroup, matches, poule))
-    }
-
+    while (j < byPoints.length && byPoints[j].points === byPoints[i].points) j++
+    const group = byPoints.slice(i, j)
+    if (group.length === 1) result.push(group[0])
+    else result.push(...resolveMultiWayTie(group, matches, poule))
     i = j
   }
 
