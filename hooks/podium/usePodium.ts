@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import confetti from 'canvas-confetti'
-import type { Match, Equipe, Match as MatchType, Joueur } from '@/lib/types'
+import type { Match, Equipe, Joueur } from '@/lib/types'
 import { StatsService } from '@/lib/services'
 
 // ============================================================================
@@ -121,92 +121,35 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
   }
 
   const buildPodium = async (allMatches: Match[], tournoiId: string): Promise<PodiumTeam[]> => {
-    const podiumData: PodiumTeam[] = []
-
-    // Trouver la finale et la petite finale
-    const finaleData = allMatches.find((m: Match) => m.type === 'finale')
-    const petiteFinaleData = allMatches.find((m: Match) => m.type === 'petite_finale')
-
-    // Champion (1er) et Finaliste (2e)
-    if (finaleData && finaleData.status === 'termine') {
-      const scoreA = finaleData.score_a ?? 0
-      const scoreB = finaleData.score_b ?? 0
-      const champion = scoreA > scoreB
-        ? finaleData.equipe_a
-        : finaleData.equipe_b
-      const finaliste = scoreA > scoreB
-        ? finaleData.equipe_b
-        : finaleData.equipe_a
-
-      if (champion) {
-        podiumData.push({
-          position: 1,
-          team: champion,
-          score: Math.max(scoreA, scoreB)
-        })
-      }
-
-      if (finaliste) {
-        podiumData.push({
-          position: 2,
-          team: finaliste,
-          score: Math.min(scoreA, scoreB)
-        })
-      }
-    } else {
-      // Fallback: Utiliser le classement general des poules
-      await buildPodiumFromPoules(podiumData, allMatches, tournoiId)
+    // Index des équipes depuis les objets equipe des matchs (incluent les joueurs pour l'affichage)
+    const teamMap = new Map<string, Team>()
+    for (const m of allMatches) {
+      if (m.equipe_a?.id && !teamMap.has(m.equipe_a.id)) teamMap.set(m.equipe_a.id, m.equipe_a as unknown as Team)
+      if (m.equipe_b?.id && !teamMap.has(m.equipe_b.id)) teamMap.set(m.equipe_b.id, m.equipe_b as unknown as Team)
     }
 
-    // 3eme place (ecrase le fallback si petite finale existe)
-    if (petiteFinaleData && petiteFinaleData.status === 'termine') {
-      const pScoreA = petiteFinaleData.score_a ?? 0
-      const pScoreB = petiteFinaleData.score_b ?? 0
-      const troisieme = pScoreA > pScoreB
-        ? petiteFinaleData.equipe_a
-        : petiteFinaleData.equipe_b
+    let teamsList = Array.from(teamMap.values()).map(t => ({ id: t.id, name: t.name }))
 
-      if (troisieme) {
-        const idx = podiumData.findIndex(p => p.position === 3)
-        const newThird = {
-          position: 3,
-          team: troisieme,
-          score: Math.max(pScoreA, pScoreB)
-        }
-        if (idx >= 0) podiumData[idx] = newThird
-        else podiumData.push(newThird)
+    // Secours si aucun match exploitable : charger les équipes du tournoi
+    if (teamsList.length === 0) {
+      const equipesResponse = await fetch(`/api/equipes?tournoi_id=${tournoiId}`, {
+        credentials: 'include'
+      })
+      if (equipesResponse.ok) {
+        const equipesData = await equipesResponse.json()
+        equipesData.forEach((e: Equipe) => teamMap.set(e.id, { id: e.id, name: e.name }))
+        teamsList = equipesData.map((e: Equipe) => ({ id: e.id, name: e.name }))
       }
     }
 
-    return podiumData
-  }
+    // Classement final : ordre = place dans le bracket (finale, petite finale, demies…),
+    // sinon classement de poule. Gère le 3e via la petite finale OU le meilleur perdant de demie.
+    const ranking = StatsService.computeFinalRanking(teamsList, allMatches)
 
-  const buildPodiumFromPoules = async (
-    podiumData: PodiumTeam[],
-    allMatches: Match[],
-    tournoiId: string
-  ) => {
-    const equipesResponse = await fetch(`/api/equipes?tournoi_id=${tournoiId}`, {
-      credentials: 'include'
-    })
-    if (!equipesResponse.ok) return
-
-    const equipesData = await equipesResponse.json()
-
-    // Filtrer uniquement les matchs de poule pour le classement
-    const pouleMatches = allMatches.filter((m: Match) => m.type === 'poule')
-
-    // Calculer les stats FIPJP pour chaque équipe
-    const teamStats = equipesData.map((team: Equipe) =>
-      StatsService.calculateTeamStats(team.id, team.name, pouleMatches)
-    )
-
-    // Tri FIPJP officiel (points, différence, confrontation directe, multi-way ties)
-    const classement = StatsService.sortTeamsByFIPJPRules(teamStats, pouleMatches)
-
-    if (classement[0]) podiumData.push({ position: 1, team: { id: classement[0].id, name: classement[0].name }, score: classement[0].pointsFor })
-    if (classement[1]) podiumData.push({ position: 2, team: { id: classement[1].id, name: classement[1].name }, score: classement[1].pointsFor })
-    if (classement[2]) podiumData.push({ position: 3, team: { id: classement[2].id, name: classement[2].name }, score: classement[2].pointsFor })
+    return ranking.slice(0, 3).map((r, idx) => ({
+      position: idx + 1,
+      team: teamMap.get(r.id) || { id: r.id, name: r.name }
+    }))
   }
 
   const loadTeamStats = async (podiumData: PodiumTeam[], allMatches: Match[]) => {

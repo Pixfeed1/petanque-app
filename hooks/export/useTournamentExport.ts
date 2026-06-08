@@ -10,7 +10,8 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { sanitizeForExcel, cleanControlCharacters } from '@/lib/sanitize'
-import type { Joueur, Equipe, EquipeJoueur } from '@/lib/types'
+import type { Joueur, Equipe, EquipeJoueur, Match as LibMatch } from '@/lib/types'
+import { StatsService } from '@/lib/services'
 
 interface Tournament {
   id: string
@@ -109,70 +110,18 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
   })
 
   /**
-   * Calcul du classement par équipe (règles FIPJP)
+   * Calcul du CLASSEMENT FINAL par équipe.
+   *
+   * Pour un tournoi à phase finale, l'ordre suit la PLACE dans le bracket (finale, petite
+   * finale, demies, …), pas les points cumulés poule + élimination — sinon un demi-finaliste
+   * pouvait passer devant le finaliste. Délégué à StatsService.computeFinalRanking.
    */
   const calculateTeamRankings = useCallback((matches: Match[], teams: Team[]) => {
-    const teamRankings = teams.map(team => {
-      const teamMatches = matches.filter(m =>
-        m.status === 'termine' &&
-        m.type !== 'bye' &&
-        (m.equipe_a?.id === team.id || m.equipe_b?.id === team.id)
-      )
-
-      const victories = teamMatches.filter(m =>
-        (m.equipe_a?.id === team.id && m.score_a > m.score_b) ||
-        (m.equipe_b?.id === team.id && m.score_b > m.score_a)
-      ).length
-
-      const defeats = teamMatches.filter(m =>
-        (m.equipe_a?.id === team.id && m.score_a < m.score_b) ||
-        (m.equipe_b?.id === team.id && m.score_b < m.score_a)
-      ).length
-
-      const draws = teamMatches.filter(m =>
-        m.score_a === m.score_b
-      ).length
-
-      const pointsFor = teamMatches.reduce((acc, m) =>
-        acc + (m.equipe_a?.id === team.id ? m.score_a : m.score_b), 0
-      )
-
-      const pointsAgainst = teamMatches.reduce((acc, m) =>
-        acc + (m.equipe_a?.id === team.id ? m.score_b : m.score_a), 0
-      )
-
-      return {
-        ...team,
-        played: teamMatches.length,
-        victories,
-        defeats,
-        draws,
-        pointsFor,
-        pointsAgainst,
-        difference: pointsFor - pointsAgainst,
-        points: victories * 3 + draws * 1
-      }
-    }).sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points
-      if (b.difference !== a.difference) return b.difference - a.difference
-
-      // Confrontation directe
-      const directMatch = matches.find(m =>
-        m.status === 'termine' &&
-        ((m.equipe_a?.id === a.id && m.equipe_b?.id === b.id) ||
-         (m.equipe_a?.id === b.id && m.equipe_b?.id === a.id))
-      )
-      if (directMatch) {
-        const aWon = (directMatch.equipe_a?.id === a.id && directMatch.score_a > directMatch.score_b) ||
-                     (directMatch.equipe_b?.id === a.id && directMatch.score_b > directMatch.score_a)
-        if (aWon) return -1
-        return 1
-      }
-
-      return b.pointsFor - a.pointsFor
-    })
-
-    setRankings(teamRankings)
+    const ranked = StatsService.computeFinalRanking(
+      teams.map(t => ({ id: t.id, name: t.name })),
+      matches as unknown as LibMatch[]
+    )
+    setRankings(ranked)
   }, [])
 
   /**

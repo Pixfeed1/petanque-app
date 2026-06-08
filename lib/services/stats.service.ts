@@ -385,6 +385,104 @@ export function sortPlayersByFIPJPRules(players: PlayerStats[]): PlayerStats[] {
 }
 
 /**
+ * Une équipe dans le classement final, avec sa place et le tour où elle a été éliminée.
+ */
+export interface RankedTeam extends TeamStats {
+  position: number
+  // Tour d'élimination : null = championne, 'poule' = sortie en poule (ou tournoi sans bracket)
+  eliminatedIn: 'finale' | 'petite_finale' | 'demi' | 'quart' | 'huitieme' | 'elimination' | 'poule' | null
+}
+
+// Tours éliminatoires, du plus proche de la finale au plus lointain
+const KNOCKOUT_ROUNDS: Array<'demi' | 'quart' | 'huitieme' | 'elimination'> = ['demi', 'quart', 'huitieme', 'elimination']
+
+/**
+ * Calcule le CLASSEMENT FINAL d'un tournoi.
+ *
+ * Tournoi À PHASE FINALE (la finale est jouée) : l'ordre suit la PLACE dans le bracket,
+ * jamais les points cumulés (un demi-finaliste ne peut pas passer devant le finaliste).
+ *   1er   = vainqueur de la finale
+ *   2e    = perdant de la finale
+ *   3e/4e = vainqueur/perdant de la petite finale si elle est jouée,
+ *           sinon les perdants des demi-finales, départagés entre eux par leurs stats de poule
+ *   puis  les perdants de chaque tour précédent (quarts, huitièmes…), départagés par poule
+ *   puis  les équipes éliminées en poule, classées par stats de poule (FIPJP)
+ *
+ * Tournoi SANS phase finale (ou finale pas encore jouée) : classement de poule pur (FIPJP)
+ * sur les seuls matchs type='poule'.
+ *
+ * Les stats RETOURNÉES sont le bilan complet de l'équipe (hors BYE) pour l'affichage ;
+ * seul l'ORDRE dépend du bracket. Le départage intra-niveau utilise les stats de POULE.
+ */
+export function computeFinalRanking(
+  teams: Array<{ id: string; name: string }>,
+  matches: Match[]
+): RankedTeam[] {
+  const isDone = (m: Match) => m.status === 'termine' && m.score_a !== null && m.score_b !== null
+  const teamAId = (m: Match) => m.equipe_a_id ?? m.equipe_a?.id ?? null
+  const teamBId = (m: Match) => m.equipe_b_id ?? m.equipe_b?.id ?? null
+  const winnerId = (m: Match) => ((m.score_a ?? 0) >= (m.score_b ?? 0) ? teamAId(m) : teamBId(m))
+  const loserId = (m: Match) => ((m.score_a ?? 0) >= (m.score_b ?? 0) ? teamBId(m) : teamAId(m))
+  const byType = (t: string) => matches.filter(m => m.type === t && isDone(m))
+
+  // Bilan complet (affichage + secours) et bilan poule seule (ordre / départage)
+  const pouleOnlyMatches = matches.filter(m => m.type === 'poule')
+  const fullStats = new Map<string, TeamStats>()
+  const pouleStats = new Map<string, TeamStats>()
+  for (const t of teams) {
+    fullStats.set(t.id, calculateTeamStats(t.id, t.name, matches))
+    pouleStats.set(t.id, calculateTeamStats(t.id, t.name, pouleOnlyMatches))
+  }
+
+  const orderedIds: string[] = []
+  const placed = new Set<string>()
+  const eliminatedIn = new Map<string, RankedTeam['eliminatedIn']>()
+  const place = (id: string | null | undefined, round: RankedTeam['eliminatedIn']) => {
+    if (id && !placed.has(id) && fullStats.has(id)) {
+      placed.add(id)
+      orderedIds.push(id)
+      eliminatedIn.set(id, round)
+    }
+  }
+  // Départage d'un groupe de même niveau d'élimination par les stats de POULE (FIPJP)
+  const sortByPoule = (ids: string[]): string[] => {
+    const grp = ids.map(id => pouleStats.get(id)).filter(Boolean) as TeamStats[]
+    return sortTeamsByFIPJPRules(grp).map(s => s.id)
+  }
+
+  // On ne bascule en classement « bracket » qu'une fois la finale jouée.
+  const finale = byType('finale')[0]
+  if (finale) {
+    place(winnerId(finale), null)
+    place(loserId(finale), 'finale')
+
+    const petite = byType('petite_finale')[0]
+    if (petite) {
+      place(winnerId(petite), 'petite_finale')
+      place(loserId(petite), 'petite_finale')
+    }
+
+    for (const round of KNOCKOUT_ROUNDS) {
+      const losers = byType(round)
+        .map(loserId)
+        .filter((id): id is string => !!id && !placed.has(id))
+      for (const id of sortByPoule(losers)) place(id, round)
+    }
+  }
+
+  // Reste : équipes éliminées en poule (ou tournoi sans finale) → classement de poule FIPJP
+  const remaining = teams.map(t => t.id).filter(id => !placed.has(id))
+  for (const id of sortByPoule(remaining)) place(id, 'poule')
+
+  return orderedIds.map((id, i) => ({
+    ...(fullStats.get(id) as TeamStats),
+    position: i + 1,
+    // null (champion) est volontaire : ne pas le réécrire en 'poule' via ??
+    eliminatedIn: eliminatedIn.has(id) ? eliminatedIn.get(id)! : 'poule'
+  }))
+}
+
+/**
  * Groupe les équipes par poule avec leurs stats calculées
  */
 export function groupTeamsByPoule(

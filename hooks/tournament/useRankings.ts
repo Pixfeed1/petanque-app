@@ -8,6 +8,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { StatsService } from '@/lib/services'
+import type { RankedTeam } from '@/lib/services'
 import type { Match as MatchType, Joueur } from '@/lib/types'
 import type { Tournament, Team, Match } from './useTournamentData'
 
@@ -42,6 +43,7 @@ interface UseRankingsReturn {
   // Computed values
   teamsWithStats: TeamWithStats[]
   teamsByPoule: { [key: string]: TeamWithStats[] }
+  finalRanking: RankedTeam[]
   individualRankings: PlayerWithStats[]
 
   // States
@@ -72,12 +74,19 @@ export function useRankings({
     }
   }, [])
 
+  // Le classement des POULES ne doit compter que les matchs type='poule' : on exclut le bracket
+  // (finale, demies…) sinon les points d'élimination polluent les stats de poule.
+  const pouleMatches = useMemo(
+    () => (matches as unknown as MatchType[]).filter(m => m.type === 'poule'),
+    [matches]
+  )
+
   /**
-   * Calcul optimisé du classement des équipes avec useMemo + StatsService
+   * Calcul optimisé du classement des équipes (matchs de poule uniquement) avec useMemo
    */
   const teamsWithStats = useMemo((): TeamWithStats[] => {
     return teams.map(team => {
-      const stats = StatsService.calculateTeamStats(team.id, team.name, matches as unknown as MatchType[])
+      const stats = StatsService.calculateTeamStats(team.id, team.name, pouleMatches)
       return {
         ...team,
         played: stats.played,
@@ -89,7 +98,19 @@ export function useRankings({
         difference: stats.difference
       }
     })
-  }, [teams, matches])
+  }, [teams, pouleMatches])
+
+  /**
+   * Classement FINAL du tournoi (ordre = place dans le bracket si phase finale, sinon poules).
+   * Sert au podium « terminé » et à tout affichage du classement général.
+   */
+  const finalRanking = useMemo(
+    () => StatsService.computeFinalRanking(
+      teams.map(t => ({ id: t.id, name: t.name })),
+      matches as unknown as MatchType[]
+    ),
+    [teams, matches]
+  )
 
   /**
    * Classement par poule optimisé avec confrontation directe FIPJP
@@ -124,10 +145,10 @@ export function useRankings({
         points: (team.victories ?? 0) * 3 + (team.draws ?? 0)
       }))
 
-      // Utiliser le service avec confrontation directe
+      // Utiliser le service avec confrontation directe (matchs de poule uniquement)
       const sorted = StatsService.sortTeamsByFIPJPRules(
         teamsStats,
-        matches as unknown as MatchType[],
+        pouleMatches,
         poule
       )
 
@@ -139,7 +160,7 @@ export function useRankings({
     })
 
     return poules
-  }, [teamsWithStats, matches])
+  }, [teamsWithStats, matches, pouleMatches])
 
   /**
    * Charge le classement individuel (pour mêlée tournante)
@@ -237,6 +258,7 @@ export function useRankings({
     // Computed values
     teamsWithStats,
     teamsByPoule,
+    finalRanking,
     individualRankings,
 
     // States

@@ -12,6 +12,6 @@ export * as ValidationService from './validation.service'
 export * as TirageService from './tirage.service'
 
 // Re-export des types pour faciliter l'usage
-export type { TeamStats, PlayerStats } from './stats.service'
+export type { TeamStats, PlayerStats, RankedTeam } from './stats.service'
 export type { BracketMatch } from './bracket.service'
 export type { ValidationResult } from './validation.service'

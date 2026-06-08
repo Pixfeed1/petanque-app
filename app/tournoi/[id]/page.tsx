@@ -104,7 +104,7 @@ export default function TournamentDetailPage() {
   })
 
   const {
-    teamsWithStats, teamsByPoule, individualRankings,
+    teamsWithStats, teamsByPoule, finalRanking, individualRankings,
     refreshingClassement, loadIndividualRankings, refreshClassement
   } = useRankings({ tournament, teams, matches })
 
@@ -753,7 +753,7 @@ export default function TournamentDetailPage() {
                     { rank: 2, label: '2e place', boule: 'cochonnet' as const },
                     { rank: 3, label: '3e place', boule: 'vert' as const },
                   ].map((p, i) => {
-                    const winner = isMelee ? individualRankings[i] : teamsWithStats[i]
+                    const winner = isMelee ? individualRankings[i] : finalRanking[i]
                     if (!winner) return null
                     return (
                       <div key={p.rank} className="bg-white border border-petanque-sable-bord/60 rounded-xl p-5 text-center">
