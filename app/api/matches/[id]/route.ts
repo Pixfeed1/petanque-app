@@ -4,9 +4,11 @@
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
-import { queryOne, query } from '@/lib/db'
+import { queryOne, query, transaction } from '@/lib/db'
 import { MatchRawDB, MatchWithEquipes, SQLValue } from '@/lib/types'
 import { emitTournamentEvent } from '@/lib/tournament-events'
+import { parseDeType } from '@/lib/services/doubleElimination.service'
+import { computeTargetState, type DEStoredRow } from '@/lib/services/doubleEliminationIntegration'
 
 // Parse défensif des settings de tournoi : un JSON malformé ne doit pas faire
 // planter (500) la page match. Fallback null si la chaîne n'est pas du JSON valide.
@@ -122,6 +124,44 @@ export async function GET(
 }
 
 // PUT - Mettre à jour un match (score, statut, etc.)
+/**
+ * Avancement double élimination : après qu'un match "de:*" passe à "termine",
+ * on recalcule TOUT le bracket (réducteur = source de vérité unique) et on
+ * persiste le différentiel. Aucun routage manuel → aucune classe de bugs de
+ * propagation. Les byes en cascade sont gérés par le réducteur.
+ */
+async function advanceDoubleElimination(tournoiId: string): Promise<void> {
+  await transaction(async (client) => {
+    const stored = await client.query(
+      `SELECT id, type, equipe_a_id, equipe_b_id, status, winner_id
+       FROM matches WHERE tournoi_id = $1 AND type LIKE 'de:%'`,
+      [tournoiId]
+    )
+    const rows = stored.rows as Array<DEStoredRow & { id: string }>
+    if (rows.length === 0) return
+
+    const target = computeTargetState(rows)
+    const byType = new Map(rows.map((r) => [r.type, r]))
+
+    for (const m of target) {
+      const cur = byType.get(m.type)
+      if (!cur) continue
+      const changed =
+        cur.equipe_a_id !== m.equipeAId ||
+        cur.equipe_b_id !== m.equipeBId ||
+        cur.status !== m.status ||
+        (cur.winner_id ?? null) !== (m.winnerId ?? null)
+      if (!changed) continue
+      await client.query(
+        `UPDATE matches
+         SET equipe_a_id = $1, equipe_b_id = $2, status = $3, winner_id = $4, updated_at = NOW()
+         WHERE tournoi_id = $5 AND type = $6`,
+        [m.equipeAId, m.equipeBId, m.status, m.winnerId, tournoiId, m.type]
+      )
+    }
+  })
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -313,6 +353,16 @@ export async function PUT(
        RETURNING *`,
       values
     )
+
+    // Double élimination : si on vient de terminer un match "de:*", recalculer
+    // et propager tout le bracket (le match courant inclus dans les résultats).
+    if (body.status === 'termine' && parseDeType(existingMatch.type as string | null) !== null) {
+      try {
+        await advanceDoubleElimination(existingMatch.tournoi_id as string)
+      } catch (e) {
+        console.error('❌ Erreur avancement double élimination:', e)
+      }
+    }
 
     // Notifier les clients SSE connectés au tournoi
     emitTournamentEvent('match:updated', existingMatch.tournoi_id, {
