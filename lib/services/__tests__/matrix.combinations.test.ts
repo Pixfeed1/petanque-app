@@ -274,6 +274,68 @@ describe('MATRICE — MÊLÉE TOURNANTE (rotations anti-rematch)', () => {
 })
 
 // ════════════════════════════════════════════════════════════════
+// MATRICE 3 bis — MÊLÉE TOURNANTE, effectif NON divisible (exempt tournant)
+// Garde-fou du FIX bug #2 : personne n'est exclu en silence, l'exempt tourne.
+// ════════════════════════════════════════════════════════════════
+
+describe('MATRICE — MÊLÉE TOURNANTE (effectif non divisible : exempt tournant)', () => {
+  const cases = [
+    { format: 'doublette', ppt: 2 as 2 | 3, nbPlayers: 11 },
+    { format: 'triplette', ppt: 3 as 2 | 3, nbPlayers: 7 },
+    { format: 'doublette', ppt: 2 as 2 | 3, nbPlayers: 13 },
+  ]
+  const ROUNDS = 6
+
+  for (const c of cases) {
+    const expectedExempt = c.nbPlayers % c.ppt
+    it(`${c.format} | ${c.nbPlayers} joueurs → ${expectedExempt} au repos/ronde, personne perdu, exempt tournant`, () => {
+      const players = makePlayers(c.nbPlayers)
+      const expectedTeams = Math.floor(c.nbPlayers / c.ppt)
+      expect(expectedExempt).toBeGreaterThan(0) // cas bien non divisible
+
+      const exemptCount = new Map<string, number>(players.map(p => [p.id, 0]))
+      let previousExempt: string[] = []
+      let prevTeams: Array<{ joueur_ids: string[] }> = []
+      let prevMatches: Array<{ equipe_a_joueur_ids: string[]; equipe_b_joueur_ids: string[] }> = []
+
+      for (let r = 0; r < ROUNDS; r++) {
+        const { teams, exempt } = antiRematchTeamFormation(players, prevTeams, prevMatches, c.ppt, previousExempt)
+
+        // bon nombre d'équipes + taille correcte
+        expect(teams.length).toBe(expectedTeams)
+        expect(teams.every(t => t.joueur_ids.length === c.ppt)).toBe(true)
+
+        // nombre d'exemptés == n % teamSize
+        expect(exempt.length).toBe(expectedExempt)
+
+        // aucun joueur perdu : (équipes aplaties) ∪ exempt == tous les joueurs
+        const playing = teams.flatMap(t => t.joueur_ids)
+        expect(new Set([...playing, ...exempt]).size).toBe(c.nbPlayers)
+        // un exempté n'est jamais aussi dans une équipe
+        expect(playing.some(id => exempt.includes(id))).toBe(false)
+
+        // équité : l'écart max/min du nombre d'exemptions reste <= 1 → personne
+        // n'est exempté deux fois tant que tout le monde ne l'a pas été une fois.
+        for (const id of exempt) exemptCount.set(id, (exemptCount.get(id) || 0) + 1)
+        const counts = [...exemptCount.values()]
+        expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1)
+
+        previousExempt = [...previousExempt, ...exempt]
+        prevTeams = [...prevTeams, ...teams]
+        for (let i = 0; i < teams.length; i++)
+          for (let j = i + 1; j < teams.length; j++)
+            prevMatches.push({ equipe_a_joueur_ids: teams[i].joueur_ids, equipe_b_joueur_ids: teams[j].joueur_ids })
+      }
+
+      // sur ROUNDS rondes, tant que ROUNDS*r <= n, ce sont des joueurs DIFFÉRENTS
+      // qui se reposent (aucun exempté deux fois avant que tous l'aient été une fois).
+      const everExempted = [...exemptCount.values()].filter(n => n > 0).length
+      expect(everExempted).toBe(Math.min(ROUNDS * expectedExempt, c.nbPlayers))
+    })
+  }
+})
+
+// ════════════════════════════════════════════════════════════════
 // MATRICE 4 — PLANS (limites & features)
 // ════════════════════════════════════════════════════════════════
 
