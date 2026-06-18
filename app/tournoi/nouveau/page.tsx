@@ -453,7 +453,7 @@ function Step3({
                   <div className="w-7 h-7 rounded-full bg-petanque-vert-pale/40 text-petanque-vert-fonce text-xs font-medium flex-shrink-0 flex items-center justify-center">
                     {player.name?.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-xs text-petanque-vert-fonce truncate flex-1">{player.name}</span>
+                  <span className="text-sm text-petanque-vert-fonce truncate flex-1">{player.name}</span>
                   {sel && <Check className="w-3.5 h-3.5 text-petanque-vert flex-shrink-0" />}
                 </button>
               )
@@ -481,7 +481,7 @@ function Step3({
                   value={player.name}
                   onChange={(e) => updateNewPlayer(i, 'name', e.target.value)}
                   placeholder="Nom"
-                  className="flex-1 h-9 px-3 text-sm bg-transparent border border-petanque-sable-bord rounded focus:border-petanque-vert focus:outline-none"
+                  className="flex-1 h-9 px-3 text-base bg-transparent border border-petanque-sable-bord rounded focus:border-petanque-vert focus:outline-none"
                 />
                 <select
                   value={player.gender}

@@ -299,7 +299,7 @@ function PodiumSpot({ position, team, animationStep, generatingCertificate, onGe
           {team.team?.name || 'Équipe'}
         </p>
         {players.length > 0 && (
-          <p className={`text-petanque-bois leading-tight ${isFirst ? 'text-xs md:text-sm' : 'text-[11px]'}`}>
+          <p className={`text-petanque-bois leading-tight ${isFirst ? 'text-sm md:text-base' : 'text-sm'}`}>
             {players.map((p: any) => p?.name).filter(Boolean).join(' · ')}
           </p>
         )}

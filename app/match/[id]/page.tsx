@@ -227,7 +227,7 @@ export default function MatchScorePage() {
               </div>
               <div className="grid grid-cols-2 gap-3 md:gap-5">
                 <div className="flex flex-col items-center gap-3 py-2">
-                  <p className="text-xs text-petanque-bois font-medium truncate max-w-full px-2">{teamAName}</p>
+                  <p className="text-base text-petanque-bois font-medium truncate max-w-full px-2">{teamAName}</p>
                   <p className="font-mono text-5xl md:text-6xl font-medium text-petanque-vert-fonce leading-none tracking-tight tabular-nums">{mancheScoreA}</p>
                   <div className="flex gap-2">
                     <button
@@ -247,7 +247,7 @@ export default function MatchScorePage() {
                   </div>
                 </div>
                 <div className="flex flex-col items-center gap-3 py-2">
-                  <p className="text-xs text-petanque-bois font-medium truncate max-w-full px-2">{teamBName}</p>
+                  <p className="text-base text-petanque-bois font-medium truncate max-w-full px-2">{teamBName}</p>
                   <p className="font-mono text-5xl md:text-6xl font-medium text-petanque-vert-fonce leading-none tracking-tight tabular-nums">{mancheScoreB}</p>
                   <div className="flex gap-2">
                     <button

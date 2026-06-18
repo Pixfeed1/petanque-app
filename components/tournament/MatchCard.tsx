@@ -90,14 +90,14 @@ export default function MatchCard({
       <div className="flex justify-between items-center">
         {/* Équipe A */}
         <div className="text-center flex-1">
-          <p className="font-medium text-gray-900 text-xs sm:text-base truncate px-1">
+          <p className="font-medium text-gray-900 text-base sm:text-lg truncate px-1">
             {match.equipe_a?.name || 'En attente'}
           </p>
           {(() => {
             const players = match.equipe_a ? getTeamPlayers(match.equipe_a.id) : []
             if (players.length > 0) {
               return (
-                <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 px-1 truncate leading-tight">
+                <p className="text-sm text-gray-600 mt-0.5 px-1 truncate leading-tight">
                   {players.join(', ')}
                 </p>
               )
@@ -106,7 +106,7 @@ export default function MatchCard({
           })()}
           {match.status === 'termine' && (
             <div className="flex items-center justify-center gap-1 mt-1">
-              <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_a ?? 0}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{match.score_a ?? 0}</p>
               {isFanny && match.score_a === maxPoints && (
                 <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
               )}
@@ -118,23 +118,23 @@ export default function MatchCard({
         <div className="px-1 sm:px-4 text-center">
           <div className="text-gray-400 font-bold text-sm sm:text-base">VS</div>
           {match.status === 'en_cours' && (
-            <p className="text-[10px] sm:text-xs text-green-600 font-medium mt-0.5">En jeu...</p>
+            <p className="text-xs sm:text-sm text-green-600 font-medium mt-0.5">En jeu...</p>
           )}
           {match.status === 'en_attente_validation' && (
-            <p className="text-[10px] sm:text-xs text-orange-600 font-medium mt-0.5">Score proposé</p>
+            <p className="text-xs sm:text-sm text-orange-600 font-medium mt-0.5">Score proposé</p>
           )}
         </div>
 
         {/* Équipe B */}
         <div className="text-center flex-1">
-          <p className="font-medium text-gray-900 text-xs sm:text-base truncate px-1">
+          <p className="font-medium text-gray-900 text-base sm:text-lg truncate px-1">
             {match.equipe_b?.name || 'En attente'}
           </p>
           {(() => {
             const players = match.equipe_b ? getTeamPlayers(match.equipe_b.id) : []
             if (players.length > 0) {
               return (
-                <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 px-1 truncate leading-tight">
+                <p className="text-sm text-gray-600 mt-0.5 px-1 truncate leading-tight">
                   {players.join(', ')}
                 </p>
               )
@@ -143,7 +143,7 @@ export default function MatchCard({
           })()}
           {match.status === 'termine' && (
             <div className="flex items-center justify-center gap-1 mt-1">
-              <p className="text-xl sm:text-2xl font-bold text-gray-900">{match.score_b ?? 0}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{match.score_b ?? 0}</p>
               {isFanny && match.score_b === maxPoints && (
                 <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
               )}
