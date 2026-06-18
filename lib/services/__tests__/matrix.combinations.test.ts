@@ -203,7 +203,7 @@ describe('MATRICE — MÊLÉE FIXE (formation → poules → finale)', () => {
 
         it(`mêlée fixe | ${format} | ${nbPlayers} joueurs → ${teamsTarget} équipes | mixité=${mixite}`, () => {
           const players = makePlayers(nbPlayers)
-          const formed = MixiteService.createTeamsWithMixite(players, ppt, mixite)
+          const formed = MixiteService.createTeamsWithMixite(players, ppt as 2 | 3, mixite)
           // INVARIANT formation
           expect(formed.teams.length).toBe(teamsTarget)
           const usedIds = formed.teams.flatMap(t => t.joueur_ids)
@@ -250,7 +250,7 @@ describe('MATRICE — MÊLÉE TOURNANTE (rotations anti-rematch)', () => {
           let prevMatches: Array<{ equipe_a_joueur_ids: string[]; equipe_b_joueur_ids: string[] }> = []
 
           for (let r = 0; r < 5; r++) {
-            const teams = antiRematchTeamFormation(players, prevTeams, prevMatches, c.ppt)
+            const teams = antiRematchTeamFormation(players, prevTeams, prevMatches, c.ppt as 2 | 3)
             // INVARIANT : bon nombre d'équipes, taille correcte, pas de joueur en double
             expect(teams.length).toBe(expectedTeams)
             expect(teams.every(t => t.joueur_ids.length === c.ppt)).toBe(true)
