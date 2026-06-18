@@ -8,6 +8,20 @@ import { queryOne, query } from '@/lib/db'
 import { MatchRawDB, MatchWithEquipes, SQLValue } from '@/lib/types'
 import { emitTournamentEvent } from '@/lib/tournament-events'
 
+// Parse défensif des settings de tournoi : un JSON malformé ne doit pas faire
+// planter (500) la page match. Fallback null si la chaîne n'est pas du JSON valide.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseTournoiSettings(raw: unknown): any {
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return null
+    }
+  }
+  return raw || null
+}
+
 // GET - Récupérer un match par ID
 export async function GET(
   request: NextRequest,
@@ -66,9 +80,7 @@ export async function GET(
         id: matchRaw.tournoi_id,
         name: matchRaw.tournoi_name || '',
         format: (matchRaw as any).tournoi_format || null,
-        settings: typeof (matchRaw as any).tournoi_settings === 'string'
-          ? JSON.parse((matchRaw as any).tournoi_settings)
-          : (matchRaw as any).tournoi_settings || null
+        settings: parseTournoiSettings((matchRaw as any).tournoi_settings)
       } : null,
       equipe_a_id: matchRaw.equipe_a_id,
       equipe_b_id: matchRaw.equipe_b_id,
