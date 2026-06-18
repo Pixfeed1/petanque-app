@@ -20,10 +20,23 @@ export interface BracketMatch {
   equipe_b: Team
   score_a: number
   score_b: number
-  status: 'a_jouer' | 'en_cours' | 'termine'
+  // 'en_attente' = slot double élim pas encore prêt ; type "de:*" pour la double élim
+  status: 'a_jouer' | 'en_cours' | 'termine' | 'en_attente'
   terrain?: number
-  type: 'poule' | 'huitieme' | 'quart' | 'demi' | 'finale' | 'petite_finale' | 'bye'
+  type: string
   round?: string
+}
+
+// Vue double élimination : rounds du tableau gagnants (WB), des repêchages (LB)
+// et la grande finale. Dérivée des matchs dont type commence par "de:".
+export interface DERound {
+  round: number
+  matches: BracketMatch[]
+}
+export interface DEBracketView {
+  wbRounds: DERound[]
+  lbRounds: DERound[]
+  gf: BracketMatch | null
 }
 
 export interface Tournament {
@@ -57,6 +70,8 @@ interface UseBracketReturn {
   hasHuitiemes: boolean
   hasQuarts: boolean
   hasDemis: boolean
+  isDouble: boolean
+  doubleElim: DEBracketView
   handleUpdateScore: (matchId: string) => void
 }
 
@@ -77,6 +92,7 @@ export function useBracket({ tournoiId }: UseBracketProps): UseBracketReturn {
     finale: null,
     petiteFinale: null
   })
+  const [doubleElim, setDoubleElim] = useState<DEBracketView>({ wbRounds: [], lbRounds: [], gf: null })
 
   useEffect(() => {
     if (tournoiId) {
@@ -103,7 +119,31 @@ export function useBracket({ tournoiId }: UseBracketProps): UseBracketReturn {
       if (!matchesResponse.ok) throw new Error('Erreur chargement matchs')
       const allMatches = await matchesResponse.json()
 
-      // Filtrer pour garder seulement les phases finales
+      // Double élimination : matchs dont type commence par "de:" (de:W1-0, de:L2-1, de:GF)
+      const deRaw = allMatches.filter((m: BracketMatch) => typeof m.type === 'string' && m.type.startsWith('de:'))
+      if (deRaw.length > 0) {
+        const wbMap = new Map<number, BracketMatch[]>()
+        const lbMap = new Map<number, BracketMatch[]>()
+        let gf: BracketMatch | null = null
+        for (const m of deRaw) {
+          const slot = m.type.slice(3) // "W1-0" | "L2-1" | "GF"
+          if (slot === 'GF') { gf = m; continue }
+          const mm = /^([WL])(\d+)-(\d+)$/.exec(slot)
+          if (!mm) continue
+          const round = parseInt(mm[2], 10)
+          const map = mm[1] === 'W' ? wbMap : lbMap
+          if (!map.has(round)) map.set(round, [])
+          map.get(round)!.push(m)
+        }
+        const idxOf = (m: BracketMatch) => parseInt(m.type.slice(3).split('-')[1] || '0', 10)
+        const toRounds = (map: Map<number, BracketMatch[]>): DERound[] =>
+          [...map.entries()]
+            .sort((a, b) => a[0] - b[0])
+            .map(([round, ms]) => ({ round, matches: ms.sort((a, b) => idxOf(a) - idxOf(b)) }))
+        setDoubleElim({ wbRounds: toRounds(wbMap), lbRounds: toRounds(lbMap), gf })
+      }
+
+      // Filtrer pour garder seulement les phases finales (élim simple)
       const matchesData = allMatches.filter((m: BracketMatch) =>
         ['huitieme', 'quart', 'demi', 'finale', 'petite_finale', 'bye'].includes(m.type)
       )
@@ -141,6 +181,7 @@ export function useBracket({ tournoiId }: UseBracketProps): UseBracketReturn {
   const hasHuitiemes = bracketData.huitiemes.length > 0
   const hasQuarts = bracketData.quarts.length > 0
   const hasDemis = bracketData.demis.length > 0
+  const isDouble = doubleElim.wbRounds.length > 0 || doubleElim.gf !== null
 
   return {
     loading,
@@ -150,6 +191,8 @@ export function useBracket({ tournoiId }: UseBracketProps): UseBracketReturn {
     hasHuitiemes,
     hasQuarts,
     hasDemis,
+    isDouble,
+    doubleElim,
     handleUpdateScore
   }
 }

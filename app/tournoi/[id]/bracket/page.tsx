@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useBracket, BracketMatch } from '@/hooks/bracket'
+import { useBracket, BracketMatch, DEBracketView, DERound } from '@/hooks/bracket'
 import { Button, BouleSvg, FadeIn } from '@/components/ui'
 import { Loader } from '@/components/Icons'
 import TournamentSubNav, { ViewRole } from '@/components/tournament/TournamentSubNav'
@@ -112,7 +112,7 @@ export default function BracketPage() {
 
   const [previewRole, setPreviewRole] = useState<ViewRole | null>(null)
   const { organization } = useAuth()
-  const { loading, tournament, bracketData, hasHuitiemes, hasQuarts, hasDemis } = useBracket({ tournoiId })
+  const { loading, tournament, bracketData, hasHuitiemes, hasQuarts, hasDemis, isDouble, doubleElim } = useBracket({ tournoiId })
 
   // Detection role : organisateur seulement si user.org === tournament.org
   const isOrganizer = !!tournament && !!organization && String(tournament.org_id) === String(organization.id)
@@ -152,6 +152,59 @@ export default function BracketPage() {
             Voir le classement
           </Button>
         </div>
+      </div>
+    )
+  }
+
+  const handleMatchClickEarly = (match: BracketMatch | null | undefined) => {
+    if (match?.id) router.push(`/match/${match.id}`)
+  }
+
+  // Double élimination : tableau principal (WB) + repêchages (LB) + grande finale.
+  if (isDouble) {
+    return (
+      <div className="min-h-screen bg-petanque-sable-pale">
+        <header className="sticky top-0 z-50 bg-petanque-sable-pale/85 backdrop-blur-xl border-b border-petanque-sable-bord/60">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between gap-4 h-14">
+              <button
+                onClick={() => router.push(`/tournoi/${tournoiId}`)}
+                className="text-sm text-petanque-bois hover:text-petanque-vert-fonce font-medium flex items-center gap-1.5"
+              >
+                <span>←</span>
+                <span className="hidden sm:inline">Retour au tournoi</span>
+              </button>
+              <span className="font-mono text-xs text-petanque-bois truncate max-w-[300px]">{tournament?.name}</span>
+              <span className="font-mono text-xs uppercase tracking-[0.16em] font-medium">
+                {doubleElim.gf?.status === 'termine' ? <span>Terminé</span> : <span>Double élim.</span>}
+              </span>
+            </div>
+          </div>
+        </header>
+
+        <TournamentSubNav
+          tournoiId={tournoiId}
+          mode={tournament?.mode}
+          currentPage="bracket"
+          baseRole={baseRole}
+          viewRole={viewRole}
+          setViewRole={(role) => setPreviewRole(role === 'organisateur' ? null : role)}
+          isPreviewMode={isPreviewMode}
+        />
+
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+          <FadeIn>
+            <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3">
+              Double élimination · 2 défaites pour être éliminé
+            </p>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.1] mb-10">
+              Tableau principal, <span className="accent-italic text-petanque-vert">repêchages</span> et grande finale.
+            </h1>
+          </FadeIn>
+          <FadeIn delay={120}>
+            <DoubleEliminationView de={doubleElim} onMatchClick={handleMatchClickEarly} />
+          </FadeIn>
+        </main>
       </div>
     )
   }
@@ -489,6 +542,129 @@ function TeamRow({ label, score, isWinner, isLiveLeader, isLoser, showScore, isP
       }`}>
         {showScore ? score : '—'}
       </span>
+    </div>
+  )
+}
+
+// ========================================================
+// Double élimination — vue (WB / LB / grande finale)
+// ========================================================
+
+function deRoundLabel(round: number, total: number, kind: 'W' | 'L'): string {
+  if (kind === 'W') return round === total ? 'Finale gagnants' : `Tour ${round}`
+  return round === total ? 'Finale repêchages' : `Repêchage ${round}`
+}
+
+function DoubleEliminationView({ de, onMatchClick }: { de: DEBracketView; onMatchClick: (m: BracketMatch) => void }) {
+  const wbTotal = de.wbRounds.length
+  const lbTotal = de.lbRounds.length
+  return (
+    <div className="space-y-12">
+      <DESection title="Tableau principal" subtitle="Winners bracket" rounds={de.wbRounds} kind="W" total={wbTotal} onMatchClick={onMatchClick} />
+      {de.lbRounds.length > 0 && (
+        <DESection title="Repêchages" subtitle="Losers bracket · le perdant de la finale termine 3e" rounds={de.lbRounds} kind="L" total={lbTotal} onMatchClick={onMatchClick} />
+      )}
+      {de.gf && (
+        <div className="pt-8 border-t border-petanque-sable-bord/50 max-w-md">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] font-medium text-petanque-vert mb-4 flex items-center gap-2.5">
+            <BouleSvg size={16} variant="acier" stries />
+            Grande finale
+          </p>
+          <DEMatchCard match={de.gf} onMatchClick={onMatchClick} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DESection({
+  title, subtitle, rounds, kind, total, onMatchClick
+}: {
+  title: string
+  subtitle: string
+  rounds: DERound[]
+  kind: 'W' | 'L'
+  total: number
+  onMatchClick: (m: BracketMatch) => void
+}) {
+  return (
+    <div>
+      <p className="font-mono text-[11px] uppercase tracking-[0.18em] font-medium text-petanque-vert-fonce mb-1">{title}</p>
+      <p className="text-xs text-petanque-bois mb-4">{subtitle}</p>
+      <div className="overflow-x-auto pb-2">
+        <div className="flex gap-6 min-w-min">
+          {rounds.map((r) => (
+            <div key={`${kind}${r.round}`} className="flex-shrink-0 w-[230px]">
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-petanque-bois mb-2">
+                {deRoundLabel(r.round, total, kind)}
+              </p>
+              <div className="space-y-3">
+                {r.matches.map((m) => (
+                  <DEMatchCard key={m.id} match={m} onMatchClick={onMatchClick} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DEMatchCard({ match, onMatchClick }: { match: BracketMatch; onMatchClick: (m: BracketMatch) => void }) {
+  const isLive = match.status === 'en_cours'
+  const isDone = match.status === 'termine'
+  const isWaiting = match.status === 'en_attente'
+  // Bye : un seul camp présent et match déjà résolu.
+  const isBye = isDone && (!match.equipe_a || !match.equipe_b)
+  const ready = !!match.equipe_a && !!match.equipe_b
+  const isClickable = ready && (match.status === 'a_jouer' || isLive || isDone)
+
+  const winnerA = isDone && match.score_a > match.score_b
+  const winnerB = isDone && match.score_b > match.score_a
+  const liveA = isLive && match.score_a > match.score_b
+  const liveB = isLive && match.score_b > match.score_a
+
+  let statusPill: React.ReactNode
+  if (isLive) statusPill = <span className="text-petanque-vert flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-petanque-vert animate-pulse"></span>Live</span>
+  else if (isBye) statusPill = <span className="text-petanque-vert">Qualifié</span>
+  else if (isDone) statusPill = <span>Terminé</span>
+  else if (isWaiting) statusPill = <span className="italic">En attente</span>
+  else statusPill = <span className="text-petanque-cochonnet">À jouer</span>
+
+  return (
+    <div
+      onClick={isClickable ? () => onMatchClick(match) : undefined}
+      className={`rounded-lg p-3 transition-colors ${
+        isLive ? 'border-[1.5px] border-petanque-vert bg-white'
+        : isWaiting ? 'border-[0.5px] border-petanque-sable-bord/60 bg-petanque-sable-pale/30'
+        : 'border-[0.5px] border-petanque-sable-bord bg-white'
+      } ${isClickable ? 'hover:border-petanque-vert/40 hover:bg-petanque-sable-pale/40 cursor-pointer' : ''}`}
+    >
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <span className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em] truncate">
+          {match.terrain ? `T${match.terrain}` : 'Match'}
+        </span>
+        <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-petanque-bois flex-shrink-0">{statusPill}</span>
+      </div>
+      <TeamRow
+        label={match.equipe_a?.name || 'À déterminer'}
+        score={match.score_a}
+        isWinner={winnerA}
+        isLiveLeader={liveA}
+        isLoser={isDone && !winnerA && !!match.equipe_a}
+        showScore={ready && match.status !== 'a_jouer' && match.status !== 'en_attente'}
+        isPlaceholder={!match.equipe_a}
+      />
+      <TeamRow
+        label={match.equipe_b?.name || (isBye ? 'Qualifié direct' : 'À déterminer')}
+        score={match.score_b}
+        isWinner={winnerB}
+        isLiveLeader={liveB}
+        isLoser={isDone && !winnerB && !!match.equipe_b}
+        showScore={ready && match.status !== 'a_jouer' && match.status !== 'en_attente'}
+        isPlaceholder={!match.equipe_b}
+      />
     </div>
   )
 }

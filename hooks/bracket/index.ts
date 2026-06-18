@@ -3,4 +3,4 @@
  */
 
 export { useBracket } from './useBracket'
-export type { BracketMatch, BracketData, Tournament } from './useBracket'
+export type { BracketMatch, BracketData, Tournament, DEBracketView, DERound } from './useBracket'
