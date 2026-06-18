@@ -169,15 +169,20 @@ export class MixiteService {
         )
       }
     } else {
-      // TRIPLETTE : 2H + 1F ou 1H + 2F autant que possible
+      // TRIPLETTE : alterner 2H+1F et 1H+2F pour équilibrer la consommation des
+      // genres. On retire toujours 2 joueurs du genre MAJORITAIRE restant (et 1 du
+      // minoritaire). Ainsi un effectif équilibré (ex. 6H/6F) donne des triplettes
+      // TOUTES mixtes, au lieu d'épuiser les hommes avec du 2H+1F systématique puis
+      // de laisser des équipes 100% féminines.
       while (
         (playersByGender.H.length >= 2 && playersByGender.F.length >= 1) ||
         (playersByGender.H.length >= 1 && playersByGender.F.length >= 2)
       ) {
         let teamPlayerIds: string[]
 
-        // Prioriser 2H + 1F si possible, sinon 1H + 2F
-        if (playersByGender.H.length >= 2 && playersByGender.F.length >= 1) {
+        // 2H+1F si les hommes sont au moins aussi nombreux que les femmes, sinon 1H+2F.
+        // (À l'intérieur de la boucle, la composition choisie est toujours réalisable.)
+        if (playersByGender.H.length >= playersByGender.F.length) {
           teamPlayerIds = [
             playersByGender.H.shift()!.id,
             playersByGender.H.shift()!.id,

@@ -208,22 +208,16 @@ describe('MATRICE — MÊLÉE FIXE (formation → poules → finale)', () => {
           expect(formed.teams.length).toBe(teamsTarget)
           const usedIds = formed.teams.flatMap(t => t.joueur_ids)
           expect(new Set(usedIds).size).toBe(teamsTarget * ppt)
-          // mixité : DOUBLETTE garantie ; TRIPLETTE best-effort (cf. mixite.service
-          // "pas encore implémenté strictement" → 2H+1F en priorité épuise les H et
-          // peut laisser une équipe 100% F). On documente le comportement réel.
+          // mixité : avec un effectif équilibré (autant de H que de F), TOUTES les
+          // équipes doivent être mixtes — en doublette (1H+1F) comme en triplette
+          // (alternance 2H+1F / 1H+2F qui équilibre la consommation des genres).
           if (mixite && ppt >= 2) {
             const isMixed = (ids: string[]) => {
               const tp = players.filter(p => ids.includes(p.id))
               return tp.some(p => p.gender === 'H') && tp.some(p => p.gender === 'F')
             }
             const mixedCount = formed.teams.filter(t => isMixed(t.joueur_ids)).length
-            if (ppt === 2) {
-              // doublette : toutes mixtes avec effectif équilibré
-              expect(mixedCount).toBe(formed.teams.length)
-            } else {
-              // triplette : best-effort (au moins une équipe mixte formée)
-              expect(mixedCount).toBeGreaterThan(0)
-            }
+            expect(mixedCount).toBe(formed.teams.length)
           }
           // pipeline poules sur les équipes formées
           const teams = formed.teams.map((t, i) => ({ id: `team_${i + 1}`, name: `Équipe ${i + 1}`, joueur_ids: t.joueur_ids }))
