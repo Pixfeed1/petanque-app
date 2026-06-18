@@ -82,7 +82,7 @@ describe('ValidationService', () => {
     it('devrait détecter les poules déséquilibrées', () => {
       const result = validatePouleSize(5, 11)
       expect(result.valid).toBe(false)
-      expect(result.warning).toContain('La dernière poule')
+      expect(result.error).toContain('La dernière poule')
     })
   })
 
