@@ -399,7 +399,7 @@ describe('Simulation Essentiel - Mêlée Tournante, 16 joueurs, Doublette', () =
   const players = makePlayers(16)
 
   it('devrait former 8 équipes de 2', () => {
-    const result = antiRematchTeamFormation(players, [], [], 2)
+    const { teams: result } = antiRematchTeamFormation(players, [], [], 2)
     expect(result.length).toBe(8)
     result.forEach(t => expect(t.joueur_ids.length).toBe(2))
 
@@ -418,7 +418,7 @@ describe('Simulation Essentiel - Mêlée Tournante, 16 joueurs, Doublette', () =
     let allPreviousMatches: Array<{ equipe_a_joueur_ids: string[]; equipe_b_joueur_ids: string[] }> = []
 
     for (let rot = 0; rot < 5; rot++) {
-      const result = antiRematchTeamFormation(players, allPreviousTeams, allPreviousMatches, 2)
+      const { teams: result } = antiRematchTeamFormation(players, allPreviousTeams, allPreviousMatches, 2)
 
       expect(result.length).toBe(8)
       const allIds = result.flatMap(t => t.joueur_ids)
@@ -463,7 +463,7 @@ describe('Simulation Essentiel - Mêlée Tournante, 12 joueurs, Triplette', () =
   const players = makePlayers(12)
 
   it('devrait former 4 équipes de 3', () => {
-    const result = antiRematchTeamFormation(players, [], [], 3)
+    const { teams: result } = antiRematchTeamFormation(players, [], [], 3)
     expect(result.length).toBe(4)
     result.forEach(t => expect(t.joueur_ids.length).toBe(3))
 
@@ -475,7 +475,7 @@ describe('Simulation Essentiel - Mêlée Tournante, 12 joueurs, Triplette', () =
     let allPrevTeams: Array<{ joueur_ids: string[] }> = []
 
     for (let rot = 0; rot < 3; rot++) {
-      const result = antiRematchTeamFormation(players, allPrevTeams, [], 3)
+      const { teams: result } = antiRematchTeamFormation(players, allPrevTeams, [], 3)
       expect(result.length).toBe(4)
 
       if (rot > 0) {
@@ -931,19 +931,21 @@ describe('Edge Cases Plan Essentiel', () => {
       { id: 'p4', gender: 'F' as const },
     ]
 
-    const result = antiRematchTeamFormation(players, [], [], 2)
+    const { teams: result } = antiRematchTeamFormation(players, [], [], 2)
     expect(result.length).toBe(2)
     const allIds = result.flatMap(t => t.joueur_ids)
     expect(new Set(allIds).size).toBe(4)
   })
 
-  it('20 joueurs mêlée tournante triplette : 6 équipes + 2 restants', () => {
+  it('20 joueurs mêlée tournante triplette : 6 équipes + 2 au repos (exempt)', () => {
     const players = makePlayers(20)
-    const result = antiRematchTeamFormation(players, [], [], 3)
+    const { teams: result, exempt } = antiRematchTeamFormation(players, [], [], 3)
 
-    expect(result.length).toBe(6) // 20/3 = 6 r2
+    expect(result.length).toBe(6) // 20/3 = 6 équipes
     const allIds = result.flatMap(t => t.joueur_ids)
     expect(allIds.length).toBe(18) // 6 × 3
-    // 2 joueurs ne sont pas assignés (restent dans available)
+    // 2 joueurs au repos, RETOURNÉS dans exempt (plus aucun joueur perdu)
+    expect(exempt.length).toBe(2)
+    expect(new Set([...allIds, ...exempt]).size).toBe(20)
   })
 })

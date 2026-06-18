@@ -180,12 +180,39 @@ export function useRotation({
           }
         }
 
-        teamCompositions = TirageService.antiRematchTeamFormation(
+        // Équité de l'exempt : reconstituer, ronde par ronde, les joueurs qui
+        // n'étaient dans aucune équipe (donc au repos) afin de faire tourner le repos.
+        const rosterIds = players.map((p: Joueur) => p.id)
+        const idsByRound = new Map<number, Set<string>>()
+        for (const t of teams) {
+          const rm = t.name.match(/^R(\d+)-/)
+          if (!rm) continue
+          const r = parseInt(rm[1], 10)
+          if (!idsByRound.has(r)) idsByRound.set(r, new Set())
+          for (const id of (t.joueur_ids || [])) idsByRound.get(r)!.add(id)
+        }
+        const previousExempt: string[] = []
+        for (const idsInRound of idsByRound.values()) {
+          for (const id of rosterIds) {
+            if (!idsInRound.has(id)) previousExempt.push(id)
+          }
+        }
+
+        const { teams: newCompositions, exempt } = TirageService.antiRematchTeamFormation(
           players.map((p: Joueur) => ({ id: p.id, gender: p.gender as 'H' | 'F' | undefined })),
           previousTeams,
           previousMatches,
-          teamSize as 2 | 3
+          teamSize as 2 | 3,
+          previousExempt
         )
+        teamCompositions = newCompositions
+
+        if (exempt.length > 0) {
+          const exemptNames = exempt.map(
+            id => players.find((p: Joueur) => p.id === id)?.name || id
+          )
+          notify.warning(`${exempt.length} joueur(s) au repos cette ronde : ${exemptNames.join(', ')}`)
+        }
       }
 
       return teamCompositions.map(team => ({

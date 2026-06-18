@@ -298,48 +298,53 @@ describe('generateBergerMatches', () => {
 describe('antiRematchTeamFormation', () => {
   it('devrait former des équipes de 2 (doublette)', () => {
     const players = makePlayers(8)
-    const result = antiRematchTeamFormation(players, [], [], 2)
+    const { teams } = antiRematchTeamFormation(players, [], [], 2)
 
-    expect(result.length).toBe(4) // 8/2 = 4 équipes
-    result.forEach(team => {
+    expect(teams.length).toBe(4) // 8/2 = 4 équipes
+    teams.forEach(team => {
       expect(team.joueur_ids.length).toBe(2)
     })
   })
 
   it('devrait former des équipes de 3 (triplette)', () => {
     const players = makePlayers(9)
-    const result = antiRematchTeamFormation(players, [], [], 3)
+    const { teams } = antiRematchTeamFormation(players, [], [], 3)
 
-    expect(result.length).toBe(3) // 9/3 = 3 équipes
-    result.forEach(team => {
+    expect(teams.length).toBe(3) // 9/3 = 3 équipes
+    teams.forEach(team => {
       expect(team.joueur_ids.length).toBe(3)
     })
   })
 
   it('ne devrait jamais dupliquer un joueur', () => {
     const players = makePlayers(8)
-    const result = antiRematchTeamFormation(players, [], [], 2)
+    const { teams } = antiRematchTeamFormation(players, [], [], 2)
 
-    const allIds = result.flatMap(t => t.joueur_ids)
+    const allIds = teams.flatMap(t => t.joueur_ids)
     expect(new Set(allIds).size).toBe(allIds.length)
   })
 
   it('devrait utiliser tous les joueurs possibles', () => {
     const players = makePlayers(8)
-    const result = antiRematchTeamFormation(players, [], [], 2)
+    const { teams, exempt } = antiRematchTeamFormation(players, [], [], 2)
 
-    const allIds = result.flatMap(t => t.joueur_ids)
+    const allIds = teams.flatMap(t => t.joueur_ids)
     expect(allIds.length).toBe(8)
+    expect(exempt).toEqual([]) // effectif divisible : personne au repos
   })
 
-  it('devrait laisser les joueurs restants (nombre non divisible)', () => {
+  it('ne devrait perdre personne quand le nombre est non divisible (exempt retourné)', () => {
     const players = makePlayers(7)
-    const result = antiRematchTeamFormation(players, [], [], 2)
+    const { teams, exempt } = antiRematchTeamFormation(players, [], [], 2)
 
-    // 7/2 = 3 équipes + 1 joueur non assigné
-    expect(result.length).toBe(3)
-    const allIds = result.flatMap(t => t.joueur_ids)
+    // 7/2 = 3 équipes (6 joueurs) + 1 joueur au repos, RETOURNÉ dans exempt
+    expect(teams.length).toBe(3)
+    const allIds = teams.flatMap(t => t.joueur_ids)
     expect(allIds.length).toBe(6)
+    expect(exempt.length).toBe(1)
+    // Invariant : aucun joueur perdu (équipes ∪ exempt = tous les joueurs)
+    const everyone = new Set([...allIds, ...exempt])
+    expect(everyone.size).toBe(7)
   })
 
   it('devrait éviter les anciens coéquipiers', () => {
@@ -354,8 +359,8 @@ describe('antiRematchTeamFormation', () => {
     // On s'attend à ce que la nouvelle rotation évite 1+2 et 3+4
     let avoidedCount = 0
     for (let run = 0; run < 50; run++) {
-      const result = antiRematchTeamFormation(players, previousTeams, [], 2)
-      const team1 = result[0].joueur_ids.sort().join(',')
+      const { teams } = antiRematchTeamFormation(players, previousTeams, [], 2)
+      const team1 = teams[0].joueur_ids.sort().join(',')
 
       if (team1 !== 'player_1,player_2' && team1 !== 'player_3,player_4') {
         avoidedCount++
@@ -377,37 +382,39 @@ describe('antiRematchTeamFormation', () => {
 
     // Avec pénalité adversaire = 1, l'algo devrait préférer des combinaisons
     // qui minimisent les re-confrontations
-    const result = antiRematchTeamFormation(players, [], previousMatches, 2)
+    const { teams } = antiRematchTeamFormation(players, [], previousMatches, 2)
 
     // Vérifier que les IDs sont valides
-    expect(result.length).toBe(2)
-    const allIds = result.flatMap(t => t.joueur_ids)
+    expect(teams.length).toBe(2)
+    const allIds = teams.flatMap(t => t.joueur_ids)
     expect(new Set(allIds).size).toBe(4)
   })
 
   it('devrait gérer 0 joueurs sans crasher', () => {
-    const result = antiRematchTeamFormation([], [], [], 2)
-    expect(result).toEqual([])
+    const { teams, exempt } = antiRematchTeamFormation([], [], [], 2)
+    expect(teams).toEqual([])
+    expect(exempt).toEqual([])
   })
 
-  it('devrait gérer 1 joueur sans crasher', () => {
+  it('devrait gérer 1 joueur sans crasher (au repos, pas largué)', () => {
     const players = makePlayers(1)
-    const result = antiRematchTeamFormation(players, [], [], 2)
-    expect(result).toEqual([]) // Pas assez pour former une équipe
+    const { teams, exempt } = antiRematchTeamFormation(players, [], [], 2)
+    expect(teams).toEqual([]) // Pas assez pour former une équipe
+    expect(exempt).toEqual(['player_1']) // le joueur est au repos, pas exclu en silence
   })
 
   it('devrait gérer exactement teamSize joueurs', () => {
     const players = makePlayers(2)
-    const result = antiRematchTeamFormation(players, [], [], 2)
-    expect(result.length).toBe(1)
-    expect(result[0].joueur_ids.length).toBe(2)
+    const { teams } = antiRematchTeamFormation(players, [], [], 2)
+    expect(teams.length).toBe(1)
+    expect(teams[0].joueur_ids.length).toBe(2)
   })
 
   it('devrait gérer exactement teamSize=3 joueurs', () => {
     const players = makePlayers(3)
-    const result = antiRematchTeamFormation(players, [], [], 3)
-    expect(result.length).toBe(1)
-    expect(result[0].joueur_ids.length).toBe(3)
+    const { teams } = antiRematchTeamFormation(players, [], [], 3)
+    expect(teams.length).toBe(1)
+    expect(teams[0].joueur_ids.length).toBe(3)
   })
 })
 

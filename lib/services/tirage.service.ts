@@ -218,14 +218,19 @@ export function bergerRoundForRotation<T extends TeamForDraw>(
  * @param previousTeams Équipes des rotations précédentes (avec joueur_ids)
  * @param previousMatches Matchs des rotations précédentes (avec equipe_a/b joueur_ids)
  * @param teamSize Taille d'équipe (2 ou 3)
- * @returns Nouvelles compositions d'équipes optimisées
+ * @param previousExempt IDs des joueurs déjà mis au repos aux rondes précédentes
+ *   (avec répétition possible), pour faire tourner l'exempt équitablement
+ * @returns `{ teams, exempt }` — les compositions optimisées et les IDs des joueurs
+ *   au repos cette ronde (effectif non divisible par teamSize). Personne n'est exclu
+ *   en silence : tout joueur absent des `teams` figure dans `exempt`.
  */
 export function antiRematchTeamFormation(
   players: Array<{ id: string; gender?: 'H' | 'F' }>,
   previousTeams: Array<{ joueur_ids: string[] }>,
   previousMatches: Array<{ equipe_a_joueur_ids: string[]; equipe_b_joueur_ids: string[] }>,
-  teamSize: 2 | 3
-): Array<{ joueur_ids: string[] }> {
+  teamSize: 2 | 3,
+  previousExempt: string[] = []
+): { teams: Array<{ joueur_ids: string[] }>; exempt: string[] } {
   // Construire la matrice de pénalité
   // Pénalité coéquipier = 3, adversaire = 1
   const penalty = new Map<string, Map<string, number>>()
@@ -260,9 +265,27 @@ export function antiRematchTeamFormation(
     }
   }
 
-  // Algorithme glouton : former les équipes en minimisant les pénalités
+  // Équité : déterminer les exemptés (joueurs au repos) de cette ronde.
+  // Quand l'effectif n'est pas divisible par teamSize, r = players.length % teamSize
+  // joueurs se reposent. On choisit ceux qui ont été exemptés le MOINS souvent jusqu'ici
+  // (égalités départagées au hasard via le mélange) → l'exempt TOURNE, personne n'est
+  // exclu en silence. Les autres jouent et forment un effectif divisible par teamSize.
+  const exemptCount = new Map<string, number>()
+  for (const id of previousExempt) {
+    exemptCount.set(id, (exemptCount.get(id) || 0) + 1)
+  }
+
   const shuffled = fisherYatesShuffle(players)
-  const available = new Set(shuffled.map(p => p.id))
+  const remainder = players.length % teamSize
+  // Tri stable : les moins exemptés d'abord ; les égalités gardent l'ordre (aléatoire) du mélange.
+  const byFewestExempt = [...shuffled].sort(
+    (a, b) => (exemptCount.get(a.id) || 0) - (exemptCount.get(b.id) || 0)
+  )
+  const exempt = byFewestExempt.slice(0, remainder).map(p => p.id)
+  const exemptSet = new Set(exempt)
+
+  // Algorithme glouton : former les équipes en minimisant les pénalités
+  const available = new Set(shuffled.filter(p => !exemptSet.has(p.id)).map(p => p.id))
   const result: Array<{ joueur_ids: string[] }> = []
 
   // Calculer le score de pénalité d'une équipe
@@ -320,7 +343,7 @@ export function antiRematchTeamFormation(
     }
   }
 
-  return result
+  return { teams: result, exempt }
 }
 
 /**

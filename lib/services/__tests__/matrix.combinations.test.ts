@@ -250,7 +250,7 @@ describe('MATRICE — MÊLÉE TOURNANTE (rotations anti-rematch)', () => {
           let prevMatches: Array<{ equipe_a_joueur_ids: string[]; equipe_b_joueur_ids: string[] }> = []
 
           for (let r = 0; r < 5; r++) {
-            const teams = antiRematchTeamFormation(players, prevTeams, prevMatches, c.ppt as 2 | 3)
+            const { teams } = antiRematchTeamFormation(players, prevTeams, prevMatches, c.ppt as 2 | 3)
             // INVARIANT : bon nombre d'équipes, taille correcte, pas de joueur en double
             expect(teams.length).toBe(expectedTeams)
             expect(teams.every(t => t.joueur_ids.length === c.ppt)).toBe(true)

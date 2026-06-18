@@ -342,7 +342,7 @@ describe('Simulation Plan Gratuit - Mêlée Tournante, 8 joueurs, Doublette', ()
   }))
 
   it('Rotation 1: formation + round-robin', () => {
-    const result = antiRematchTeamFormation(players, [], [], 2)
+    const { teams: result } = antiRematchTeamFormation(players, [], [], 2)
 
     expect(result.length).toBe(4)
     const allIds = result.flatMap(t => t.joueur_ids)
@@ -362,7 +362,7 @@ describe('Simulation Plan Gratuit - Mêlée Tournante, 8 joueurs, Doublette', ()
       { equipe_a_joueur_ids: ['p5', 'p6'], equipe_b_joueur_ids: ['p7', 'p8'] },
     ]
 
-    const r2Teams = antiRematchTeamFormation(players, r1Teams, r1Matches, 2)
+    const { teams: r2Teams } = antiRematchTeamFormation(players, r1Teams, r1Matches, 2)
 
     expect(r2Teams.length).toBe(4)
 
@@ -389,7 +389,7 @@ describe('Simulation Plan Gratuit - Mêlée Tournante, 8 joueurs, Doublette', ()
     ]
 
     const allPreviousTeams = [...r1Teams, ...r2Teams]
-    const r3Teams = antiRematchTeamFormation(players, allPreviousTeams, [], 2)
+    const { teams: r3Teams } = antiRematchTeamFormation(players, allPreviousTeams, [], 2)
 
     expect(r3Teams.length).toBe(4)
 
@@ -419,7 +419,7 @@ describe('Simulation Plan Gratuit - Mêlée Tournante, 8 joueurs, Doublette', ()
     let allPreviousMatches: Array<{ equipe_a_joueur_ids: string[]; equipe_b_joueur_ids: string[] }> = []
 
     for (let rotation = 0; rotation < 10; rotation++) {
-      const result = antiRematchTeamFormation(players, allPreviousTeams, allPreviousMatches, 2)
+      const { teams: result } = antiRematchTeamFormation(players, allPreviousTeams, allPreviousMatches, 2)
 
       // L'algo ne doit JAMAIS crasher, même après épuisement
       expect(result.length).toBe(4)
