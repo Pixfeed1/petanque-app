@@ -429,6 +429,31 @@ export function useMatchActions({
       .map(data => qualified.find(q => q.team.id === data.id)?.team)
       .filter((team): team is Team => team !== undefined)
 
+    // Double élimination (plan Club) : à partir de 3 équipes, on génère tout le
+    // squelette (WB + LB + grande finale) côté serveur via le réducteur. En deçà
+    // de 3 équipes, la double élim n'a pas de sens → on retombe sur l'élim simple.
+    const eliminationFormat = tournament.settings.eliminationFormat || 'simple'
+    if (eliminationFormat === 'double' && reorderedQualified.length >= 3) {
+      try {
+        const resp = await fetch(`/api/tournois/${tournament.id}/double-elimination`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ teamIdsBySeed: reorderedQualified.map(t => t.id) })
+        })
+        if (!resp.ok) {
+          const error = await resp.json().catch(() => ({ error: 'Erreur serveur' }))
+          throw new Error(error.error || `HTTP ${resp.status}`)
+        }
+        notify.success(`Phase à double élimination générée pour ${reorderedQualified.length} équipes`)
+        await loadTournamentData()
+      } catch (error) {
+        console.error('Erreur génération double élimination:', error)
+        notify.error(`Erreur lors de la génération de la double élimination : ${error instanceof Error ? error.message : 'inconnue'}`)
+      }
+      return
+    }
+
     try {
       // Fix Bug #1 : utiliser BracketService.generateFirstRoundPairs pour le seeding standard
       // Gère correctement les BYE pour 3, 5, 6, 7, 9-15 qualifiés (le pairing manuel était cassé)
