@@ -23,14 +23,26 @@ export function computePouleDistributions(nbEquipes: number): PouleDistribution[
     else label = `${P} poules (${reste} de ${base + 1}, ${P - reste} de ${base})`
     dists.push({ nbPoules: P, pouleSize, sizes, label, recommended: false })
   }
+
+  // Ne garder que les répartitions réellement ATTEIGNABLES par le générateur.
+  // snakeDraftDistribution(teams, pouleSize) crée ceil(nbEquipes / pouleSize) poules.
+  // Une carte n'est honnête que si ce calcul retombe sur son propre nbPoules.
+  // Effet de bord garanti : élimine aussi toute collision de pouleSize entre cartes
+  // (deux cartes ne peuvent plus partager une même pouleSize une fois filtrées),
+  // donc la sélection par pouleSize dans le wizard devient sans ambiguïté.
+  const reachable = dists.filter(
+    (d) => Math.ceil(nbEquipes / d.pouleSize) === d.nbPoules
+  )
+
+  // Recommandation : poule moyenne la plus proche de 3.5, calculée sur les cartes restantes
   let bestIdx = 0
   let bestScore = Infinity
-  dists.forEach((d, i) => {
+  reachable.forEach((d, i) => {
     const avg = nbEquipes / d.nbPoules
     let score = Math.abs(avg - 3.5)
-    if (d.nbPoules === 1 && dists.length > 1) score += 5
+    if (d.nbPoules === 1 && reachable.length > 1) score += 5
     if (score < bestScore) { bestScore = score; bestIdx = i }
   })
-  if (dists[bestIdx]) dists[bestIdx].recommended = true
-  return dists
+  if (reachable[bestIdx]) reachable[bestIdx].recommended = true
+  return reachable
 }

@@ -184,6 +184,31 @@ export function generateBergerMatches<T extends TeamForDraw>(
 }
 
 /**
+ * Mêlée tournante en TÊTE-À-TÊTE : sélectionne les matchs d'UNE seule ronde de Berger.
+ *
+ * En tête-à-tête, chaque joueur est une équipe de 1 STABLE (on ne fusionne jamais les
+ * individus). Une « rotation » ne recompose donc pas les équipes (impossible avec 1 joueur) :
+ * elle change les ADVERSAIRES. On déroule donc le tournoi à la Berger, une ronde par rotation :
+ *   - ronde 1 (création)      → tour 1
+ *   - rotation r (>= 2)       → tour ((r-1) % nbRondes) + 1
+ * Chaque joueur affronte ainsi un nouvel adversaire à chaque rotation, sans répétition tant que
+ * le round-robin complet n'est pas épuisé. Avec un nombre impair de joueurs, un joueur est exempt
+ * (bye) à chaque ronde — il n'est jamais largué.
+ *
+ * @param teams Équipes individuelles, dans un ordre STABLE (identique entre rotations)
+ * @param rotationNumber Numéro de la rotation (1 = ronde initiale, puis 2, 3, ...)
+ */
+export function bergerRoundForRotation<T extends TeamForDraw>(
+  teams: T[],
+  rotationNumber: number
+): Array<{ teamA: T; teamB: T; tour: number; poule: string | null }> {
+  const all = generateBergerMatches(teams, null)
+  const numRounds = all.reduce((mx, m) => Math.max(mx, m.tour), 0)
+  const targetTour = numRounds > 0 ? ((rotationNumber - 1) % numRounds) + 1 : 1
+  return all.filter(m => m.tour === targetTour)
+}
+
+/**
  * Anti-rematch pour la mêlée tournante
  *
  * Construit un historique des coéquipiers et adversaires de chaque joueur,
@@ -358,6 +383,7 @@ export const TirageService = {
   calculateBalancedPoolSizes,
   bergerRoundRobin,
   generateBergerMatches,
+  bergerRoundForRotation,
   antiRematchTeamFormation,
   smartTerrainAssignment
 }

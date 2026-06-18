@@ -110,6 +110,41 @@ export function useTournamentCreation({
 
     // Tête-à-tête : 1 joueur = 1 équipe
     if (formData.format === 'tete_a_tete') {
+      if (formData.mode === 'melee_tournante') {
+        // Mêlée tournante en tête-à-tête : équipes individuelles STABLES (ordre = allPlayerIds),
+        // préfixe R1- pour la rotation + config mêlée. La ronde 1 (Berger) est créée ensuite par
+        // createMeleeTeteATeteFirstRound (et non createPoolMatches qui ferait un round-robin complet).
+        const teamsToCreate = allPlayerIds.map((pid, index) => ({
+          tournoi_id: tournoi.id,
+          name: `R1-Équipe ${index + 1}`,
+          joueur_ids: [pid],
+          stats: { victoires: 0, defaites: 0, points_pour: 0, points_contre: 0 }
+        }))
+        const teamsResp = await fetch('/api/equipes/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ teams: teamsToCreate })
+        })
+        if (!teamsResp.ok) throw new Error('Erreur lors de la création des équipes tête-à-tête')
+
+        await fetch(`/api/tournois/${tournoi.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            settings: {
+              ...tournoi.settings,
+              melee_tournante_players: allPlayerIds,
+              melee_rotation: formData.meleeRotation,
+              current_round: 1
+            }
+          })
+        })
+        return 0
+      }
+
+      // Tête-à-tête mêlée fixe / poules : comportement existant (équipes mélangées)
       const shuffled = [...allPlayerIds].sort(() => Math.random() - 0.5)
       for (let i = 0; i < shuffled.length; i++) {
         await createTeamWithPlayers(tournoi.id, i + 1, [shuffled[i]])
@@ -233,6 +268,66 @@ export function useTournamentCreation({
     const matchesResult = await matchesBatchResponse.json()
     if (matchesResult.created !== matchesToCreate.length) {
       throw new Error(`Seulement ${matchesResult.created}/${matchesToCreate.length} matchs créés`)
+    }
+  }, [formData])
+
+  /**
+   * Crée la ronde 1 d'une mêlée tournante en tête-à-tête : UNE seule ronde de Berger
+   * (chaque joueur un match contre un adversaire), pas un round-robin complet.
+   */
+  const createMeleeTeteATeteFirstRound = useCallback(async (tournoi: Tournoi) => {
+    const response = await fetch(`/api/equipes?tournoi_id=${tournoi.id}`, {
+      credentials: 'include'
+    })
+    if (!response.ok) throw new Error('Erreur récupération équipes')
+
+    const equipes = await response.json()
+    if (!equipes?.length) throw new Error('Aucune équipe trouvée')
+
+    // Ordre stable = numéro dans "R1-Équipe N" (ordre de création)
+    const ordered = [...equipes].sort((a: { name: string }, b: { name: string }) => {
+      const na = parseInt((a.name.match(/Équipe (\d+)/) || [])[1] || '0', 10)
+      const nb = parseInt((b.name.match(/Équipe (\d+)/) || [])[1] || '0', 10)
+      return na - nb
+    })
+
+    // Ronde 1 = première ronde de Berger (même logique que les rotations suivantes,
+    // cf. useRotation.buildMatchesForRotation → un seul schéma partagé, pas de cas à part).
+    const round1 = TirageService.bergerRoundForRotation(
+      ordered.map((t: { id: string; name: string }) => ({ id: t.id, name: t.name })),
+      1
+    )
+
+    const matchesToCreate = round1.map(m => ({
+      tournoi_id: tournoi.id,
+      equipe_a_id: m.teamA.id,
+      equipe_b_id: m.teamB.id,
+      tour: 1,
+      terrain: null as number | null,
+      type: 'poule',
+      poule: null as string | null,
+      status: 'a_jouer'
+    }))
+
+    if (formData.terrains > 0) {
+      const terrainAssignment = TirageService.smartTerrainAssignment(
+        matchesToCreate.map((m, idx) => ({
+          id: `tat_${idx}`, equipe_a_id: m.equipe_a_id, equipe_b_id: m.equipe_b_id, tour: 1
+        })),
+        formData.terrains
+      )
+      matchesToCreate.forEach((m, idx) => { m.terrain = terrainAssignment.get(`tat_${idx}`) || null })
+    }
+
+    const matchesResp = await fetch('/api/matches/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ matches: matchesToCreate })
+    })
+    if (!matchesResp.ok) {
+      const e = await matchesResp.json().catch(() => ({ error: 'Erreur serveur' }))
+      throw new Error(e.error || 'Erreur lors de la création des matchs de la ronde 1')
     }
   }, [formData])
 
@@ -403,7 +498,11 @@ export function useTournamentCreation({
           notify.warning(`${unassigned} joueur(s) non assigné(s) en raison de la mixité`)
         }
 
-        await createPoolMatches(tournoi)
+        if (formData.format === 'tete_a_tete' && formData.mode === 'melee_tournante') {
+          await createMeleeTeteATeteFirstRound(tournoi)
+        } else {
+          await createPoolMatches(tournoi)
+        }
 
         // Mettre à jour le tournoi
         await fetch(`/api/tournois/${tournoi.id}`, {
@@ -432,7 +531,7 @@ export function useTournamentCreation({
   }, [
     user, organization, router, refreshOrganization,
     formData, availablePlayers, getEstimatedTeams,
-    createTeamsWithMixity, createPoolMatches
+    createTeamsWithMixity, createPoolMatches, createMeleeTeteATeteFirstRound
   ])
 
   return {

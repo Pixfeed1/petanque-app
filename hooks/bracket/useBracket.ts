@@ -30,6 +30,7 @@ export interface Tournament {
   id: string
   name: string
   org_id?: string
+  mode?: string
   settings: {
     consolante?: boolean
   }

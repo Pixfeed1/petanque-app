@@ -123,7 +123,8 @@ export function useRotation({
       )
       if (players.length === 0) return null
 
-      const teamSize = tournament.format === 'doublette' ? 2 : 3
+      const isTeteATete = tournament.format === 'tete_a_tete'
+      const teamSize = isTeteATete ? 1 : (tournament.format === 'doublette' ? 2 : 3)
       const newRotation = currentRotation + 1
       let teamNumber = 1
 
@@ -132,7 +133,16 @@ export function useRotation({
       const isFirstRotation = currentRotation === 1 && teams.filter(t => t.name.startsWith('R')).length === 0
       const needsMixite = tournament.settings.mixiteObligatoire || false
 
-      if (isFirstRotation || needsMixite) {
+      if (isTeteATete) {
+        // Tête-à-tête : 1 joueur = 1 équipe, identité STABLE entre rotations.
+        // Ordre = settings.players, pour que rotation r corresponde à la ronde de Berger r
+        // (chaque joueur affronte un nouvel adversaire, sans répétition).
+        const order = tournament.settings.players
+        const sortedPlayers = [...players].sort(
+          (a: Joueur, b: Joueur) => order.indexOf(a.id) - order.indexOf(b.id)
+        )
+        teamCompositions = sortedPlayers.map((p: Joueur) => ({ joueur_ids: [p.id] }))
+      } else if (isFirstRotation || needsMixite) {
         if (needsMixite) {
           const genderValidation = MixiteService.validatePlayerGenders(players, true)
           if (!genderValidation.valid) {
@@ -212,7 +222,11 @@ export function useRotation({
       name: t.name
     }))
 
-    const bergerMatches = TirageService.generateBergerMatches(virtualTeams, null)
+    // Tête-à-tête : une rotation = UNE ronde de Berger (chaque joueur un nouvel adversaire).
+    // Doublette/triplette : round-robin complet sur les équipes rebrassées (comportement existant).
+    const bergerMatches = tournament.format === 'tete_a_tete'
+      ? TirageService.bergerRoundForRotation(virtualTeams, rotationNumber)
+      : TirageService.generateBergerMatches(virtualTeams, null)
 
     const terrains = tournament.settings.terrains || 0
     let terrainMap: Map<string, number> | null = null

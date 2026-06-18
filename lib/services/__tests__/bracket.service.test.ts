@@ -33,7 +33,7 @@ function generateEliminationPhases(nbQualified: number): TM[] {
     if (p.isBye) {
       out.push({ type: 'bye', status: 'termine', equipe_a_id: p.teamA.id, equipe_b_id: null, score_a: 0, score_b: 0, equipe_a: p.teamA })
     } else if (p.teamB) {
-      out.push({ type: firstType, status: 'a_jouer', equipe_a_id: p.teamA.id, equipe_b_id: p.teamB.id, equipe_a: p.teamA, equipe_b: p.teamB })
+      out.push({ type: firstType, status: 'a_jouer', equipe_a_id: p.teamA.id, equipe_b_id: p.teamB.id, score_a: null, score_b: null, equipe_a: p.teamA, equipe_b: p.teamB })
     }
   }
   return out

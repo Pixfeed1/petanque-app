@@ -84,6 +84,7 @@ export default function ExportTournamentPage() {
 
       <TournamentSubNav
         tournoiId={tournoiId}
+        mode={tournament?.mode}
         currentPage="export"
         baseRole={baseRole}
         viewRole={viewRole}

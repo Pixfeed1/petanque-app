@@ -41,6 +41,7 @@ export default function TournamentDetailPage() {
   const [showStartModal, setShowStartModal] = useState(false)
   const [previewRole, setPreviewRole] = useState<ViewRole | null>(null)
   const [showRoleMenu, setShowRoleMenu] = useState(false)
+  const [showActionsMenu, setShowActionsMenu] = useState(false)
   const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(new Set())
   const [matchsFilter, setMatchsFilter] = useState<'all' | 'a_venir' | 'en_cours' | 'termine'>('all')
 
@@ -97,7 +98,7 @@ export default function TournamentDetailPage() {
     onConfirmTerrainConflict: handleConfirmTerrainConflict
   })
 
-  const { isRotationAvailable, reformTeamsForRotation } = useRotation({
+  const { currentRotation, isRotationAvailable, reformTeamsForRotation } = useRotation({
     tournament, teams, matches, loadTournamentData,
     onSuccess: showSuccess, onError: showError, onWarning: showWarning
   })
@@ -217,6 +218,63 @@ export default function TournamentDetailPage() {
     } catch (error) { console.error('Erreur démarrage tournoi:', error) }
   }
 
+  // Met à jour le statut du tournoi (clôture / réouverture) via l'API
+  const updateTournamentStatus = async (status: 'en_cours' | 'termine') => {
+    if (!tournament) return false
+    try {
+      const response = await fetch(`/api/tournois/${tournament.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status })
+      })
+      if (!response.ok) { showError('Échec de la mise à jour du tournoi.'); return false }
+      setTournament({ ...tournament, status })
+      return true
+    } catch (error) {
+      console.error('Erreur mise à jour statut tournoi:', error)
+      showError('Erreur lors de la mise à jour du tournoi.')
+      return false
+    }
+  }
+
+  // Clôture le tournoi. En mêlée tournante, le classement individuel devient le résultat final.
+  const handleFinishTournament = async () => {
+    if (!tournament) return
+    setShowActionsMenu(false)
+    const isMelee = tournament.mode === 'melee_tournante'
+    const ok = await confirm({
+      title: 'Clôturer le tournoi',
+      message: isMelee
+        ? 'Le tournoi sera figé et le classement individuel deviendra le résultat final. Plus aucune rotation ne sera possible.'
+        : 'Le tournoi sera marqué comme terminé. Tu pourras toujours le rouvrir ensuite.',
+      confirmText: 'Clôturer',
+      variant: 'warning'
+    })
+    if (!ok) return
+    if (await updateTournamentStatus('termine')) {
+      showSuccess('Tournoi clôturé.')
+      await loadTournamentData()
+    }
+  }
+
+  // Rouvre un tournoi clôturé (repasse en cours)
+  const handleReopenTournament = async () => {
+    if (!tournament) return
+    setShowActionsMenu(false)
+    const ok = await confirm({
+      title: 'Rouvrir le tournoi',
+      message: 'Le tournoi repassera « en cours ». Tu pourras de nouveau saisir des scores et, en mêlée tournante, lancer des rotations.',
+      confirmText: 'Rouvrir',
+      variant: 'warning'
+    })
+    if (!ok) return
+    if (await updateTournamentStatus('en_cours')) {
+      showSuccess('Tournoi rouvert.')
+      await loadTournamentData()
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-petanque-sable-pale flex items-center justify-center">
@@ -246,6 +304,13 @@ export default function TournamentDetailPage() {
   // Mode choisi : guider vers la composition tant qu'il manque des équipes (min 4 pour démarrer)
   const needsTeams = tournament.mode === 'choisi' && teams.length < 4
   const statusLabel = tournament.status === 'preparation' ? 'Préparation' : tournament.status === 'en_cours' ? 'En cours' : 'Terminé'
+  const formatLabel = tournament.format === 'tete_a_tete' ? 'Tête-à-tête' : tournament.format === 'doublette' ? 'Doublettes' : 'Triplettes'
+  const isMelee = tournament.mode === 'melee_tournante'
+  // En mêlée tournante, le nombre d'équipes cumule les rotations (R1-, R2-, …) → ne pas l'afficher.
+  // On affiche le nombre réel de joueurs + la rotation courante.
+  const playerCount = Array.isArray(tournament.settings?.players)
+    ? (tournament.settings.players as string[]).length
+    : teams.length
 
   // Section helper
   const sections: { id: ActiveSection; label: string; meta?: string }[] = [
@@ -284,12 +349,63 @@ export default function TournamentDetailPage() {
                 </span>
               )}
             </div>
-            <button className="w-8 h-8 border border-petanque-sable-bord/60 bg-white rounded-lg text-petanque-bois hover:text-petanque-vert-fonce flex items-center justify-center text-sm">⋯</button>
+            <div className="relative flex-shrink-0">
+              <button
+                onClick={() => setShowActionsMenu(v => !v)}
+                aria-haspopup="menu"
+                aria-expanded={showActionsMenu}
+                aria-label="Actions du tournoi"
+                className="w-8 h-8 border border-petanque-sable-bord/60 bg-white rounded-lg text-petanque-bois hover:text-petanque-vert-fonce flex items-center justify-center text-sm"
+              >⋯</button>
+              {showActionsMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowActionsMenu(false)} />
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-petanque-sable-bord rounded-lg shadow-lg py-1 z-50 min-w-[220px]">
+                    {isAdmin && tournament.status === 'en_cours' && (
+                      <button
+                        onClick={handleFinishTournament}
+                        className="w-full text-left px-3 py-2.5 text-sm text-petanque-vert-fonce hover:bg-petanque-sable-pale flex items-start gap-2.5"
+                      >
+                        <Flag className="w-4 h-4 mt-0.5 flex-shrink-0 text-petanque-cochonnet" />
+                        <span>
+                          <span className="block font-medium">Clôturer le tournoi</span>
+                          <span className="block text-[11px] text-petanque-bois">
+                            {tournament.mode === 'melee_tournante'
+                              ? 'Fige le classement individuel comme résultat final'
+                              : 'Marque le tournoi comme terminé'}
+                          </span>
+                        </span>
+                      </button>
+                    )}
+                    {isAdmin && tournament.status === 'termine' && (
+                      <button
+                        onClick={handleReopenTournament}
+                        className="w-full text-left px-3 py-2.5 text-sm text-petanque-vert-fonce hover:bg-petanque-sable-pale flex items-start gap-2.5"
+                      >
+                        <Refresh className="w-4 h-4 mt-0.5 flex-shrink-0 text-petanque-vert" />
+                        <span className="font-medium">Rouvrir le tournoi</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => { setShowActionsMenu(false); router.push(`/tournoi/${tournament.id}/export`) }}
+                      className="w-full text-left px-3 py-2.5 text-sm text-petanque-vert-fonce hover:bg-petanque-sable-pale flex items-center gap-2.5"
+                    >
+                      <Grid className="w-4 h-4 flex-shrink-0 text-petanque-bois" />
+                      <span className="font-medium">Exporter / imprimer</span>
+                    </button>
+                    {!isAdmin && tournament.status !== 'termine' && (
+                      <p className="px-3 py-2 text-[11px] text-petanque-bois italic">Aucune autre action disponible</p>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
       <TournamentSubNav
         tournoiId={tournament.id}
+        mode={tournament.mode}
         currentPage="apercu"
         currentSection={activeSection}
         onSectionChange={(id) => setActiveSection(id as any)}
@@ -332,8 +448,10 @@ export default function TournamentDetailPage() {
               </h2>
               <p className="text-base text-petanque-bois">
                 Mode <span className="text-petanque-vert font-medium">{tournament.mode === 'choisi' ? 'choisi' : tournament.mode === 'melee_fixe' ? 'mêlée fixe' : 'mêlée tournante'}</span>
-                {' · '}{tournament.format === 'doublette' ? 'Doublettes' : 'Triplettes'}
-                {' · '}{teams.length} équipes
+                {' · '}{formatLabel}
+                {' · '}{isMelee
+                  ? <>{playerCount} joueur{playerCount > 1 ? 's' : ''}{tournament.status !== 'preparation' ? ` · Rotation ${currentRotation}` : ''}</>
+                  : <>{teams.length} équipe{teams.length > 1 ? 's' : ''}</>}
                 {' · '}{tournament.settings.terrains} terrain{tournament.settings.terrains > 1 ? 's' : ''}
               </p>
             </FadeIn>
@@ -626,7 +744,7 @@ export default function TournamentDetailPage() {
               </FadeIn>
             )}
 
-            {/* PODIUM (terminé) */}
+            {/* PODIUM (terminé) — en mêlée tournante, le podium = classement individuel */}
             {tournament.status === 'termine' && (
               <FadeIn delay={160}>
                 <div className="mt-10 grid grid-cols-3 gap-4">
@@ -635,7 +753,7 @@ export default function TournamentDetailPage() {
                     { rank: 2, label: '2e place', boule: 'cochonnet' as const },
                     { rank: 3, label: '3e place', boule: 'vert' as const },
                   ].map((p, i) => {
-                    const winner = teamsWithStats[i]
+                    const winner = isMelee ? individualRankings[i] : teamsWithStats[i]
                     if (!winner) return null
                     return (
                       <div key={p.rank} className="bg-white border border-petanque-sable-bord/60 rounded-xl p-5 text-center">
@@ -649,9 +767,15 @@ export default function TournamentDetailPage() {
                   })}
                 </div>
                 <div className="text-center mt-6">
-                  <Button variant="primary" onClick={() => router.push(`/tournoi/${tournament.id}/podium`)}>
-                    <Trophy className="w-4 h-4 mr-1.5" />Voir le podium détaillé
-                  </Button>
+                  {isMelee ? (
+                    <Button variant="primary" onClick={() => setActiveSection('classement')}>
+                      <Trophy className="w-4 h-4 mr-1.5" />Voir le classement complet
+                    </Button>
+                  ) : (
+                    <Button variant="primary" onClick={() => router.push(`/tournoi/${tournament.id}/podium`)}>
+                      <Trophy className="w-4 h-4 mr-1.5" />Voir le podium détaillé
+                    </Button>
+                  )}
                 </div>
               </FadeIn>
             )}
