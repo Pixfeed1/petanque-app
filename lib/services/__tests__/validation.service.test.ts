@@ -176,6 +176,48 @@ describe('ValidationService', () => {
       expect(result.valid).toBe(false)
       expect(result.error).toContain('Score maximum')
     })
+
+    // ── Points personnalisés (maxPoints ≠ 13, chemin Club) ──────────────
+    describe('points personnalisés (maxPoints ≠ 13)', () => {
+      it('11-8 en jeu à 11 → valide', () => {
+        expect(validateScore(11, 8, 11).valid).toBe(true)
+      })
+      it('21-19 en jeu à 21 → valide', () => {
+        expect(validateScore(21, 19, 21).valid).toBe(true)
+      })
+      it('12-8 en jeu à 11 → invalide (au-dessus de maxPoints)', () => {
+        const result = validateScore(12, 8, 11)
+        expect(result.valid).toBe(false)
+        expect(result.error).toContain('Score maximum')
+      })
+      it('11-11 en jeu à 11 → invalide (deux à maxPoints)', () => {
+        const result = validateScore(11, 11, 11)
+        expect(result.valid).toBe(false)
+        expect(result.error).toContain('simultanément')
+      })
+    })
+
+    // ── Limite de temps & élimination ───────────────────────────────────
+    describe('limite de temps', () => {
+      it('10-7 au temps limite (allowTimeLimitEnd) → valide', () => {
+        expect(validateScore(10, 7, 13, { allowTimeLimitEnd: true }).valid).toBe(true)
+      })
+      it('10-7 sans temps limite → invalide (doit atteindre 13)', () => {
+        const result = validateScore(10, 7, 13, { allowTimeLimitEnd: false })
+        expect(result.valid).toBe(false)
+        expect(result.error).toContain('13')
+      })
+      it('8-8 au temps limite en élimination → invalide (le meneur gagne)', () => {
+        const result = validateScore(8, 8, 13, { allowTimeLimitEnd: true, isElimination: true })
+        expect(result.valid).toBe(false)
+        expect(result.error).toContain('éliminatoire')
+      })
+      it('8-8 au temps limite hors élimination → valide (validateScore tolère le nul en poule)', () => {
+        // NB : la route applique l'option (a) et refusera ce nul ; ici on teste
+        // validateScore seul, qui tolère l'égalité en poule au temps limite.
+        expect(validateScore(8, 8, 13, { allowTimeLimitEnd: true, isElimination: false }).valid).toBe(true)
+      })
+    })
   })
 
   describe('validatePouleNames', () => {
