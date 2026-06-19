@@ -9,6 +9,7 @@ import { MatchRawDB, MatchWithEquipes, SQLValue } from '@/lib/types'
 import { emitTournamentEvent } from '@/lib/tournament-events'
 import { parseDeType } from '@/lib/services/doubleElimination.service'
 import { computeTargetState, type DEStoredRow } from '@/lib/services/doubleEliminationIntegration'
+import { validateScore } from '@/lib/services/validation.service'
 
 // Parse défensif des settings de tournoi : un JSON malformé ne doit pas faire
 // planter (500) la page match. Fallback null si la chaîne n'est pas du JSON valide.
@@ -263,10 +264,6 @@ export async function PUT(
         // 🔧 FIX: Permettre les égalités SEULEMENT pour les matchs BYE (équipe_b null)
         const isByeMatch = existingMatch.type === 'bye' || !existingMatch.equipe_b_id
 
-        if (!isByeMatch && scoreA === scoreB) {
-          return apiError('Un match de pétanque ne peut pas se terminer sur une égalité', 400)
-        }
-
         // Récupérer les settings du tournoi
         const tournoiQuery = await query(
           'SELECT settings FROM tournois WHERE id = $1',
@@ -276,15 +273,28 @@ export async function PUT(
         const maxPoints = settings.maxPoints || 13
         const timeLimit = settings.timeLimit || false
 
-        // Validation des scores de fin de match (règles pétanque)
-        if (!isByeMatch && !timeLimit) {
-          const oneReachesMax = scoreA === maxPoints || scoreB === maxPoints
-          const noneExceedsMax = scoreA <= maxPoints && scoreB <= maxPoints
-          if (!oneReachesMax || !noneExceedsMax) {
-            return apiError(
-              `Score invalide (${scoreA}-${scoreB}). Exactement une équipe doit atteindre ${maxPoints} points, l'autre doit être en dessous.`,
-              400
-            )
+        // Source de vérité UNIQUE pour la validation de fin de match : validateScore.
+        // isElimination = phase à élimination (élim simple OU double "de:*"), où le
+        // meneur au temps limite gagne (pas d'égalité possible).
+        const matchTypeStr = (existingMatch.type as string) || ''
+        const isElimination =
+          matchTypeStr.startsWith('de:') ||
+          ['huitieme', 'quart', 'demi', 'finale', 'petite_finale'].includes(matchTypeStr)
+
+        if (!isByeMatch) {
+          const scoreCheck = validateScore(scoreA, scoreB, maxPoints, {
+            allowTimeLimitEnd: timeLimit,
+            isElimination,
+          })
+          if (!scoreCheck.valid) {
+            return apiError(scoreCheck.error!, 400)
+          }
+
+          // Option (a) — conservateur : aucune égalité hors BYE (zéro régression vs prod).
+          // validateScore tolère un nul en poule au temps limite ; on le refuse ici pour
+          // préserver le comportement actuel. Passer en option (b) = retirer ce bloc.
+          if (scoreA === scoreB) {
+            return apiError('Un match de pétanque ne peut pas se terminer sur une égalité', 400)
           }
         }
 
