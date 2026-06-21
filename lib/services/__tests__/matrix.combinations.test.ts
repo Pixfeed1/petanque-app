@@ -27,7 +27,6 @@ import {
 } from '../stats.service'
 import { MixiteService } from '../mixite.service'
 import * as ValidationService from '../validation.service'
-import { getFeaturesForPlan, getOrgLimit, hasOrgFeature } from '../../plans'
 import type { Match } from '@/lib/types'
 
 // ─── HELPERS ────────────────────────────────────────────────────
@@ -335,28 +334,6 @@ describe('MATRICE — MÊLÉE TOURNANTE (effectif non divisible : exempt tournan
   }
 })
 
-// ════════════════════════════════════════════════════════════════
-// MATRICE 4 — PLANS (limites & features)
-// ════════════════════════════════════════════════════════════════
-
-describe('MATRICE — PLANS (limites & features)', () => {
-  const expected: Record<string, any> = {
-    free:      { max_tournois: 1,    max_equipes: 8,    advanced_stats: false, custom_rules: false, club_customization: false },
-    essentiel: { max_tournois: null, max_equipes: null, advanced_stats: false, custom_rules: false, club_customization: false },
-    club:      { max_tournois: null, max_equipes: null, advanced_stats: true,  custom_rules: true,  club_customization: true },
-  }
-
-  for (const plan of Object.keys(expected)) {
-    it(`plan ${plan} → limites & features correctes`, () => {
-      const settings = { plan, features: getFeaturesForPlan(plan) }
-      expect(getOrgLimit(settings, 'max_tournois')).toBe(expected[plan].max_tournois)
-      expect(getOrgLimit(settings, 'max_equipes')).toBe(expected[plan].max_equipes)
-      expect(hasOrgFeature(settings, 'advanced_stats')).toBe(expected[plan].advanced_stats)
-      expect(hasOrgFeature(settings, 'custom_rules')).toBe(expected[plan].custom_rules)
-      expect(hasOrgFeature(settings, 'club_customization')).toBe(expected[plan].club_customization)
-    })
-  }
-})
 
 // ════════════════════════════════════════════════════════════════
 // MATRICE 5 — COMBOS INVALIDES (l'app doit les rejeter)

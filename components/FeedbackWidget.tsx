@@ -18,8 +18,6 @@ interface FeedbackEntry {
 
 export function FeedbackWidget() {
   const { user, isAuthenticated } = useAuth()
-  const [betaEnabled, setBetaEnabled] = useState(false)
-  const [betaMessage, setBetaMessage] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [category, setCategory] = useState('general')
@@ -27,16 +25,6 @@ export function FeedbackWidget() {
   const [sent, setSent] = useState(false)
   const [myFeedbacks, setMyFeedbacks] = useState<FeedbackEntry[]>([])
   const [showHistory, setShowHistory] = useState(false)
-
-  useEffect(() => {
-    fetch('/api/beta-status')
-      .then(r => r.json())
-      .then(data => {
-        setBetaEnabled(data.enabled)
-        setBetaMessage(data.message || '')
-      })
-      .catch(() => {})
-  }, [])
 
   useEffect(() => {
     if (isOpen && isAuthenticated && showHistory) {
@@ -47,7 +35,7 @@ export function FeedbackWidget() {
     }
   }, [isOpen, isAuthenticated, showHistory])
 
-  if (!betaEnabled || !isAuthenticated) return null
+  if (!isAuthenticated) return null
 
   const handleSubmit = async () => {
     if (!message.trim() || message.trim().length < 5) return
@@ -128,11 +116,10 @@ export function FeedbackWidget() {
             </div>
           </div>
 
-          {/* Message beta */}
+          {/* Contact direct */}
           <div className="border-b border-petanque-sable-bord bg-petanque-vert-pale px-5 py-4">
-            <p className="text-sm text-petanque-vert-fonce">{betaMessage}</p>
-            <p className="mt-2 text-xs text-petanque-bois">
-              Ou écrivez-nous : <a href="mailto:support@petanquepro.fr" className="font-medium text-petanque-vert underline">support@petanquepro.fr</a>
+            <p className="text-xs text-petanque-bois">
+              Une question ? Écrivez-nous : <a href="mailto:support@petanquepro.fr" className="font-medium text-petanque-vert underline">support@petanquepro.fr</a>
             </p>
           </div>
 

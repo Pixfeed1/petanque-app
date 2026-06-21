@@ -51,11 +51,6 @@ export default function AdminFeedback() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
 
-  const [betaEnabled, setBetaEnabled] = useState(false)
-  const [betaMessage, setBetaMessage] = useState('')
-  const [togglingBeta, setTogglingBeta] = useState(false)
-  const [savedHint, setSavedHint] = useState(false)
-
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
   const [stats, setStats] = useState<FeedbackStats>({ total: 0, new: 0, read: 0, replied: 0 })
   const [loading, setLoading] = useState(true)
@@ -67,7 +62,6 @@ export default function AdminFeedback() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      fetchBetaStatus()
       fetchFeedbacks()
     }
   }, [authLoading, user])
@@ -75,44 +69,6 @@ export default function AdminFeedback() {
   useEffect(() => {
     if (user) fetchFeedbacks()
   }, [filter, filterEmail])
-
-  const fetchBetaStatus = async () => {
-    try {
-      const res = await fetch('/api/admin/beta-mode', { credentials: 'include' })
-      if (res.ok) {
-        const data = await res.json()
-        setBetaEnabled(data.enabled)
-        setBetaMessage(data.message || '')
-      }
-    } catch {}
-  }
-
-  const toggleBeta = async () => {
-    setTogglingBeta(true)
-    try {
-      const res = await fetch('/api/admin/beta-mode', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ enabled: !betaEnabled, message: betaMessage })
-      })
-      if (res.ok) setBetaEnabled(!betaEnabled)
-    } catch {}
-    setTogglingBeta(false)
-  }
-
-  const saveBetaMessage = async () => {
-    try {
-      await fetch('/api/admin/beta-mode', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ enabled: betaEnabled, message: betaMessage })
-      })
-      setSavedHint(true)
-      setTimeout(() => setSavedHint(false), 2000)
-    } catch {}
-  }
 
   const fetchFeedbacks = async () => {
     setLoading(true)
@@ -200,58 +156,6 @@ export default function AdminFeedback() {
         </p>
       </FadeIn>
 
-      {/* SECTION 01 : Mode Beta */}
-      <FadeIn delay={80}>
-        <section className="pb-10 mb-10 border-b border-petanque-sable-bord/50">
-          <p className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] mb-1.5">01</p>
-          <div className="flex items-start justify-between gap-6 mb-5">
-            <div className="flex-1">
-              <h2 className="text-lg md:text-xl font-medium text-petanque-vert-fonce mb-2 tracking-tight">
-                Mode beta
-              </h2>
-              <p className="text-sm text-petanque-bois leading-relaxed max-w-2xl">
-                Quand actif, toutes les fonctionnalités sont gratuites pour les utilisateurs et le bouton « Donnez-nous votre avis » apparaît à droite de leur écran.
-              </p>
-            </div>
-            <button
-              onClick={toggleBeta}
-              disabled={togglingBeta}
-              className={'relative inline-flex h-7 w-14 items-center rounded-full transition-colors flex-shrink-0 ' + (
-                betaEnabled ? 'bg-petanque-vert' : 'bg-petanque-sable-bord'
-              )}
-            >
-              <span className={'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ' + (
-                betaEnabled ? 'translate-x-8' : 'translate-x-1'
-              )} />
-            </button>
-          </div>
-
-          {betaEnabled && (
-            <div className="space-y-3">
-              <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em]">
-                Message affiché aux utilisateurs
-              </p>
-              <textarea
-                value={betaMessage}
-                onChange={e => setBetaMessage(e.target.value)}
-                rows={2}
-                className="w-full px-3 py-2 border border-petanque-sable-bord rounded-lg text-sm resize-none focus:ring-2 focus:ring-petanque-vert/30 focus:border-petanque-vert bg-white text-petanque-vert-fonce placeholder:text-petanque-bois/60"
-              />
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={saveBetaMessage}
-                  className="px-4 py-2 bg-petanque-vert text-petanque-sable rounded-lg text-sm font-medium hover:bg-petanque-vert-fonce transition-colors"
-                >
-                  Sauvegarder
-                </button>
-                {savedHint && (
-                  <span className="text-xs text-petanque-vert font-mono">✓ Sauvegardé</span>
-                )}
-              </div>
-            </div>
-          )}
-        </section>
-      </FadeIn>
 
       {/* SECTION 02 : Stats */}
       <FadeIn delay={140}>

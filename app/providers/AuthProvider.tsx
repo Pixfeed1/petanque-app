@@ -33,7 +33,6 @@ interface AuthContextType {
   refreshOrganization: () => Promise<void>
   isAuthenticated: boolean
   isPremium: boolean
-  isBetaMode: boolean
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -44,8 +43,7 @@ const AuthContext = createContext<AuthContextType>({
   updateUserPlan: async () => false,
   refreshOrganization: async () => {},
   isAuthenticated: false,
-  isPremium: false,
-  isBetaMode: false
+  isPremium: true
 })
 
 export const useAuth = () => useContext(AuthContext)
@@ -56,7 +54,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [organization, setOrganization] = useState<Organization | null>(null)
-  const [betaMode, setBetaMode] = useState(false)
 
   useEffect(() => {
     checkUser()
@@ -104,7 +101,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('✅ Session récupérée:', data.user.email)
         setUser(data.user)
         setOrganization(data.organization)
-        setBetaMode(!!data.betaMode)
       } else {
         console.log('ℹ️ Aucune session active')
         setUser(null)
@@ -197,8 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateUserPlan,
     refreshOrganization,
     isAuthenticated: !!user,
-    isPremium: betaMode || ['essentiel', 'club'].includes(String(organization?.settings?.plan || '')),
-    isBetaMode: betaMode
+    isPremium: true
   }
 
   // Logs de debug en développement
