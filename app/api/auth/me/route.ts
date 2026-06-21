@@ -4,7 +4,6 @@
 import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError } from '@/lib/middleware'
 import { queryOne } from '@/lib/db'
-import { getFeaturesForPlanAsync, isBetaModeEnabled } from '@/lib/plans'
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,17 +32,19 @@ export async function GET(request: NextRequest) {
       [user.id, organisation?.id]
     )
 
-    const plan = organisation?.settings?.plan || 'free'
-    const betaMode = await isBetaModeEnabled()
-    const planFeatures = await getFeaturesForPlanAsync(plan)
-
+    // Gratuit pour tous — état entièrement débloqué en dur (plus de plans).
     return apiSuccess({
       user,
       organization: organisation,
       role: role?.role || 'member',
-      isPremium: betaMode || ['essentiel', 'club'].includes(plan),
-      features: planFeatures,
-      betaMode
+      isPremium: true,
+      features: {
+        advanced_stats: true,
+        custom_rules: true,
+        club_customization: true,
+        max_tournois: null,
+        max_equipes: null
+      }
     })
   } catch (error) {
     console.error('❌ Erreur /api/auth/me:', error)

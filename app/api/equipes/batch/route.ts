@@ -6,7 +6,6 @@ import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middlew
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { emitTournamentEvent } from '@/lib/tournament-events'
 import { query, queryOne, transaction } from '@/lib/db'
-import { getOrgLimitAsync } from '@/lib/plans'
 
 interface TeamInput {
   tournoi_id: string
@@ -68,13 +67,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const orgResult = await query(
-      `SELECT settings FROM organisations WHERE id = $1`,
-      [tournoi.org_id]
-    )
-    const orgSettings = orgResult.rows[0]?.settings || {}
-    const maxEquipes = await getOrgLimitAsync(orgSettings, 'max_equipes')
-
     const values: any[] = []
     const valueStrings: string[] = []
 
@@ -97,44 +89,17 @@ export async function POST(request: NextRequest) {
       RETURNING *
     `
 
-    // FIX BUG : transaction réelle via le helper transaction() qui partage
-    // un seul client PoolClient. Avant : query('BEGIN')/query('COMMIT')
-    // s'exécutaient sur des connexions différentes du pool, donc le verrou
-    // FOR UPDATE et la transaction étaient inopérants.
-    let existingCountForError = 0
-    try {
-      const inserted = await transaction(async (client) => {
-        if (maxEquipes !== null) {
-          const countResult = await client.query(
-            `SELECT COUNT(*) as count FROM equipes WHERE tournoi_id = $1 FOR UPDATE`,
-            [tournoiId]
-          )
-          const existingCount = parseInt(countResult.rows[0]?.count || '0')
-          existingCountForError = existingCount
-          if (existingCount + teams.length > maxEquipes) {
-            throw new Error('LIMIT_REACHED')
-          }
-        }
+    const inserted = await transaction(async (client) => {
+      const result = await client.query(insertQuery, values)
+      return result.rows
+    })
 
-        const result = await client.query(insertQuery, values)
-        return result.rows
-      })
+    emitTournamentEvent('team:created', tournoiId, { count: inserted.length })
 
-      emitTournamentEvent('team:created', tournoiId, { count: inserted.length })
-
-      return apiSuccess({
-        created: inserted.length,
-        teams: inserted
-      }, 201)
-    } catch (txError: any) {
-      if (txError?.message === 'LIMIT_REACHED') {
-        return apiError(
-          `Votre plan est limité à ${maxEquipes} équipes par tournoi (${existingCountForError} existantes). Passez au plan supérieur pour des équipes illimitées.`,
-          403
-        )
-      }
-      throw txError
-    }
+    return apiSuccess({
+      created: inserted.length,
+      teams: inserted
+    }, 201)
   } catch (error) {
     console.error('❌ Erreur POST /api/equipes/batch:', error)
     return apiError('Erreur lors de la création des équipes', 500)

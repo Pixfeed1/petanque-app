@@ -5,7 +5,6 @@ import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { queryMany, query } from '@/lib/db'
-import { getOrgLimitAsync, hasOrgFeatureAsync } from '@/lib/plans'
 
 // GET - Récupérer les tournois de l'organisation
 export async function GET(request: NextRequest) {
@@ -95,25 +94,6 @@ export async function POST(request: NextRequest) {
       return apiError('Accès refusé à cette organisation', 403)
     }
 
-    // Vérifier les limites du plan
-    const orgResult = await query(
-      `SELECT settings FROM organisations WHERE id = $1`,
-      [org_id]
-    )
-    const orgSettings = orgResult.rows[0]?.settings || {}
-
-    const maxTournois = await getOrgLimitAsync(orgSettings, 'max_tournois')
-    if (maxTournois !== null) {
-      const countResult = await query(
-        `SELECT COUNT(*) as count FROM tournois WHERE org_id = $1 AND status = 'en_cours'`,
-        [org_id]
-      )
-      const activeTournoiCount = parseInt(countResult.rows[0]?.count || '0')
-      if (activeTournoiCount >= maxTournois) {
-        return apiError(`Votre plan est limité à ${maxTournois} tournoi${maxTournois > 1 ? 's' : ''} actif${maxTournois > 1 ? 's' : ''} en cours. Terminez votre tournoi en cours ou passez au plan supérieur.`, 403)
-      }
-    }
-
     // Appliquer les valeurs par défaut aux settings
     const defaultSettings = {
       terrains: 4,
@@ -133,11 +113,6 @@ export async function POST(request: NextRequest) {
     // Valider maxPoints (range 7-25)
     if (mergedSettings.maxPoints < 7 || mergedSettings.maxPoints > 25) {
       return apiError('maxPoints doit être entre 7 et 25', 400)
-    }
-
-    // Règles personnalisées (maxPoints != 13) nécessitent le plan Club
-    if (mergedSettings.maxPoints !== 13 && !(await hasOrgFeatureAsync(orgSettings, 'custom_rules'))) {
-      return apiError('Les règles de tournoi personnalisées nécessitent le plan Club', 403)
     }
 
     // Stocker visibility dans settings

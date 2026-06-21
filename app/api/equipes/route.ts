@@ -5,7 +5,6 @@ import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { queryMany, query, queryOne, transaction } from '@/lib/db'
-import { getOrgLimitAsync } from '@/lib/plans'
 
 // GET - Récupérer les équipes d'un tournoi
 export async function GET(request: NextRequest) {
@@ -97,12 +96,6 @@ export async function POST(request: NextRequest) {
       return apiError('Accès non autorisé à ce tournoi', 403)
     }
 
-    const orgResult = await query(
-      `SELECT settings FROM organisations WHERE id = $1`,
-      [tournoi.org_id]
-    )
-    const orgSettings = orgResult.rows[0]?.settings || {}
-
     if (!name.trim()) {
       return apiError('Le nom de l\'équipe ne peut pas être vide', 400)
     }
@@ -121,41 +114,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const maxEquipes = await getOrgLimitAsync(orgSettings, 'max_equipes')
+    const created = await transaction(async (client) => {
+      const result = await client.query(
+        `INSERT INTO equipes (tournoi_id, name, joueur_ids, stats, created_at)
+         VALUES ($1, $2, $3::bigint[], $4::jsonb, NOW())
+         RETURNING *`,
+        [tournoi_id, name.trim(), Array.isArray(joueur_ids) ? joueur_ids : [], JSON.stringify(stats || {})]
+      )
+      return result.rows[0]
+    })
 
-    // FIX BUG : transaction réelle via le helper transaction() qui partage
-    // un seul client PoolClient. Avant : query('BEGIN') / query('COMMIT')
-    // s'exécutaient sur des connexions différentes du pool, donc le verrou
-    // FOR UPDATE et la transaction étaient inopérants.
-    try {
-      const created = await transaction(async (client) => {
-        if (maxEquipes !== null) {
-          const countResult = await client.query(
-            `SELECT COUNT(*) as count FROM equipes WHERE tournoi_id = $1 FOR UPDATE`,
-            [tournoi_id]
-          )
-          if (parseInt(countResult.rows[0]?.count || '0') >= maxEquipes) {
-            // throw pour rollback automatique par transaction()
-            throw new Error('LIMIT_REACHED')
-          }
-        }
-
-        const result = await client.query(
-          `INSERT INTO equipes (tournoi_id, name, joueur_ids, stats, created_at)
-           VALUES ($1, $2, $3::bigint[], $4::jsonb, NOW())
-           RETURNING *`,
-          [tournoi_id, name.trim(), Array.isArray(joueur_ids) ? joueur_ids : [], JSON.stringify(stats || {})]
-        )
-        return result.rows[0]
-      })
-
-      return apiSuccess(created, 201)
-    } catch (txError: any) {
-      if (txError?.message === 'LIMIT_REACHED') {
-        return apiError(`Votre plan est limité à ${maxEquipes} équipes par tournoi. Passez au plan supérieur pour des équipes illimitées.`, 403)
-      }
-      throw txError
-    }
+    return apiSuccess(created, 201)
   } catch (error) {
     console.error('❌ Erreur POST /api/equipes:', error)
     return apiError('Erreur lors de la création de l\'équipe', 500)
