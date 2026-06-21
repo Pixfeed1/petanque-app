@@ -78,8 +78,8 @@ export default function CreateTournamentPage() {
   else if (currentStep === 4) heroContent = <>Quelques <span className="accent-italic text-petanque-vert">réglages avant de lancer.</span></>
   else heroContent = <>Tout est prêt, <span className="accent-italic text-petanque-vert">on lance ?</span></>
 
-  const plan = (organization?.settings as Record<string, any>)?.plan
-  const isClubPlan = plan === 'club'
+  // Gratuit pour tous — toutes les options avancées débloquées (Phase 2 : retrait des plans).
+  const isClubPlan = true
 
   return (
     <div className="min-h-screen bg-petanque-sable-pale">
@@ -626,10 +626,9 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
         ))}
       </div>
 
-      <div className={`border-t border-petanque-sable-bord/50 pt-6 ${!isClubPlan ? 'opacity-60' : ''}`}>
+      <div className="border-t border-petanque-sable-bord/50 pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-petanque-cochonnet font-medium">Plan Club</span>
-          {!isClubPlan && <span className="text-xs text-petanque-bois italic">— passe au plan Club pour activer</span>}
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-petanque-bois font-medium">Options avancées</span>
         </div>
         <div className="space-y-4">
           <div>
