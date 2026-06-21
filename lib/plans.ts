@@ -102,33 +102,34 @@ export function getOrgLimit(
 // ── Versions async tenant compte du mode beta ──
 
 /**
- * Version async de hasOrgFeature — vérifie d'abord si le mode beta est actif.
- * Si oui, toutes les features sont débloquées.
+ * Version async de hasOrgFeature.
+ * Gratuit pour tous — voir Phase 2 pour le retrait des plans.
  */
 export async function hasOrgFeatureAsync(
-  orgSettings: Record<string, any>,
-  featureKey: 'advanced_stats' | 'custom_rules' | 'club_customization'
+  _orgSettings: Record<string, any>,
+  _featureKey: 'advanced_stats' | 'custom_rules' | 'club_customization'
 ): Promise<boolean> {
-  if (await isBetaModeEnabled()) return true
-  return hasOrgFeature(orgSettings, featureKey)
+  // Gratuit pour tous — toutes les features débloquées (Phase 2 : retrait des plans).
+  return true
 }
 
 /**
- * Version async de getOrgLimit — vérifie d'abord si le mode beta est actif.
- * Si oui, aucune limite (retourne null = illimité).
+ * Version async de getOrgLimit.
+ * Gratuit pour tous — voir Phase 2 pour le retrait des plans.
  */
 export async function getOrgLimitAsync(
-  orgSettings: Record<string, any>,
-  limitKey: 'max_tournois' | 'max_equipes'
+  _orgSettings: Record<string, any>,
+  _limitKey: 'max_tournois' | 'max_equipes'
 ): Promise<number | null> {
-  if (await isBetaModeEnabled()) return null
-  return getOrgLimit(orgSettings, limitKey)
+  // Gratuit pour tous — aucune limite (null = illimité). Phase 2 : retrait des plans.
+  return null
 }
 
 /**
- * Version async de getFeaturesForPlan — en mode beta, retourne les features Club.
+ * Version async de getFeaturesForPlan.
+ * Gratuit pour tous — voir Phase 2 pour le retrait des plans.
  */
-export async function getFeaturesForPlanAsync(plan: string): Promise<PlanFeatures> {
-  if (await isBetaModeEnabled()) return PLAN_FEATURES.club
-  return getFeaturesForPlan(plan)
+export async function getFeaturesForPlanAsync(_plan: string): Promise<PlanFeatures> {
+  // Gratuit pour tous — toujours le jeu de features « club ». Phase 2 : retrait des plans.
+  return PLAN_FEATURES.club
 }
