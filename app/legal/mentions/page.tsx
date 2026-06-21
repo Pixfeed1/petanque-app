@@ -39,7 +39,7 @@ export default function MentionsLegales() {
           L'ensemble du site (textes, illustrations, identité visuelle, code source, marque « Pétanque Pro ») est protégé par le droit français de la propriété intellectuelle. Toute reproduction, représentation, modification ou exploitation, totale ou partielle, sans autorisation écrite préalable de PixFeed EI est interdite.
         </LegalP>
         <LegalP>
-          Les marques et logos cités (Stripe, OVH, etc.) demeurent la propriété de leurs détenteurs respectifs.
+          Les marques et logos cités (OVH, etc.) demeurent la propriété de leurs détenteurs respectifs.
         </LegalP>
       </LegalSection>
 

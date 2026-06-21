@@ -3,7 +3,7 @@
 
 'use client'
 
-import { LegalLayout, LegalSection, Callout, PriceCard, LegalP, LegalList, LegalLI, LegalKV, LegalLink } from '@/components/legal'
+import { LegalLayout, LegalSection, Callout, LegalP, LegalList, LegalLI, LegalLink } from '@/components/legal'
 
 export default function Terms() {
   return (
@@ -39,82 +39,25 @@ export default function Terms() {
         </LegalP>
       </LegalSection>
 
-      <LegalSection num="04" title="Offres et tarifs">
+      <LegalSection num="04" title="Un service gratuit">
         <LegalP>
-          Pétanque Pro propose trois offres complémentaires :
+          Pétanque Pro est mis à disposition <strong>gratuitement</strong> et sans limitation de durée. Tournois et équipes illimités, tous les modes de jeu et toutes les options sont accessibles à chaque utilisateur, sans abonnement ni paiement.
         </LegalP>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5 mb-2">
-          <PriceCard
-            name="Gratuit"
-            price="0 €"
-            duration="Sans engagement"
-            features={[
-              '1 tournoi à la fois',
-              '8 équipes maximum',
-              'Toutes les fonctionnalités de base',
-              'Accès web'
-            ]}
-          />
-          <PriceCard
-            name="Essentiel"
-            price="9,99 €"
-            duration="par mois · sans engagement"
-            popular
-            features={[
-              'Tournois illimités',
-              'Équipes illimitées',
-              'Export PDF et Excel',
-              'Historique complet',
-              '<strong>Support prioritaire</strong>'
-            ]}
-          />
-          <PriceCard
-            name="Club"
-            price="19,99 €"
-            duration="par mois · sans engagement"
-            features={[
-              'Tout le plan Essentiel',
-              '<strong>Personnalisation club</strong>',
-              'Multi-organisateurs',
-              'Statistiques avancées',
-              'Page publique du club'
-            ]}
-          />
-        </div>
         <Callout label="Bon à savoir">
-          Le plan <strong>Gratuit</strong> est accessible sans limitation de durée. Tu peux passer à un plan payant à tout moment, et résilier sans frais via ton espace client.
+          Aucune carte bancaire n'est demandée et aucun paiement n'est requis. L'ensemble des fonctionnalités est inclus sans frais.
         </Callout>
       </LegalSection>
 
-      <LegalSection num="05" title="Paiement">
+      <LegalSection num="05" title="Résiliation et suspension">
         <LegalP>
-          Les paiements sont traités par <LegalLink href="https://stripe.com/fr" external>Stripe</LegalLink>, prestataire certifié PCI-DSS niveau 1. Aucune donnée bancaire n'est stockée sur les serveurs de PixFeed EI.
-        </LegalP>
-        <LegalKV label="Moyens acceptés" value="Carte bancaire, Apple Pay, Google Pay" />
-        <LegalKV label="Devise" value="Euros (€) TTC" />
-        <LegalKV label="TVA" value="Non applicable, art. 293 B du CGI" />
-        <LegalKV label="Facture" value="Disponible dans l'espace client après chaque paiement" />
-      </LegalSection>
-
-      <LegalSection num="06" title="Droit de rétractation">
-        <LegalP>
-          Conformément aux articles L.221-18 et suivants du Code de la consommation, tu disposes d'un délai de <strong className="text-petanque-vert-fonce">14 jours</strong> à compter de la souscription pour exercer ton droit de rétractation, sans avoir à justifier de motif ni à payer de pénalités.
-        </LegalP>
-        <Callout label="Renonciation au droit de rétractation">
-          En activant immédiatement les fonctionnalités payantes (ex : créer un second tournoi avec le plan Essentiel), tu renonces expressément à ce droit de rétractation, conformément à l'article L.221-28 13° du Code de la consommation.
-        </Callout>
-      </LegalSection>
-
-      <LegalSection num="07" title="Reconduction et résiliation">
-        <LegalP>
-          Les abonnements payants sont mensuels et reconduits tacitement chaque mois. Tu peux les résilier à tout moment depuis ton espace client. La résiliation prend effet à la fin du mois en cours déjà payé, sans remboursement au prorata.
+          Tu peux cesser d'utiliser le service et supprimer ton compte à tout moment depuis ton espace, sans frais ni justification.
         </LegalP>
         <LegalP>
           PixFeed EI se réserve le droit de suspendre ou clôturer un compte en cas de manquement grave aux présentes CGV (fraude, abus, contenu illicite), après notification préalable.
         </LegalP>
       </LegalSection>
 
-      <LegalSection num="08" title="Obligations de l'utilisateur">
+      <LegalSection num="06" title="Obligations de l'utilisateur">
         <LegalP>Tu t'engages à :</LegalP>
         <LegalList>
           <LegalLI>Fournir des informations exactes lors de l'inscription</LegalLI>
@@ -125,7 +68,7 @@ export default function Terms() {
         </LegalList>
       </LegalSection>
 
-      <LegalSection num="09" title="Responsabilité de PixFeed EI">
+      <LegalSection num="07" title="Responsabilité de PixFeed EI">
         <LegalP>
           PixFeed EI s'engage à fournir le service avec diligence et selon les règles de l'art. Toutefois, la responsabilité de PixFeed EI ne saurait être engagée :
         </LegalP>
@@ -136,26 +79,26 @@ export default function Terms() {
           <LegalLI>pour les contenus saisis par les utilisateurs</LegalLI>
         </LegalList>
         <LegalP>
-          En tout état de cause, la responsabilité de PixFeed EI est plafonnée au montant des sommes versées par l'utilisateur au cours des 12 derniers mois.
+          En tout état de cause, la responsabilité de PixFeed EI est limitée aux dommages directs et prévisibles, à l'exclusion de tout dommage indirect. Le service étant fourni gratuitement, il l'est en l'état, sans garantie de disponibilité ininterrompue.
         </LegalP>
       </LegalSection>
 
-      <LegalSection num="10" title="Propriété intellectuelle">
+      <LegalSection num="08" title="Propriété intellectuelle">
         <LegalP>
-          PixFeed EI conserve l'ensemble des droits de propriété intellectuelle sur Pétanque Pro (code, design, marque). Tu disposes uniquement d'un droit d'usage personnel, non exclusif et non transférable, pour la durée de ton abonnement.
+          PixFeed EI conserve l'ensemble des droits de propriété intellectuelle sur Pétanque Pro (code, design, marque). Tu disposes uniquement d'un droit d'usage personnel, non exclusif et non transférable, pour la durée d'utilisation du service.
         </LegalP>
         <LegalP>
           Les contenus que tu crées (tournois, joueurs, scores) restent ta propriété. Tu accordes à PixFeed EI une licence limitée pour les héberger et les afficher dans le cadre du service.
         </LegalP>
       </LegalSection>
 
-      <LegalSection num="11" title="Données personnelles">
+      <LegalSection num="09" title="Données personnelles">
         <LegalP>
           Le traitement de tes données personnelles est détaillé dans la <LegalLink href="/legal/privacy">politique de confidentialité</LegalLink>, partie intégrante des présentes CGV.
         </LegalP>
       </LegalSection>
 
-      <LegalSection num="12" title="Droit applicable et médiation">
+      <LegalSection num="10" title="Droit applicable et médiation">
         <LegalP>
           Les présentes CGV sont régies par le droit français. En cas de litige, une solution amiable sera recherchée avant toute action judiciaire.
         </LegalP>

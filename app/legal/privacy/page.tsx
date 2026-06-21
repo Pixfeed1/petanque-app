@@ -28,7 +28,6 @@ export default function PrivacyPolicy() {
           <LegalLI><strong>Compte utilisateur</strong> : email, mot de passe chiffré, nom complet, photo de profil (optionnel)</LegalLI>
           <LegalLI><strong>Organisation</strong> : nom du club, ville, type d'organisation</LegalLI>
           <LegalLI><strong>Tournois et joueurs</strong> : noms, scores, statistiques saisies par l'utilisateur</LegalLI>
-          <LegalLI><strong>Paiement</strong> : géré exclusivement par Stripe, aucune donnée bancaire n'est stockée sur nos serveurs</LegalLI>
           <LegalLI><strong>Technique</strong> : adresse IP, type de navigateur, logs de connexion (90 jours max)</LegalLI>
         </LegalList>
       </LegalSection>
@@ -37,7 +36,6 @@ export default function PrivacyPolicy() {
         <LegalList>
           <LegalLI>Création et gestion de ton compte</LegalLI>
           <LegalLI>Organisation et suivi de tes tournois</LegalLI>
-          <LegalLI>Gestion des abonnements et facturation via Stripe</LegalLI>
           <LegalLI>Envoi d'emails transactionnels (confirmation, réinitialisation de mot de passe)</LegalLI>
           <LegalLI>Amélioration du service (statistiques anonymisées)</LegalLI>
           <LegalLI>Lutte contre la fraude et la sécurité du service</LegalLI>
@@ -49,7 +47,7 @@ export default function PrivacyPolicy() {
           Le traitement de tes données repose sur trois bases légales du RGPD :
         </LegalP>
         <LegalList>
-          <LegalLI><strong>L'exécution du contrat</strong> (article 6.1.b) : nécessaire pour fournir le service auquel tu as souscrit</LegalLI>
+          <LegalLI><strong>L'exécution du contrat</strong> (article 6.1.b) : nécessaire pour fournir le service que tu utilises</LegalLI>
           <LegalLI><strong>Le consentement</strong> (article 6.1.a) : pour les cookies non essentiels et la newsletter</LegalLI>
           <LegalLI><strong>L'intérêt légitime</strong> (article 6.1.f) : sécurité du service et lutte contre la fraude</LegalLI>
         </LegalList>
@@ -59,18 +57,16 @@ export default function PrivacyPolicy() {
         <LegalP>Tes données ne sont jamais vendues. Elles peuvent être transmises uniquement à :</LegalP>
         <LegalList>
           <LegalLI><strong>OVH</strong> (hébergement, France) — sous-traitant technique</LegalLI>
-          <LegalLI><strong>Stripe</strong> (paiement, Irlande/US) — pour le traitement des abonnements</LegalLI>
           <LegalLI>Les autorités publiques en cas de réquisition judiciaire</LegalLI>
         </LegalList>
         <Callout label="Pas de transfert hors UE">
-          Hors du paiement via Stripe (qui dispose des Clauses Contractuelles Types de la Commission européenne), aucun transfert de données hors Union européenne n'est effectué.
+          Aucun transfert de données hors Union européenne n'est effectué.
         </Callout>
       </LegalSection>
 
       <LegalSection num="06" title="Durée de conservation">
         <LegalKV label="Compte actif" value="Tant que ton compte existe" />
         <LegalKV label="Compte inactif" value="Suppression automatique après 3 ans" />
-        <LegalKV label="Données de facturation" value="10 ans (obligation comptable)" />
         <LegalKV label="Logs techniques" value="90 jours maximum" />
         <LegalKV label="Cookies" value="13 mois maximum" />
       </LegalSection>
@@ -95,12 +91,11 @@ export default function PrivacyPolicy() {
 
       <LegalSection num="08" title="Cookies et traceurs">
         <LegalP>
-          Le site utilise un nombre minimal de cookies, classés en trois catégories :
+          Le site utilise un nombre minimal de cookies, classés en deux catégories :
         </LegalP>
         <LegalList>
-          <LegalLI><strong>Cookies essentiels</strong> : authentification, session, panier. Indispensables au fonctionnement, ne nécessitent pas ton consentement.</LegalLI>
+          <LegalLI><strong>Cookies essentiels</strong> : authentification, session. Indispensables au fonctionnement, ne nécessitent pas ton consentement.</LegalLI>
           <LegalLI><strong>Cookies de mesure d'audience</strong> : statistiques anonymisées. Soumis à consentement.</LegalLI>
-          <LegalLI><strong>Cookies tiers</strong> : Stripe (paiement). Soumis à consentement.</LegalLI>
         </LegalList>
         <LegalP>
           Tu peux à tout moment modifier tes préférences cookies via le bandeau dédié ou les paramètres de ton navigateur.
