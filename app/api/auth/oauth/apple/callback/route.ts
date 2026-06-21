@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
         [
           `Organisation de ${orgName}`,
           user.id,
-          JSON.stringify({ plan: 'free', features: { max_tournois: 1, max_equipes: 8 } })
+          JSON.stringify({})
         ]
       )
       orgId = org.id

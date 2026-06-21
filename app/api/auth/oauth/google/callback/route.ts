@@ -167,7 +167,7 @@ export async function GET(request: NextRequest) {
         [
           `Organisation de ${googleUser.given_name}`,
           user.id,
-          JSON.stringify({ plan: 'free', features: { max_tournois: 1, max_equipes: 8 } })
+          JSON.stringify({})
         ]
       )
       orgId = org.id

@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
          RETURNING *`,
         [
           orgName,
-          JSON.stringify({ plan: 'free', features: { max_tournois: 1, max_equipes: 8 }, db_version: '1.0', created_via: 'signup' }),
+          JSON.stringify({ db_version: '1.0', created_via: 'signup' }),
           user.id
         ]
       )
