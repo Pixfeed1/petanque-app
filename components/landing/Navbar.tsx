@@ -10,7 +10,6 @@ import { Menu, Close } from '@/components/Icons'
 const navLinks = [
   { id: 'features', label: 'Fonctionnalités' },
   { id: 'modes', label: 'Modes' },
-  { id: 'pricing', label: 'Tarifs' },
   { id: 'testimonials', label: 'Avis' },
 ]
 

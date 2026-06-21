@@ -41,9 +41,10 @@ export default function Dashboard() {
   }, [organization])
 
   useEffect(() => {
+    // Gratuit pour tous : on ignore ?upgrade=true (plus de modale de paiement),
+    // on nettoie juste l'URL. Voir Phase 2 pour le retrait du flux Stripe.
     const upgrade = searchParams?.get('upgrade') ?? null
     if (upgrade === 'true' && user && !authLoading) {
-      setShowUpgradeModal(true)
       router.replace('/dashboard', { scroll: false })
     }
   }, [searchParams, user, authLoading, router])
@@ -243,29 +244,9 @@ export default function Dashboard() {
                         <p className="text-xs text-petanque-bois mt-0.5">
                           {organization?.name}
                         </p>
-                        {userPlan !== 'free' && (
-                          <div className="mt-2">
-                            <Badge variant={userPlan === 'club' ? 'warning' : 'success'}>
-                              Plan {userPlan === 'club' ? 'Club' : 'Essentiel'}
-                            </Badge>
-                          </div>
-                        )}
+                        {/* Gratuit pour tous : plus de badge de plan ni de CTA d'upgrade (Phase 2). */}
                       </div>
                       <div className="p-2 space-y-1">
-                        {userPlan === 'free' && (
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            fullWidth
-                            onClick={() => {
-                              setShowProfileMenu(false)
-                              setShowUpgradeModal(true)
-                            }}
-                          >
-                            <Trophy />
-                            Passer Premium
-                          </Button>
-                        )}
                         <button
                           onClick={() => {
                             setShowProfileMenu(false)
@@ -590,13 +571,7 @@ export default function Dashboard() {
         </Section>
       </main>
 
-      {showUpgradeModal && (
-        <UpgradeModal
-          onClose={() => setShowUpgradeModal(false)}
-          onUpgrade={handleUpgrade}
-          processing={processingPayment}
-        />
-      )}
+      {/* Gratuit pour tous : modale de paiement masquée (code conservé pour la Phase 2). */}
 
       {ConfirmModal}
     </div>

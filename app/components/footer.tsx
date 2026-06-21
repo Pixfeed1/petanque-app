@@ -60,14 +60,6 @@ export default function Footer({ scrollToSection }: FooterProps) {
                 </Link>
               </li>
               <li>
-                <button
-                  onClick={() => handleNavigation('pricing')}
-                  className="hover:text-white transition text-left"
-                >
-                  Tarifs
-                </button>
-              </li>
-              <li>
                 <Link href="/dashboard" className="hover:text-white transition">
                   Dashboard
                 </Link>

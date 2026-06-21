@@ -173,8 +173,6 @@ export default function Parametres() {
         <FadeIn>
           <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3 flex flex-wrap gap-x-3 gap-y-1">
             <span>Compte</span>
-            <span className="text-petanque-sable-bord">·</span>
-            <span>{planLabel}</span>
           </p>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.05] mb-12">
             Tes paramètres et <span className="accent-italic text-petanque-vert">préférences.</span>
@@ -203,43 +201,8 @@ export default function Parametres() {
           </section>
         </FadeIn>
 
-        {/* === Section Abonnement === */}
-        <FadeIn delay={140}>
-          <section className="mb-10 pb-10 border-b border-petanque-sable-bord/50">
-            <p className="font-mono text-[11px] text-petanque-bois uppercase tracking-[0.18em] font-medium mb-5">Abonnement</p>
-            {isPremium ? (
-              <div className="flex gap-5 items-start">
-                <BouleSvg size={42} variant="acier" stries className="flex-shrink-0 mt-1" />
-                <div className="flex-1">
-                  <div className="flex items-baseline gap-3 mb-1.5 flex-wrap">
-                    <span className="text-xl font-medium text-petanque-vert-fonce">{planLabel}</span>
-                    <span className="font-mono text-[10px] text-petanque-vert bg-petanque-vert-pale/30 px-2.5 py-0.5 rounded-full uppercase tracking-[0.18em] font-semibold">Actif</span>
-                  </div>
-                  <p className="text-sm text-petanque-bois mb-4">Toutes les fonctionnalités débloquées.</p>
-                  <ul className="space-y-1.5">
-                    {(isClub
-                      ? ['Tournois illimités', 'Personnalisation du club', 'Règles personnalisées', 'Export PDF et partage', 'Historique des tournois']
-                      : ['Tournois illimités', 'Export PDF et partage', 'Historique des tournois']
-                    ).map((feat) => (
-                      <li key={feat} className="text-sm text-petanque-vert-fonce flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-petanque-vert flex-shrink-0" />
-                        {feat}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <p className="text-base text-petanque-vert-fonce font-medium mb-1">Plan Gratuit</p>
-                <p className="text-sm text-petanque-bois mb-5">1 tournoi, 8 équipes max — passe à Essentiel pour tout débloquer.</p>
-                <Button variant="primary" onClick={() => router.push('/dashboard?upgrade=true')}>
-                  Voir les plans · à partir de 9,99€/an
-                </Button>
-              </div>
-            )}
-          </section>
-        </FadeIn>
+        {/* === Section Abonnement masquée === Gratuit pour tous : plus de plan ni
+            de facturation côté UI. Code conservé pour la Phase 2 (retrait des plans). */}
 
         {/* === Section Personnalisation Club === */}
         {isClub && (
