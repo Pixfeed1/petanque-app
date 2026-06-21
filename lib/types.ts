@@ -199,14 +199,6 @@ export interface User {
 }
 
 export interface UserMetadata {
-  subscription?: {
-    status: 'free' | 'essentiel' | 'club'
-    plan: 'free' | 'essentiel_yearly' | 'club_yearly'
-    stripe_customer_id?: string
-    stripe_subscription_id?: string
-    subscribed_since?: string
-    current_period_end?: string
-  }
   preferences?: {
     theme?: 'light' | 'dark'
     notifications?: boolean
@@ -282,22 +274,6 @@ export interface EquipeWithStats extends Equipe {
 // ============================================
 // PAIEMENTS & STRIPE
 // ============================================
-
-export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'cancelled'
-
-export interface PaymentAttempt {
-  id: string
-  user_id: string
-  stripe_session_id: string
-  stripe_customer_id?: string | null
-  stripe_payment_intent?: string | null
-  stripe_subscription_id?: string | null
-  amount: number
-  currency: string
-  status: PaymentStatus
-  created_at: string
-  completed_at?: string | null
-}
 
 // ============================================
 // API RESPONSES

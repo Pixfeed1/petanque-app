@@ -4,22 +4,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '../providers/AuthProvider'
-import { loadStripe } from '@stripe/stripe-js'
 import { useDashboardData } from './hooks/useDashboardData'
-import { Trophy, Users, Plus, Logout, Settings, Archive } from '@/components/Icons'
+import { Users, Plus, Logout, Settings, Archive } from '@/components/Icons'
 import { Button, Badge, Section, Stat, Boule, BouleSvg, useToast, useConfirm } from '@/components/ui'
 import type { ActionItem } from '@/lib/types'
 
-const stripePromise =
-  typeof window !== 'undefined' && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-    ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-    : null
-
 export default function Dashboard() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { user, organization, loading: authLoading, signOut } = useAuth()
   const { loading, stats, tournois, recentMatches, refetch } = useDashboardData(
     organization?.id ? Number(organization.id) : undefined
@@ -27,27 +20,9 @@ export default function Dashboard() {
   const { showError } = useToast()
   const { confirm, ConfirmModal } = useConfirm()
 
-  const [userPlan, setUserPlan] = useState('free')
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-  const [processingPayment, setProcessingPayment] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'preparation' | 'termine'>('all')
   const [showProfileMenu, setShowProfileMenu] = useState(false)
-
-  useEffect(() => {
-    if (organization?.settings?.plan && typeof organization.settings.plan === 'string') {
-      setUserPlan(organization.settings.plan)
-    }
-  }, [organization])
-
-  useEffect(() => {
-    // Gratuit pour tous : on ignore ?upgrade=true (plus de modale de paiement),
-    // on nettoie juste l'URL. Voir Phase 2 pour le retrait du flux Stripe.
-    const upgrade = searchParams?.get('upgrade') ?? null
-    if (upgrade === 'true' && user && !authLoading) {
-      router.replace('/dashboard', { scroll: false })
-    }
-  }, [searchParams, user, authLoading, router])
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -100,24 +75,6 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     await signOut()
-  }
-
-  const handleUpgrade = async (planType: 'essentiel' | 'club' = 'essentiel') => {
-    if (!user?.id) return
-    setProcessingPayment(true)
-    try {
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, userEmail: user.email, planType }),
-      })
-      const { url } = await response.json()
-      if (url) window.location.href = url
-    } catch (error) {
-      console.error('Erreur lors de la creation de la session:', error)
-      showError('Une erreur est survenue. Veuillez reessayer.')
-      setProcessingPayment(false)
-    }
   }
 
   const handleDeleteTournament = async (tournoiId: number | string) => {
@@ -571,117 +528,7 @@ export default function Dashboard() {
         </Section>
       </main>
 
-      {/* Gratuit pour tous : modale de paiement masquée (code conservé pour la Phase 2). */}
-
       {ConfirmModal}
-    </div>
-  )
-}
-
-interface UpgradeModalProps {
-  onClose: () => void
-  onUpgrade: (planType: 'essentiel' | 'club') => void
-  processing: boolean
-}
-
-function UpgradeModal({ onClose, onUpgrade, processing }: UpgradeModalProps) {
-  return (
-    <div className="fixed inset-0 bg-petanque-vert-fonce/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-petanque-sable-pale rounded-2xl border border-petanque-sable-bord max-w-2xl w-full overflow-hidden">
-
-        <div className="px-6 py-5 border-b border-petanque-sable-bord/60 flex items-center justify-between bg-white">
-          <div>
-            <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.15em] mb-1">
-              Pour aller plus loin
-            </p>
-            <h2 className="text-xl font-medium text-petanque-vert-fonce tracking-tight">
-              Choisis ton plan
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            disabled={processing}
-            className="p-2 text-petanque-bois hover:text-petanque-vert-fonce hover:bg-petanque-sable-pale rounded-lg transition disabled:opacity-50"
-            aria-label="Fermer"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            <div className="bg-white border border-petanque-sable-bord rounded-xl p-5 relative">
-              <h3 className="text-base font-medium text-petanque-vert-fonce mb-1">Essentiel</h3>
-              <div className="flex items-baseline gap-1 mb-4">
-                <span className="font-mono text-3xl font-medium text-petanque-vert">9,99€</span>
-                <span className="text-sm text-petanque-bois">/an</span>
-              </div>
-              <ul className="space-y-2.5 mb-5">
-                <li className="flex items-start gap-2 text-sm text-petanque-vert-fonce">
-                  <span className="text-petanque-vert mt-0.5">✓</span>
-                  Tournois illimites
-                </li>
-                <li className="flex items-start gap-2 text-sm text-petanque-vert-fonce">
-                  <span className="text-petanque-vert mt-0.5">✓</span>
-                  Equipes illimitees
-                </li>
-              </ul>
-              <Button
-                variant="secondary"
-                fullWidth
-                loading={processing}
-                onClick={() => onUpgrade('essentiel')}
-              >
-                Choisir Essentiel
-              </Button>
-            </div>
-
-            <div className="bg-white border-2 border-petanque-vert rounded-xl p-5 relative">
-              <span className="absolute -top-2.5 left-4 px-2.5 py-0.5 bg-petanque-vert text-petanque-sable text-[10px] font-medium uppercase tracking-wider rounded-full">
-                Recommande
-              </span>
-              <h3 className="text-base font-medium text-petanque-vert-fonce mb-1">Club</h3>
-              <div className="flex items-baseline gap-1 mb-4">
-                <span className="font-mono text-3xl font-medium text-petanque-vert">19,99€</span>
-                <span className="text-sm text-petanque-bois">/an</span>
-              </div>
-              <ul className="space-y-2.5 mb-5">
-                <li className="flex items-start gap-2 text-sm text-petanque-vert-fonce">
-                  <span className="text-petanque-vert mt-0.5">✓</span>
-                  Tout Essentiel
-                </li>
-                <li className="flex items-start gap-2 text-sm text-petanque-vert-fonce">
-                  <span className="text-petanque-vert mt-0.5">✓</span>
-                  Statistiques avancees
-                </li>
-                <li className="flex items-start gap-2 text-sm text-petanque-vert-fonce">
-                  <span className="text-petanque-vert mt-0.5">✓</span>
-                  Personnalisation club
-                </li>
-                <li className="flex items-start gap-2 text-sm text-petanque-vert-fonce">
-                  <span className="text-petanque-vert mt-0.5">✓</span>
-                  Regles de tournoi sur mesure
-                </li>
-              </ul>
-              <Button
-                variant="primary"
-                fullWidth
-                loading={processing}
-                onClick={() => onUpgrade('club')}
-              >
-                Choisir Club
-              </Button>
-            </div>
-          </div>
-
-          <p className="text-xs text-center text-petanque-bois mt-5">
-            Paiement securise par Stripe · 30 jours satisfait ou rembourse
-          </p>
-        </div>
-      </div>
     </div>
   )
 }
