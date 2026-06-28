@@ -12,12 +12,12 @@ export default function Terms() {
       eyebrow="CGV · Conditions générales"
       titleStart="Le contrat"
       titleAccent="entre toi et nous."
-      intro="Ces Conditions Générales de Vente définissent le cadre contractuel entre PixFeed EI, éditeur de Pétanque Pro, et toi en tant qu'utilisateur du service. En créant un compte, tu acceptes ces conditions."
+      intro="Ces Conditions Générales de Vente définissent le cadre contractuel entre PixFeed, éditeur de Pétanque Pro, et toi en tant qu'utilisateur du service. En créant un compte, tu acceptes ces conditions."
       crossLink={{ label: 'Voir la politique de confidentialité', href: '/legal/privacy' }}
     >
       <LegalSection num="01" title="Objet">
         <LegalP>
-          Les présentes CGV régissent l'accès et l'utilisation de Pétanque Pro, application en ligne d'organisation de tournois de pétanque, éditée par PixFeed EI (Marc Gueffie, SIRET 852 393 735 00018, Franconville 95130).
+          Les présentes CGV régissent l'accès et l'utilisation de Pétanque Pro, application en ligne d'organisation de tournois de pétanque, éditée par PixFeed (SIRET 852 393 735 00018, Franconville 95130).
         </LegalP>
       </LegalSection>
 
@@ -26,7 +26,7 @@ export default function Terms() {
           La création d'un compte sur petanquepro.fr vaut acceptation pleine et entière des présentes CGV. Si tu n'acceptes pas tout ou partie de ces conditions, tu dois renoncer à utiliser le service.
         </LegalP>
         <LegalP>
-          PixFeed EI se réserve le droit de modifier ces CGV à tout moment. Toute modification substantielle sera notifiée par email au moins 30 jours avant son entrée en vigueur.
+          PixFeed se réserve le droit de modifier ces CGV à tout moment. Toute modification substantielle sera notifiée par email au moins 30 jours avant son entrée en vigueur.
         </LegalP>
       </LegalSection>
 
@@ -53,7 +53,7 @@ export default function Terms() {
           Tu peux cesser d'utiliser le service et supprimer ton compte à tout moment depuis ton espace, sans frais ni justification.
         </LegalP>
         <LegalP>
-          PixFeed EI se réserve le droit de suspendre ou clôturer un compte en cas de manquement grave aux présentes CGV (fraude, abus, contenu illicite), après notification préalable.
+          PixFeed se réserve le droit de suspendre ou clôturer un compte en cas de manquement grave aux présentes CGV (fraude, abus, contenu illicite), après notification préalable.
         </LegalP>
       </LegalSection>
 
@@ -68,9 +68,9 @@ export default function Terms() {
         </LegalList>
       </LegalSection>
 
-      <LegalSection num="07" title="Responsabilité de PixFeed EI">
+      <LegalSection num="07" title="Responsabilité de PixFeed">
         <LegalP>
-          PixFeed EI s'engage à fournir le service avec diligence et selon les règles de l'art. Toutefois, la responsabilité de PixFeed EI ne saurait être engagée :
+          PixFeed s'engage à fournir le service avec diligence et selon les règles de l'art. Toutefois, la responsabilité de PixFeed ne saurait être engagée :
         </LegalP>
         <LegalList>
           <LegalLI>en cas de force majeure ou d'événement échappant à son contrôle</LegalLI>
@@ -79,16 +79,16 @@ export default function Terms() {
           <LegalLI>pour les contenus saisis par les utilisateurs</LegalLI>
         </LegalList>
         <LegalP>
-          En tout état de cause, la responsabilité de PixFeed EI est limitée aux dommages directs et prévisibles, à l'exclusion de tout dommage indirect. Le service étant fourni gratuitement, il l'est en l'état, sans garantie de disponibilité ininterrompue.
+          En tout état de cause, la responsabilité de PixFeed est limitée aux dommages directs et prévisibles, à l'exclusion de tout dommage indirect. Le service étant fourni gratuitement, il l'est en l'état, sans garantie de disponibilité ininterrompue.
         </LegalP>
       </LegalSection>
 
       <LegalSection num="08" title="Propriété intellectuelle">
         <LegalP>
-          PixFeed EI conserve l'ensemble des droits de propriété intellectuelle sur Pétanque Pro (code, design, marque). Tu disposes uniquement d'un droit d'usage personnel, non exclusif et non transférable, pour la durée d'utilisation du service.
+          PixFeed conserve l'ensemble des droits de propriété intellectuelle sur Pétanque Pro (code, design, marque). Tu disposes uniquement d'un droit d'usage personnel, non exclusif et non transférable, pour la durée d'utilisation du service.
         </LegalP>
         <LegalP>
-          Les contenus que tu crées (tournois, joueurs, scores) restent ta propriété. Tu accordes à PixFeed EI une licence limitée pour les héberger et les afficher dans le cadre du service.
+          Les contenus que tu crées (tournois, joueurs, scores) restent ta propriété. Tu accordes à PixFeed une licence limitée pour les héberger et les afficher dans le cadre du service.
         </LegalP>
       </LegalSection>
 

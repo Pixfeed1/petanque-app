@@ -17,7 +17,7 @@ export default function PrivacyPolicy() {
     >
       <LegalSection num="01" title="Responsable du traitement">
         <LegalP>
-          Le responsable de traitement des données collectées sur petanquepro.fr est <strong className="text-petanque-vert-fonce">PixFeed EI</strong> (Marc Gueffie), entreprise individuelle immatriculée sous le SIRET 852 393 735 00018, sise à Franconville (95130).
+          Le responsable de traitement des données collectées sur petanquepro.fr est <strong className="text-petanque-vert-fonce">PixFeed</strong>, immatriculée sous le SIRET 852 393 735 00018, sise à Franconville (95130).
         </LegalP>
         <LegalKV label="Contact" value={<LegalLink href="mailto:contact@petanquepro.fr">contact@petanquepro.fr</LegalLink>} />
       </LegalSection>

@@ -302,7 +302,7 @@ function PlayerModal({ editingPlayer, formData, onUpdateForm, onSave, onClose }:
                 type="text"
                 value={formData.name}
                 onChange={(e) => onUpdateForm({ name: e.target.value })}
-                placeholder="Marc Gueffie"
+                placeholder="Jean Dupont"
                 autoFocus
                 className="w-full h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:ring-2 focus:ring-petanque-vert/20 focus:outline-none text-sm text-petanque-vert-fonce"
               />

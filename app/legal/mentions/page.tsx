@@ -16,10 +16,10 @@ export default function MentionsLegales() {
       crossLink={{ label: 'Voir les CGV', href: '/legal/terms' }}
     >
       <LegalSection num="01" title="Éditeur du site">
-        <LegalKV label="Raison sociale" value="PixFeed EI" />
+        <LegalKV label="Raison sociale" value="PixFeed" />
         <LegalKV label="Forme juridique" value="Entreprise individuelle (micro-entrepreneur)" />
         <LegalKV label="SIRET" value="852 393 735 00018" />
-        <LegalKV label="Directeur de la publication" value="Marc Gueffie" />
+        <LegalKV label="Directeur de la publication" value="PixFeed" />
         <LegalKV label="Adresse" value="Franconville (95130), France" />
         <LegalKV label="E-mail" value={<LegalLink href="mailto:contact@petanquepro.fr">contact@petanquepro.fr</LegalLink>} />
         <LegalKV label="TVA" value="Non applicable, art. 293 B du CGI (franchise en base)" />
@@ -36,7 +36,7 @@ export default function MentionsLegales() {
 
       <LegalSection num="03" title="Propriété intellectuelle">
         <LegalP>
-          L'ensemble du site (textes, illustrations, identité visuelle, code source, marque « Pétanque Pro ») est protégé par le droit français de la propriété intellectuelle. Toute reproduction, représentation, modification ou exploitation, totale ou partielle, sans autorisation écrite préalable de PixFeed EI est interdite.
+          L'ensemble du site (textes, illustrations, identité visuelle, code source, marque « Pétanque Pro ») est protégé par le droit français de la propriété intellectuelle. Toute reproduction, représentation, modification ou exploitation, totale ou partielle, sans autorisation écrite préalable de PixFeed est interdite.
         </LegalP>
         <LegalP>
           Les marques et logos cités (OVH, etc.) demeurent la propriété de leurs détenteurs respectifs.
@@ -45,7 +45,7 @@ export default function MentionsLegales() {
 
       <LegalSection num="04" title="Limitation de responsabilité">
         <LegalP>
-          PixFeed EI met tout en œuvre pour garantir la fiabilité et la disponibilité du service. Toutefois, l'éditeur ne saurait être tenu responsable :
+          PixFeed met tout en œuvre pour garantir la fiabilité et la disponibilité du service. Toutefois, l'éditeur ne saurait être tenu responsable :
         </LegalP>
         <LegalList>
           <LegalLI>des interruptions temporaires liées à la maintenance ou aux opérations de l'hébergeur</LegalLI>
@@ -56,7 +56,7 @@ export default function MentionsLegales() {
 
       <LegalSection num="05" title="Médiation de la consommation">
         <LegalP>
-          Conformément à l'article L.612-1 du Code de la consommation, en cas de litige non résolu à l'amiable, vous pouvez recourir gratuitement au médiateur de la consommation référencé par PixFeed EI :
+          Conformément à l'article L.612-1 du Code de la consommation, en cas de litige non résolu à l'amiable, vous pouvez recourir gratuitement au médiateur de la consommation référencé par PixFeed :
         </LegalP>
         <Callout label="Médiateur conso">
           Plateforme européenne de règlement en ligne des litiges (RLL) : <LegalLink href="https://ec.europa.eu/consumers/odr" external>ec.europa.eu/consumers/odr</LegalLink>
