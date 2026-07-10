@@ -482,55 +482,24 @@ export function useMatchActions({
       const nbMatches = bracketPairs.length
       const nbByes = bracketPairs.filter(p => p.isBye).length
 
-      // Créer les matchs d'élimination dans l'ordre du seeding (BYE inclus aux bonnes positions)
-      for (const pair of bracketPairs) {
-        if (!pair.teamA) {
-          console.warn('⚠️ Paire sans équipe A ignorée', pair)
-          continue
-        }
+      // Construire tous les matchs (BYE inclus aux bonnes positions) et les créer
+      // en UN SEUL appel transactionnel : évite les brackets partiels/dupliqués.
+      const elimMatches = bracketPairs
+        .filter(pair => pair.teamA)
+        .map(pair => pair.isBye
+          ? { equipe_a_id: pair.teamA!.id, equipe_b_id: null, tour: 1, type: 'bye', status: 'termine', score_a: 0, score_b: 0 }
+          : { equipe_a_id: pair.teamA!.id, equipe_b_id: pair.teamB!.id, tour: 1, type: matchType, status: 'a_jouer' })
+        .filter(m => m.type === 'bye' || m.equipe_b_id)
 
-        if (pair.isBye) {
-          // Match BYE : équipe A qualifiée automatiquement (tête de série exemptée)
-          const byeResponse = await fetch('/api/matches', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              tournoi_id: tournament.id,
-              equipe_a_id: pair.teamA.id,
-              equipe_b_id: null,
-              tour: 1,
-              terrain: null,
-              type: 'bye',
-              status: 'termine',
-              score_a: 0,
-              score_b: 0
-            })
-          })
-          if (!byeResponse.ok) {
-            const error = await byeResponse.json().catch(() => ({ error: 'Erreur serveur' }))
-            throw new Error(`Échec création match BYE: ${error.error}`)
-          }
-        } else if (pair.teamB) {
-          const matchResponse = await fetch('/api/matches', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              tournoi_id: tournament.id,
-              equipe_a_id: pair.teamA.id,
-              equipe_b_id: pair.teamB.id,
-              tour: 1,
-              terrain: null,
-              type: matchType,
-              status: 'a_jouer'
-            })
-          })
-          if (!matchResponse.ok) {
-            const error = await matchResponse.json().catch(() => ({ error: 'Erreur serveur' }))
-            throw new Error(`Échec création match ${pair.teamA.name} vs ${pair.teamB.name}: ${error.error}`)
-          }
-        }
+      const elimResp = await fetch(`/api/tournois/${tournament.id}/elimination`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ matches: elimMatches })
+      })
+      if (!elimResp.ok) {
+        const error = await elimResp.json().catch(() => ({ error: 'Erreur serveur' }))
+        throw new Error(error.error || 'Échec de la génération des phases éliminatoires')
       }
 
       const byeMsg = nbByes > 0 ? ` (${nbByes} exempt${nbByes > 1 ? 's' : ''})` : ''
@@ -605,47 +574,26 @@ export function useMatchActions({
         if (byeMatch.equipe_a_id) winners.push(byeMatch.equipe_a_id)
       }
 
-      // Créer la finale
+      // Construire finale (+ petite finale si consolante) et créer en UN appel
+      // transactionnel avec garde serveur anti-doublon.
+      const finaleMatches: Array<Record<string, unknown>> = []
       if (!finaleExists && winners.length === 2) {
-        const finaleResponse = await fetch('/api/matches', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            tournoi_id: tournament.id,
-            equipe_a_id: winners[0],
-            equipe_b_id: winners[1],
-            tour: 1,
-            terrain: null,
-            type: 'finale',
-            status: 'a_jouer'
-          })
-        })
-        if (!finaleResponse.ok) {
-          const error = await finaleResponse.json().catch(() => ({ error: 'Erreur serveur' }))
-          throw new Error(`Échec création finale: ${error.error}`)
-        }
+        finaleMatches.push({ equipe_a_id: winners[0], equipe_b_id: winners[1], tour: 1, type: 'finale', status: 'a_jouer' })
+      }
+      if (!petiteFinaleExists && losers.length === 2 && tournament.settings.consolante) {
+        finaleMatches.push({ equipe_a_id: losers[0], equipe_b_id: losers[1], tour: 1, type: 'petite_finale', status: 'a_jouer' })
       }
 
-      // Créer la petite finale seulement si consolante est activée
-      if (!petiteFinaleExists && losers.length === 2 && tournament.settings.consolante) {
-        const petiteFinaleResponse = await fetch('/api/matches', {
+      if (finaleMatches.length > 0) {
+        const finaleResp = await fetch(`/api/tournois/${tournament.id}/elimination`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({
-            tournoi_id: tournament.id,
-            equipe_a_id: losers[0],
-            equipe_b_id: losers[1],
-            tour: 1,
-            terrain: null,
-            type: 'petite_finale',
-            status: 'a_jouer'
-          })
+          body: JSON.stringify({ matches: finaleMatches })
         })
-        if (!petiteFinaleResponse.ok) {
-          const error = await petiteFinaleResponse.json().catch(() => ({ error: 'Erreur serveur' }))
-          throw new Error(`Échec création petite finale: ${error.error}`)
+        if (!finaleResp.ok) {
+          const error = await finaleResp.json().catch(() => ({ error: 'Erreur serveur' }))
+          throw new Error(error.error || 'Échec de la génération des finales')
         }
       }
 
@@ -683,25 +631,23 @@ export function useMatchActions({
     }
 
     try {
-      for (const pair of result.pairs) {
-        const response = await fetch('/api/matches', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            tournoi_id: tournament.id,
-            equipe_a_id: pair.a.id,
-            equipe_b_id: pair.b.id,
-            tour: 1,
-            terrain: null,
-            type: result.round,
-            status: 'a_jouer'
-          })
-        })
-        if (!response.ok) {
-          const error = await response.json().catch(() => ({ error: 'Erreur serveur' }))
-          throw new Error(`Échec création match ${pair.a.name} vs ${pair.b.name}: ${error.error}`)
-        }
+      // Créer tout le tour en UN appel transactionnel (garde serveur anti-doublon)
+      const roundMatches = result.pairs.map(pair => ({
+        equipe_a_id: pair.a.id,
+        equipe_b_id: pair.b.id,
+        tour: 1,
+        type: result.round,
+        status: 'a_jouer'
+      }))
+      const response = await fetch(`/api/tournois/${tournament.id}/elimination`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ matches: roundMatches })
+      })
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Erreur serveur' }))
+        throw new Error(error.error || `Échec de la génération du tour ${result.round}`)
       }
       notify.success(`${result.pairs.length} match(s) de ${result.round} générés`)
       await loadTournamentData()
