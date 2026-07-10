@@ -63,7 +63,7 @@ export async function POST(
         [tournoiId]
       )
       if (existing.rows.length > 0) {
-        throw new Error('Une phase à double élimination existe déjà pour ce tournoi')
+        throw new Error('ALREADY_EXISTS')
       }
 
       const values: any[] = []
@@ -95,7 +95,12 @@ export async function POST(
 
     return apiSuccess({ created: result.length, matches: result }, 201)
   } catch (error: any) {
+    // Erreur métier attendue → 409 avec message propre ; sinon 500 générique
+    // (ne pas fuiter le message d'exception brut au client).
+    if (error?.message === 'ALREADY_EXISTS') {
+      return apiError('Une phase à double élimination existe déjà pour ce tournoi', 409)
+    }
     console.error('❌ Erreur POST /api/tournois/[id]/double-elimination:', error)
-    return apiError(error.message || 'Erreur lors de la génération de la double élimination', 500)
+    return apiError('Erreur lors de la génération de la double élimination', 500)
   }
 }

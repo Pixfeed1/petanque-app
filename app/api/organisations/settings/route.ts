@@ -2,7 +2,7 @@
 // API pour mettre à jour les settings d'une organisation (personnalisation club)
 
 import { NextRequest } from 'next/server'
-import { requireAuth, checkOrgAdmin, apiSuccess, apiError } from '@/lib/middleware'
+import { requireAuth, checkOrgAdmin, checkOrgAccess, apiSuccess, apiError } from '@/lib/middleware'
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { query, queryOne } from '@/lib/db'
 
@@ -97,6 +97,15 @@ export async function GET(request: NextRequest) {
 
     if (!orgId) {
       return apiError('org_id requis', 400)
+    }
+
+    // FIX SÉCURITÉ (IDOR) : vérifier que l'utilisateur appartient à l'org avant
+    // de renvoyer ses settings. Sans ce contrôle, un utilisateur authentifié
+    // pouvait énumérer ?org_id=1,2,3… et lire le plan/personnalisation de
+    // toutes les organisations.
+    const hasAccess = await checkOrgAccess(user.id, orgId)
+    if (!hasAccess) {
+      return apiError('Accès refusé', 403)
     }
 
     const org = await queryOne<{ id: string; settings: Record<string, any> }>(

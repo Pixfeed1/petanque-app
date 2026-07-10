@@ -43,15 +43,25 @@ export interface RateLimitConfig {
  * Extrait l'adresse IP du client depuis la requête
  */
 export function getClientIP(request: NextRequest): string {
-  // Vérifier les headers de proxy (Vercel, Cloudflare, etc.)
-  const forwardedFor = request.headers.get('x-forwarded-for')
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim()
-  }
-
+  // FIX SÉCURITÉ : ne jamais faire confiance à la PREMIÈRE valeur de
+  // X-Forwarded-For — elle est contrôlée par le client et permettait de
+  // contourner le rate-limiting (brute-force login/reset) en la faisant varier.
+  //
+  // Derrière notre proxy (nginx : proxy_set_header X-Real-IP $remote_addr),
+  // X-Real-IP contient l'IP réelle du client, non spoofable → on la privilégie.
   const realIP = request.headers.get('x-real-ip')
   if (realIP) {
     return realIP.trim()
+  }
+
+  // À défaut, prendre la DERNIÈRE entrée de X-Forwarded-For (celle ajoutée par
+  // le proxy de confiance), pas la première (envoyée par le client).
+  const forwardedFor = request.headers.get('x-forwarded-for')
+  if (forwardedFor) {
+    const parts = forwardedFor.split(',').map(s => s.trim()).filter(Boolean)
+    if (parts.length > 0) {
+      return parts[parts.length - 1]
+    }
   }
 
   // Fallback: utiliser une IP fictive pour le développement local

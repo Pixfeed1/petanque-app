@@ -38,8 +38,10 @@ export async function POST(request: NextRequest) {
 
     return apiSuccess({ sent: true }, 201)
   } catch (error: any) {
+    // FIX SÉCURITÉ : ne pas renvoyer le message d'exception brut au client
+    // (pouvait fuiter des détails DB/contrainte). Détail loggé côté serveur.
     console.error('❌ Erreur POST /api/feedback:', error)
-    return apiError(`Erreur serveur: ${error?.message || error}`, 500)
+    return apiError('Erreur lors de l\'envoi du feedback', 500)
   }
 }
 

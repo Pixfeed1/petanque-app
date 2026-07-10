@@ -15,8 +15,11 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
 
-    // Paramètres de filtrage
-    const approved = searchParams.get('approved') !== 'false' // Par défaut: seulement les approuvés
+    // FIX SÉCURITÉ : cette route est PUBLIQUE (aucune auth). On force le filtre
+    // approved=true : ?approved=false exposait auparavant les avis non modérés
+    // (spam/contenu abusif). La modération des avis non approuvés passe par
+    // /api/reviews/moderate (protégé par requireAdmin).
+    const approved = true
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
     const rating = searchParams.get('rating') // Filtrer par note (optionnel)
