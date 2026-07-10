@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server'
 import { requireAuth, apiSuccess, apiError, checkOrgAccess } from '@/lib/middleware'
 import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { queryMany, query } from '@/lib/db'
+import { sanitizeTournoiSettings } from '@/lib/validations'
 
 // GET - Récupérer les tournois de l'organisation
 export async function GET(request: NextRequest) {
@@ -108,9 +109,11 @@ export async function POST(request: NextRequest) {
       allowPhotos: false,
       sendNotifications: false
     }
-    const mergedSettings = { ...defaultSettings, ...(settings || {}) }
+    // FIX SÉCURITÉ : sanitize (whitelist + coercition + bornes) avant merge, au
+    // lieu de `...settings` brut (mass assignment / valeurs absurdes / NaN).
+    const mergedSettings: Record<string, any> = { ...defaultSettings, ...sanitizeTournoiSettings(settings) }
 
-    // Valider maxPoints (range 7-25)
+    // Valider maxPoints (range 7-25) — désormais garanti numérique par le sanitizer
     if (mergedSettings.maxPoints < 7 || mergedSettings.maxPoints > 25) {
       return apiError('maxPoints doit être entre 7 et 25', 400)
     }

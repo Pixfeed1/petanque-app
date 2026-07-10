@@ -205,6 +205,13 @@ export async function PUT(
       return apiError('Accès refusé pour modifier ce match', 403)
     }
 
+    // FIX SÉCURITÉ : whitelist des statuts. Avant, body.status était poussé tel
+    // quel → on pouvait écrire n'importe quelle chaîne en base (pas de CHECK).
+    const VALID_MATCH_STATUSES = ['a_jouer', 'en_cours', 'termine', 'en_attente_validation', 'valide']
+    if (body.status !== undefined && !VALID_MATCH_STATUSES.includes(body.status)) {
+      return apiError('Statut de match invalide', 400)
+    }
+
     const updates: string[] = []
     const values: SQLValue[] = []
     let paramIndex = 1
@@ -346,8 +353,18 @@ export async function PUT(
     //   updates.push(`proposed_at = NOW()`)
     // }
 
-    // Le winner_id peut être calculé automatiquement pour un match terminé
+    // Le winner_id peut être calculé automatiquement pour un match terminé.
+    // FIX SÉCURITÉ : valider qu'il correspond à l'une des deux équipes du match.
+    // Avant, en envoyant winner_id SANS status='termine', on contournait le
+    // contrôle croisé avec les scores et on pouvait affecter comme vainqueur une
+    // équipe arbitraire (y compris d'un autre tournoi).
     if (body.winner_id !== undefined && body.winner_id !== null) {
+      const validWinners = [existingMatch.equipe_a_id, existingMatch.equipe_b_id]
+        .filter((v): v is string | number => v !== null && v !== undefined)
+        .map(String)
+      if (!validWinners.includes(String(body.winner_id))) {
+        return apiError('Le vainqueur doit être l\'une des deux équipes du match', 400)
+      }
       updates.push(`winner_id = $${paramIndex++}`)
       values.push(body.winner_id)
     }

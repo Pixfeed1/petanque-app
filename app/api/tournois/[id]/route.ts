@@ -7,6 +7,7 @@ import { applyRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { queryOne, query } from '@/lib/db'
 import { SQLValue } from '@/lib/types'
 import { emitTournamentEvent } from '@/lib/tournament-events'
+import { sanitizeTournoiSettings } from '@/lib/validations'
 
 // GET - Récupérer un tournoi par ID
 export async function GET(
@@ -88,24 +89,34 @@ export async function PUT(
         return apiError(`Statut invalide. Valeurs acceptées: ${validStatuses.join(', ')}`, 400)
       }
 
-      // Valider les transitions de statut autorisées
-      const allowedTransitions: Record<string, string[]> = {
-        'preparation': ['en_cours'],
-        'en_cours': ['termine'],
-        'termine': ['en_cours']
-      }
       const currentStatus = existingTournoi.status as string
-      if (!allowedTransitions[currentStatus]?.includes(body.status)) {
-        return apiError(`Transition de statut invalide: ${currentStatus} → ${body.status}`, 400)
+      // FIX BUG : une transition X→X (no-op) est autorisée — le PUT final de la
+      // création envoie status:'preparation' sur un tournoi déjà en preparation,
+      // et était rejeté 400 (poules_created jamais persisté).
+      if (body.status !== currentStatus) {
+        const allowedTransitions: Record<string, string[]> = {
+          'preparation': ['en_cours'],
+          'en_cours': ['termine', 'preparation'],
+          'termine': ['en_cours']
+        }
+        if (!allowedTransitions[currentStatus]?.includes(body.status)) {
+          return apiError(`Transition de statut invalide: ${currentStatus} → ${body.status}`, 400)
+        }
+        updates.push(`status = $${paramIndex++}`)
+        values.push(body.status)
       }
-
-      updates.push(`status = $${paramIndex++}`)
-      values.push(body.status)
     }
 
     if (body.settings !== undefined) {
+      // FIX SÉCURITÉ / BUG : merger avec l'existant (au lieu de remplacer tout le
+      // JSONB) et sanitize (whitelist + coercition). Avant, un simple membre
+      // pouvait écraser tous les settings (maxPoints:999, effacer melee_*...).
+      const existingSettings = typeof existingTournoi.settings === 'string'
+        ? JSON.parse(existingTournoi.settings)
+        : (existingTournoi.settings || {})
+      const mergedSettings = { ...existingSettings, ...sanitizeTournoiSettings(body.settings) }
       updates.push(`settings = $${paramIndex++}::jsonb`)
-      values.push(body.settings)
+      values.push(mergedSettings)
     }
 
     if (updates.length === 0) {

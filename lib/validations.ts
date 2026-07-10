@@ -271,3 +271,76 @@ export const replyFeedbackSchema = z.object({
   admin_reply: z.string().min(1).max(2000).optional(),
   status: z.enum(['new', 'read', 'replied', 'archived']).optional()
 })
+
+// ============================================
+// SANITIZATION DES SETTINGS DE TOURNOI
+// ============================================
+// FIX SÉCURITÉ : le POST/PUT tournois faisait `{ ...defaults, ...settings }`
+// sans whitelist (mass assignment) ni coercition de type. Un appel API direct
+// pouvait injecter pouleSize:0, terrains:-5, maxPoints:"abc"/NaN, ou des clés
+// parasites. Ce helper coerce et borne les clés connues et ignore les inconnues.
+
+type SettingsInput = Record<string, unknown>
+
+function clampInt(value: unknown, min: number, max: number, fallback: number): number {
+  const n = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(n)) return fallback
+  return Math.min(max, Math.max(min, Math.round(n)))
+}
+
+function toBool(value: unknown, fallback = false): boolean {
+  if (typeof value === 'boolean') return value
+  if (value === 'true') return true
+  if (value === 'false') return false
+  return fallback
+}
+
+/**
+ * Nettoie un objet de settings de tournoi : coercition + bornes sur les clés
+ * connues, whitelist stricte (les clés inconnues sont ignorées). Ne fixe PAS
+ * les valeurs par défaut absentes (utiliser `{ ...defaults, ...sanitize(x) }`
+ * en création, ou merger avec l'existant en mise à jour).
+ */
+export function sanitizeTournoiSettings(input: unknown): SettingsInput {
+  const src: SettingsInput = (input && typeof input === 'object') ? input as SettingsInput : {}
+  const out: SettingsInput = {}
+
+  // Numériques bornés
+  if ('terrains' in src) out.terrains = clampInt(src.terrains, 1, 50, 4)
+  if ('maxPoints' in src) out.maxPoints = clampInt(src.maxPoints, 7, 25, 13)
+  if ('pouleSize' in src) out.pouleSize = clampInt(src.pouleSize, 2, 12, 4)
+  if ('timeLimitMinutes' in src) out.timeLimitMinutes = clampInt(src.timeLimitMinutes, 5, 240, 60)
+  if ('qualifiedPerPoule' in src) out.qualifiedPerPoule = clampInt(src.qualifiedPerPoule, 1, 16, 2)
+  if ('current_round' in src) out.current_round = clampInt(src.current_round, 1, 100, 1)
+
+  // Booléens
+  for (const key of ['timeLimit', 'consolante', 'fairPlay', 'recordMenes', 'allowPhotos', 'sendNotifications', 'mixiteObligatoire', 'poules_created'] as const) {
+    if (key in src) out[key] = toBool(src[key])
+  }
+
+  // Chaînes bornées / énumérées
+  if ('date' in src && typeof src.date === 'string') out.date = src.date.slice(0, 32)
+  if ('time' in src && typeof src.time === 'string') out.time = src.time.slice(0, 16)
+  if ('location' in src && typeof src.location === 'string') out.location = src.location.slice(0, 255)
+  if ('eliminationFormat' in src && (src.eliminationFormat === 'simple' || src.eliminationFormat === 'double')) {
+    out.eliminationFormat = src.eliminationFormat
+  }
+  if ('meleeRotation' in src && (src.meleeRotation === 'par_tour' || src.meleeRotation === 'par_match')) {
+    out.meleeRotation = src.meleeRotation
+  }
+  if ('visibility' in src && (src.visibility === 'private' || src.visibility === 'public')) {
+    out.visibility = src.visibility
+  }
+
+  // Listes d'IDs de joueurs (bornées, éléments primitifs uniquement)
+  for (const key of ['players', 'melee_tournante_players'] as const) {
+    if (key in src && Array.isArray(src[key])) {
+      out[key] = (src[key] as unknown[])
+        .filter(v => typeof v === 'string' || typeof v === 'number')
+        .slice(0, 512)
+        .map(String)
+    }
+  }
+
+  return out
+}
