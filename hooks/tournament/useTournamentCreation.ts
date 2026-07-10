@@ -1,17 +1,22 @@
 /**
- * Hook pour la création du tournoi et ses entités
- * - Création des joueurs
- * - Création des équipes (avec mixité)
- * - Création des matchs de poules
+ * Hook pour la création du tournoi et ses entités.
+ *
+ * Création ATOMIQUE : au lieu d'une saga de N requêtes HTTP séquentielles
+ * (joueurs → tournoi → équipes → settings → matchs) qui laissait des données
+ * partielles en cas d'échec, on construit tout le payload côté client
+ * (compositions d'équipes + matchs, avec des jetons "new:<index>" pour les
+ * joueurs à créer) puis on l'envoie en UN seul appel à POST /api/tournois/full,
+ * qui insère l'ensemble dans une transaction PG (rollback global si erreur).
  */
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
-import { ValidationService, TirageService } from '@/lib/services'
+import { ValidationService } from '@/lib/services'
 import { MixiteService } from '@/lib/services/mixite.service'
-import type { Joueur, Tournoi } from '@/lib/types'
-import type { TournamentFormData, NewPlayer } from './useCreateTournament'
+import type { Joueur } from '@/lib/types'
+import type { TournamentFormData } from './useCreateTournament'
+import { buildTeamsAndMatches, type PlayerRef } from '@/lib/tournament/creationPayload'
 
 // Validation email
 const isValidEmail = (email: string): boolean => {
@@ -28,11 +33,8 @@ interface UseTournamentCreationProps {
 }
 
 interface UseTournamentCreationReturn {
-  // State
   savingTournament: boolean
   successAnimation: boolean
-
-  // Actions
   handleSubmit: () => Promise<void>
 }
 
@@ -49,291 +51,11 @@ export function useTournamentCreation({
   const [savingTournament, setSavingTournament] = useState(false)
   const [successAnimation, setSuccessAnimation] = useState(false)
 
-  // Système de notification avec fallback
   const notify = {
     error: (msg: string) => onError ? onError(msg) : console.error(msg),
     warning: (msg: string) => onWarning ? onWarning(msg) : console.warn(msg)
   }
 
-  /**
-   * Crée une équipe avec ses joueurs
-   */
-  const createTeamWithPlayers = useCallback(async (
-    tournoiId: string,
-    teamNumber: number,
-    playerIds: string[],
-    prefix: string = ''
-  ) => {
-    const teamName = prefix ? `${prefix}Équipe ${teamNumber}` : `Équipe ${teamNumber}`
-
-    const response = await fetch('/api/equipes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        tournoi_id: tournoiId,
-        name: teamName,
-        joueur_ids: playerIds,
-        stats: { victoires: 0, defaites: 0, points_pour: 0, points_contre: 0 }
-      })
-    })
-
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}))
-      throw new Error(errData.error || 'Erreur création équipe')
-    }
-
-    return response.json()
-  }, [])
-
-  /**
-   * Crée les équipes avec mixité
-   */
-  const createTeamsWithMixity = useCallback(async (
-    tournoi: Tournoi,
-    allPlayerIds: string[],
-    updatedPlayersList: Joueur[]
-  ): Promise<number> => {
-    const playersPerTeam = formData.format === 'tete_a_tete' ? 1 :
-      formData.format === 'doublette' ? 2 : 3
-
-    // Validation
-    const validation = ValidationService.validatePlayerCount(
-      allPlayerIds.length,
-      formData.format,
-      formData.mode
-    )
-    if (!validation.valid) throw new Error(validation.error)
-
-    // MODE CHOISI : pas d'équipes auto
-    if (formData.mode === 'choisi') return 0
-
-    // Tête-à-tête : 1 joueur = 1 équipe
-    if (formData.format === 'tete_a_tete') {
-      if (formData.mode === 'melee_tournante') {
-        // Mêlée tournante en tête-à-tête : équipes individuelles STABLES (ordre = allPlayerIds),
-        // préfixe R1- pour la rotation + config mêlée. La ronde 1 (Berger) est créée ensuite par
-        // createMeleeTeteATeteFirstRound (et non createPoolMatches qui ferait un round-robin complet).
-        const teamsToCreate = allPlayerIds.map((pid, index) => ({
-          tournoi_id: tournoi.id,
-          name: `R1-Équipe ${index + 1}`,
-          joueur_ids: [pid],
-          stats: { victoires: 0, defaites: 0, points_pour: 0, points_contre: 0 }
-        }))
-        const teamsResp = await fetch('/api/equipes/batch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ teams: teamsToCreate })
-        })
-        if (!teamsResp.ok) throw new Error('Erreur lors de la création des équipes tête-à-tête')
-
-        await fetch(`/api/tournois/${tournoi.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            settings: {
-              ...tournoi.settings,
-              melee_tournante_players: allPlayerIds,
-              melee_rotation: formData.meleeRotation,
-              current_round: 1
-            }
-          })
-        })
-        return 0
-      }
-
-      // Tête-à-tête mêlée fixe / poules : comportement existant (équipes mélangées)
-      const shuffled = [...allPlayerIds].sort(() => Math.random() - 0.5)
-      for (let i = 0; i < shuffled.length; i++) {
-        await createTeamWithPlayers(tournoi.id, i + 1, [shuffled[i]])
-      }
-      return 0
-    }
-
-    // MÊLÉE FIXE ou TOURNANTE : utiliser MixiteService
-    const players = updatedPlayersList.filter(p => allPlayerIds.includes(p.id))
-    const mixiteResult = MixiteService.createTeamsWithMixite(
-      players,
-      playersPerTeam as 2 | 3,
-      formData.mixiteObligatoire
-    )
-
-    const prefix = formData.mode === 'melee_tournante' ? 'R1-' : ''
-
-    // Créer toutes les équipes en batch (1 seule requête au lieu de N)
-    const teamsToCreate = mixiteResult.teams.map((team, index) => ({
-      tournoi_id: tournoi.id,
-      name: prefix ? `${prefix}Équipe ${index + 1}` : `Équipe ${index + 1}`,
-      joueur_ids: team.joueur_ids,
-      stats: { victoires: 0, defaites: 0, points_pour: 0, points_contre: 0 }
-    }))
-
-    const teamsBatchResponse = await fetch('/api/equipes/batch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ teams: teamsToCreate })
-    })
-
-    if (!teamsBatchResponse.ok) {
-      throw new Error('Erreur lors de la création des équipes en batch')
-    }
-
-    // Config mêlée tournante
-    if (formData.mode === 'melee_tournante') {
-      await fetch(`/api/tournois/${tournoi.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          settings: {
-            ...tournoi.settings,
-            melee_tournante_players: allPlayerIds,
-            melee_rotation: formData.meleeRotation,
-            current_round: 1
-          }
-        })
-      })
-    }
-
-    return mixiteResult.unassignedPlayerIds.length
-  }, [formData, createTeamWithPlayers])
-
-  /**
-   * Crée les matchs de poules avec snake draft + Berger + terrains intelligents
-   */
-  const createPoolMatches = useCallback(async (tournoi: Tournoi) => {
-    const response = await fetch(`/api/equipes?tournoi_id=${tournoi.id}`, {
-      credentials: 'include'
-    })
-    if (!response.ok) throw new Error('Erreur récupération équipes')
-
-    const equipes = await response.json()
-    if (!equipes?.length) throw new Error('Aucune équipe trouvée')
-
-    // Distribution serpentin (snake draft) pour des poules équilibrées
-    const poules = TirageService.snakeDraftDistribution(equipes, formData.pouleSize)
-
-    const matchesToCreate: Array<Record<string, unknown>> = []
-
-    for (const [pouleName, pouleTeams] of Object.entries(poules)) {
-      // Scheduling Berger pour chaque poule (planning optimal)
-      const bergerMatches = TirageService.generateBergerMatches(pouleTeams, pouleName)
-
-      // Assignation intelligente des terrains
-      let terrainAssignment: Map<string, number> | null = null
-      if (formData.terrains > 0) {
-        const matchesForTerrain = bergerMatches.map((m, idx) => ({
-          id: `${pouleName}_${idx}`,
-          equipe_a_id: m.teamA.id,
-          equipe_b_id: m.teamB.id,
-          tour: m.tour
-        }))
-        terrainAssignment = TirageService.smartTerrainAssignment(
-          matchesForTerrain,
-          formData.terrains
-        )
-      }
-
-      for (let idx = 0; idx < bergerMatches.length; idx++) {
-        const m = bergerMatches[idx]
-        matchesToCreate.push({
-          tournoi_id: tournoi.id,
-          equipe_a_id: m.teamA.id,
-          equipe_b_id: m.teamB.id,
-          tour: m.tour,
-          terrain: terrainAssignment?.get(`${pouleName}_${idx}`) || null,
-          type: 'poule',
-          poule: m.poule,
-          status: 'a_jouer'
-        })
-      }
-    }
-
-    // Créer tous les matchs en batch
-    const matchesBatchResponse = await fetch('/api/matches/batch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ matches: matchesToCreate })
-    })
-
-    if (!matchesBatchResponse.ok) {
-      const error = await matchesBatchResponse.json()
-      throw new Error(error.error || 'Erreur lors de la création des matchs en batch')
-    }
-
-    const matchesResult = await matchesBatchResponse.json()
-    if (matchesResult.created !== matchesToCreate.length) {
-      throw new Error(`Seulement ${matchesResult.created}/${matchesToCreate.length} matchs créés`)
-    }
-  }, [formData])
-
-  /**
-   * Crée la ronde 1 d'une mêlée tournante en tête-à-tête : UNE seule ronde de Berger
-   * (chaque joueur un match contre un adversaire), pas un round-robin complet.
-   */
-  const createMeleeTeteATeteFirstRound = useCallback(async (tournoi: Tournoi) => {
-    const response = await fetch(`/api/equipes?tournoi_id=${tournoi.id}`, {
-      credentials: 'include'
-    })
-    if (!response.ok) throw new Error('Erreur récupération équipes')
-
-    const equipes = await response.json()
-    if (!equipes?.length) throw new Error('Aucune équipe trouvée')
-
-    // Ordre stable = numéro dans "R1-Équipe N" (ordre de création)
-    const ordered = [...equipes].sort((a: { name: string }, b: { name: string }) => {
-      const na = parseInt((a.name.match(/Équipe (\d+)/) || [])[1] || '0', 10)
-      const nb = parseInt((b.name.match(/Équipe (\d+)/) || [])[1] || '0', 10)
-      return na - nb
-    })
-
-    // Ronde 1 = première ronde de Berger (même logique que les rotations suivantes,
-    // cf. useRotation.buildMatchesForRotation → un seul schéma partagé, pas de cas à part).
-    const round1 = TirageService.bergerRoundForRotation(
-      ordered.map((t: { id: string; name: string }) => ({ id: t.id, name: t.name })),
-      1
-    )
-
-    const matchesToCreate = round1.map(m => ({
-      tournoi_id: tournoi.id,
-      equipe_a_id: m.teamA.id,
-      equipe_b_id: m.teamB.id,
-      tour: 1,
-      terrain: null as number | null,
-      type: 'poule',
-      poule: null as string | null,
-      status: 'a_jouer'
-    }))
-
-    if (formData.terrains > 0) {
-      const terrainAssignment = TirageService.smartTerrainAssignment(
-        matchesToCreate.map((m, idx) => ({
-          id: `tat_${idx}`, equipe_a_id: m.equipe_a_id, equipe_b_id: m.equipe_b_id, tour: 1
-        })),
-        formData.terrains
-      )
-      matchesToCreate.forEach((m, idx) => { m.terrain = terrainAssignment.get(`tat_${idx}`) || null })
-    }
-
-    const matchesResp = await fetch('/api/matches/batch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ matches: matchesToCreate })
-    })
-    if (!matchesResp.ok) {
-      const e = await matchesResp.json().catch(() => ({ error: 'Erreur serveur' }))
-      throw new Error(e.error || 'Erreur lors de la création des matchs de la ronde 1')
-    }
-  }, [formData])
-
-  /**
-   * Soumission du formulaire
-   */
   const handleSubmit = useCallback(async () => {
     if (!user) {
       notify.error('Vous devez être connecté')
@@ -357,43 +79,64 @@ export function useTournamentCreation({
       return
     }
 
-    // Validations préalables
+    // --- Validations préalables (identiques à l'ancien flux) ---
     const formatValidation = MixiteService.validateFormatMixite(formData.format, formData.mixiteObligatoire)
     if (!formatValidation.valid) {
       notify.error(formatValidation.error || 'Format invalide')
       return
     }
 
+    // Nouveaux joueurs (avec jetons "new:<index>")
+    const newPlayerInputs = formData.newPlayers.filter(np => np.name.trim())
+    const newPlayerRefs: PlayerRef[] = newPlayerInputs.map((np, i) => ({
+      id: `new:${i}`, name: np.name.trim(), gender: np.gender
+    }))
+
+    // Joueurs existants sélectionnés
+    const selectedExisting: PlayerRef[] = formData.selectedPlayers
+      .map(id => availablePlayers.find(p => p.id === id))
+      .filter((p): p is Joueur => !!p)
+      .map(p => ({ id: p.id, name: p.name, gender: p.gender, email: p.email }))
+
+    const combinedPlayers: PlayerRef[] = [...selectedExisting, ...newPlayerRefs]
+    const allPlayerIds = combinedPlayers.map(p => p.id)
+
     // Validation mixité si obligatoire
     if (formData.mixiteObligatoire && formData.mode !== 'choisi') {
-      const selectedExisting = availablePlayers.filter(p => formData.selectedPlayers.includes(p.id))
-      const tempBase = Date.now()
-      const newPlayersTemp = formData.newPlayers
-        .filter(np => np.name.trim())
-        .map((np, i) => ({ id: `temp-${tempBase}-${i}`, name: np.name, gender: np.gender }))
-
-      const genderValidation = MixiteService.validatePlayerGenders(
-        [...selectedExisting, ...newPlayersTemp],
-        true
-      )
+      const genderValidation = MixiteService.validatePlayerGenders(combinedPlayers as unknown as Joueur[], true)
       if (!genderValidation.valid) {
         notify.error(genderValidation.error || 'Configuration mixité invalide')
         return
       }
     }
 
-    // Validation poules
-    const pouleValidation = ValidationService.validatePouleSize(formData.pouleSize, getEstimatedTeams())
-    if (!pouleValidation.valid) {
-      notify.error(`Configuration invalide: ${pouleValidation.error || pouleValidation.warning}`)
-      return
+    // Validation nombre de joueurs (hors mode choisi)
+    if (formData.mode !== 'choisi') {
+      if (allPlayerIds.length === 0) {
+        notify.error('Aucun joueur sélectionné')
+        return
+      }
+      const countValidation = ValidationService.validatePlayerCount(allPlayerIds.length, formData.format, formData.mode)
+      if (!countValidation.valid) {
+        notify.error(countValidation.error || 'Nombre de joueurs invalide')
+        return
+      }
     }
 
-    // Validation date
-    const selectedDate = new Date(formData.date)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    if (selectedDate < today) {
+    // Validation poules (seulement si des poules seront générées)
+    const willGeneratePoules = formData.mode !== 'choisi' &&
+      !(formData.format === 'tete_a_tete' && formData.mode === 'melee_tournante')
+    if (willGeneratePoules) {
+      const pouleValidation = ValidationService.validatePouleSize(formData.pouleSize, getEstimatedTeams())
+      if (!pouleValidation.valid) {
+        notify.error(`Configuration invalide: ${pouleValidation.error || pouleValidation.warning}`)
+        return
+      }
+    }
+
+    // Validation date (comparaison de chaînes YYYY-MM-DD, sans piège de fuseau)
+    const todayStr = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD en heure locale
+    if (formData.date && formData.date < todayStr) {
       notify.error('La date doit être ultérieure ou égale à aujourd\'hui.')
       return
     }
@@ -407,131 +150,99 @@ export function useTournamentCreation({
     setSavingTournament(true)
 
     try {
-      // 1. Créer les nouveaux joueurs
-      const newPlayerIds: string[] = []
-      const allPlayersUpdated = [...availablePlayers]
-
-      for (const np of formData.newPlayers) {
-        if (np.name.trim()) {
-          const emailToSave = np.email?.trim() && isValidEmail(np.email) ? np.email.trim() : null
-
-          const res = await fetch('/api/joueurs', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              org_id: organization.id,
-              name: np.name.trim(),
-              email: emailToSave,
-              phone: np.phone?.trim() || null,
-              gender: np.gender,
-              stats: { gender: np.gender }
-            })
-          })
-
-          if (!res.ok) throw new Error(`Impossible de créer ${np.name}`)
-
-          const data = await res.json()
-          newPlayerIds.push(data.id)
-          allPlayersUpdated.push(data)
-        }
-      }
-
-      // 2. Créer le tournoi
-      const allPlayerIds = [...formData.selectedPlayers, ...newPlayerIds]
-
-      if (formData.mode !== 'choisi' && allPlayerIds.length === 0) {
-        throw new Error('Aucun joueur sélectionné')
-      }
-
-      const tournoiData = {
-        org_id: organization.id,
-        name: formData.name.trim(),
-        mode: formData.mode,
-        format: formData.format,
-        status: 'preparation',
-        visibility: formData.visibility,
-        settings: {
-          date: formData.date,
-          time: formData.time,
-          location: formData.location?.trim() || null,
-          terrains: formData.terrains,
-          maxPoints: formData.maxPoints,
-          timeLimit: formData.timeLimit,
-          timeLimitMinutes: formData.timeLimit ? formData.timeLimitMinutes : 60,
-          pouleSize: formData.pouleSize,
-          eliminationFormat: formData.eliminationFormat,
-          meleeRotation: formData.mode === 'melee_tournante' ? formData.meleeRotation : null,
-          qualifiedPerPoule: formData.qualifiedPerPoule,
-          consolante: formData.consolante,
-          fairPlay: formData.fairPlay,
-          recordMenes: formData.recordMenes,
+      // Construire équipes + matchs (indexés)
+      const { teams, matches, unassignedCount } = buildTeamsAndMatches(
+        {
+          format: formData.format,
+          mode: formData.mode,
           mixiteObligatoire: formData.mixiteObligatoire,
-          allowPhotos: formData.allowPhotos,
-          sendNotifications: formData.sendNotifications,
-          players: allPlayerIds
-        }
+          pouleSize: formData.pouleSize,
+          terrains: formData.terrains,
+        },
+        combinedPlayers
+      )
+      if (unassignedCount > 0) {
+        notify.warning(`${unassignedCount} joueur(s) non assigné(s) en raison de la mixité`)
       }
 
-      const tournoiRes = await fetch('/api/tournois', {
+      const isMeleeTournante = formData.mode === 'melee_tournante'
+
+      const settings: Record<string, unknown> = {
+        date: formData.date,
+        time: formData.time,
+        location: formData.location?.trim() || null,
+        terrains: formData.terrains,
+        maxPoints: formData.maxPoints,
+        timeLimit: formData.timeLimit,
+        timeLimitMinutes: formData.timeLimit ? formData.timeLimitMinutes : 60,
+        pouleSize: formData.pouleSize,
+        eliminationFormat: formData.eliminationFormat,
+        meleeRotation: isMeleeTournante ? formData.meleeRotation : null,
+        qualifiedPerPoule: formData.qualifiedPerPoule,
+        consolante: formData.consolante,
+        fairPlay: formData.fairPlay,
+        recordMenes: formData.recordMenes,
+        mixiteObligatoire: formData.mixiteObligatoire,
+        allowPhotos: formData.allowPhotos,
+        sendNotifications: formData.sendNotifications,
+        players: allPlayerIds,
+        // Poules/matchs créés dans le même appel → poules_created dès la création
+        // (sauf mode choisi où l'organisateur compose ensuite).
+        poules_created: formData.mode !== 'choisi',
+      }
+      if (isMeleeTournante) {
+        settings.melee_tournante_players = allPlayerIds
+        settings.current_round = 1
+      }
+
+      const payload = {
+        tournoi: {
+          org_id: organization.id,
+          name: formData.name.trim(),
+          mode: formData.mode,
+          format: formData.format,
+          visibility: formData.visibility,
+          settings,
+        },
+        newPlayers: newPlayerInputs.map(np => ({
+          name: np.name.trim(),
+          gender: np.gender,
+          email: np.email?.trim() && isValidEmail(np.email) ? np.email.trim() : null,
+          phone: np.phone?.trim() || null,
+        })),
+        teams,
+        matches,
+      }
+
+      const res = await fetch('/api/tournois/full', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(tournoiData)
+        body: JSON.stringify(payload),
       })
 
-      if (!tournoiRes.ok) {
-        const err = await tournoiRes.json()
-        throw new Error(err.error || 'Erreur création tournoi')
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Erreur lors de la création du tournoi')
       }
 
-      const tournoi = await tournoiRes.json()
+      const data = await res.json()
+      const tournoiId = data?.tournoi?.id
 
-      // 3. Créer équipes et matchs : UNIQUEMENT en mode mêlée.
-      // En mode choisi, l'organisateur compose les équipes manuellement sur la
-      // page du tournoi puis génère les poules de là (pool de joueurs déjà stocké
-      // dans settings.players). Générer les poules ici throw "Aucune équipe trouvée".
-      if (formData.mode !== 'choisi') {
-        const unassigned = await createTeamsWithMixity(tournoi, allPlayerIds, allPlayersUpdated)
-
-        if (unassigned > 0) {
-          notify.warning(`${unassigned} joueur(s) non assigné(s) en raison de la mixité`)
-        }
-
-        if (formData.format === 'tete_a_tete' && formData.mode === 'melee_tournante') {
-          await createMeleeTeteATeteFirstRound(tournoi)
-        } else {
-          await createPoolMatches(tournoi)
-        }
-
-        // Mettre à jour le tournoi
-        await fetch(`/api/tournois/${tournoi.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            status: 'preparation',
-            settings: { ...tournoi.settings, poules_created: true }
-          })
-        })
-      }
-
-      // Animation brève et redirection
       setSuccessAnimation(true)
       await new Promise(r => setTimeout(r, 400))
-      router.push(`/tournoi/${tournoi.id}`)
-
+      router.push(`/tournoi/${tournoiId}`)
     } catch (error) {
+      // Création atomique : en cas d'échec, AUCUNE donnée partielle (rollback serveur).
       const msg = error instanceof Error ? error.message : 'Erreur lors de la création'
-      notify.error(`${msg}. Des données partielles peuvent avoir été créées.`)
+      notify.error(msg)
       console.error('Erreur création:', error)
     } finally {
       setSavingTournament(false)
     }
   }, [
     user, organization, router, refreshOrganization,
-    formData, availablePlayers, getEstimatedTeams,
-    createTeamsWithMixity, createPoolMatches, createMeleeTeteATeteFirstRound
+    formData, availablePlayers, getEstimatedTeams
   ])
 
   return {
