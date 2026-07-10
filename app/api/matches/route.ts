@@ -56,13 +56,21 @@ export async function GET(request: NextRequest) {
     )
 
     const matches: MatchWithEquipes[] = matchesRaw.map((match): MatchWithEquipes => {
+      // FIX BUG : pg désérialise déjà le JSONB en objet/array JS. Ne parser que si
+      // c'est une chaîne (cas legacy) ; sinon utiliser la valeur telle quelle. Avant,
+      // la condition typeof==='string' était toujours fausse → manches_json renvoyé
+      // null → historique des mènes perdu/écrasé.
       let manchesData = null
-      if (match.manches_json && typeof match.manches_json === 'string' && match.manches_json.trim().length > 0) {
-        try {
-          manchesData = JSON.parse(match.manches_json)
-        } catch {
-          // JSON invalide — manchesData reste null
+      if (typeof match.manches_json === 'string') {
+        if (match.manches_json.trim().length > 0) {
+          try {
+            manchesData = JSON.parse(match.manches_json)
+          } catch {
+            // JSON invalide — manchesData reste null
+          }
         }
+      } else {
+        manchesData = match.manches_json ?? null
       }
 
       return {

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import confetti from 'canvas-confetti'
 import type { Match, Equipe, Match as MatchType, Joueur } from '@/lib/types'
 import { StatsService } from '@/lib/services'
+import { thirdPlaceTeamId } from '@/lib/services/doubleEliminationIntegration'
 
 // ============================================================================
 // Types
@@ -123,6 +124,12 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
   const buildPodium = async (allMatches: Match[], tournoiId: string): Promise<PodiumTeam[]> => {
     const podiumData: PodiumTeam[] = []
 
+    // FIX BUG : reconnaître la double élimination (types "de:*"). Sans ça, le podium
+    // retombait sur le classement de poules et n'affichait jamais le vrai champion.
+    if (buildPodiumFromDoubleElim(podiumData, allMatches)) {
+      return podiumData
+    }
+
     // Trouver la finale et la petite finale
     const finaleData = allMatches.find((m: Match) => m.type === 'finale')
     const petiteFinaleData = allMatches.find((m: Match) => m.type === 'petite_finale')
@@ -179,6 +186,61 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
     }
 
     return podiumData
+  }
+
+  /**
+   * Construit le podium à partir d'un bracket à double élimination (types "de:*").
+   * Champion = vainqueur de la grande finale (de:GF), 2e = finaliste,
+   * 3e = perdant de la finale du losers bracket (via thirdPlaceTeamId).
+   * Renvoie true si un bracket DE a été trouvé et traité.
+   */
+  const buildPodiumFromDoubleElim = (podiumData: PodiumTeam[], allMatches: Match[]): boolean => {
+    const deMatches = allMatches.filter(
+      (m: Match) => typeof m.type === 'string' && m.type.startsWith('de:')
+    )
+    if (deMatches.length === 0) return false
+
+    // Index id -> équipe (nom) à partir des équipes présentes dans les matchs
+    const teamById = new Map<string, Team>()
+    for (const m of allMatches) {
+      if (m.equipe_a?.id) teamById.set(m.equipe_a.id, m.equipe_a as Team)
+      if (m.equipe_b?.id) teamById.set(m.equipe_b.id, m.equipe_b as Team)
+    }
+
+    const grandFinale = deMatches.find((m: Match) => (m.type as string) === 'de:GF')
+    if (!grandFinale || grandFinale.status !== 'termine') {
+      // Bracket DE en cours : pas encore de podium définitif → on ne bascule pas
+      // sur le fallback poules (qui serait faux), on renvoie true avec un podium vide.
+      return true
+    }
+
+    const scoreA = grandFinale.score_a ?? 0
+    const scoreB = grandFinale.score_b ?? 0
+    const championTeam = grandFinale.winner_id
+      ? teamById.get(grandFinale.winner_id)
+      : scoreA > scoreB ? (grandFinale.equipe_a as Team) : (grandFinale.equipe_b as Team)
+    const finalisteTeam = grandFinale.winner_id
+      ? (grandFinale.equipe_a?.id === grandFinale.winner_id ? grandFinale.equipe_b : grandFinale.equipe_a) as Team
+      : scoreA > scoreB ? (grandFinale.equipe_b as Team) : (grandFinale.equipe_a as Team)
+
+    if (championTeam) podiumData.push({ position: 1, team: championTeam, score: Math.max(scoreA, scoreB) })
+    if (finalisteTeam) podiumData.push({ position: 2, team: finalisteTeam, score: Math.min(scoreA, scoreB) })
+
+    const thirdId = thirdPlaceTeamId(
+      deMatches.map((m: Match) => ({
+        type: m.type,
+        equipe_a_id: m.equipe_a_id ?? null,
+        equipe_b_id: m.equipe_b_id ?? null,
+        status: m.status,
+        winner_id: m.winner_id ?? null
+      }))
+    )
+    if (thirdId) {
+      const t = teamById.get(thirdId)
+      if (t) podiumData.push({ position: 3, team: t })
+    }
+
+    return true
   }
 
   const buildPodiumFromPoules = async (

@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { generateFirstRoundPairs, getMatchWinners, nextRoundMatchups } from '../bracket.service'
+import { generateFirstRoundPairs, getMatchWinners, nextRoundMatchups, calculateBracketMatches } from '../bracket.service'
 
 type TM = {
   type: string; status: string
@@ -63,13 +63,20 @@ function runToPodium(nbQualified: number): { finalists: string[]; duplicateRound
     if (res.kind === 'error') break
 
     if (res.kind === 'finale') {
-      // Reproduit generateFinales : les 2 vainqueurs de demi s'affrontent.
+      // Reproduit generateFinales : vainqueurs de demi + vainqueur d'un éventuel
+      // bye du tour courant (cas 3 qualifiés : la demi est le premier tour).
       const demis = matches.filter(m => m.type === 'demi' && m.status === 'termine')
       const w = getMatchWinners(demis.map(m => ({
         equipe_a_id: m.equipe_a_id, equipe_b_id: m.equipe_b_id,
         score_a: m.score_a ?? 0, score_b: m.score_b ?? 0,
         type: m.type, equipe_a: m.equipe_a, equipe_b: m.equipe_b,
       }))).filter((x): x is { id: string; name: string } => x !== null)
+      const hasEarlierRounds = matches.some(m => m.type === 'quart' || m.type === 'huitieme')
+      if (!hasEarlierRounds) {
+        for (const b of matches.filter(m => m.type === 'bye' && m.status === 'termine' && m.equipe_a)) {
+          w.push(b.equipe_a!)
+        }
+      }
       matches.push({ type: 'finale', status: 'a_jouer', equipe_a_id: w[0].id, equipe_b_id: w[1].id, score_a: null, score_b: null, equipe_a: w[0], equipe_b: w[1] })
       break
     }
@@ -90,13 +97,33 @@ function runToPodium(nbQualified: number): { finalists: string[]; duplicateRound
 }
 
 describe('Bracket — progression complète jusqu\'au podium (régression byes)', () => {
-  for (let n = 5; n <= 16; n++) {
+  for (let n = 3; n <= 16; n++) {
     it(`${n} qualifiés : finale = seed 1 vs seed 2, sans doublon`, () => {
       const { finalists, duplicateRound } = runToPodium(n)
       expect(duplicateRound).toBeNull()
       expect(finalists).toEqual(['S1', 'S2'])
     })
   }
+})
+
+describe('Bracket — cas 3 qualifiés (régression : finale bloquée)', () => {
+  it('génère 1 exempt + 1 demi, puis signale la finale', () => {
+    const matches = generateEliminationPhases(3)
+    expect(matches.filter(m => m.type === 'bye').length).toBe(1)
+    expect(matches.filter(m => m.type === 'demi').length).toBe(1)
+    playAll(matches)
+    const res = nextRoundMatchups(matches as any)
+    expect(res.kind).toBe('finale')
+  })
+})
+
+describe('Bracket — garde au-delà de 16 qualifiés', () => {
+  it('17 qualifiés : lève une erreur explicite (pas d\'exclusion silencieuse)', () => {
+    expect(() => calculateBracketMatches(17)).toThrow(/max 16|Trop d'équipes/)
+  })
+  it('16 qualifiés : toujours accepté', () => {
+    expect(() => calculateBracketMatches(16)).not.toThrow()
+  })
 })
 
 describe('Bracket — cas précis du bug (huitièmes avec byes)', () => {

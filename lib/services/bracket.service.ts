@@ -81,15 +81,24 @@ export function calculateBracketMatches(nbTeams: number): {
     }
   }
 
-  // 9-16 équipes → huitièmes de finale
-  const nextPowerOf2 = 16
-  const nbByes = nextPowerOf2 - nbTeams
-  return {
-    nbMatches: 8,
-    round: 'huitieme',
-    hasByes: nbByes > 0,
-    nbByes
+  if (nbTeams <= 16) {
+    // 9-16 équipes → huitièmes de finale
+    const nextPowerOf2 = 16
+    const nbByes = nextPowerOf2 - nbTeams
+    return {
+      nbMatches: 8,
+      round: 'huitieme',
+      hasByes: nbByes > 0,
+      nbByes
+    }
   }
+
+  // Au-delà de 16, le bracket (limité aux huitièmes) exclurait silencieusement
+  // les équipes 17+. On lève une erreur explicite plutôt que de perdre des équipes.
+  throw new Error(
+    `Trop d'équipes qualifiées (${nbTeams}) pour une élimination directe (max 16). ` +
+    `Réduisez le nombre de qualifiés par poule ou utilisez des poules plus grandes.`
+  )
 }
 
 /**

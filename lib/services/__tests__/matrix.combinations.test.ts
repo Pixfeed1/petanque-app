@@ -349,8 +349,11 @@ describe('MATRICE — combos INVALIDES (doivent être rejetés)', () => {
   it('taille de poule > nb équipes → rejeté', () => {
     expect(ValidationService.validatePouleSize(6, 4).valid).toBe(false)
   })
-  it('dernière poule à 1 équipe → rejeté', () => {
-    // 11 équipes en poules de 5 → [5,5,1] : dernière poule à 1
-    expect(ValidationService.validatePouleSize(5, 11).valid).toBe(false)
+  it('distribution donnant une poule < 3 → rejeté', () => {
+    // 4 équipes en poules de 3 → distribution équilibrée [2,2] : poule de 2 non viable.
+    // (NB : 11 équipes / poules de 5 donne en réalité [4,4,3], donc valide — la
+    // validation suit désormais la distribution équilibrée réelle, pas un modèle
+    // fill-first qui imaginait [5,5,1].)
+    expect(ValidationService.validatePouleSize(3, 4).valid).toBe(false)
   })
 })

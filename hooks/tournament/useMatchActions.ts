@@ -383,7 +383,22 @@ export function useMatchActions({
         }
       })
 
-      // Trier avec StatsService.sortTeamsByFIPJPRules
+      // FIX BUG : passer matches + poule pour activer le départage par
+      // confrontation directe (3e critère FIPJP). Sans ces arguments, deux
+      // équipes à égalité de points/différence étaient classées à
+      // l'alphabétique, pouvant qualifier la mauvaise équipe.
+      const pouleMatchesForRanking = pouleMatches
+        .filter(m => m.poule === pouleName && m.status === 'termine')
+        .map(m => ({
+          equipe_a_id: m.equipe_a_id || null,
+          equipe_b_id: m.equipe_b_id || null,
+          poule: m.poule || null,
+          status: m.status,
+          score_a: m.score_a ?? null,
+          score_b: m.score_b ?? null
+        })) as MatchType[]
+
+      // Trier avec StatsService.sortTeamsByFIPJPRules (confrontation directe incluse)
       const rankings = StatsService.sortTeamsByFIPJPRules(
         teamStatsForPoule.map(t => ({
           id: t.team.id,
@@ -396,7 +411,9 @@ export function useMatchActions({
           pointsAgainst: t.stats.pointsAgainst,
           difference: t.stats.difference,
           points: t.stats.points
-        }))
+        })),
+        pouleMatchesForRanking,
+        pouleName
       ).map(stats => teamStatsForPoule.find(t => t.team.id === stats.id))
         .filter((teamStat): teamStat is typeof teamStatsForPoule[number] => teamStat !== undefined)
 
@@ -533,8 +550,18 @@ export function useMatchActions({
 
     const demiMatches = matches.filter(m => m.type === 'demi' && m.status === 'termine')
 
-    if (demiMatches.length < 2) {
-      notify.warning('Les deux demi-finales doivent être terminées')
+    // FIX BUG : cas 3 qualifiés → la demi est le PREMIER tour, avec 1 exempt (bye)
+    // qui accède directement à la finale. Sans earlier round (quart/huitième), le
+    // vainqueur du bye doit compter comme finaliste, sinon la finale n'est jamais
+    // générée et le tournoi reste bloqué.
+    const hasEarlierRounds = matches.some(m => m.type === 'quart' || m.type === 'huitieme')
+    const byeMatchesThisRound = hasEarlierRounds
+      ? []
+      : matches.filter(m => m.type === 'bye' && m.status === 'termine' && m.equipe_a_id)
+
+    const totalSemifinalSlots = demiMatches.length + byeMatchesThisRound.length
+    if (demiMatches.length === 0 || totalSemifinalSlots < 2) {
+      notify.warning('Les demi-finales doivent être terminées')
       return
     }
 
@@ -570,6 +597,12 @@ export function useMatchActions({
           winners.push(match.equipe_b_id)
           losers.push(match.equipe_a_id)
         }
+      }
+
+      // Cas 3 qualifiés : ajouter le vainqueur de l'exempt (bye) aux finalistes.
+      // Un bye n'a pas de perdant → pas de petite finale possible dans ce cas.
+      for (const byeMatch of byeMatchesThisRound) {
+        if (byeMatch.equipe_a_id) winners.push(byeMatch.equipe_a_id)
       }
 
       // Créer la finale

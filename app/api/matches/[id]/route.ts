@@ -65,14 +65,21 @@ export async function GET(
       return apiError('Accès refusé à ce match', 403)
     }
 
-    // Parse manches_json seulement si c'est une chaîne non-vide
+    // FIX BUG : pg désérialise déjà le JSONB en objet/array JS. Ne parser que si
+    // c'est une chaîne (legacy) ; sinon la valeur telle quelle. Avant, la condition
+    // typeof==='string' était toujours fausse → manches_json null → historique des
+    // mènes perdu et écrasé à la mène suivante.
     let manchesData = null
-    if (matchRaw.manches_json && typeof matchRaw.manches_json === 'string' && matchRaw.manches_json.trim().length > 0) {
-      try {
-        manchesData = JSON.parse(matchRaw.manches_json)
-      } catch {
-        // JSON invalide — manchesData reste null
+    if (typeof matchRaw.manches_json === 'string') {
+      if (matchRaw.manches_json.trim().length > 0) {
+        try {
+          manchesData = JSON.parse(matchRaw.manches_json)
+        } catch {
+          // JSON invalide — manchesData reste null
+        }
       }
+    } else {
+      manchesData = matchRaw.manches_json ?? null
     }
 
     // Transform to nested format

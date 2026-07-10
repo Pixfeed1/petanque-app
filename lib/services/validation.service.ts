@@ -100,18 +100,22 @@ export function validatePouleSize(
     }
   }
 
-  // Vérifier déséquilibre extrême
+  // FIX BUG : valider la distribution ÉQUILIBRÉE réelle (identique à
+  // computePouleDistributions / snakeDraftDistribution), pas un modèle
+  // « fill-first » naïf. L'ancien calcul `totalTeams % pouleSize` imaginait
+  // par ex. 13 équipes en poules de 4 comme 4-4-4-1 (rejeté à tort), alors
+  // que la répartition réelle est 4-3-3-3 (parfaitement valide).
   const nbPoules = Math.ceil(totalTeams / pouleSize)
-  const lastPouleSize = totalTeams % pouleSize || pouleSize
+  const base = Math.floor(totalTeams / nbPoules)
+  const reste = totalTeams % nbPoules
+  const sizes = Array.from({ length: nbPoules }, (_, i) => (i < reste ? base + 1 : base))
+  const minSize = Math.min(...sizes)
 
-  if (lastPouleSize < 2 && nbPoules > 1) {
+  // Une poule de moins de 3 équipes n'est pas viable (trop peu de matchs)
+  if (minSize < 3 && nbPoules > 1) {
     return {
       valid: false,
-      // FIX BUG : utilisait 'warning' alors que valid:false → l'UI affiche
-      // typiquement 'error' uniquement quand invalide, donc le message ne
-      // s'affichait jamais. Passé en 'error' pour que l'utilisateur voie
-      // pourquoi sa configuration de poules est rejetée.
-      error: `La dernière poule n'aurait que ${lastPouleSize} équipe(s). Ajustez la taille des poules.`
+      error: `Cette configuration donnerait une poule de ${minSize} équipe(s). Minimum 3 par poule : ajustez la taille des poules.`
     }
   }
 

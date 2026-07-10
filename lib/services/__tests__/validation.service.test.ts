@@ -79,10 +79,24 @@ describe('ValidationService', () => {
       expect(result.valid).toBe(false)
     })
 
-    it('devrait détecter les poules déséquilibrées', () => {
-      const result = validatePouleSize(5, 11)
+    it('devrait détecter les poules non viables (< 3 équipes)', () => {
+      // 4 équipes en poules de 3 → distribution réelle 3-1 impossible,
+      // équilibrée 2-2 → poule de 2, non viable
+      const result = validatePouleSize(3, 4)
       expect(result.valid).toBe(false)
-      expect(result.error).toContain('La dernière poule')
+      expect(result.error).toContain('poule de')
+    })
+
+    it('devrait accepter 13 équipes en poules de 4 (distribution 4-3-3-3)', () => {
+      // Régression : l'ancien modèle fill-first imaginait 4-4-4-1 et rejetait
+      // à tort cette configuration pourtant recommandée par computePouleDistributions.
+      const result = validatePouleSize(4, 13)
+      expect(result.valid).toBe(true)
+    })
+
+    it('devrait accepter 11 équipes en poules de 4 (distribution 4-4-3)', () => {
+      const result = validatePouleSize(4, 11)
+      expect(result.valid).toBe(true)
     })
   })
 
