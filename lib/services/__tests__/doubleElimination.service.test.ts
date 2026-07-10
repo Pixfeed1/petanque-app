@@ -29,6 +29,7 @@ function simulate(nbTeams: number, picker: (a: number, b: number) => number = (a
   const losses = new Map<number, number>()
   for (let t = 1; t <= nbTeams; t++) losses.set(t, 0)
   const realMatches: Array<[number, number, number]> = [] // [a, b, winner]
+  const winnerOf = new Map<string, Team>()
 
   const put = (ref: { matchId: string; slot: 'A' | 'B' } | null, team: Team) => {
     if (!ref) return team // null = sortie (champion)
@@ -44,6 +45,28 @@ function simulate(nbTeams: number, picker: (a: number, b: number) => number = (a
   while (resolved.size < bracket.matches.length && guard++ < 10000) {
     for (const m of bracket.matches) {
       if (resolved.has(m.id)) continue
+
+      // GF2 (bracket reset) : pas de routage statique, résolu à partir de la GF.
+      if (m.id === 'GF2') {
+        if (!resolved.has('GF')) continue
+        const gfSlots = slots.get('GF')!
+        const wbChamp = gfSlots.A as Team // champion WB (placé en GF.A)
+        const gfWinner = winnerOf.get('GF')!
+        resolved.add('GF2')
+        if (gfWinner === wbChamp) {
+          champion = gfWinner // pas de reset
+        } else {
+          // reset joué : champion WB vs vainqueur GF (champion LB)
+          const w = picker(wbChamp as number, gfWinner as number)
+          champion = w
+          const loser = w === wbChamp ? gfWinner : wbChamp
+          losses.set(loser as number, (losses.get(loser as number) || 0) + 1)
+          realMatches.push([wbChamp as number, gfWinner as number, w as number])
+          winnerOf.set('GF2', w)
+        }
+        continue
+      }
+
       const s = slots.get(m.id)!
       if (s.A === undefined || s.B === undefined) continue // pas prêt
       resolved.add(m.id)
@@ -63,6 +86,7 @@ function simulate(nbTeams: number, picker: (a: number, b: number) => number = (a
         realMatches.push([a as number, b as number, w])
       }
 
+      winnerOf.set(m.id, winner)
       const champ = put(m.winnerTo, winner)
       if (m.id === 'GF') champion = winner
       else void champ
@@ -79,16 +103,16 @@ describe('Double élimination — structure', () => {
     [8, 8, 3, 4],
     [16, 16, 4, 6],
   ] as const) {
-    it(`${n} équipes : ${W} rounds WB, ${L} rounds LB, ${2 * B - 2} matchs`, () => {
+    it(`${n} équipes : ${W} rounds WB, ${L} rounds LB, ${2 * B - 1} matchs`, () => {
       const br = generateDoubleElimination(n)
       expect(br.bracketSize).toBe(B)
       expect(br.wbRounds).toBe(W)
       expect(br.lbRounds).toBe(L)
-      // total slots = 2B-2 (WB:B-1, LB:B-2, GF:1)
-      expect(br.matches.length).toBe(2 * B - 2)
+      // total slots = 2B-1 (WB:B-1, LB:B-2, GF+GF2:2)
+      expect(br.matches.length).toBe(2 * B - 1)
       expect(br.matches.filter((m) => m.bracket === 'W').length).toBe(B - 1)
       expect(br.matches.filter((m) => m.bracket === 'L').length).toBe(B - 2)
-      expect(br.matches.filter((m) => m.bracket === 'GF').length).toBe(1)
+      expect(br.matches.filter((m) => m.bracket === 'GF').length).toBe(2)
     })
   }
 })
@@ -200,13 +224,15 @@ describe('Double élimination — évitement des rematchs dans le LB', () => {
 })
 
 describe('Double élimination — encodage persistance (type/tour)', () => {
-  it('8 équipes : 14 lignes, types "de:*" uniques, tours ordonnés, GF en dernier', () => {
+  it('8 équipes : 15 lignes (GF + GF2), types "de:*" uniques, GF2 en dernier', () => {
     const rows = toPersistenceRows(8)
-    expect(rows.length).toBe(14)
-    expect(new Set(rows.map((r) => r.type)).size).toBe(14) // tous uniques
+    expect(rows.length).toBe(15)
+    expect(new Set(rows.map((r) => r.type)).size).toBe(15) // tous uniques
     expect(rows.every((r) => parseDeType(r.type) === r.matchId)).toBe(true) // round-trip
+    const gf2 = rows.find((r) => r.matchId === 'GF2')!
+    expect(gf2.tour).toBe(Math.max(...rows.map((r) => r.tour))) // GF2 (reset) jouée en dernier
     const gf = rows.find((r) => r.matchId === 'GF')!
-    expect(gf.tour).toBe(Math.max(...rows.map((r) => r.tour))) // GF jouée en dernier
+    expect(gf.tour).toBeLessThan(gf2.tour)
     expect(parseDeType('classique')).toBeNull() // n'interfère pas avec l'élim simple
   })
 })
@@ -270,5 +296,55 @@ describe('Double élimination — réducteur computeBracketState (flux API)', ()
 
   it('garde-fou : < 3 équipes refusé', () => {
     expect(() => genDE(2)).toThrow()
+  })
+})
+
+describe('Double élimination — bracket reset (GF2)', () => {
+  it('champion WB gagne la GF : GF2 no-op (pas de 2e finale)', () => {
+    // 4 équipes, meilleur seed gagne tout → le champion WB (T1) gagne la GF.
+    const state = driveToCompletion(4)
+    const gf2 = state.find((m) => m.matchId === 'GF2')!
+    expect(gf2.isBye).toBe(true) // résolu à vide
+    expect(gf2.equipeAId).toBeNull()
+    expect(gf2.equipeBId).toBeNull()
+  })
+
+  it('upset en GF : le champion LB gagne → GF2 opposant les deux finalistes', () => {
+    // 4 équipes. On force un upset : en GF, l'équipe B (champion LB) gagne.
+    const teams = ['T1', 'T2', 'T3', 'T4']
+    const results = new Map<string, string>()
+    let state = computeBracketState(4, teams, results)
+    let guard = 0
+    // Phase 1 : jouer tout SAUF la GF (meilleur seed gagne)
+    while (guard++ < 100) {
+      const playable = state.filter((m) => m.status === 'a_jouer' && m.matchId !== 'GF')
+      if (playable.length === 0) break
+      for (const m of playable) {
+        const sa = parseInt(m.equipeAId!.slice(1))
+        const sb = parseInt(m.equipeBId!.slice(1))
+        results.set(m.matchId, sa < sb ? m.equipeAId! : m.equipeBId!)
+      }
+      state = computeBracketState(4, teams, results)
+    }
+    const gf = state.find((m) => m.matchId === 'GF')!
+    expect(gf.status).toBe('a_jouer')
+    // La GF oppose le champion WB (A) au champion LB (B). On fait gagner B (upset).
+    const wbChamp = gf.equipeAId!
+    const lbChamp = gf.equipeBId!
+    results.set('GF', lbChamp)
+    state = computeBracketState(4, teams, results)
+
+    // GF2 doit être activée avec les deux finalistes
+    const gf2 = state.find((m) => m.matchId === 'GF2')!
+    expect(gf2.isBye).toBe(false)
+    expect(new Set([gf2.equipeAId, gf2.equipeBId])).toEqual(new Set([wbChamp, lbChamp]))
+    expect(gf2.status).toBe('a_jouer')
+
+    // On joue la GF2 : le champion WB prend sa revanche → champion final
+    results.set('GF2', wbChamp)
+    state = computeBracketState(4, teams, results)
+    const gf2Final = state.find((m) => m.matchId === 'GF2')!
+    expect(gf2Final.status).toBe('termine')
+    expect(gf2Final.winnerId).toBe(wbChamp)
   })
 })

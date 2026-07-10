@@ -207,7 +207,13 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
       if (m.equipe_b?.id) teamById.set(m.equipe_b.id, m.equipe_b as Team)
     }
 
-    const grandFinale = deMatches.find((m: Match) => (m.type as string) === 'de:GF')
+    // Match décisif : la GF2 (bracket reset) SI elle a réellement été jouée
+    // (2 équipes + terminée) ; sinon la grande finale GF.
+    const gf2 = deMatches.find((m: Match) => (m.type as string) === 'de:GF2')
+    const gf2Played = !!gf2 && gf2.status === 'termine' && !!gf2.equipe_a_id && !!gf2.equipe_b_id
+    const grandFinale = gf2Played
+      ? gf2!
+      : deMatches.find((m: Match) => (m.type as string) === 'de:GF')
     if (!grandFinale || grandFinale.status !== 'termine') {
       // Bracket DE en cours : pas encore de podium définitif → on ne bascule pas
       // sur le fallback poules (qui serait faux), on renvoie true avec un podium vide.

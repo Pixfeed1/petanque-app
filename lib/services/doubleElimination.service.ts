@@ -51,6 +51,7 @@ export function seedOrder(bracketSize: number): number[] {
 const wbId = (r: number, i: number) => `W${r}-${i}`
 const lbId = (r: number, i: number) => `L${r}-${i}`
 const GF = 'GF'
+const GF2 = 'GF2'
 
 /** Nombre de matchs d'un round WB. */
 const wbRoundSize = (B: number, r: number) => B / 2 ** r
@@ -122,6 +123,13 @@ export function generateDoubleElimination(
   // ---- Grande finale ----
   matches.push({ id: GF, bracket: 'GF', round: 1, index: 0, winnerTo: null, loserTo: null })
 
+  // ---- Grande finale "reset" (bracket reset) ----
+  // Le champion du WB arrive invaincu en GF ; s'il PERD la GF (le champion du LB
+  // gagne), il n'a qu'une seule défaite → une 2e finale décisive est jouée (GF2).
+  // GF2 n'a pas de routage statique (winnerTo/loserTo null) : sa condition
+  // d'activation est gérée dans computeBracketState (elle dépend du résultat de GF).
+  matches.push({ id: GF2, bracket: 'GF', round: 2, index: 0, winnerTo: null, loserTo: null })
+
   // ---- Routage des PERDANTS du WB vers le LB ----
   const byId = new Map(matches.map((mm) => [mm.id, mm]))
 
@@ -171,7 +179,7 @@ export interface DEPersistRow {
 function globalTour(m: DEMatch, wbRounds: number): number {
   if (m.bracket === 'W') return m.round // 1..W
   if (m.bracket === 'L') return wbRounds + m.round // W+1 ..
-  return wbRounds + 2 * (wbRounds - 1) + 1 // GF en dernier
+  return wbRounds + 2 * (wbRounds - 1) + m.round // GF (round 1) puis GF2 (round 2) en dernier
 }
 
 /** Transforme la structure en lignes prêtes à insérer dans `matches`. */
@@ -278,6 +286,33 @@ export function computeBracketState<T>(
       changed = true
       setCell(m.winnerTo, w)
       setCell(m.loserTo, l)
+    }
+  }
+
+  // ---- Bracket reset (GF2) ----
+  // GF2 n'a pas de routage statique : sa condition dépend du résultat de GF.
+  //  - Le champion WB (placé en GF.A) gagne la GF → pas de reset : GF2 est un
+  //    no-op résolu (champion = champion WB), sans équipes.
+  //  - Le champion LB (GF.B) gagne la GF → reset : GF2 oppose le champion WB au
+  //    champion LB (2e finale décisive).
+  if (byId.has(GF2) && settled.has(GF)) {
+    const gfA = A.get(GF) // champion WB
+    const gfWinner = winner.get(GF)
+    if (gfA !== undefined && gfA !== DE_BYE && gfWinner != null && gfWinner !== DE_BYE) {
+      if (gfWinner === gfA) {
+        // Pas de reset → GF2 résolu à vide (le champion WB reste champion)
+        settled.add(GF2)
+        winner.set(GF2, gfA as T)
+        isBye.set(GF2, true)
+      } else {
+        // Reset → GF2 = champion WB vs champion LB (vainqueur de GF)
+        A.set(GF2, gfA)
+        Bm.set(GF2, gfWinner as T)
+        if (results.has(GF2)) {
+          settled.add(GF2)
+          winner.set(GF2, results.get(GF2) as T)
+        }
+      }
     }
   }
 
