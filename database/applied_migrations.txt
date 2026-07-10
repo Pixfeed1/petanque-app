@@ -4,3 +4,4 @@
 005_fix_joueur_ids_to_bigint.sql
 006_create_beta_feedback.sql
 007_add_round_to_matches.sql
+008_add_check_constraints.sql

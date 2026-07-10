@@ -25,9 +25,12 @@ if [ ! -f "$MIGRATION_TRACKER" ]; then
 fi
 
 # 1. Pull des dernières modifications
+# Branche de déploiement configurable (défaut : main). Corrige l'ancien pull
+# codé en dur sur une branche de feature (claude/reviews-system-...).
+DEPLOY_BRANCH="${DEPLOY_BRANCH:-main}"
 echo ""
-echo -e "${YELLOW}📥 Récupération des modifications...${NC}"
-git pull origin claude/reviews-system-011CV4UA9wqYJzSWLZazBud3
+echo -e "${YELLOW}📥 Récupération des modifications (branche: ${DEPLOY_BRANCH})...${NC}"
+git pull origin "$DEPLOY_BRANCH"
 
 # 2. Installation des dépendances
 echo ""
@@ -58,9 +61,9 @@ if [ -d "$MIGRATIONS_DIR" ]; then
                 # Si psql échoue, afficher les instructions manuelles
                 echo -e "  ${RED}❌ Impossible d'appliquer automatiquement${NC}"
                 echo ""
-                echo -e "${YELLOW}⚠️  Appliquez manuellement via phpMyAdmin :${NC}"
-                echo "     1. Connectez-vous à phpMyAdmin"
-                echo "     2. Sélectionnez la base '$DB_NAME'"
+                echo -e "${YELLOW}⚠️  Appliquez manuellement via psql / pgAdmin :${NC}"
+                echo "     1. Connectez-vous : psql -h localhost -d '$DB_NAME' -U '$DB_USER'"
+                echo "     2. (ou pgAdmin sur la base '$DB_NAME')"
                 echo "     3. Copiez/collez le contenu de: $migration_file"
                 echo "     4. Exécutez le SQL"
                 echo ""

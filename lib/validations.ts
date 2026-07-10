@@ -160,20 +160,8 @@ export const matchIdSchema = z.object({
   id: idSchema
 })
 
-// ============================================
-// PAIEMENTS STRIPE
-// ============================================
-
-// FIX SÉCURITÉ : userId/userEmail retirés - lus depuis la session auth côté serveur
-// priceId accepté mais ignoré par le serveur (recalculé depuis planType)
-export const createCheckoutSessionSchema = z.object({
-  planType: z.enum(['essentiel', 'club']).optional().default('essentiel'),
-  priceId: z.string().optional().nullable()
-})
-
-export const verifyPaymentSchema = z.object({
-  session_id: z.string().min(1, 'Session ID manquant')
-})
+// (Schémas Stripe createCheckoutSessionSchema / verifyPaymentSchema retirés :
+//  code mort depuis la suppression du paiement/plans sur cette branche.)
 
 // ============================================
 // QUERY PARAMETERS

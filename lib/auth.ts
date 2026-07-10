@@ -151,9 +151,12 @@ export async function authenticateUser(
   email: string,
   password: string
 ): Promise<AuthSession> {
-  // Récupérer l'utilisateur et son hash
+  // Récupérer l'utilisateur et son hash.
+  // FIX : comparaison insensible à la casse — le reset password normalisait
+  // déjà l'email en minuscules, mais le login comparait en respectant la casse,
+  // rendant certains comptes (email en majuscules) incohérents.
   const user = await queryOne<User & { password_hash: string }>(
-    'SELECT * FROM users WHERE email = $1',
+    'SELECT * FROM users WHERE LOWER(email) = LOWER($1)',
     [email]
   )
 
@@ -264,79 +267,11 @@ export async function updateUser(
   return user
 }
 
-/**
- * Génère un token de réinitialisation de mot de passe
- * @param email - Email de l'utilisateur
- * @returns Token de réinitialisation
- */
-export async function generateResetToken(email: string): Promise<string> {
-  const user = await getUserByEmail(email)
-
-  if (!user) {
-    throw new Error('USER_NOT_FOUND')
-  }
-
-  // Générer un token aléatoire
-  const resetToken = jwt.sign(
-    { userId: user.id, type: 'reset' },
-    JWT_SECRET,
-    { expiresIn: '1h' }
-  )
-
-  // Stocker le token en BDD
-  await query(
-    `UPDATE users
-     SET reset_token = $1, reset_token_expires = NOW() + INTERVAL '1 hour'
-     WHERE id = $2`,
-    [resetToken, user.id]
-  )
-
-  return resetToken
-}
-
-/**
- * Réinitialise le mot de passe avec un token
- * @param token - Token de réinitialisation
- * @param newPassword - Nouveau mot de passe
- */
-export async function resetPassword(
-  token: string,
-  newPassword: string
-): Promise<void> {
-  // Vérifier le token
-  const decoded = verifyToken(token) as any
-
-  if (!decoded || decoded.type !== 'reset') {
-    throw new Error('INVALID_RESET_TOKEN')
-  }
-
-  // Vérifier que le token existe en BDD et n'est pas expiré
-  const user = await queryOne<User>(
-    `SELECT id FROM users
-     WHERE id = $1
-     AND reset_token = $2
-     AND reset_token_expires > NOW()`,
-    [decoded.userId, token]
-  )
-
-  if (!user) {
-    throw new Error('RESET_TOKEN_EXPIRED')
-  }
-
-  // Hash du nouveau mot de passe
-  const passwordHash = await hashPassword(newPassword)
-
-  // Mettre à jour le mot de passe et supprimer le token
-  await query(
-    `UPDATE users
-     SET password_hash = $1,
-         reset_token = NULL,
-         reset_token_expires = NULL,
-         updated_at = NOW()
-     WHERE id = $2`,
-    [passwordHash, user.id]
-  )
-}
+// NOTE : les anciennes fonctions generateResetToken()/resetPassword() ont été
+// retirées. Elles étaient inutilisées ET incohérentes avec le flux réel : elles
+// stockaient un JWT brut dans reset_token et le comparaient via verifyToken,
+// alors que les routes /api/auth/reset-password stockent un hash SHA-256 à usage
+// unique. Les garder exposait au risque de les rebrancher par erreur.
 
 /**
  * Change le mot de passe d'un utilisateur connecté

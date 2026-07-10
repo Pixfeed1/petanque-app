@@ -1,5 +1,10 @@
 -- ===================================
--- SCHÉMA POSTGRESQL COMPLET
+-- ⚠️  SCHÉMA OBSOLÈTE — NE PAS UTILISER EN PRODUCTION  ⚠️
+-- Identifiants UUID + joueur_ids JSONB, INCOMPATIBLES avec le code (BIGINT).
+-- ➜ Schéma canonique de production : database/schema_nouid.sql
+-- Conservé uniquement pour référence historique.
+-- ===================================
+-- SCHÉMA POSTGRESQL COMPLET (UUID/JSONB — obsolète)
 -- Application Pétanque Pro
 -- Version SANS pgcrypto (compatible tous serveurs)
 -- ===================================

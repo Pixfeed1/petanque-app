@@ -44,7 +44,7 @@ GRANT ALL PRIVILEGES ON DATABASE petanque TO petanque_user;
 
 ```bash
 # Depuis le dossier de l'application
-sudo -u postgres psql petanque < database/schema.sql
+sudo -u postgres psql petanque < database/schema_nouid.sql
 
 # Vérifier que les tables ont été créées
 sudo -u postgres psql petanque -c "\dt"

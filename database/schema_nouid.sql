@@ -1,7 +1,11 @@
 -- ===================================
--- SCHÉMA POSTGRESQL SANS UUID
+-- SCHÉMA POSTGRESQL SANS UUID  ★ SCHÉMA CANONIQUE ★
 -- Application Pétanque Pro
--- Pour serveurs PostgreSQL sans pgcrypto/uuid-ossp
+--
+-- C'EST LE SCHÉMA DE RÉFÉRENCE utilisé en production (identifiants BIGINT).
+-- Le code applicatif est câblé sur BIGINT (casts ::bigint[], $1::bigint = ANY(...)).
+-- N'utilisez PAS schema.sql / schema_uuid_ossp.sql (UUID) : ils sont incompatibles
+-- avec le code et provoquent des erreurs 500 à la création d'équipe.
 -- ===================================
 
 -- Suppression des tables existantes (attention en production!)
@@ -75,7 +79,8 @@ CREATE TABLE tournois (
   name VARCHAR(255) NOT NULL,
   format VARCHAR(50) NOT NULL,
   mode VARCHAR(50) NOT NULL,
-  status VARCHAR(50) DEFAULT 'preparation',
+  status VARCHAR(50) DEFAULT 'preparation'
+    CHECK (status IN ('preparation','en_cours','termine')),
   settings JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -129,11 +134,14 @@ CREATE TABLE matches (
   terrain INTEGER,
   equipe_a_id BIGINT REFERENCES equipes(id) ON DELETE SET NULL,
   equipe_b_id BIGINT REFERENCES equipes(id) ON DELETE SET NULL,
-  score_a INTEGER DEFAULT 0,
-  score_b INTEGER DEFAULT 0,
-  status VARCHAR(50) DEFAULT 'a_jouer',
-  type VARCHAR(50),
+  score_a INTEGER DEFAULT 0 CHECK (score_a IS NULL OR score_a >= 0),
+  score_b INTEGER DEFAULT 0 CHECK (score_b IS NULL OR score_b >= 0),
+  status VARCHAR(50) DEFAULT 'a_jouer'
+    CHECK (status IN ('a_jouer','en_cours','termine','en_attente','en_attente_validation','valide')),
+  type VARCHAR(50)
+    CHECK (type IS NULL OR type IN ('poule','bye','elimination','huitieme','quart','demi','finale','petite_finale') OR type LIKE 'de:%'),
   poule VARCHAR(10),
+  round VARCHAR(50), -- tour d'élimination (huitieme/quart/demi/finale/petite_finale)
   winner_id BIGINT REFERENCES equipes(id) ON DELETE SET NULL,
   manches_json JSONB DEFAULT '[]'::jsonb,
   started_at TIMESTAMP,
@@ -148,8 +156,10 @@ CREATE INDEX idx_matches_tournoi_id ON matches(tournoi_id);
 CREATE INDEX idx_matches_status ON matches(status);
 CREATE INDEX idx_matches_type ON matches(type);
 CREATE INDEX idx_matches_poule ON matches(poule);
+CREATE INDEX idx_matches_round ON matches(round);
 CREATE INDEX idx_matches_equipe_a_id ON matches(equipe_a_id);
 CREATE INDEX idx_matches_equipe_b_id ON matches(equipe_b_id);
+CREATE INDEX idx_matches_winner_id ON matches(winner_id);
 
 -- ===================================
 -- TABLE PAYMENT_ATTEMPTS

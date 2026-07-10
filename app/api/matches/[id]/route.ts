@@ -212,6 +212,33 @@ export async function PUT(
       return apiError('Statut de match invalide', 400)
     }
 
+    // FIX BUG : en élimination SIMPLE, modifier le résultat d'un match déjà
+    // propagé au tour suivant ne recalcule pas ce tour → bracket incohérent.
+    // On bloque tant que le tour suivant existe (l'organisateur doit le
+    // supprimer avant de corriger). La double élim ("de:*") est exclue : elle
+    // recalcule tout via advanceDoubleElimination.
+    const ELIM_LATER_ROUNDS: Record<string, string[]> = {
+      huitieme: ['quart', 'demi', 'finale', 'petite_finale'],
+      quart: ['demi', 'finale', 'petite_finale'],
+      demi: ['finale', 'petite_finale'],
+    }
+    const existingType = (existingMatch.type as string) || ''
+    const editsOutcome =
+      body.score_a !== undefined || body.score_b !== undefined ||
+      body.winner_id !== undefined || body.status !== undefined
+    if (editsOutcome && existingMatch.status === 'termine' && ELIM_LATER_ROUNDS[existingType]) {
+      const later = await queryOne(
+        `SELECT 1 FROM matches WHERE tournoi_id = $1 AND type = ANY($2::text[]) LIMIT 1`,
+        [existingMatch.tournoi_id, ELIM_LATER_ROUNDS[existingType]]
+      )
+      if (later) {
+        return apiError(
+          'Ce match a déjà été propagé au tour suivant. Supprimez le tour suivant avant de corriger ce résultat.',
+          409
+        )
+      }
+    }
+
     const updates: string[] = []
     const values: SQLValue[] = []
     let paramIndex = 1

@@ -16,7 +16,7 @@ L'application peut maintenant être déployée sur **votre propre VPS** avec vot
 ## ✅ MIGRATIONS RÉALISÉES
 
 ### 📊 **Base de données**
-- ✅ Schéma PostgreSQL complet (`database/schema.sql`)
+- ✅ Schéma PostgreSQL complet (`database/schema_nouid.sql`)
 - ✅ Script de migration pour bases existantes (`database/migration_add_missing_columns.sql`)
 - ✅ Tous les champs nécessaires ajoutés :
   - `joueurs.gender` (H/F)
@@ -80,7 +80,7 @@ GRANT ALL PRIVILEGES ON DATABASE petanque_app TO petanque_user;
 \q
 
 # Importer le schéma
-psql -U petanque_user -d petanque_app -f database/schema.sql
+psql -U petanque_user -d petanque_app -f database/schema_nouid.sql
 ```
 
 ### 3. Configurer l'application

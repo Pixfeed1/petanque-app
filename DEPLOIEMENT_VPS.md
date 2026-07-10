@@ -73,7 +73,7 @@ GRANT ALL PRIVILEGES ON DATABASE petanque_app TO petanque_user;
 \q
 
 # Importer le schéma
-psql -U petanque_user -d petanque_app -f database/schema.sql
+psql -U petanque_user -d petanque_app -f database/schema_nouid.sql
 ```
 
 ---

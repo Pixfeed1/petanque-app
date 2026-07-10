@@ -1,5 +1,12 @@
 -- ===================================
--- SCHÉMA POSTGRESQL COMPLET
+-- ⚠️  SCHÉMA OBSOLÈTE — NE PAS UTILISER EN PRODUCTION  ⚠️
+-- Ce schéma utilise des identifiants UUID, INCOMPATIBLES avec le code applicatif
+-- (câblé sur BIGINT : casts ::bigint[], $1::bigint = ANY(joueur_ids)).
+-- L'utiliser provoque des erreurs 500 à la création d'équipe.
+-- ➜ Schéma canonique de production : database/schema_nouid.sql
+-- Conservé uniquement pour référence historique.
+-- ===================================
+-- SCHÉMA POSTGRESQL COMPLET (UUID — obsolète)
 -- Application Pétanque Pro
 -- ===================================
 
