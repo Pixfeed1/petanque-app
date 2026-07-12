@@ -31,7 +31,7 @@ interface UseMatchActionsReturn {
   getPoolDistribution: (teamCount: number, poolSize: number) => number[]
 
   // Actions
-  generatePoules: () => Promise<void>
+  generatePoules: () => Promise<boolean>
   generateEliminationPhases: () => Promise<void>
   generateFinales: () => Promise<void>
   generateNextEliminationRound: () => Promise<void>
@@ -181,14 +181,14 @@ export function useMatchActions({
    * - Tailles de poules équilibrées (ex: 4-4-3-3 au lieu de 4-4-4-2)
    * - Scheduling Berger pour les matchs (repos entre matchs d'une même équipe)
    */
-  const generatePoules = useCallback(async () => {
-    if (!tournament || teams.length === 0) return
+  const generatePoules = useCallback(async (): Promise<boolean> => {
+    if (!tournament || teams.length === 0) return false
 
     const pouleSize = tournament.settings.pouleSize || 4
 
     if (!isValidPoolConfiguration(teams.length, pouleSize)) {
       notify.error(`Configuration invalide: ${teams.length} équipes en poules de ${pouleSize} créerait des poules déséquilibrées`)
-      return
+      return false
     }
 
     const existingPouleMatches = matches.filter(m => m.type === 'poule')
@@ -198,13 +198,13 @@ export function useMatchActions({
       const hasPlayedMatches = existingPouleMatches.some(m => m.status === 'en_cours' || m.status === 'termine')
       if (hasPlayedMatches) {
         notify.warning('Impossible de régénérer les poules : des matchs ont déjà été joués.')
-        return
+        return false
       }
       const message = 'Des poules existent déjà. Voulez-vous les supprimer et en régénérer de nouvelles ?'
       const confirmed = onConfirmTerrainConflict
         ? await onConfirmTerrainConflict(message)
         : window.confirm(message)
-      if (!confirmed) return
+      if (!confirmed) return false
     }
 
     // Distribution serpentin (snake draft) pour des poules équilibrées
@@ -288,9 +288,11 @@ export function useMatchActions({
       const sizes = Object.values(poules).map(p => p.length).join('-')
       notify.success(`${nbPoules} poules générées (${sizes}) avec tirage serpentin`)
       await loadTournamentData()
+      return true
     } catch (error) {
       console.error('Erreur génération poules:', error)
       notify.error(`Erreur génération poules: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+      return false
     }
   }, [tournament, teams, matches, isValidPoolConfiguration, loadTournamentData, onConfirmTerrainConflict])
 
@@ -468,6 +470,17 @@ export function useMatchActions({
         console.error('Erreur génération double élimination:', error)
         notify.error(`Erreur lors de la génération de la double élimination : ${error instanceof Error ? error.message : 'inconnue'}`)
       }
+      return
+    }
+
+    // FIX : message clair EN AMONT au-delà de 16 qualifiés (l'élimination directe
+    // est plafonnée à 16). Sinon l'erreur levée par calculateBracketMatches était
+    // masquée par le catch générique et l'organisateur restait bloqué sans savoir quoi faire.
+    if (reorderedQualified.length > 16) {
+      notify.error(
+        `Trop d'équipes qualifiées (${reorderedQualified.length}) pour une élimination directe (max 16). ` +
+        `Réduisez le nombre de qualifiés par poule, agrandissez les poules, ou passez en double élimination.`
+      )
       return
     }
 

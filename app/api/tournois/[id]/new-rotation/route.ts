@@ -147,6 +147,15 @@ export async function POST(
         matchValues
       )
 
+      // 5. Persister current_round (met à jour uniquement cette clé du JSONB)
+      await client.query(
+        `UPDATE tournois
+         SET settings = jsonb_set(COALESCE(settings, '{}'::jsonb), '{current_round}', to_jsonb($2::int), true),
+             updated_at = NOW()
+         WHERE id = $1`,
+        [tournoiId, rotation_number]
+      )
+
       return {
         rotation_number,
         teams_created: createdTeams.length,

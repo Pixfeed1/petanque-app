@@ -12,6 +12,24 @@ import { TirageService } from '@/lib/services'
 import type { Joueur } from '@/lib/types'
 import type { Tournament, Team, Match } from './useTournamentData'
 
+/**
+ * Matchs appartenant à une rotation donnée, identifiés par l'APPARTENANCE
+ * d'équipe (équipes nommées `R{n}-…`) et NON par `m.tour`.
+ * En doublette/triplette, le tour 1 est étalé sur plusieurs tours Berger
+ * (1,2,3…) : filtrer par `m.tour === rotation` ne verrait qu'une partie des
+ * matchs et permettait de tourner prématurément.
+ */
+function matchesOfRotation(teams: Team[], matches: Match[], rotation: number): Match[] {
+  const ids = new Set(
+    teams.filter(t => t.name.startsWith(`R${rotation}-`)).map(t => t.id)
+  )
+  if (ids.size === 0) return []
+  return matches.filter(m =>
+    (m.equipe_a_id && ids.has(m.equipe_a_id)) ||
+    (m.equipe_b_id && ids.has(m.equipe_b_id))
+  )
+}
+
 interface UseRotationProps {
   tournament: Tournament | null
   teams: Team[]
@@ -56,29 +74,26 @@ export function useRotation({
   useEffect(() => {
     if (!tournament || tournament.mode !== 'melee_tournante') return
 
-    // Priorité 1 : tournament.settings.current_round
-    if (tournament.settings.current_round && tournament.settings.current_round > 1) {
-      setCurrentRotation(tournament.settings.current_round)
-      return
-    }
-
-    // Priorité 2 : extraire le numéro de rotation le plus élevé des noms d'équipes (R{n}-...)
+    // Dérivation FIABLE : le numéro de rotation le plus élevé parmi les noms
+    // d'équipes `R{n}-…`. On n'utilise PLUS le `tour` max des matchs : en
+    // doublette/triplette, le tour 1 s'étale sur plusieurs tours Berger (1,2,3),
+    // ce qui faisait dériver currentRotation à 3 dès le tour 1 (rotation
+    // prématurée + numérotation qui saute R1→R4).
     let maxRotation = 1
     for (const team of teams) {
-      const match = team.name.match(/^R(\d+)-/)
-      if (match) {
-        const rotNum = parseInt(match[1], 10)
+      const m = team.name.match(/^R(\d+)-/)
+      if (m) {
+        const rotNum = parseInt(m[1], 10)
         if (rotNum > maxRotation) maxRotation = rotNum
       }
     }
 
-    // Priorité 3 : tour le plus élevé dans les matchs
-    for (const m of matches) {
-      if (m.tour > maxRotation) maxRotation = m.tour
-    }
+    // Fallback : settings.current_round si aucune équipe R{n}- n'est encore chargée
+    const fromSettings = tournament.settings.current_round || 1
+    const derived = Math.max(maxRotation, fromSettings)
 
-    if (maxRotation !== currentRotation) {
-      setCurrentRotation(maxRotation)
+    if (derived !== currentRotation) {
+      setCurrentRotation(derived)
     }
   }, [tournament, teams, matches])
 
@@ -89,7 +104,7 @@ export function useRotation({
     if (tournament?.mode !== 'melee_tournante') return false
 
     const rotationType = tournament.settings.meleeRotation || 'par_tour'
-    const currentRotationMatches = matches.filter(m => m.tour === currentRotation)
+    const currentRotationMatches = matchesOfRotation(teams, matches, currentRotation)
 
     if (currentRotationMatches.length === 0) return false
 
@@ -100,7 +115,7 @@ export function useRotation({
       // Mode par_tour : besoin que TOUS les matchs soient terminés
       return currentRotationMatches.every(m => m.status === 'termine')
     }
-  }, [tournament, matches, currentRotation])
+  }, [tournament, teams, matches, currentRotation])
 
   /**
    * Crée de nouvelles équipes avec anti-rematch et mixité
@@ -130,8 +145,8 @@ export function useRotation({
 
       let teamCompositions: Array<{ joueur_ids: string[] }>
 
-      const isFirstRotation = currentRotation === 1 && teams.filter(t => t.name.startsWith('R')).length === 0
       const needsMixite = tournament.settings.mixiteObligatoire || false
+      const rotationType = tournament.settings.meleeRotation || 'par_tour'
 
       if (isTeteATete) {
         // Tête-à-tête : 1 joueur = 1 équipe, identité STABLE entre rotations.
@@ -142,26 +157,36 @@ export function useRotation({
           (a: Joueur, b: Joueur) => order.indexOf(a.id) - order.indexOf(b.id)
         )
         teamCompositions = sortedPlayers.map((p: Joueur) => ({ joueur_ids: [p.id] }))
-      } else if (isFirstRotation || needsMixite) {
+      } else {
+        // FIX M3 : en par_match, ne PAS re-mélanger les joueurs encore engagés dans
+        // un match non terminé du tour courant (sinon ils seraient dans 2 matchs à la
+        // fois). On ne recompose qu'avec les joueurs libérés.
+        let roster = players
+        if (rotationType === 'par_match') {
+          const engaged = new Set<string>()
+          for (const m of matchesOfRotation(teams, matches, currentRotation)) {
+            if (m.status === 'termine') continue
+            for (const tid of [m.equipe_a_id, m.equipe_b_id]) {
+              const tm = teams.find(t => t.id === tid)
+              tm?.joueur_ids?.forEach(id => engaged.add(id))
+            }
+          }
+          roster = players.filter((p: Joueur) => !engaged.has(p.id))
+          if (roster.length < teamSize) {
+            notify.warning('Pas assez de joueurs libérés pour former une nouvelle rotation. Attendez la fin d\'autres matchs.')
+            return null
+          }
+        }
+
+        // FIX M4 : mixité obligatoire → tous les joueurs doivent avoir un genre.
         if (needsMixite) {
-          const genderValidation = MixiteService.validatePlayerGenders(players, true)
+          const genderValidation = MixiteService.validatePlayerGenders(roster, true)
           if (!genderValidation.valid) {
             notify.error(genderValidation.error || 'Certains joueurs n\'ont pas de genre défini')
             return null
           }
         }
 
-        const mixiteResult = MixiteService.createTeamsWithMixite(
-          players,
-          teamSize as 2 | 3,
-          needsMixite
-        )
-        teamCompositions = mixiteResult.teams
-
-        if (mixiteResult.unassignedPlayerIds.length > 0) {
-          console.warn(`${mixiteResult.unassignedPlayerIds.length} joueur(s) non assigné(s):`, mixiteResult.warnings)
-        }
-      } else {
         const previousTeams = teams
           .filter(t => t.name.match(/^R\d+-/))
           .map(t => ({ joueur_ids: t.joueur_ids || [] }))
@@ -180,9 +205,8 @@ export function useRotation({
           }
         }
 
-        // Équité de l'exempt : reconstituer, ronde par ronde, les joueurs qui
-        // n'étaient dans aucune équipe (donc au repos) afin de faire tourner le repos.
-        const rosterIds = players.map((p: Joueur) => p.id)
+        // Équité de l'exempt : reconstituer, ronde par ronde, les joueurs au repos.
+        const rosterIds = roster.map((p: Joueur) => p.id)
         const idsByRound = new Map<number, Set<string>>()
         for (const t of teams) {
           const rm = t.name.match(/^R(\d+)-/)
@@ -198,18 +222,22 @@ export function useRotation({
           }
         }
 
+        // FIX M2 : anti-rematch AVEC contrainte de mixité (le paramètre `mixite`
+        // garde les équipes mixtes tout en minimisant les re-matchs). Avant, la
+        // mixité passait par un simple mélange qui ignorait l'historique.
         const { teams: newCompositions, exempt } = TirageService.antiRematchTeamFormation(
-          players.map((p: Joueur) => ({ id: p.id, gender: p.gender as 'H' | 'F' | undefined })),
+          roster.map((p: Joueur) => ({ id: p.id, gender: p.gender as 'H' | 'F' | undefined })),
           previousTeams,
           previousMatches,
           teamSize as 2 | 3,
-          previousExempt
+          previousExempt,
+          needsMixite
         )
         teamCompositions = newCompositions
 
         if (exempt.length > 0) {
           const exemptNames = exempt.map(
-            id => players.find((p: Joueur) => p.id === id)?.name || id
+            id => roster.find((p: Joueur) => p.id === id)?.name || id
           )
           notify.warning(`${exempt.length} joueur(s) au repos cette ronde : ${exemptNames.join(', ')}`)
         }
@@ -295,34 +323,24 @@ export function useRotation({
       return
     }
 
+    // Matchs de la rotation courante, identifiés par appartenance d'équipe (R{n}-)
+    const currentRotationMatches = matchesOfRotation(teams, matches, currentRotation)
+
+    if (currentRotationMatches.length === 0) {
+      notify.warning('Aucun match trouvé pour le tour actuel. Créez d\'abord des matchs avant de faire une rotation.')
+      return
+    }
+
     if (rotationType === 'par_match') {
-      // Vérifier qu'au moins 1 match est terminé
-      const currentRotationMatches = matches.filter(m => m.tour === currentRotation)
-
-      if (currentRotationMatches.length === 0) {
-        notify.warning('Aucun match trouvé pour le tour actuel. Créez d\'abord des matchs avant de faire une rotation.')
-        return
-      }
-
       const hasFinishedMatch = currentRotationMatches.some(m => m.status === 'termine')
-
       if (!hasFinishedMatch) {
         notify.warning('Mode rotation par match: Au moins 1 match doit être terminé avant de pouvoir créer une nouvelle rotation.')
         return
       }
     } else {
-      // Vérifier que TOUS les matchs sont terminés
-      const allMatchesOfCurrentTour = matches.filter(m => m.tour === currentRotation)
-
-      if (allMatchesOfCurrentTour.length === 0) {
-        notify.warning('Aucun match trouvé pour le tour actuel. Créez d\'abord des matchs avant de faire une rotation.')
-        return
-      }
-
-      const allFinished = allMatchesOfCurrentTour.every(m => m.status === 'termine')
-
+      const allFinished = currentRotationMatches.every(m => m.status === 'termine')
       if (!allFinished) {
-        const remainingMatches = allMatchesOfCurrentTour.filter(m => m.status !== 'termine').length
+        const remainingMatches = currentRotationMatches.filter(m => m.status !== 'termine').length
         notify.warning(`Mode rotation par tour: Tous les matchs du tour ${currentRotation} doivent être terminés. Matchs restants: ${remainingMatches}`)
         return
       }

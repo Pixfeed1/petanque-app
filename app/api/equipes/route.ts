@@ -100,7 +100,9 @@ export async function POST(request: NextRequest) {
       return apiError('Le nom de l\'équipe ne peut pas être vide', 400)
     }
 
-    if (Array.isArray(joueur_ids) && joueur_ids.length > 0) {
+    // FIX : exiger un nombre de joueurs exact (rejette aussi l'équipe VIDE, qui
+    // passait avant grâce à la garde `length > 0`).
+    {
       const tournoiDetails = await queryOne<{ format: string }>(
         'SELECT format FROM tournois WHERE id = $1',
         [tournoi_id]
@@ -108,8 +110,9 @@ export async function POST(request: NextRequest) {
       if (tournoiDetails) {
         const expectedPlayers = tournoiDetails.format === 'tete_a_tete' ? 1 :
                                 tournoiDetails.format === 'doublette' ? 2 : 3
-        if (joueur_ids.length !== expectedPlayers) {
-          return apiError(`Une ${tournoiDetails.format} requiert exactement ${expectedPlayers} joueur(s) par équipe, ${joueur_ids.length} fourni(s)`, 400)
+        const provided = Array.isArray(joueur_ids) ? joueur_ids.length : 0
+        if (provided !== expectedPlayers) {
+          return apiError(`Une ${tournoiDetails.format} requiert exactement ${expectedPlayers} joueur(s) par équipe, ${provided} fourni(s)`, 400)
         }
       }
     }

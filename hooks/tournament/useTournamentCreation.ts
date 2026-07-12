@@ -108,6 +108,18 @@ export function useTournamentCreation({
         notify.error(genderValidation.error || 'Configuration mixité invalide')
         return
       }
+      // FIX M4 : mixité obligatoire réellement vérifiée — sans au moins 1 homme ET
+      // 1 femme, aucune équipe mixte n'est possible. On bloque au lieu de produire
+      // silencieusement des équipes non mixtes.
+      const nbH = combinedPlayers.filter(p => p.gender === 'H').length
+      const nbF = combinedPlayers.filter(p => p.gender === 'F').length
+      if (nbH < 1 || nbF < 1) {
+        notify.error('Mixité obligatoire impossible : il faut au moins 1 homme et 1 femme.')
+        return
+      }
+      if (nbH !== nbF && formData.format !== 'triplette') {
+        notify.warning(`Déséquilibre H/F (${nbH}H / ${nbF}F) : certaines équipes ne pourront pas être parfaitement mixtes.`)
+      }
     }
 
     // Validation nombre de joueurs (hors mode choisi)

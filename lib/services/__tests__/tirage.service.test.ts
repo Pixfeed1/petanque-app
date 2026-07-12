@@ -416,6 +416,45 @@ describe('antiRematchTeamFormation', () => {
     expect(teams.length).toBe(1)
     expect(teams[0].joueur_ids.length).toBe(3)
   })
+
+  // ─── Contrainte de mixité (M2) ───────────────────────────────
+  describe('mixité', () => {
+    const genderOf = (id: string): 'H' | 'F' => (id.startsWith('H') ? 'H' : 'F')
+    const isMixed = (ids: string[]) => ids.some(i => genderOf(i) === 'H') && ids.some(i => genderOf(i) === 'F')
+    const H = (n: number) => ({ id: `H${n}`, gender: 'H' as const })
+    const F = (n: number) => ({ id: `F${n}`, gender: 'F' as const })
+
+    it('doublette mixité: toutes les équipes sont mixtes quand H=F', () => {
+      const players = [H(1), H(2), H(3), F(1), F(2), F(3)]
+      const { teams } = antiRematchTeamFormation(players, [], [], 2, [], true)
+      expect(teams.length).toBe(3)
+      for (const t of teams) expect(isMixed(t.joueur_ids), t.joueur_ids.join(',')).toBe(true)
+    })
+
+    it('doublette mixité: évite quand même le re-match', () => {
+      const players = [H(1), H(2), F(1), F(2)]
+      // Rotation précédente : H1+F1 et H2+F2 étaient coéquipiers
+      const previousTeams = [{ joueur_ids: ['H1', 'F1'] }, { joueur_ids: ['H2', 'F2'] }]
+      const { teams } = antiRematchTeamFormation(players, previousTeams, [], 2, [], true)
+      // mixte + pas de re-match → H1+F2 et H2+F1
+      for (const t of teams) expect(isMixed(t.joueur_ids)).toBe(true)
+      const pairs = teams.map(t => t.joueur_ids.slice().sort().join('-')).sort()
+      expect(pairs).toEqual(['F2-H1', 'F1-H2'].sort())
+    })
+
+    it('triplette mixité: chaque équipe a au moins 1H et 1F', () => {
+      const players = [H(1), H(2), H(3), H(4), F(1), F(2)]
+      const { teams } = antiRematchTeamFormation(players, [], [], 3, [], true)
+      expect(teams.length).toBe(2)
+      for (const t of teams) expect(isMixed(t.joueur_ids), t.joueur_ids.join(',')).toBe(true)
+    })
+
+    it('mixité impossible (que des H): ne plante pas, forme des équipes non mixtes', () => {
+      const players = [H(1), H(2), H(3), H(4)]
+      const { teams } = antiRematchTeamFormation(players, [], [], 2, [], true)
+      expect(teams.length).toBe(2) // repli propre, personne exclu
+    })
+  })
 })
 
 // ─── SMART TERRAIN ASSIGNMENT ──────────────────────────────────

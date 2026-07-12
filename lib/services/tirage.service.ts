@@ -229,8 +229,23 @@ export function antiRematchTeamFormation(
   previousTeams: Array<{ joueur_ids: string[] }>,
   previousMatches: Array<{ equipe_a_joueur_ids: string[]; equipe_b_joueur_ids: string[] }>,
   teamSize: 2 | 3,
-  previousExempt: string[] = []
+  previousExempt: string[] = [],
+  mixite: boolean = false
 ): { teams: Array<{ joueur_ids: string[] }>; exempt: string[] } {
+  // Genre normalisé (tout ce qui n'est pas 'F' compte comme 'H'), pour la
+  // contrainte de mixité optionnelle. Une équipe est « mixte » si elle contient
+  // au moins un 'H' et un 'F'.
+  const genderById = new Map<string, 'H' | 'F'>()
+  for (const p of players) genderById.set(p.id, p.gender === 'F' ? 'F' : 'H')
+  const isTeamMixed = (ids: string[]): boolean => {
+    let hasH = false, hasF = false
+    for (const id of ids) {
+      if (genderById.get(id) === 'F') hasF = true
+      else hasH = true
+    }
+    return hasH && hasF
+  }
+
   // Construire la matrice de pénalité
   // Pénalité coéquipier = 3, adversaire = 1
   const penalty = new Map<string, Map<string, number>>()
@@ -308,11 +323,18 @@ export function antiRematchTeamFormation(
     const candidates = [...available]
 
     if (teamSize === 2) {
-      // Trouver le meilleur partenaire
-      let bestPartner = candidates[0]
-      let bestScore = Infinity
+      // Si mixité demandée, ne considérer QUE les partenaires de genre opposé
+      // (équipe mixte). S'il n'en reste aucun, on retombe sur tous les candidats
+      // (mieux vaut une équipe non mixte que d'exclure un joueur).
+      let pool = candidates
+      if (mixite) {
+        const mixedPool = candidates.filter(c => isTeamMixed([first, c]))
+        if (mixedPool.length > 0) pool = mixedPool
+      }
 
-      for (const c of candidates) {
+      let bestPartner = pool[0]
+      let bestScore = Infinity
+      for (const c of pool) {
         const score = teamPenalty([first, c])
         if (score < bestScore) {
           bestScore = score
@@ -323,16 +345,24 @@ export function antiRematchTeamFormation(
       available.delete(bestPartner)
       result.push({ joueur_ids: [first, bestPartner] })
     } else {
-      // Trouver la meilleure paire de coéquipiers
+      // Triplette : privilégier les paires formant une équipe mixte (≥1H et ≥1F),
+      // à moindre pénalité ; repli sur toutes les paires si aucune n'est mixte.
       let bestPair = [candidates[0], candidates[1]]
       let bestScore = Infinity
+      let bestMixed = false
 
       for (let i = 0; i < candidates.length; i++) {
         for (let j = i + 1; j < candidates.length; j++) {
           const score = teamPenalty([first, candidates[i], candidates[j]])
-          if (score < bestScore) {
+          const mixed = !mixite || isTeamMixed([first, candidates[i], candidates[j]])
+          // Une paire mixte l'emporte sur une non mixte ; à mixité égale, moindre pénalité.
+          const better = mixite
+            ? (mixed && !bestMixed) || (mixed === bestMixed && score < bestScore)
+            : score < bestScore
+          if (better) {
             bestScore = score
             bestPair = [candidates[i], candidates[j]]
+            bestMixed = mixed
           }
         }
       }

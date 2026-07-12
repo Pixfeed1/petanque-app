@@ -207,7 +207,24 @@ export default function TournamentDetailPage() {
     if (!tournament) return
     if (teams.length < 4) { showError(`Minimum 4 équipes requises. Vous avez ${teams.length} équipe(s).`); return }
     try {
-      if (matches.length === 0) await generatePoules()
+      // Mêlée tournante : les matchs de la ronde 1 sont créés à la création du
+      // tournoi (pas de poules à générer ici).
+      if (tournament.mode !== 'melee_tournante') {
+        // FIX : (re)générer les poules si aucune n'existe OU si des équipes ont été
+        // ajoutées après coup et ne sont couvertes par aucun match (équipe orpheline).
+        const pouleMatches = matches.filter(m => m.type === 'poule')
+        const covered = new Set<string>()
+        pouleMatches.forEach(m => {
+          if (m.equipe_a_id) covered.add(m.equipe_a_id)
+          if (m.equipe_b_id) covered.add(m.equipe_b_id)
+        })
+        const allTeamsCovered = teams.every(t => covered.has(t.id))
+        if (pouleMatches.length === 0 || !allTeamsCovered) {
+          // FIX : ne PAS démarrer si la génération échoue (sinon tournoi en_cours sans matchs)
+          const ok = await generatePoules()
+          if (!ok) { showError('Les poules n\'ont pas pu être générées — le tournoi n\'a pas démarré.'); return }
+        }
+      }
       const response = await fetch(`/api/tournois/${tournament.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -215,7 +232,11 @@ export default function TournamentDetailPage() {
         body: JSON.stringify({ status: 'en_cours' })
       })
       if (response.ok) { setTournament({ ...tournament, status: 'en_cours' }); setShowStartModal(false) }
-    } catch (error) { console.error('Erreur démarrage tournoi:', error) }
+      else { showError('Échec du démarrage du tournoi.') }
+    } catch (error) {
+      console.error('Erreur démarrage tournoi:', error)
+      showError('Erreur lors du démarrage du tournoi.')
+    }
   }
 
   // Met à jour le statut du tournoi (clôture / réouverture) via l'API
