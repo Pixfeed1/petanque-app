@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
        LEFT JOIN equipes ea ON m.equipe_a_id = ea.id
        LEFT JOIN equipes eb ON m.equipe_b_id = eb.id
        WHERE m.tournoi_id = $1
-       ORDER BY m.tour, m.terrain`,
+       ORDER BY m.tour, m.terrain NULLS LAST, m.id`,
       [tournoiId]
     )
 
@@ -132,6 +132,17 @@ export async function POST(request: NextRequest) {
 
     if (!equipe_a_id) {
       return apiError('equipe_a_id est requis', 400)
+    }
+
+    // FIX : valider type/status en amont (400 propre) au lieu de laisser la
+    // contrainte CHECK en base lever une exception → 500.
+    const VALID_TYPES = ['poule', 'bye', 'elimination', 'huitieme', 'quart', 'demi', 'finale', 'petite_finale']
+    const VALID_STATUSES = ['a_jouer', 'en_cours', 'termine', 'en_attente', 'en_attente_validation', 'valide']
+    if (type !== undefined && type !== null && !VALID_TYPES.includes(type)) {
+      return apiError(`Type de match invalide: ${type}`, 400)
+    }
+    if (status !== undefined && status !== null && !VALID_STATUSES.includes(status)) {
+      return apiError(`Statut de match invalide: ${status}`, 400)
     }
 
     // FIX SÉCURITÉ : vérifier l'accès à l'org du tournoi

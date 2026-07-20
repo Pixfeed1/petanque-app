@@ -131,15 +131,18 @@ export async function POST(request: NextRequest) {
       </html>
     `
 
-    // Envoyer l'email
-    try {
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM || 'noreply@petanquepro.fr',
-        to: email,
-        subject: '🔐 Réinitialisation de votre mot de passe - Pétanque Pro',
-        html: emailHtml,
-        // Version texte pour clients email sans HTML
-        text: `
+    // FIX SÉCURITÉ (anti-énumération) : envoi de l'email en fire-and-forget.
+    // Auparavant l'envoi était bloquant et un échec SMTP levait un 500 UNIQUEMENT
+    // pour un compte existant (200 instantané sinon) → oracle binaire + timing.
+    // On n'attend plus l'envoi : la réponse est identique et immédiate dans tous
+    // les cas (compte existant ou non).
+    transporter.sendMail({
+      from: process.env.SMTP_FROM || 'noreply@petanquepro.fr',
+      to: email,
+      subject: '🔐 Réinitialisation de votre mot de passe - Pétanque Pro',
+      html: emailHtml,
+      // Version texte pour clients email sans HTML
+      text: `
 Réinitialisation de mot de passe - Pétanque Pro
 
 Bonjour ${user.full_name || 'Utilisateur'},
@@ -156,16 +159,9 @@ Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.
 ---
 © ${new Date().getFullYear()} Pétanque Pro
         `.trim()
-      })
-
-    } catch (emailError) {
-      console.error('Erreur envoi email:', emailError)
-
-      if (process.env.NODE_ENV !== 'development') {
-        // En production: ne pas exposer l'erreur
-        throw new Error('Impossible d\'envoyer l\'email')
-      }
-    }
+    }).catch((emailError) => {
+      console.error('Erreur envoi email (reset):', emailError)
+    })
 
     return NextResponse.json({
       message: 'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.',

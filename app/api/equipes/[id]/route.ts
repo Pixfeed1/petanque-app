@@ -176,9 +176,9 @@ export async function DELETE(
 
     const { id } = await params
 
-    // Charger équipe + org_id du tournoi
+    // Charger équipe + org_id + statut du tournoi
     const equipe = await queryOne<any>(
-      `SELECT e.id, e.tournoi_id, t.org_id as tournoi_org_id
+      `SELECT e.id, e.tournoi_id, t.org_id as tournoi_org_id, t.status as tournoi_status
        FROM equipes e
        LEFT JOIN tournois t ON e.tournoi_id = t.id
        WHERE e.id = $1`,
@@ -196,6 +196,13 @@ export async function DELETE(
     const hasAccess = await checkOrgAccess(user.id, String(equipe.tournoi_org_id))
     if (!hasAccess) {
       return apiError('Accès refusé', 403)
+    }
+
+    // FIX : interdire la suppression hors préparation. En cours/terminé, les FK
+    // ON DELETE SET NULL mettraient equipe_a/b/winner à NULL → matchs orphelins,
+    // stats/classement/bracket corrompus.
+    if (equipe.tournoi_status && equipe.tournoi_status !== 'preparation') {
+      return apiError('Impossible de supprimer une équipe une fois le tournoi démarré.', 400)
     }
 
     await query('DELETE FROM equipes WHERE id = $1', [id])

@@ -178,51 +178,43 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
   /**
    * Calcul du classement individuel (mêlée tournante)
    */
-  const calculateIndividualRankings = useCallback((matches: Match[]) => {
+  const calculateIndividualRankings = useCallback((matches: Match[], teamsList: Team[]) => {
     const playerStats = new Map()
 
-    matches.filter(m => m.status === 'termine' && m.type !== 'bye').forEach(match => {
-      // Joueurs équipe A
-      match.equipe_a?.players?.forEach((player: Joueur) => {
-        if (!player) return
-        const stats = playerStats.get(player.id) || {
-          ...player,
-          played: 0,
-          victories: 0,
-          defeats: 0,
-          draws: 0,
-          pointsFor: 0,
-          pointsAgainst: 0
-        }
-        stats.played++
-        if (match.score_a > match.score_b) stats.victories++
-        else if (match.score_a < match.score_b) stats.defeats++
-        else stats.draws++
-        stats.pointsFor += match.score_a
-        stats.pointsAgainst += match.score_b
-        playerStats.set(player.id, stats)
-      })
+    // FIX : les matchs ne portent pas de champ `players`. On construit un index
+    // joueur à partir des équipes enrichies (equipes_joueurs) et on rattache les
+    // joueurs de chaque match via `equipe_a/b.joueur_ids`.
+    const playerById = new Map<string, Joueur>()
+    for (const t of teamsList) {
+      for (const ej of (((t as any).equipes_joueurs as EquipeJoueur[] | undefined) || [])) {
+        if (ej.joueur?.id) playerById.set(ej.joueur.id, ej.joueur)
+      }
+    }
 
-      // Joueurs équipe B
-      match.equipe_b?.players?.forEach((player: Joueur) => {
-        if (!player) return
+    const accumulate = (
+      joueurIds: string[] | undefined,
+      scoreFor: number,
+      scoreAgainst: number
+    ) => {
+      for (const pid of (joueurIds || [])) {
+        const player = playerById.get(pid)
+        if (!player) continue
         const stats = playerStats.get(player.id) || {
-          ...player,
-          played: 0,
-          victories: 0,
-          defeats: 0,
-          draws: 0,
-          pointsFor: 0,
-          pointsAgainst: 0
+          ...player, played: 0, victories: 0, defeats: 0, draws: 0, pointsFor: 0, pointsAgainst: 0
         }
         stats.played++
-        if (match.score_b > match.score_a) stats.victories++
-        else if (match.score_b < match.score_a) stats.defeats++
+        if (scoreFor > scoreAgainst) stats.victories++
+        else if (scoreFor < scoreAgainst) stats.defeats++
         else stats.draws++
-        stats.pointsFor += match.score_b
-        stats.pointsAgainst += match.score_a
+        stats.pointsFor += scoreFor
+        stats.pointsAgainst += scoreAgainst
         playerStats.set(player.id, stats)
-      })
+      }
+    }
+
+    matches.filter(m => m.status === 'termine' && m.type !== 'bye').forEach(match => {
+      accumulate((match.equipe_a as any)?.joueur_ids, match.score_a, match.score_b)
+      accumulate((match.equipe_b as any)?.joueur_ids, match.score_b, match.score_a)
     })
 
     const individualRankings = Array.from(playerStats.values())
@@ -313,7 +305,7 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
 
         // Calculer classement
         if (tournamentData.mode === 'melee_tournante') {
-          calculateIndividualRankings(matchesWithMenes)
+          calculateIndividualRankings(matchesWithMenes, teamsData)
         } else {
           calculateTeamRankings(matchesWithMenes, teamsData)
         }
@@ -416,7 +408,11 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
 
           pdf.setFontSize(10)
           pdf.setFont('helvetica', 'normal')
-          team.players?.forEach((player: Joueur) => {
+          // FIX : les joueurs enrichis sont dans `equipes_joueurs` (pas `players`,
+          // qui n'existe pas) → l'onglet Équipes était vide.
+          ;((team as any).equipes_joueurs as EquipeJoueur[] | undefined)?.forEach((ej) => {
+            const player = ej.joueur
+            if (!player) return
             const gender = player.gender === 'H' ? '(H)' : '(F)'
             pdf.text(`   ${gender} ${player.name}`, 25, yPosition)
             yPosition += 5
@@ -589,12 +585,13 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
         const teamsData = [
           ['Equipe', 'Joueur', 'Genre', 'Role'],
           ...teams.flatMap(team =>
-            team.players?.map((p: Joueur) => [
+            // FIX : joueurs enrichis dans `equipes_joueurs` (pas `players`)
+            (((team as any).equipes_joueurs as EquipeJoueur[] | undefined)?.map((ej) => [
               sanitizeForExcel(team.name),
-              sanitizeForExcel(p.name),
-              p.gender === 'H' ? 'Homme' : 'Femme',
-              (p as any).role === 'capitaine' ? 'Capitaine' : 'Joueur'
-            ]) || []
+              sanitizeForExcel(ej.joueur?.name),
+              ej.joueur?.gender === 'H' ? 'Homme' : 'Femme',
+              ej.role === 'capitaine' ? 'Capitaine' : 'Joueur'
+            ])) || []
           )
         ]
         const wsTeams = XLSX.utils.aoa_to_sheet(teamsData)

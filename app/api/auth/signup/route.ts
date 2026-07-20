@@ -30,7 +30,10 @@ export async function POST(request: NextRequest) {
       return apiError(validation.errors.join(', '), 400)
     }
 
-    const { email, password, fullName, organizationName } = validation.data
+    const { password, fullName, organizationName } = validation.data
+    // FIX : normaliser l'email en minuscules (cohérent avec le login qui compare
+    // en LOWER()). Évitait des comptes en double / un reset qui n'arrivait jamais.
+    const email = validation.data.email.toLowerCase().trim()
 
     // Hash du mot de passe AVANT la transaction (opération CPU-bound, on
     // évite de tenir un client de pool pendant le bcrypt).

@@ -94,7 +94,9 @@ export function generateToken(payload: JWTPayload): string {
  */
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload
+    // FIX SÉCURITÉ : forcer l'algorithme HS256 pour empêcher toute confusion
+    // d'algorithme (ex. jeton "alg: none" ou substitution RS/HS).
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as JWTPayload
     return decoded
   } catch (error) {
     return null

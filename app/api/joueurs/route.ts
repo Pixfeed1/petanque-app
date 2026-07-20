@@ -25,8 +25,11 @@ export async function GET(request: NextRequest) {
     }
 
     const { org_id: orgId } = validation.data
-    const limit = parseInt(searchParams.get('limit') || '100')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    // FIX : bornes + garde NaN (parseInt('abc')=NaN passé à LIMIT → 500)
+    const limitRaw = parseInt(searchParams.get('limit') || '100', 10)
+    const offsetRaw = parseInt(searchParams.get('offset') || '0', 10)
+    const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 500) : 100
+    const offset = Number.isFinite(offsetRaw) ? Math.max(offsetRaw, 0) : 0
     const search = searchParams.get('search') || ''
 
     const hasAccess = await checkOrgAccess(user.id, orgId)

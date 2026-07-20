@@ -72,12 +72,24 @@ export async function POST(request: NextRequest) {
     )
     const validEquipeIds = new Set(equipesResult.rows.map((e) => (e as Record<string, unknown>).id as string))
 
+    // FIX : valider type/status en amont (400 propre au lieu d'un 500 via la
+    // contrainte CHECK ; en batch, évite qu'un seul mauvais type fasse échouer tout le lot).
+    const VALID_TYPES = ['poule', 'bye', 'elimination', 'huitieme', 'quart', 'demi', 'finale', 'petite_finale']
+    const VALID_STATUSES = ['a_jouer', 'en_cours', 'termine', 'en_attente', 'en_attente_validation', 'valide']
+
     // Valider chaque match
     for (let i = 0; i < matches.length; i++) {
       const match = matches[i]
 
       if (!match.equipe_a_id) {
         return apiError(`Match ${i}: equipe_a_id est requis`, 400)
+      }
+
+      if (match.type != null && !VALID_TYPES.includes(match.type)) {
+        return apiError(`Match ${i}: type invalide (${match.type})`, 400)
+      }
+      if (match.status != null && !VALID_STATUSES.includes(match.status)) {
+        return apiError(`Match ${i}: statut invalide (${match.status})`, 400)
       }
 
       const isByeMatch = match.type === 'bye' || match.equipe_b_id === null

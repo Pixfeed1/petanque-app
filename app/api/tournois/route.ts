@@ -18,8 +18,11 @@ export async function GET(request: NextRequest) {
     // Récupérer l'orgId depuis les query params
     const { searchParams } = new URL(request.url)
     const orgId = searchParams.get('org_id')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    // FIX : bornes + garde NaN (parseInt('abc')=NaN passé à LIMIT → 500)
+    const limitRaw = parseInt(searchParams.get('limit') || '50', 10)
+    const offsetRaw = parseInt(searchParams.get('offset') || '0', 10)
+    const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 200) : 50
+    const offset = Number.isFinite(offsetRaw) ? Math.max(offsetRaw, 0) : 0
 
     if (!orgId) {
       return apiError('org_id est requis', 400)

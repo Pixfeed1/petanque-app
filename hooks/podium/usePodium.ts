@@ -124,6 +124,13 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
   const buildPodium = async (allMatches: Match[], tournoiId: string): Promise<PodiumTeam[]> => {
     const podiumData: PodiumTeam[] = []
 
+    // FIX : en mêlée tournante, le podium est INDIVIDUEL (les équipes changent à
+    // chaque rotation) — pas un classement d'équipe éphémère.
+    if (tournament?.mode === 'melee_tournante') {
+      await buildPodiumFromIndividual(podiumData, allMatches, tournoiId)
+      return podiumData
+    }
+
     // FIX BUG : reconnaître la double élimination (types "de:*"). Sans ça, le podium
     // retombait sur le classement de poules et n'affichait jamais le vrai champion.
     if (buildPodiumFromDoubleElim(podiumData, allMatches)) {
@@ -247,6 +254,34 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
     }
 
     return true
+  }
+
+  /**
+   * Podium INDIVIDUEL pour la mêlée tournante : chaque joueur est classé sur
+   * tous ses matchs (toutes rotations confondues), via les règles FIPJP.
+   */
+  const buildPodiumFromIndividual = async (podiumData: PodiumTeam[], allMatches: Match[], tournoiId: string) => {
+    const eqRes = await fetch(`/api/equipes?tournoi_id=${tournoiId}`, { credentials: 'include' })
+    if (!eqRes.ok) return
+    const teams = await eqRes.json()
+
+    const orgId = tournament?.org_id
+    const jRes = orgId ? await fetch(`/api/joueurs?org_id=${orgId}`, { credentials: 'include' }) : null
+    const jData = jRes && jRes.ok ? await jRes.json() : []
+    const players: Joueur[] = Array.isArray(jData) ? jData : (jData.joueurs || [])
+    if (players.length === 0) return
+
+    const stats = StatsService.calculateAllPlayersStats(players, allMatches as any, teams)
+    const ranked = StatsService.sortPlayersByFIPJPRules(stats).filter(p => p.played > 0)
+
+    ranked.slice(0, 3).forEach((p, i) => {
+      podiumData.push({
+        position: i + 1,
+        team: { id: p.id, name: p.name },
+        score: p.points,
+        stats: { victories: p.victories, defeats: p.defeats, draws: p.draws, pointsFor: p.pointsFor, pointsAgainst: p.pointsAgainst }
+      })
+    })
   }
 
   const buildPodiumFromPoules = async (
