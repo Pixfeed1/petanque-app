@@ -236,7 +236,12 @@ export function antiRematchTeamFormation(
   // contrainte de mixité optionnelle. Une équipe est « mixte » si elle contient
   // au moins un 'H' et un 'F'.
   const genderById = new Map<string, 'H' | 'F'>()
-  for (const p of players) genderById.set(p.id, p.gender === 'F' ? 'F' : 'H')
+  let totalH = 0, totalF = 0
+  for (const p of players) {
+    const g = p.gender === 'F' ? 'F' : 'H'
+    genderById.set(p.id, g)
+    if (g === 'F') totalF++; else totalH++
+  }
   const isTeamMixed = (ids: string[]): boolean => {
     let hasH = false, hasF = false
     for (const id of ids) {
@@ -245,6 +250,12 @@ export function antiRematchTeamFormation(
     }
     return hasH && hasF
   }
+  // Genre minoritaire : en triplette mixte on vise « 2 majorité + 1 minorité »
+  // pour ne pas épuiser le genre rare dans une seule équipe (ce qui laisserait
+  // une autre équipe non mixte).
+  const minorityGender: 'H' | 'F' = totalF <= totalH ? 'F' : 'H'
+  const minorityCount = (ids: string[]): number =>
+    ids.reduce((n, id) => n + (genderById.get(id) === minorityGender ? 1 : 0), 0)
 
   // Construire la matrice de pénalité
   // Pénalité coéquipier = 3, adversaire = 1
@@ -345,24 +356,27 @@ export function antiRematchTeamFormation(
       available.delete(bestPartner)
       result.push({ joueur_ids: [first, bestPartner] })
     } else {
-      // Triplette : privilégier les paires formant une équipe mixte (≥1H et ≥1F),
-      // à moindre pénalité ; repli sur toutes les paires si aucune n'est mixte.
+      // Triplette : classer les paires par qualité de mixité puis par pénalité.
+      //   rang 2 = équipe mixte avec EXACTEMENT 1 joueur du genre minoritaire
+      //            (2 majorité + 1 minorité → n'épuise pas le genre rare)
+      //   rang 1 = équipe mixte (mais 2 du genre minoritaire)
+      //   rang 0 = équipe non mixte
+      // Sans mixité, tout est rang 0 → on retombe sur la moindre pénalité.
       let bestPair = [candidates[0], candidates[1]]
       let bestScore = Infinity
-      let bestMixed = false
+      let bestRank = -1
 
       for (let i = 0; i < candidates.length; i++) {
         for (let j = i + 1; j < candidates.length; j++) {
-          const score = teamPenalty([first, candidates[i], candidates[j]])
-          const mixed = !mixite || isTeamMixed([first, candidates[i], candidates[j]])
-          // Une paire mixte l'emporte sur une non mixte ; à mixité égale, moindre pénalité.
-          const better = mixite
-            ? (mixed && !bestMixed) || (mixed === bestMixed && score < bestScore)
-            : score < bestScore
+          const team = [first, candidates[i], candidates[j]]
+          const score = teamPenalty(team)
+          let rank = 0
+          if (mixite && isTeamMixed(team)) rank = minorityCount(team) === 1 ? 2 : 1
+          const better = rank > bestRank || (rank === bestRank && score < bestScore)
           if (better) {
+            bestRank = rank
             bestScore = score
             bestPair = [candidates[i], candidates[j]]
-            bestMixed = mixed
           }
         }
       }
