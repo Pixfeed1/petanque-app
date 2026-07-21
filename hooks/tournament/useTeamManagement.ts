@@ -32,15 +32,28 @@ interface UseTeamManagementReturn {
   setNewTeamName: React.Dispatch<React.SetStateAction<string>>
   showTeamFormation: boolean
   setShowTeamFormation: React.Dispatch<React.SetStateAction<boolean>>
+  suggestedTeamName: string
 
   // Actions
   loadAvailablePlayers: () => Promise<void>
   togglePlayerSelection: (playerId: string) => void
   createTeamWithPlayers: () => Promise<void>
+  autoFillRemainingTeams: () => Promise<void>
   renameTeam: () => Promise<void>
   getPlayersPerTeam: (format: string) => number
   getTeamPlayers: (teamId: string | null | undefined) => string[]
   resetTeamFormation: () => void
+}
+
+/**
+ * Génère le prochain nom d'équipe libre "Équipe N".
+ * Évite les collisions avec les équipes déjà nommées ainsi.
+ */
+function nextDefaultTeamName(existing: Team[]): string {
+  const taken = new Set(existing.map(t => t.name.trim().toLowerCase()))
+  let n = 1
+  while (taken.has(`équipe ${n}`)) n++
+  return `Équipe ${n}`
 }
 
 export function useTeamManagement({
@@ -77,6 +90,9 @@ export function useTeamManagement({
   const getPlayersPerTeam = useCallback((format: string): number => {
     return format === 'tete_a_tete' ? 1 : format === 'doublette' ? 2 : 3
   }, [])
+
+  // Nom suggéré pour la prochaine équipe (pré-rempli, éditable) → 2 taps pour créer.
+  const suggestedTeamName = nextDefaultTeamName(teams)
 
   /**
    * Récupère les noms des joueurs d'une équipe
@@ -152,13 +168,11 @@ export function useTeamManagement({
    * Crée une nouvelle équipe avec les joueurs sélectionnés
    */
   const createTeamWithPlayers = useCallback(async () => {
-    if (!tournament || !newTeamNameForCreation.trim()) {
-      notify.warning('Veuillez entrer un nom d\'équipe')
-      return
-    }
+    if (!tournament) return
 
-    // Vérifier l'unicité du nom d'équipe
-    const teamName = newTeamNameForCreation.trim()
+    // Nom facultatif : si laissé vide, on utilise le nom suggéré "Équipe N".
+    // → l'utilisateur peut composer une équipe en 2 taps (sélection + créer).
+    const teamName = newTeamNameForCreation.trim() || nextDefaultTeamName(teams)
     const existingTeam = teams.find(t => t.name.toLowerCase() === teamName.toLowerCase())
     if (existingTeam) {
       notify.error(`Une équipe nommée "${teamName}" existe déjà. Veuillez choisir un autre nom.`)
@@ -214,6 +228,82 @@ export function useTeamManagement({
   }, [tournament, newTeamNameForCreation, teams, selectedPlayerIds, getPlayersPerTeam, loadTournamentData])
 
   /**
+   * Répartit automatiquement les joueurs restants en équipes complètes.
+   * Escape hatch du mode "choisi" : l'organisateur peut composer à la main les
+   * équipes qui lui tiennent à cœur, puis compléter le reste en un clic.
+   */
+  const autoFillRemainingTeams = useCallback(async () => {
+    if (!tournament) return
+
+    const perTeam = getPlayersPerTeam(tournament.format)
+    const pool = [...availablePlayers]
+
+    if (pool.length < perTeam) {
+      notify.warning('Pas assez de joueurs restants pour former une équipe complète.')
+      return
+    }
+
+    // Mélange (Fisher-Yates) pour une répartition aléatoire équitable
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[pool[i], pool[j]] = [pool[j], pool[i]]
+    }
+
+    // Découpe en équipes complètes (on laisse de côté un éventuel reliquat)
+    const chunks: Joueur[][] = []
+    for (let i = 0; i + perTeam <= pool.length; i += perTeam) {
+      chunks.push(pool.slice(i, i + perTeam))
+    }
+
+    setCreatingTeam(true)
+    try {
+      const taken = new Set(teams.map(t => t.name.trim().toLowerCase()))
+      let idx = 0
+      let created = 0
+
+      for (const chunk of chunks) {
+        // Prochain nom "Équipe N" libre
+        let name = ''
+        do { idx++; name = `Équipe ${idx}` } while (taken.has(name.toLowerCase()))
+        taken.add(name.toLowerCase())
+
+        const response = await fetch('/api/equipes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            tournoi_id: tournament.id,
+            name,
+            joueur_ids: chunk.map(p => p.id),
+            stats: { victoires: 0, defaites: 0, points_pour: 0, points_contre: 0 }
+          })
+        })
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}))
+          notify.error(error.error || 'Impossible de créer une équipe automatiquement')
+          break
+        }
+        created++
+      }
+
+      await loadTournamentData()
+
+      const leftover = pool.length % perTeam
+      notify.success(
+        `${created} équipe${created > 1 ? 's' : ''} créée${created > 1 ? 's' : ''} automatiquement` +
+        (leftover ? ` · ${leftover} joueur${leftover > 1 ? 's' : ''} non assigné${leftover > 1 ? 's' : ''}` : '')
+      )
+      resetTeamFormation()
+    } catch (error) {
+      console.error('Erreur répartition automatique:', error)
+      notify.error('Erreur lors de la répartition automatique')
+    } finally {
+      setCreatingTeam(false)
+    }
+  }, [tournament, availablePlayers, teams, getPlayersPerTeam, loadTournamentData, resetTeamFormation])
+
+  /**
    * Renomme une équipe existante
    */
   const renameTeam = useCallback(async () => {
@@ -266,11 +356,13 @@ export function useTeamManagement({
     setNewTeamName,
     showTeamFormation,
     setShowTeamFormation,
+    suggestedTeamName,
 
     // Actions
     loadAvailablePlayers,
     togglePlayerSelection,
     createTeamWithPlayers,
+    autoFillRemainingTeams,
     renameTeam,
     getPlayersPerTeam,
     getTeamPlayers,

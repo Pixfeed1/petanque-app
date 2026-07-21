@@ -80,6 +80,7 @@ export default function TournamentDetailPage() {
     setNewTeamNameForCreation, creatingTeam, editingTeam,
     setEditingTeam, newTeamName, setNewTeamName, showTeamFormation,
     setShowTeamFormation, togglePlayerSelection, createTeamWithPlayers,
+    autoFillRemainingTeams, suggestedTeamName,
     renameTeam, getPlayersPerTeam, getTeamPlayers, resetTeamFormation
   } = useTeamManagement({
     tournament, teams, loadTournamentData,
@@ -1108,14 +1109,19 @@ export default function TournamentDetailPage() {
       {isAdmin && showTeamFormation && tournament && (
         <TeamFormationModal
           tournament={tournament}
+          teams={teams}
+          minTeams={MIN_TEAMS_TO_START}
           availablePlayers={availablePlayers}
           selectedPlayerIds={selectedPlayerIds}
           newTeamName={newTeamNameForCreation}
+          suggestedName={suggestedTeamName}
           creatingTeam={creatingTeam}
           onClose={resetTeamFormation}
           onNameChange={setNewTeamNameForCreation}
           onTogglePlayer={togglePlayerSelection}
           onCreate={createTeamWithPlayers}
+          onAutoFill={autoFillRemainingTeams}
+          onFinish={() => { resetTeamFormation(); setShowStartModal(true) }}
           getPlayersPerTeam={getPlayersPerTeam}
         />
       )}
