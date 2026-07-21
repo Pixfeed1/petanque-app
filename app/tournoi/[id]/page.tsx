@@ -28,6 +28,11 @@ import { useEffectiveRole, type ViewRole } from '@/hooks/useEffectiveRole'
 import TournamentSubNav from '@/components/tournament/TournamentSubNav'
 type ActiveSection = 'apercu' | 'matchs' | 'classement' | 'equipes' | 'stats'
 
+// Nombre minimum d'équipes pour démarrer un tournoi. Abaissé de 4 à 3 : de
+// nombreux petits tournois (3 doublettes = 6 joueurs, 3 en tête-à-tête…)
+// restaient bloqués en préparation, impossibles à démarrer.
+const MIN_TEAMS_TO_START = 3
+
 export default function TournamentDetailPage() {
   const router = useRouter()
   const params = useParams()
@@ -205,7 +210,7 @@ export default function TournamentDetailPage() {
 
   const handleStartTournament = async () => {
     if (!tournament) return
-    if (teams.length < 4) { showError(`Minimum 4 équipes requises. Vous avez ${teams.length} équipe(s).`); return }
+    if (teams.length < MIN_TEAMS_TO_START) { showError(`Minimum ${MIN_TEAMS_TO_START} équipes requises. Vous avez ${teams.length} équipe(s).`); return }
     try {
       // Mêlée tournante : les matchs de la ronde 1 sont créés à la création du
       // tournoi (pas de poules à générer ici).
@@ -322,8 +327,8 @@ export default function TournamentDetailPage() {
   }
 
   const isAdmin = canManage  // alias pour compat (fourni par useEffectiveRole)
-  // Mode choisi : guider vers la composition tant qu'il manque des équipes (min 4 pour démarrer)
-  const needsTeams = tournament.mode === 'choisi' && teams.length < 4
+  // Mode choisi : guider vers la composition tant qu'il manque des équipes
+  const needsTeams = tournament.mode === 'choisi' && teams.length < MIN_TEAMS_TO_START
   const statusLabel = tournament.status === 'preparation' ? 'Préparation' : tournament.status === 'en_cours' ? 'En cours' : 'Terminé'
   const formatLabel = tournament.format === 'tete_a_tete' ? 'Tête-à-tête' : tournament.format === 'doublette' ? 'Doublettes' : 'Triplettes'
   const isMelee = tournament.mode === 'melee_tournante'
@@ -521,7 +526,7 @@ export default function TournamentDetailPage() {
                       <p className="text-sm text-petanque-vert-fonce">
                         {teams.length === 0
                           ? "Aucune équipe pour l'instant. Compose tes équipes pour pouvoir démarrer."
-                          : `${teams.length} équipe${teams.length > 1 ? 's' : ''} composée${teams.length > 1 ? 's' : ''} · il en faut au moins 4 pour démarrer.`}
+                          : `${teams.length} équipe${teams.length > 1 ? 's' : ''} composée${teams.length > 1 ? 's' : ''} · il en faut au moins ${MIN_TEAMS_TO_START} pour démarrer.`}
                       </p>
                     </div>
                     <Button variant="primary" onClick={() => { setActiveSection('equipes'); setShowTeamFormation(true) }}>
@@ -1023,7 +1028,7 @@ export default function TournamentDetailPage() {
                 <div className="bg-petanque-cochonnet/10 border border-petanque-cochonnet/40 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
                   <div>
                     <p className="text-sm font-medium text-petanque-cochonnet-fonce mb-0.5">Aucune équipe pour l&apos;instant</p>
-                    <p className="text-sm text-petanque-bois">Compose tes équipes manuellement — il en faut au moins 4 pour démarrer.</p>
+                    <p className="text-sm text-petanque-bois">Compose tes équipes manuellement — il en faut au moins {MIN_TEAMS_TO_START} pour démarrer.</p>
                   </div>
                   <Button variant="primary" size="sm" onClick={() => setShowTeamFormation(true)}>
                     Composer les équipes
@@ -1034,8 +1039,8 @@ export default function TournamentDetailPage() {
                   <div>
                     <p className="text-sm font-medium text-petanque-vert-fonce mb-0.5">{teams.length} équipe{teams.length > 1 ? 's' : ''} composée{teams.length > 1 ? 's' : ''}</p>
                     <p className="text-sm text-petanque-bois">
-                      {teams.length < 4
-                        ? `Encore ${4 - teams.length} équipe${4 - teams.length > 1 ? 's' : ''} pour pouvoir démarrer.`
+                      {teams.length < MIN_TEAMS_TO_START
+                        ? `Encore ${MIN_TEAMS_TO_START - teams.length} équipe${MIN_TEAMS_TO_START - teams.length > 1 ? 's' : ''} pour pouvoir démarrer.`
                         : "Tu peux démarrer le tournoi, ou ajouter d'autres équipes."}
                     </p>
                   </div>
