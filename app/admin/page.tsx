@@ -22,10 +22,18 @@ const statusLabels: Record<string, string> = {
 interface Stats {
   users: { total: number; today: number; thisWeek: number; thisMonth: number }
   tournois: { total: number; thisMonth: number; enCours: number; preparation: number }
+  funnel: { crees: number; avecEquipes: number; avecMatchs: number; demarres: number; termines: number }
+  funnelByMode: { mode: string; crees: number; avecEquipes: number; demarres: number }[]
   plans: { plan: string; count: number }[]
   recentUsers: any[]
   recentTournois: any[]
   topOrgs: any[]
+}
+
+const modeLabels: Record<string, string> = {
+  choisi: 'Choisi',
+  melee_fixe: 'Mêlée fixe',
+  melee_tournante: 'Mêlée tournante'
 }
 
 type TabKey = 'users' | 'tournois' | 'orgs'
@@ -135,9 +143,46 @@ export default function AdminDashboard() {
         </section>
       </FadeIn>
 
-      <FadeIn delay={140}>
+      <FadeIn delay={120}>
         <section className="pb-10 mb-10 border-b border-petanque-sable-bord/50">
           <p className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] mb-1.5">02</p>
+          <h2 className="text-lg md:text-xl font-medium text-petanque-vert-fonce mb-1.5 tracking-tight">
+            Conversion <span className="accent-italic text-petanque-vert">— activation.</span>
+          </h2>
+          <p className="text-sm text-petanque-bois leading-relaxed mb-6 max-w-2xl">
+            De la création au tournoi démarré. C'est ici qu'on voit où les organisateurs décrochent.
+          </p>
+          <FunnelRow funnel={stats.funnel} />
+
+          {stats.funnelByMode.length > 0 && (
+            <div className="mt-8">
+              <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-4">
+                Taux de démarrage par mode
+              </p>
+              <div className="flex flex-wrap gap-x-10 gap-y-5">
+                {stats.funnelByMode.map((m) => {
+                  const rate = m.crees > 0 ? Math.round((m.demarres / m.crees) * 100) : 0
+                  return (
+                    <div key={m.mode}>
+                      <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-1.5">
+                        {modeLabels[m.mode] || m.mode}
+                      </p>
+                      <p className="font-mono text-2xl md:text-3xl font-medium leading-none text-petanque-vert-fonce">
+                        {rate}<span className="text-base text-petanque-bois">%</span>
+                      </p>
+                      <p className="text-xs text-petanque-bois mt-2">{m.demarres} démarré{m.demarres > 1 ? 's' : ''} / {m.crees} créé{m.crees > 1 ? 's' : ''}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </section>
+      </FadeIn>
+
+      <FadeIn delay={160}>
+        <section className="pb-10 mb-10 border-b border-petanque-sable-bord/50">
+          <p className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] mb-1.5">03</p>
           <h2 className="text-lg md:text-xl font-medium text-petanque-vert-fonce mb-5 tracking-tight">
             Répartition des plans
           </h2>
@@ -156,9 +201,9 @@ export default function AdminDashboard() {
         </section>
       </FadeIn>
 
-      <FadeIn delay={200}>
+      <FadeIn delay={220}>
         <section>
-          <p className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] mb-1.5">03</p>
+          <p className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] mb-1.5">04</p>
           <h2 className="text-lg md:text-xl font-medium text-petanque-vert-fonce mb-5 tracking-tight">
             Activité récente
           </h2>
@@ -173,6 +218,50 @@ export default function AdminDashboard() {
         </section>
       </FadeIn>
     </AdminLayout>
+  )
+}
+
+function FunnelRow({ funnel }: { funnel: Stats['funnel'] }) {
+  const steps = [
+    { label: 'Créés', value: funnel.crees },
+    { label: 'Avec équipes', value: funnel.avecEquipes },
+    { label: 'Avec matchs', value: funnel.avecMatchs },
+    { label: 'Démarrés', value: funnel.demarres },
+    { label: 'Terminés', value: funnel.termines },
+  ]
+  const base = funnel.crees || 1
+  // Repérer la plus grosse chute entre deux étapes (en points de %) pour la souligner.
+  let worstIdx = -1
+  let worstDrop = 0
+  for (let i = 1; i < steps.length; i++) {
+    const drop = (steps[i - 1].value - steps[i].value) / base
+    if (drop > worstDrop) { worstDrop = drop; worstIdx = i }
+  }
+
+  return (
+    <div className="flex flex-wrap items-stretch gap-y-5">
+      {steps.map((s, i) => {
+        const pct = Math.round((s.value / base) * 100)
+        const isWorst = i === worstIdx
+        return (
+          <div key={s.label} className="flex items-stretch">
+            <div className="min-w-[92px]">
+              <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-1.5">{s.label}</p>
+              <p className="font-mono text-2xl md:text-3xl font-medium leading-none text-petanque-vert-fonce">{s.value}</p>
+              <p className="text-xs text-petanque-bois mt-2">{pct}%</p>
+            </div>
+            {i < steps.length - 1 && (
+              <div className="flex flex-col items-center justify-start px-3 md:px-4 pt-1">
+                <span className={`font-mono text-sm leading-none ${isWorst ? 'text-petanque-cochonnet' : 'text-petanque-acier'}`}>→</span>
+                {isWorst && worstDrop > 0 && (
+                  <span className="font-mono text-[10px] text-petanque-cochonnet mt-1.5 whitespace-nowrap">−{Math.round(worstDrop * 100)}%</span>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
   )
 }
 

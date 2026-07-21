@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
     const [
       usersStats,
       tournoisStats,
+      funnelStats,
+      funnelByMode,
       plansStats,
       recentUsers,
       recentTournois,
@@ -51,6 +53,40 @@ export async function GET(request: NextRequest) {
           COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE) as today,
           COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE - INTERVAL '30 days') as this_month
         FROM tournois
+      `),
+
+      // Funnel d'activation : créés → avec équipes → avec matchs → démarrés → terminés.
+      // Mesure où les organisateurs décrochent (beaucoup restent en préparation à 0 équipe).
+      queryOne<{
+        crees: string
+        avec_equipes: string
+        avec_matchs: string
+        demarres: string
+        termines: string
+      }>(`
+        SELECT
+          COUNT(*) as crees,
+          COUNT(*) FILTER (WHERE eq.n > 0) as avec_equipes,
+          COUNT(*) FILTER (WHERE ma.n > 0) as avec_matchs,
+          COUNT(*) FILTER (WHERE t.status IN ('en_cours', 'termine')) as demarres,
+          COUNT(*) FILTER (WHERE t.status = 'termine') as termines
+        FROM tournois t
+        LEFT JOIN (SELECT tournoi_id, COUNT(*) n FROM equipes GROUP BY tournoi_id) eq ON eq.tournoi_id = t.id
+        LEFT JOIN (SELECT tournoi_id, COUNT(*) n FROM matches GROUP BY tournoi_id) ma ON ma.tournoi_id = t.id
+      `),
+
+      // Funnel décomposé par mode (choisi vs mêlée) : montre que le mode "choisi"
+      // concentre les tournois créés mais jamais remplis.
+      queryMany<{ mode: string; crees: string; avec_equipes: string; demarres: string }>(`
+        SELECT
+          t.mode,
+          COUNT(*) as crees,
+          COUNT(*) FILTER (WHERE eq.n > 0) as avec_equipes,
+          COUNT(*) FILTER (WHERE t.status IN ('en_cours', 'termine')) as demarres
+        FROM tournois t
+        LEFT JOIN (SELECT tournoi_id, COUNT(*) n FROM equipes GROUP BY tournoi_id) eq ON eq.tournoi_id = t.id
+        GROUP BY t.mode
+        ORDER BY crees DESC
       `),
 
       // Répartition des plans
@@ -126,6 +162,19 @@ export async function GET(request: NextRequest) {
         today: parseInt(tournoisStats?.today || '0'),
         thisMonth: parseInt(tournoisStats?.this_month || '0'),
       },
+      funnel: {
+        crees: parseInt(funnelStats?.crees || '0'),
+        avecEquipes: parseInt(funnelStats?.avec_equipes || '0'),
+        avecMatchs: parseInt(funnelStats?.avec_matchs || '0'),
+        demarres: parseInt(funnelStats?.demarres || '0'),
+        termines: parseInt(funnelStats?.termines || '0'),
+      },
+      funnelByMode: (funnelByMode as any[]).map((m) => ({
+        mode: m.mode,
+        crees: parseInt(m.crees),
+        avecEquipes: parseInt(m.avec_equipes),
+        demarres: parseInt(m.demarres),
+      })),
       plans: plansStats.map((p: any) => ({
         plan: p.plan,
         count: parseInt(p.count)
