@@ -65,11 +65,14 @@ export async function POST(
       [tournoiId]
     )
     if (!tournoiResult) return apiError('Tournoi introuvable', 404)
+    // SÉCURITÉ : autoriser AVANT de révéler quoi que ce soit sur le tournoi.
+    // Sinon la vérif du mode (400 « uniquement en mêlée tournante ») renseignait
+    // un utilisateur non autorisé sur le mode d'un tournoi d'une autre organisation.
+    const hasAccess = await checkOrgAccess(user.id, tournoiResult.org_id)
+    if (!hasAccess) return apiError('Accès refusé', 403)
     if (tournoiResult.mode !== 'melee_tournante') {
       return apiError('Rotation disponible uniquement en mêlée tournante', 400)
     }
-    const hasAccess = await checkOrgAccess(user.id, tournoiResult.org_id)
-    if (!hasAccess) return apiError('Accès refusé', 403)
 
     // TRANSACTION : création équipes + matchs en une seule transaction
     // Si erreur sur les matchs, les équipes créées sont rollback automatiquement
