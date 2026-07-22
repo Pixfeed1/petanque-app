@@ -101,7 +101,10 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
       const allMatches = await matchesResponse.json()
 
       // Construire le podium
-      const podiumData = await buildPodium(allMatches, tournoiId as string)
+      // On passe `tournamentData` fraîchement chargé (et PAS l'état `tournament`,
+      // que setTournament n'a pas encore mis à jour dans ce tour de rendu) : sinon
+      // la détection du mode mêlée et l'org_id seraient lus « en retard » (null).
+      const podiumData = await buildPodium(allMatches, tournoiId as string, tournamentData)
 
       // Charger les stats completes pour chaque equipe
       await loadTeamStats(podiumData, allMatches)
@@ -121,13 +124,13 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
     }
   }
 
-  const buildPodium = async (allMatches: Match[], tournoiId: string): Promise<PodiumTeam[]> => {
+  const buildPodium = async (allMatches: Match[], tournoiId: string, t: any): Promise<PodiumTeam[]> => {
     const podiumData: PodiumTeam[] = []
 
     // FIX : en mêlée tournante, le podium est INDIVIDUEL (les équipes changent à
     // chaque rotation) — pas un classement d'équipe éphémère.
-    if (tournament?.mode === 'melee_tournante') {
-      await buildPodiumFromIndividual(podiumData, allMatches, tournoiId)
+    if (t?.mode === 'melee_tournante') {
+      await buildPodiumFromIndividual(podiumData, allMatches, tournoiId, t)
       return podiumData
     }
 
@@ -260,12 +263,12 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
    * Podium INDIVIDUEL pour la mêlée tournante : chaque joueur est classé sur
    * tous ses matchs (toutes rotations confondues), via les règles FIPJP.
    */
-  const buildPodiumFromIndividual = async (podiumData: PodiumTeam[], allMatches: Match[], tournoiId: string) => {
+  const buildPodiumFromIndividual = async (podiumData: PodiumTeam[], allMatches: Match[], tournoiId: string, t: any) => {
     const eqRes = await fetch(`/api/equipes?tournoi_id=${tournoiId}`, { credentials: 'include' })
     if (!eqRes.ok) return
     const teams = await eqRes.json()
 
-    const orgId = tournament?.org_id
+    const orgId = t?.org_id
     const jRes = orgId ? await fetch(`/api/joueurs?org_id=${orgId}`, { credentials: 'include' }) : null
     const jData = jRes && jRes.ok ? await jRes.json() : []
     const players: Joueur[] = Array.isArray(jData) ? jData : (jData.joueurs || [])

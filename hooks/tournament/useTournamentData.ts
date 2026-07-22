@@ -167,7 +167,14 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
 
     // 2. Si le tournoi est "en_cours" et que tous les matchs sont terminés, passer à "termine"
     // MAIS seulement si les phases finales sont bien terminées (pas juste les poules)
-    if (tournamentData.status === 'en_cours') {
+    //
+    // EXCEPTION mêlée tournante : ne JAMAIS clôturer automatiquement. En rotation
+    // "par_tour" (le mode par défaut), « tous les matchs du tour terminés » est
+    // précisément la condition pour lancer la rotation suivante. Une clôture auto
+    // à ce moment fermait le tournoi juste avant que l'organisateur puisse créer
+    // le tour suivant → le tour 2 devenait inatteignable (catch-22). La mêlée se
+    // termine uniquement via le bouton explicite « Clôturer le tournoi ».
+    if (tournamentData.status === 'en_cours' && tournamentData.mode !== 'melee_tournante') {
       const allMatchesFinished = matchesData.every(m => m.status === 'termine')
 
       if (allMatchesFinished) {
