@@ -342,4 +342,57 @@ describe('StatsService', () => {
       expect(grouped['A'][1].id).toBe('team2')
     })
   })
+
+  describe('mode fair-play (plafond de différence)', () => {
+    // Fabrique compacte : team1 (score a) vs team2 (score b)
+    const mk = (id: string, a: number, b: number): Match => ({
+      id, tournoi_id: 't1',
+      equipe_a: { id: 'team1', name: 'Team 1', joueur_ids: [], tournoi_id: 't1' },
+      equipe_b: { id: 'team2', name: 'Team 2', joueur_ids: [], tournoi_id: 't1' },
+      equipe_a_id: 'team1', equipe_b_id: 'team2',
+      score_a: a, score_b: b, status: 'termine', type: 'poule', tour: 1, terrain: 1,
+      poule: 'A', round: null, manches_json: null, started_at: null, ended_at: null,
+      validated_at: null, played_at: null, proposed_by: null, proposed_at: null,
+      winner_id: a > b ? 'team1' : 'team2', created_at: '2024-01-01', updated_at: '2024-01-01'
+    } as Match)
+
+    it('sans fair-play : la différence est le total brut (13-0 + 13-11 = +15)', () => {
+      const matches = [mk('1', 13, 0), mk('2', 13, 11)]
+      const stats = calculateTeamStats('team1', 'Team 1', matches)
+      expect(stats.difference).toBe(15)
+      expect(stats.pointsFor).toBe(26)
+      expect(stats.pointsAgainst).toBe(11)
+    })
+
+    it('fair-play : chaque écart est plafonné à ±5 (13-0 → +5, 13-11 → +2 = +7)', () => {
+      const matches = [mk('1', 13, 0), mk('2', 13, 11)]
+      const stats = calculateTeamStats('team1', 'Team 1', matches, true)
+      expect(stats.difference).toBe(7) // min(13,5) + min(2,5)
+      // Les points marqués/encaissés restent les vrais scores
+      expect(stats.pointsFor).toBe(26)
+      expect(stats.pointsAgainst).toBe(11)
+    })
+
+    it('fair-play : une lourde défaite est aussi adoucie (0-13 → -5)', () => {
+      const stats = calculateTeamStats('team1', 'Team 1', [mk('1', 0, 13)], true)
+      expect(stats.difference).toBe(-5)
+    })
+
+    it('fair-play : une victoire serrée n\'est pas affectée (13-11 → +2)', () => {
+      const stats = calculateTeamStats('team1', 'Team 1', [mk('1', 13, 11)], true)
+      expect(stats.difference).toBe(2)
+    })
+
+    it('fair-play change le classement : écraser un adversaire ne fait pas monter', () => {
+      // team1 gagne large (13-0) ; team2 gagne serré 2× (13-11)
+      const matches = [
+        mk('1', 13, 0),                          // team1 vs team2 : team1 +13 / team2 -13
+      ]
+      const t1 = calculateTeamStats('team1', 'Team 1', matches, true)
+      const t2 = calculateTeamStats('team2', 'Team 2', matches, true)
+      // Sans plafond team1 aurait +13 ; avec fair-play, +5 seulement
+      expect(t1.difference).toBe(5)
+      expect(t2.difference).toBe(-5)
+    })
+  })
 })

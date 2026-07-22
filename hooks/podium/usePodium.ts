@@ -172,7 +172,7 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
       }
     } else {
       // Fallback: Utiliser le classement general des poules
-      await buildPodiumFromPoules(podiumData, allMatches, tournoiId)
+      await buildPodiumFromPoules(podiumData, allMatches, tournoiId, t)
     }
 
     // 3eme place (ecrase le fallback si petite finale existe)
@@ -274,7 +274,7 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
     const players: Joueur[] = Array.isArray(jData) ? jData : (jData.joueurs || [])
     if (players.length === 0) return
 
-    const stats = StatsService.calculateAllPlayersStats(players, allMatches as any, teams)
+    const stats = StatsService.calculateAllPlayersStats(players, allMatches as any, teams, !!t?.settings?.fairPlay)
     const ranked = StatsService.sortPlayersByFIPJPRules(stats).filter(p => p.played > 0)
 
     ranked.slice(0, 3).forEach((p, i) => {
@@ -290,7 +290,8 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
   const buildPodiumFromPoules = async (
     podiumData: PodiumTeam[],
     allMatches: Match[],
-    tournoiId: string
+    tournoiId: string,
+    t: any
   ) => {
     const equipesResponse = await fetch(`/api/equipes?tournoi_id=${tournoiId}`, {
       credentials: 'include'
@@ -304,7 +305,7 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
 
     // Calculer les stats FIPJP pour chaque équipe
     const teamStats = equipesData.map((team: Equipe) =>
-      StatsService.calculateTeamStats(team.id, team.name, pouleMatches)
+      StatsService.calculateTeamStats(team.id, team.name, pouleMatches, !!t?.settings?.fairPlay)
     )
 
     // Tri FIPJP officiel (points, différence, confrontation directe, multi-way ties)

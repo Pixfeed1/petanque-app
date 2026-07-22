@@ -38,10 +38,19 @@ export interface PlayerStats {
  * Calcule les statistiques d'une équipe à partir de ses matchs
  * Règles FIPJP : victoire = 3 points, nul = 1 point, défaite = 0 point
  */
+// Mode fair-play (« esprit club ») : au classement, l'écart de points pris en
+// compte par match est plafonné. Gagner 13-0 ne rapporte pas plus que 13-5 →
+// aucun intérêt à écraser une équipe faible. Les points marqués/encaissés
+// affichés restent, eux, les vrais scores.
+export const FAIR_PLAY_MAX_DIFF = 5
+const clampDiff = (d: number, fairPlay: boolean) =>
+  fairPlay ? Math.max(-FAIR_PLAY_MAX_DIFF, Math.min(FAIR_PLAY_MAX_DIFF, d)) : d
+
 export function calculateTeamStats(
   teamId: string,
   teamName: string,
-  matches: Match[]
+  matches: Match[],
+  fairPlay: boolean = false
 ): TeamStats {
   // Filtrer les matchs de cette équipe (uniquement terminés, pas les BYE)
   const teamMatches = matches.filter(m =>
@@ -77,6 +86,7 @@ export function calculateTeamStats(
   // Calcul points marqués et encaissés
   let pointsFor = 0
   let pointsAgainst = 0
+  let cappedDiff = 0
 
   teamMatches.forEach(m => {
     if (m.score_a === null || m.score_b === null) return
@@ -84,14 +94,17 @@ export function calculateTeamStats(
     if (m.equipe_a?.id === teamId) {
       pointsFor += m.score_a
       pointsAgainst += m.score_b
+      cappedDiff += clampDiff(m.score_a - m.score_b, fairPlay)
     } else if (m.equipe_b?.id === teamId) {
       pointsFor += m.score_b
       pointsAgainst += m.score_a
+      cappedDiff += clampDiff(m.score_b - m.score_a, fairPlay)
     }
   })
 
-  // Différence de points (moyenne générale FIPJP)
-  const difference = pointsFor - pointsAgainst
+  // Différence de points (moyenne générale FIPJP). En fair-play, elle est la
+  // somme des écarts plafonnés par match ; sinon, pointsFor - pointsAgainst.
+  const difference = cappedDiff
 
   // Points FIPJP : victoire = 3 pts, nul = 1 pt, défaite = 0 pt
   const points = victories * 3 + draws * 1
@@ -189,7 +202,8 @@ export function calculatePlayerStats(
 export function calculateAllPlayersStats(
   players: Joueur[],
   matches: Match[],
-  teams: Array<{ id: string; joueur_ids?: string[] }>
+  teams: Array<{ id: string; joueur_ids?: string[] }>,
+  fairPlay: boolean = false
 ): PlayerStats[] {
   // Construire index joueur -> équipes une seule fois (O(n) au lieu de O(n*m))
   const playerToTeams = new Map<string, string[]>()
@@ -221,6 +235,7 @@ export function calculateAllPlayersStats(
     let draws = 0
     let pointsFor = 0
     let pointsAgainst = 0
+    let cappedDiff = 0
 
     playerMatches.forEach(match => {
       if (match.score_a === null || match.score_b === null) return
@@ -240,9 +255,11 @@ export function calculateAllPlayersStats(
       if (isTeamA) {
         pointsFor += match.score_a
         pointsAgainst += match.score_b
+        cappedDiff += clampDiff(match.score_a - match.score_b, fairPlay)
       } else {
         pointsFor += match.score_b
         pointsAgainst += match.score_a
+        cappedDiff += clampDiff(match.score_b - match.score_a, fairPlay)
       }
     })
 
@@ -256,7 +273,7 @@ export function calculateAllPlayersStats(
       draws,
       pointsFor,
       pointsAgainst,
-      difference: pointsFor - pointsAgainst,
+      difference: cappedDiff,
       points: victories * 3 + draws
     }
   })

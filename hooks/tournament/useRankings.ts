@@ -76,8 +76,9 @@ export function useRankings({
    * Calcul optimisé du classement des équipes avec useMemo + StatsService
    */
   const teamsWithStats = useMemo((): TeamWithStats[] => {
+    const fairPlay = !!tournament?.settings?.fairPlay
     return teams.map(team => {
-      const stats = StatsService.calculateTeamStats(team.id, team.name, matches as unknown as MatchType[])
+      const stats = StatsService.calculateTeamStats(team.id, team.name, matches as unknown as MatchType[], fairPlay)
       return {
         ...team,
         played: stats.played,
@@ -89,7 +90,7 @@ export function useRankings({
         difference: stats.difference
       }
     })
-  }, [teams, matches])
+  }, [teams, matches, tournament])
 
   /**
    * Classement par poule optimisé avec confrontation directe FIPJP
@@ -192,7 +193,8 @@ export function useRankings({
       const statsArray = StatsService.calculateAllPlayersStats(
         joueurs,
         matchesData as unknown as MatchType[],
-        teamsForStats
+        teamsForStats,
+        !!tournament.settings?.fairPlay
       )
 
       // Tri FIPJP officiel (points = victoires × 3 + nuls, différence, pointsFor)

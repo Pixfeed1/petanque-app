@@ -374,7 +374,7 @@ export function useMatchActions({
           updated_at: new Date().toISOString()
         }))
 
-        const stats = StatsService.calculateTeamStats(team.id, team.name, matchesForService as MatchType[])
+        const stats = StatsService.calculateTeamStats(team.id, team.name, matchesForService as MatchType[], !!tournament?.settings?.fairPlay)
 
         return {
           team,

@@ -986,6 +986,15 @@ export default function TournamentDetailPage() {
         {/* CLASSEMENT */}
         {activeSection === 'classement' && (
           <div>
+            {tournament.settings?.fairPlay && (
+              <div className="mb-5 flex items-start gap-2.5 bg-petanque-vert-pale/25 border border-petanque-vert/25 rounded-xl px-4 py-3">
+                <span className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-[12px] font-serif italic text-petanque-vert flex-shrink-0 mt-0.5">i</span>
+                <p className="text-sm text-petanque-vert-fonce leading-relaxed">
+                  <span className="font-medium">Mode fair-play actif.</span>{' '}
+                  <span className="accent-italic text-petanque-bois">L&apos;écart de points par match est plafonné à ±5 au classement — écraser une équipe ne fait pas monter davantage.</span>
+                </p>
+              </div>
+            )}
             {tournament.mode === 'melee_tournante' ? (
               <PlayerRankingsTable players={individualRankings.map((player: any) => ({
                 id: player.id, name: player.name, email: player.email,
