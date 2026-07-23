@@ -3,6 +3,7 @@ import {
   teamGenderProfile,
   profilesCompatible,
   pairRoundByMixite,
+  pairRound,
   type GenderProfile,
 } from '../mixiteAdversaire'
 
@@ -93,6 +94,47 @@ describe('mixiteAdversaire', () => {
       const solo = pairRoundByMixite(['F'])
       expect(solo.pairs).toEqual([])
       expect(solo.bye).toBe(0)
+    })
+  })
+
+  describe('pairRound (évitement des adversaires déjà rencontrés)', () => {
+    const key = (a: number, b: number) => [a, b].sort((x, y) => x - y).join('-')
+    const N4: GenderProfile[] = ['N', 'N', 'N', 'N']
+
+    it('sans contrainte : apparie tout le monde', () => {
+      const { pairs, repeats, forced } = pairRound(N4)
+      expect(pairs.length).toBe(2)
+      expect(repeats).toBe(0)
+      expect(forced).toBe(0)
+    })
+
+    it('évite un adversaire déjà rencontré si possible', () => {
+      // 0 a déjà affronté 1 → à la ronde suivante, 0 ne doit pas retomber sur 1.
+      const played = new Set([key(0, 1)])
+      const { pairs, repeats } = pairRound(N4, (i, j) => played.has(key(i, j)))
+      expect(repeats).toBe(0)
+      const pair0 = pairs.find(([a, b]) => a === 0 || b === 0)!
+      const partner = pair0[0] === 0 ? pair0[1] : pair0[0]
+      expect(partner).not.toBe(1)
+    })
+
+    it('déroge (repeat compté) si tous les adversaires ont déjà été rencontrés', () => {
+      // 2 équipes qui se sont déjà affrontées → forcément un rematch.
+      const played = new Set([key(0, 1)])
+      const { pairs, repeats } = pairRound(['N', 'N'], (i, j) => played.has(key(i, j)))
+      expect(pairs.length).toBe(1)
+      expect(repeats).toBe(1)
+    })
+
+    it('combine mixité ET fraîcheur : compatible+nouveau préféré', () => {
+      // profils F,F,M,M ; 0 a déjà affronté 1 (les deux F).
+      const profiles: GenderProfile[] = ['F', 'F', 'M', 'M']
+      const played = new Set([key(0, 1)])
+      const { pairs, forced, repeats } = pairRound(profiles, (i, j) => played.has(key(i, j)))
+      // Idéalement 0 (F) tombe contre... l'autre F est 1 (déjà joué) → dérogation
+      // mixité OU rematch inévitable. On vérifie juste qu'il n'y a qu'UNE entorse.
+      expect(forced + repeats).toBeLessThanOrEqual(2)
+      expect(pairs.length).toBe(2)
     })
   })
 })

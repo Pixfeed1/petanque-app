@@ -66,21 +66,50 @@ export interface MixitePairing {
  * @returns paires d'index, bye éventuel, et nombre de dérogations
  */
 export function pairRoundByMixite(profiles: GenderProfile[]): MixitePairing {
+  return pairRound(profiles)
+}
+
+/**
+ * Appariement d'une ronde, glouton, maximisant à la fois :
+ *   - la compatibilité de genre (F↔F/N, M↔M/N ; jamais F↔M),
+ *   - la fraîcheur de l'adversaire (éviter de rejouer contre un ancien adversaire).
+ *
+ * Score d'un candidat = (compatible ? 2 : 0) + (déjà affronté ? 0 : 1). On prend
+ * le meilleur score → on privilégie « compatible ET nouveau », puis on dégrade
+ * proprement (dérogations comptées) « s'il y a impossibilité de faire autrement ».
+ *
+ * @param profiles profils de genre par équipe (mettre tout à 'N' pour ignorer la mixité)
+ * @param avoid    (i, j) => true si i et j se sont déjà affrontés (à éviter)
+ */
+export function pairRound(
+  profiles: GenderProfile[],
+  avoid?: (i: number, j: number) => boolean
+): MixitePairing & { repeats: number } {
   const remaining = profiles.map((_, i) => i)
   const pairs: Array<[number, number]> = []
   let forced = 0
+  let repeats = 0
 
   while (remaining.length > 1) {
     const a = remaining.shift() as number
-    let idx = remaining.findIndex((b) => profilesCompatible(profiles[a], profiles[b]))
-    if (idx === -1) {
-      idx = 0
-      forced++
+    let bestIdx = 0
+    let bestScore = -1
+    for (let k = 0; k < remaining.length; k++) {
+      const b = remaining[k]
+      const comp = profilesCompatible(profiles[a], profiles[b]) ? 2 : 0
+      const fresh = avoid && avoid(a, b) ? 0 : 1
+      const score = comp + fresh
+      if (score > bestScore) {
+        bestScore = score
+        bestIdx = k
+      }
     }
-    const b = remaining.splice(idx, 1)[0]
+    const b = remaining.splice(bestIdx, 1)[0]
+    if (!profilesCompatible(profiles[a], profiles[b])) forced++
+    if (avoid && avoid(a, b)) repeats++
     pairs.push([a, b])
   }
 
   const bye = remaining.length === 1 ? remaining[0] : null
-  return { pairs, bye, forced }
+  return { pairs, bye, forced, repeats }
 }

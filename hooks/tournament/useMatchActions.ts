@@ -9,6 +9,7 @@
 import { useCallback } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { ValidationService, BracketService, StatsService, TirageService } from '@/lib/services'
+import { teamGenderProfile, pairRound, type GenderProfile } from '@/lib/services/mixiteAdversaire'
 import type { Match as MatchType } from '@/lib/types'
 import type { Tournament, Team, Match } from './useTournamentData'
 
@@ -32,6 +33,7 @@ interface UseMatchActionsReturn {
 
   // Actions
   generatePoules: () => Promise<boolean>
+  generatePartie: (partieNum: number) => Promise<boolean>
   generateEliminationPhases: () => Promise<void>
   generateFinales: () => Promise<void>
   generateNextEliminationRound: () => Promise<void>
@@ -295,6 +297,85 @@ export function useMatchActions({
       return false
     }
   }, [tournament, teams, matches, isValidPoolConfiguration, loadTournamentData, onConfirmTerrainConflict])
+
+  /**
+   * MODE « N PARTIES » à équipes FIXES (choisi / mêlée simple).
+   * Génère la partie `partieNum` : on garde les équipes, on RE-TIRE seulement les
+   * adversaires — en évitant les adversaires déjà rencontrés (et en respectant la
+   * mixité des adversaires si activée). Chaque partie = un match par équipe (tour = partieNum).
+   */
+  const generatePartie = useCallback(async (partieNum: number): Promise<boolean> => {
+    if (!tournament || teams.length < 2) {
+      notify.error('Il faut au moins 2 équipes pour lancer une partie.')
+      return false
+    }
+
+    const pairKey = (a: string, b: string) => [a, b].sort().join('|')
+    // Adversaires déjà rencontrés (toutes parties confondues)
+    const played = new Set<string>()
+    matches.forEach(m => {
+      if (m.equipe_a_id && m.equipe_b_id) played.add(pairKey(m.equipe_a_id, m.equipe_b_id))
+    })
+
+    // Profils de genre si mixité des adversaires (nécessite les genres → fetch joueurs)
+    let profiles: GenderProfile[] = teams.map(() => 'N')
+    if (tournament.settings.mixiteAdversaire && organization?.id) {
+      try {
+        const r = await fetch(`/api/joueurs?org_id=${organization.id}`, { credentials: 'include' })
+        if (r.ok) {
+          const data = await r.json()
+          const all = Array.isArray(data) ? data : data.joueurs || []
+          const genderById = new Map<string, 'H' | 'F'>()
+          for (const p of all) genderById.set(p.id, p.gender === 'F' ? 'F' : 'H')
+          profiles = teams.map(t => teamGenderProfile(t.joueur_ids || [], genderById))
+        }
+      } catch { /* pas de genre → appariement sans contrainte de mixité */ }
+    }
+
+    const { pairs, repeats } = pairRound(profiles, (i, j) => played.has(pairKey(teams[i].id, teams[j].id)))
+    if (pairs.length === 0) {
+      notify.error('Impossible de former des matchs pour cette partie.')
+      return false
+    }
+
+    const terrains = tournament.settings.terrains || 0
+    const forTerrain = pairs.map(([a, b], idx) => ({ id: `p_${idx}`, equipe_a_id: teams[a].id, equipe_b_id: teams[b].id, tour: partieNum }))
+    const tMap = terrains > 0 ? TirageService.smartTerrainAssignment(forTerrain, terrains) : null
+
+    const newMatches = pairs.map(([a, b], idx) => ({
+      tournoi_id: tournament.id,
+      equipe_a_id: teams[a].id,
+      equipe_b_id: teams[b].id,
+      tour: partieNum,
+      terrain: tMap?.get(`p_${idx}`) || null,
+      type: 'poule' as const,
+      poule: null,
+      status: 'a_jouer' as const,
+    }))
+
+    try {
+      const res = await fetch('/api/matches/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ matches: newMatches }),
+      })
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}))
+        throw new Error(e.error || 'Erreur serveur')
+      }
+      await loadTournamentData()
+      notify.success(
+        `Partie ${partieNum} lancée : ${pairs.length} match${pairs.length > 1 ? 's' : ''}` +
+        (repeats ? ` · ${repeats} revanche${repeats > 1 ? 's' : ''} inévitable${repeats > 1 ? 's' : ''}` : '')
+      )
+      return true
+    } catch (e) {
+      console.error('Erreur génération partie:', e)
+      notify.error(`Erreur : ${e instanceof Error ? e.message : 'inconnue'}`)
+      return false
+    }
+  }, [tournament, teams, matches, organization, loadTournamentData])
 
   /**
    * Génère les phases éliminatoires après les poules
@@ -739,6 +820,7 @@ export function useMatchActions({
 
     // Actions
     generatePoules,
+    generatePartie,
     generateEliminationPhases,
     generateFinales,
     generateNextEliminationRound,

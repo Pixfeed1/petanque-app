@@ -96,7 +96,7 @@ export default function TournamentDetailPage() {
 
   const {
     isValidPoolConfiguration, getValidPoolSizes, getPoolDistribution,
-    generatePoules, generateEliminationPhases, generateFinales,
+    generatePoules, generatePartie, generateEliminationPhases, generateFinales,
     generateNextEliminationRound, assignTerrain
   } = useMatchActions({
     tournament, teams, matches, loadTournamentData, getTeamPlayers,
@@ -216,19 +216,29 @@ export default function TournamentDetailPage() {
       // Mêlée tournante : les matchs de la ronde 1 sont créés à la création du
       // tournoi (pas de poules à générer ici).
       if (tournament.mode !== 'melee_tournante') {
-        // FIX : (re)générer les poules si aucune n'existe OU si des équipes ont été
-        // ajoutées après coup et ne sont couvertes par aucun match (équipe orpheline).
-        const pouleMatches = matches.filter(m => m.type === 'poule')
-        const covered = new Set<string>()
-        pouleMatches.forEach(m => {
-          if (m.equipe_a_id) covered.add(m.equipe_a_id)
-          if (m.equipe_b_id) covered.add(m.equipe_b_id)
-        })
-        const allTeamsCovered = teams.every(t => covered.has(t.id))
-        if (pouleMatches.length === 0 || !allTeamsCovered) {
-          // FIX : ne PAS démarrer si la génération échoue (sinon tournoi en_cours sans matchs)
-          const ok = await generatePoules()
-          if (!ok) { showError('Les poules n\'ont pas pu être générées — le tournoi n\'a pas démarré.'); return }
+        const partiesMode = !!tournament.settings.nombreParties
+        if (partiesMode) {
+          // MODE « N PARTIES » à équipes fixes : la partie 1 est un match par équipe
+          // (adversaires tirés), pas des poules. Généré seulement si rien n'existe.
+          if (matches.length === 0) {
+            const ok = await generatePartie(1)
+            if (!ok) { showError('La partie 1 n\'a pas pu être générée — le tournoi n\'a pas démarré.'); return }
+          }
+        } else {
+          // FIX : (re)générer les poules si aucune n'existe OU si des équipes ont été
+          // ajoutées après coup et ne sont couvertes par aucun match (équipe orpheline).
+          const pouleMatches = matches.filter(m => m.type === 'poule')
+          const covered = new Set<string>()
+          pouleMatches.forEach(m => {
+            if (m.equipe_a_id) covered.add(m.equipe_a_id)
+            if (m.equipe_b_id) covered.add(m.equipe_b_id)
+          })
+          const allTeamsCovered = teams.every(t => covered.has(t.id))
+          if (pouleMatches.length === 0 || !allTeamsCovered) {
+            // FIX : ne PAS démarrer si la génération échoue (sinon tournoi en_cours sans matchs)
+            const ok = await generatePoules()
+            if (!ok) { showError('Les poules n\'ont pas pu être générées — le tournoi n\'a pas démarré.'); return }
+          }
         }
       }
       const response = await fetch(`/api/tournois/${tournament.id}`, {
@@ -548,8 +558,8 @@ export default function TournamentDetailPage() {
               </FadeIn>
             )}
 
-            {/* Action requise — phases finales à générer */}
-            {tournament.status === 'en_cours' && isAdmin && tournament.mode !== 'melee_tournante' &&
+            {/* Action requise — phases finales à générer (pas en mode « N parties ») */}
+            {tournament.status === 'en_cours' && isAdmin && tournament.mode !== 'melee_tournante' && !tournament.settings.nombreParties &&
              matches.some(m => m.type === 'poule' && m.status === 'termine') &&
              matches.filter(m => m.type === 'poule').every(m => m.status === 'termine') &&
              !matches.some(m => ['huitieme', 'quart', 'demi', 'finale'].includes(m.type || '')) && (
@@ -691,6 +701,38 @@ export default function TournamentDetailPage() {
                     <Button variant="primary" onClick={reformTeamsForRotation} disabled={!isRotationAvailable}>
                       <Shuffle className="w-4 h-4 mr-1.5" />{nbParties > 0 ? `Lancer la partie ${currentRotation + 1}` : 'Nouvelle rotation'}
                     </Button>
+                  </div>
+                </FadeIn>
+              )
+            })()}
+
+            {/* Équipes fixes (choisi / mêlée simple) en mode « N parties » */}
+            {tournament.mode !== 'melee_tournante' && !!tournament.settings.nombreParties && tournament.status === 'en_cours' && isAdmin && (() => {
+              const N = tournament.settings.nombreParties as number
+              const pm = matches.filter(m => m.type === 'poule')
+              const currentPartie = pm.reduce((mx, m) => Math.max(mx, m.tour || 1), 0) || 1
+              const currentDone = pm.some(m => m.tour === currentPartie) && pm.filter(m => m.tour === currentPartie).every(m => m.status === 'termine')
+              const partiesDone = currentPartie >= N && currentDone
+              return (
+                <FadeIn delay={140}>
+                  <div className="bg-petanque-vert-pale/30 border border-petanque-vert/30 rounded-xl px-5 py-4 mb-8 flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.16em] font-medium text-petanque-vert-fonce mb-1">{partiesDone ? 'Toutes les parties jouées' : `Partie ${currentPartie} / ${N}`}</p>
+                      <p className="text-sm text-petanque-vert-fonce">
+                        {partiesDone
+                          ? `Les ${N} parties sont terminées. Consulte le classement par équipe.`
+                          : 'Une fois cette partie terminée, lance la suivante (mêmes équipes, adversaires re-tirés).'}
+                      </p>
+                    </div>
+                    {partiesDone ? (
+                      <Button variant="primary" onClick={() => setActiveSection('classement')}>
+                        <Flag className="w-4 h-4 mr-1.5" />Voir le classement
+                      </Button>
+                    ) : (
+                      <Button variant="primary" onClick={() => generatePartie(currentPartie + 1)} disabled={!currentDone}>
+                        <Shuffle className="w-4 h-4 mr-1.5" />Lancer la partie {currentPartie + 1}
+                      </Button>
+                    )}
                   </div>
                 </FadeIn>
               )

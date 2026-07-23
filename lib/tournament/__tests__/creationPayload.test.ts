@@ -31,7 +31,9 @@ describe('buildTeamsAndMatches', () => {
       ...Array.from({ length: 4 }, (_, i) => ({ id: `h${i}`, name: `H${i}`, gender: 'H' as const })),
       ...Array.from({ length: 4 }, (_, i) => ({ id: `f${i}`, name: `F${i}`, gender: 'F' as const })),
     ]
-    const cfg: CreationComposition = { format: 'doublette', mode: 'melee_tournante', mixiteObligatoire: false, mixiteAdversaire: true, pouleSize: 4, terrains: 2 }
+    // Mixité obligatoire → doublettes 1H+1F (profil « équilibré ») : l'appariement
+    // est toujours compatible, le test est donc déterministe (pas de dérogation aléatoire).
+    const cfg: CreationComposition = { format: 'doublette', mode: 'melee_tournante', mixiteObligatoire: true, mixiteAdversaire: true, pouleSize: 4, terrains: 2 }
     const { teams, matches } = buildTeamsAndMatches(cfg, ps)
     assertValid(teams, matches)
     // Une seule ronde : un match par équipe (pas un round-robin)
