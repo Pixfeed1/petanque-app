@@ -477,7 +477,7 @@ export default function TournamentDetailPage() {
                 Mode <span className="text-petanque-vert font-medium">{tournament.mode === 'choisi' ? 'choisi' : tournament.mode === 'melee_fixe' ? 'mêlée fixe' : 'mêlée tournante'}</span>
                 {' · '}{formatLabel}
                 {' · '}{isMelee
-                  ? <>{playerCount} joueur{playerCount > 1 ? 's' : ''}{tournament.status !== 'preparation' ? ` · Rotation ${currentRotation}` : ''}</>
+                  ? <>{playerCount} joueur{playerCount > 1 ? 's' : ''}{tournament.status !== 'preparation' ? (tournament.settings.nombreParties ? ` · Partie ${Math.min(currentRotation, tournament.settings.nombreParties)} / ${tournament.settings.nombreParties}` : ` · Rotation ${currentRotation}`) : ''}</>
                   : <>{teams.length} équipe{teams.length > 1 ? 's' : ''}</>}
                 {' · '}{tournament.settings.terrains} terrain{tournament.settings.terrains > 1 ? 's' : ''}
               </p>
@@ -662,20 +662,39 @@ export default function TournamentDetailPage() {
               </FadeIn>
             )}
 
-            {/* Mêlée tournante : action rotation */}
-            {tournament.mode === 'melee_tournante' && tournament.status === 'en_cours' && isAdmin && (
-              <FadeIn delay={140}>
-                <div className="bg-petanque-vert-pale/30 border border-petanque-vert/30 rounded-xl px-5 py-4 mb-8 flex items-center justify-between gap-4 flex-wrap">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.16em] font-medium text-petanque-vert-fonce mb-1">Rotation</p>
-                    <p className="text-sm text-petanque-vert-fonce">Régénère les équipes pour le prochain tour.</p>
+            {/* Mêlée tournante : action rotation / parties */}
+            {tournament.mode === 'melee_tournante' && tournament.status === 'en_cours' && isAdmin && (() => {
+              const nbParties = tournament.settings.nombreParties || 0
+              const partiesDone = nbParties > 0 && currentRotation >= nbParties
+              if (partiesDone) {
+                return (
+                  <FadeIn delay={140}>
+                    <div className="bg-petanque-vert-pale/30 border border-petanque-vert/30 rounded-xl px-5 py-4 mb-8 flex items-center justify-between gap-4 flex-wrap">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.16em] font-medium text-petanque-vert-fonce mb-1">Toutes les parties jouées</p>
+                        <p className="text-sm text-petanque-vert-fonce">Les {nbParties} parties sont terminées. Clôture pour figer le classement, ou consulte-le dès maintenant.</p>
+                      </div>
+                      <Button variant="primary" onClick={() => setActiveSection('classement')}>
+                        <Flag className="w-4 h-4 mr-1.5" />Voir le classement
+                      </Button>
+                    </div>
+                  </FadeIn>
+                )
+              }
+              return (
+                <FadeIn delay={140}>
+                  <div className="bg-petanque-vert-pale/30 border border-petanque-vert/30 rounded-xl px-5 py-4 mb-8 flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.16em] font-medium text-petanque-vert-fonce mb-1">{nbParties > 0 ? `Partie ${currentRotation} / ${nbParties}` : 'Rotation'}</p>
+                      <p className="text-sm text-petanque-vert-fonce">{nbParties > 0 ? 'Une fois cette partie terminée, lance la suivante (équipes et adversaires re-tirés).' : 'Régénère les équipes pour le prochain tour.'}</p>
+                    </div>
+                    <Button variant="primary" onClick={reformTeamsForRotation} disabled={!isRotationAvailable}>
+                      <Shuffle className="w-4 h-4 mr-1.5" />{nbParties > 0 ? `Lancer la partie ${currentRotation + 1}` : 'Nouvelle rotation'}
+                    </Button>
                   </div>
-                  <Button variant="primary" onClick={reformTeamsForRotation} disabled={!isRotationAvailable}>
-                    <Shuffle className="w-4 h-4 mr-1.5" />Nouvelle rotation
-                  </Button>
-                </div>
-              </FadeIn>
-            )}
+                </FadeIn>
+              )
+            })()}
 
             {/* EN CE MOMENT */}
             {tournament.status === 'en_cours' && liveMatches.length > 0 && (

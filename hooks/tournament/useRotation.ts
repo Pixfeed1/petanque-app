@@ -104,6 +104,10 @@ export function useRotation({
   const isRotationAvailable = useMemo(() => {
     if (tournament?.mode !== 'melee_tournante') return false
 
+    // Mode « N parties » : plus de nouvelle partie une fois les N atteintes.
+    const nombreParties = tournament.settings.nombreParties || 0
+    if (nombreParties > 0 && currentRotation >= nombreParties) return false
+
     const rotationType = tournament.settings.meleeRotation || 'par_tour'
     const currentRotationMatches = matchesOfRotation(teams, matches, currentRotation)
 
@@ -286,15 +290,18 @@ export function useRotation({
       name: t.name
     }))
 
-    // MIXITÉ DES ADVERSAIRES (doublette/triplette) : une rotation = UN match par
-    // équipe contre un adversaire de profil de genre compatible (jamais 2F+1H
-    // contre 2H+1F). Sinon : comportement existant (round-robin / Berger).
+    // MODE « PARTIES » ou MIXITÉ DES ADVERSAIRES (doublette/triplette) :
+    // une rotation = UN match par équipe (pas un round-robin). Avec mixité
+    // adversaire, l'appariement respecte les profils de genre ; sinon simple.
+    const partiesMode = !!tournament.settings.nombreParties
+    const useMixite = !!tournament.settings.mixiteAdversaire && !!genderById
     if (
       tournament.format !== 'tete_a_tete' &&
-      tournament.settings.mixiteAdversaire &&
-      genderById
+      (useMixite || partiesMode)
     ) {
-      const profiles = newTeams.map(t => teamGenderProfile(t.joueur_ids, genderById))
+      const profiles = useMixite
+        ? newTeams.map(t => teamGenderProfile(t.joueur_ids, genderById!))
+        : newTeams.map(() => 'N' as const)
       const { pairs } = pairRoundByMixite(profiles)
       const forTerrain = pairs.map(([a, b], idx) => ({ id: `rot_${idx}`, equipe_a_id: String(a), equipe_b_id: String(b), tour: rotationNumber }))
       const terrains = tournament.settings.terrains || 0

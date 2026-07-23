@@ -48,6 +48,14 @@ describe('buildTeamsAndMatches', () => {
     }
   })
 
+  it('mode « N parties » : la partie 1 est une seule ronde (un match par équipe)', () => {
+    const cfg: CreationComposition = { format: 'doublette', mode: 'melee_tournante', mixiteObligatoire: false, nombreParties: 3, pouleSize: 4, terrains: 2 }
+    const { teams, matches } = buildTeamsAndMatches(cfg, players(8))
+    assertValid(teams, matches)
+    expect(matches.length).toBe(teams.length / 2) // une ronde, pas un round-robin
+    expect(matches.every(m => m.tour === 1)).toBe(true)
+  })
+
   it('doublette mêlée fixe, 8 joueurs → 4 équipes, matchs de poule valides', () => {
     const cfg: CreationComposition = { format: 'doublette', mode: 'melee_fixe', mixiteObligatoire: false, pouleSize: 4, terrains: 4 }
     const r = buildTeamsAndMatches(cfg, players(8))

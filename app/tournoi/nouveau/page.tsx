@@ -677,6 +677,18 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
 
       {formData.mode === 'melee_tournante' && (
         <div>
+          <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Nombre de parties</label>
+          <select
+            value={formData.nombreParties || 0}
+            onChange={(e) => updateFormField('nombreParties', parseInt(e.target.value) || 0)}
+            className="w-full md:w-1/2 h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:outline-none text-sm text-petanque-vert-fonce mb-2"
+          >
+            <option value={0}>Illimité (rotations manuelles)</option>
+            <option value={2}>2 parties</option>
+            <option value={3}>3 parties</option>
+            <option value={4}>4 parties</option>
+          </select>
+          <p className="text-xs text-petanque-bois mb-4">Fixe le nombre de parties : à chaque partie, équipes et adversaires sont re-tirés, puis le classement individuel est figé.</p>
           <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Rotation des équipes</label>
           <select
             value={formData.meleeRotation}

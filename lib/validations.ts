@@ -299,6 +299,7 @@ export function sanitizeTournoiSettings(input: unknown): SettingsInput {
   if ('pouleSize' in src) out.pouleSize = clampInt(src.pouleSize, 2, 12, 4)
   if ('timeLimitMinutes' in src) out.timeLimitMinutes = clampInt(src.timeLimitMinutes, 5, 240, 60)
   if ('qualifiedPerPoule' in src) out.qualifiedPerPoule = clampInt(src.qualifiedPerPoule, 1, 16, 2)
+  if ('nombreParties' in src) out.nombreParties = clampInt(src.nombreParties, 0, 4, 0)
   if ('current_round' in src) out.current_round = clampInt(src.current_round, 1, 100, 1)
 
   // Booléens

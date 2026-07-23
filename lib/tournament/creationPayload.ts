@@ -30,6 +30,8 @@ export interface CreationComposition {
   mixiteObligatoire: boolean
   /** Mixité des adversaires (mêlée tournante) : une partie = un adversaire de profil compatible. */
   mixiteAdversaire?: boolean
+  /** Nombre de parties fixé (2/3/4). Structure le tournoi en rondes : une partie = un match par équipe. */
+  nombreParties?: number
   pouleSize: number
   terrains: number
 }
@@ -93,12 +95,15 @@ export function buildTeamsAndMatches(
     for (const m of withTerrain) {
       matches.push({ team_a_index: m.a, team_b_index: m.b, tour: m.tour, terrain: m.terrain, type: 'poule', poule: m.poule, status: 'a_jouer' })
     }
-  } else if (cfg.mode === 'melee_tournante' && cfg.mixiteAdversaire) {
-    // MIXITÉ DES ADVERSAIRES : la ronde 1 est UN match par équipe contre un
-    // adversaire de profil de genre compatible (jamais 2F+1H contre 2H+1F).
+  } else if (cfg.mode === 'melee_tournante' && (cfg.mixiteAdversaire || cfg.nombreParties)) {
+    // MODE « PARTIES » / MIXITÉ ADVERSAIRE : la partie 1 est UN match par équipe
+    // (pas un round-robin). Si mixité adversaire : appariement par profil de genre
+    // compatible (jamais 2F+1H contre 2H+1F) ; sinon appariement simple.
     const genderById = new Map<string, 'H' | 'F'>()
     for (const p of combinedPlayers) genderById.set(p.id, p.gender === 'F' ? 'F' : 'H')
-    const profiles = teams.map(t => teamGenderProfile(t.joueur_ids, genderById))
+    const profiles = cfg.mixiteAdversaire
+      ? teams.map(t => teamGenderProfile(t.joueur_ids, genderById))
+      : teams.map(() => 'N' as const)
     const { pairs } = pairRoundByMixite(profiles)
     const withTerrain = assignTerrains(
       pairs.map(([a, b]) => ({ a, b, tour: 1, poule: null as string | null })),

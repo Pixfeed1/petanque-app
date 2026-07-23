@@ -28,6 +28,8 @@ export interface TournamentFormData {
   pouleSize: number
   eliminationFormat: 'simple' | 'double'
   meleeRotation: 'par_tour' | 'par_match'
+  // Nombre de parties fixé à l'avance (2/3/4). 0 = illimité (rotations manuelles).
+  nombreParties: number
   qualifiedPerPoule: number
   consolante: boolean
   mixiteObligatoire: boolean
@@ -73,6 +75,7 @@ const initialFormData: TournamentFormData = {
   pouleSize: 4,
   eliminationFormat: 'simple',
   meleeRotation: 'par_tour',
+  nombreParties: 0,
   qualifiedPerPoule: 2,
   consolante: false,
   mixiteObligatoire: false,

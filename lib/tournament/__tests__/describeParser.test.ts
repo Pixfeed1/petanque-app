@@ -68,6 +68,13 @@ describe('parseTournamentDescription', () => {
     it('pas de mention → non défini', () => expect(parse('doublette').fields.timeLimit).toBeUndefined())
   })
 
+  describe('nombre de parties', () => {
+    it('"en 3 parties" → 3', () => expect(parse('en 3 parties').fields.nombreParties).toBe(3))
+    it('"4 parties" → 4', () => expect(parse('mêlée tournante 4 parties').fields.nombreParties).toBe(4))
+    it('hors bornes (5) → ignoré', () => expect(parse('5 parties').fields.nombreParties).toBeUndefined())
+    it('PIÈGE : "12 joueurs" ne fixe pas les parties', () => expect(parse('12 joueurs').fields.nombreParties).toBeUndefined())
+  })
+
   describe('qualifiés par poule', () => {
     it('"2 qualifiés" → 2', () => expect(parse('2 qualifiés par poule').fields.qualifiedPerPoule).toBe(2))
     it('"les 3 premiers" → 3', () => expect(parse('les 3 premiers').fields.qualifiedPerPoule).toBe(3))

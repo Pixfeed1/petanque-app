@@ -19,6 +19,7 @@ export interface TournamentSettings {
   pouleSize?: number
   eliminationFormat?: 'simple' | 'double'
   meleeRotation?: 'par_tour' | 'par_match'
+  nombreParties?: number
   mixiteObligatoire?: boolean
   mixiteAdversaire?: boolean
   qualifiedPerPoule?: number

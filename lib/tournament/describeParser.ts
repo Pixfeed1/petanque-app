@@ -102,6 +102,13 @@ export function parseTournamentDescription(input: string): ParsedTournament {
     detected.push('Limite de temps activée')
   }
 
+  // ── NOMBRE DE PARTIES (2–4) ─────────────────────────────────────────
+  const parties = findNumber(t, /(\d+)\s*parties?/) ?? findNumber(t, /en\s+(\d+)\s+manches?/)
+  if (parties !== null && parties >= 2 && parties <= 4) {
+    fields.nombreParties = parties
+    detected.push(`Nombre de parties : ${parties}`)
+  }
+
   // ── QUALIFIÉS PAR POULE (1–16) ──────────────────────────────────────
   const qual = findNumber(t, /(\d+)\s*qualifies?/) ?? findNumber(t, /les\s+(\d+)\s+premiers/)
   if (qual !== null && qual >= 1 && qual <= 16) {
