@@ -695,6 +695,7 @@ export default function TournamentDetailPage() {
                         getTeamPlayers={getTeamPlayers}
                         onAssignTerrain={assignTerrain}
                         availableTerrains={tournament.settings.terrains}
+                        terrainNames={tournament.settings.terrainNames}
                         onWarning={showWarning}
                       />
                     ))}

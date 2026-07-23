@@ -14,6 +14,7 @@ export interface TournamentSettings {
   time: string
   location?: string
   terrains: number
+  terrainNames?: string[]
   maxPoints: number
   pouleSize?: number
   eliminationFormat?: 'simple' | 'double'

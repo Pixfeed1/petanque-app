@@ -320,6 +320,16 @@ export function sanitizeTournoiSettings(input: unknown): SettingsInput {
     out.visibility = src.visibility
   }
 
+  // Terrains nommés (sous-ensemble de la liste autorisée, sans doublon)
+  if ('terrainNames' in src && Array.isArray(src.terrainNames)) {
+    const allowed = new Set(['A', 'B', 'C', '3', '4', '5', '6', '7', '8', '9'])
+    const seen = new Set<string>()
+    out.terrainNames = (src.terrainNames as unknown[])
+      .map(v => String(v).trim().toUpperCase())
+      .filter(s => allowed.has(s) && !seen.has(s) && (seen.add(s), true))
+      .slice(0, 10)
+  }
+
   // Listes d'IDs de joueurs (bornées, éléments primitifs uniquement)
   for (const key of ['players', 'melee_tournante_players'] as const) {
     if (key in src && Array.isArray(src[key])) {

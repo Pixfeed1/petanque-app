@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { useMatchScore } from '@/hooks/match'
+import { terrainLabel } from '@/lib/tournament/terrains'
 import { useToast } from '@/components/ui/Toast'
 import { useConfirm } from '@/components/ui/ConfirmModal'
 import { Button, BouleSvg, FadeIn } from '@/components/ui'
@@ -152,7 +153,7 @@ export default function MatchScorePage() {
             ) : (
               <span>Terminé</span>
             )}
-            {match.terrain && (<><span className="text-petanque-sable-bord">·</span><span>Terrain {match.terrain}</span></>)}
+            {match.terrain && (<><span className="text-petanque-sable-bord">·</span><span>Terrain {terrainLabel(match.terrain, (match as any).tournoi?.settings?.terrainNames)}</span></>)}
             {!winner && (<><span className="text-petanque-sable-bord">·</span><span>Mène {currentManche}</span></>)}
           </p>
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.1] mb-8">

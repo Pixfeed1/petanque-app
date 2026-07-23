@@ -37,10 +37,21 @@ describe('parseTournamentDescription', () => {
       expect(parse('sur 4 terrains').fields.maxPoints).toBeUndefined())
   })
 
-  describe('terrains (1–50)', () => {
-    it('"4 terrains" → 4', () => expect(parse('sur 4 terrains').fields.terrains).toBe(4))
+  describe('terrains', () => {
+    it('"4 terrains" (nombre) → 4', () => expect(parse('sur 4 terrains').fields.terrains).toBe(4))
     it('"1 terrain" (singulier) → 1', () => expect(parse('1 terrain').fields.terrains).toBe(1))
     it('hors bornes (60) → ignoré', () => expect(parse('60 terrains').fields.terrains).toBeUndefined())
+    it('nommés "terrains A, B, 5" → liste + count', () => {
+      const f = parse('sur les terrains A, B, 5').fields
+      expect(f.terrainNames).toEqual(['A', 'B', '5'])
+      expect(f.terrains).toBe(3)
+    })
+    it('nommés "terrains a b c" (casse) → A B C', () => {
+      expect(parse('terrains a b c').fields.terrainNames).toEqual(['A', 'B', 'C'])
+    })
+    it('nommés avec "et" : "terrains 7 et 8"', () => {
+      expect(parse('terrains 7 et 8').fields.terrainNames).toEqual(['7', '8'])
+    })
   })
 
   describe('limite de temps', () => {

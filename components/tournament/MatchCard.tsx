@@ -6,6 +6,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { terrainLabel } from '@/lib/tournament/terrains'
 
 interface Team {
   id: string
@@ -30,6 +31,7 @@ interface MatchCardProps {
   getTeamPlayers: (teamId: string) => string[]
   onAssignTerrain?: (matchId: string, terrain: number) => void
   availableTerrains: number
+  terrainNames?: string[]
   onWarning?: (message: string) => void
 }
 
@@ -40,6 +42,7 @@ export default function MatchCard({
   getTeamPlayers,
   onAssignTerrain,
   availableTerrains,
+  terrainNames,
   onWarning
 }: MatchCardProps) {
   const router = useRouter()
@@ -82,7 +85,7 @@ export default function MatchCard({
           </span>
         )}
         {match.terrain && (
-          <span className="text-sm font-semibold text-gray-900">Terrain {match.terrain}</span>
+          <span className="text-sm font-semibold text-gray-900">Terrain {terrainLabel(match.terrain, terrainNames)}</span>
         )}
       </div>
 
@@ -162,7 +165,7 @@ export default function MatchCard({
           >
             <option value="">Terrain...</option>
             {Array.from({ length: availableTerrains }, (_, i) => (
-              <option key={i + 1} value={i + 1}>Terrain {i + 1}</option>
+              <option key={i + 1} value={i + 1}>Terrain {terrainLabel(i + 1, terrainNames)}</option>
             ))}
           </select>
           <button

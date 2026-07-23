@@ -15,6 +15,7 @@ export interface TournamentFormData {
   time: string
   location: string
   terrains: number
+  terrainNames: string[]
 
   // Étape 2 - Configuration
   mode: 'choisi' | 'melee_fixe' | 'melee_tournante'
@@ -63,6 +64,7 @@ const initialFormData: TournamentFormData = {
   time: '09:00',
   location: '',
   terrains: 4,
+  terrainNames: ['A', 'B', 'C', '3'],
   mode: 'melee_fixe',
   format: 'doublette',
   maxPoints: 13,

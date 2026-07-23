@@ -11,6 +11,7 @@
  */
 
 import type { TournamentFormData } from '@/hooks/tournament/useCreateTournament'
+import { sanitizeTerrainNames } from '@/lib/tournament/terrains'
 
 export interface ParsedTournament {
   /** Champs reconnus, à fusionner dans le formulaire. */
@@ -73,11 +74,21 @@ export function parseTournamentDescription(input: string): ParsedTournament {
     detected.push(`Points : ${pts}`)
   }
 
-  // ── TERRAINS (1–50) ─────────────────────────────────────────────────
-  const terrains = findNumber(t, /(\d+)\s*terrains?/)
-  if (terrains !== null && terrains >= 1 && terrains <= 50) {
-    fields.terrains = terrains
-    detected.push(`Terrains : ${terrains}`)
+  // ── TERRAINS ────────────────────────────────────────────────────────
+  // Nommés d'abord : « terrains A, B, 5 » / « sur les terrains a b c »
+  const named = t.match(/terrains?\s+((?:[abc]|[3-9])(?:[\s,]+(?:et\s+)?(?:[abc]|[3-9]))*)/i)
+  const terrainNames = named ? sanitizeTerrainNames(named[1].split(/[\s,]+|et/)) : []
+  if (terrainNames.length > 0) {
+    fields.terrainNames = terrainNames
+    fields.terrains = terrainNames.length
+    detected.push(`Terrains : ${terrainNames.join(', ')}`)
+  } else {
+    // Sinon un simple nombre : « 4 terrains »
+    const terrains = findNumber(t, /(\d+)\s*terrains?/)
+    if (terrains !== null && terrains >= 1 && terrains <= 10) {
+      fields.terrains = terrains
+      detected.push(`Terrains : ${terrains}`)
+    }
   }
 
   // ── LIMITE DE TEMPS ─────────────────────────────────────────────────

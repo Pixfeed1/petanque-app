@@ -13,6 +13,7 @@ import { Button, BouleSvg, FadeIn } from '@/components/ui'
 import { Loader, Plus, X, Check } from '@/components/Icons'
 import { computePouleDistributions } from '@/lib/tournament/pouleDistributions'
 import { parseTournamentDescription } from '@/lib/tournament/describeParser'
+import { AVAILABLE_TERRAINS } from '@/lib/tournament/terrains'
 
 export default function CreateTournamentPage() {
   const router = useRouter()
@@ -337,15 +338,38 @@ function Step1({ formData, updateFormField }: any) {
       </div>
 
       <div>
-        <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Nombre de terrains</label>
-        <input
-          type="number"
-          value={formData.terrains}
-          onChange={(e) => updateFormField('terrains', Math.max(1, parseInt(e.target.value) || 1))}
-          min={1}
-          max={20}
-          className="w-32 h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:ring-2 focus:ring-petanque-vert/20 focus:outline-none text-center font-mono text-base text-petanque-vert-fonce"
-        />
+        <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Terrains de jeu</label>
+        <p className="text-xs text-petanque-bois mb-3">Sélectionne les terrains disponibles sur le lieu du concours.</p>
+        <div className="flex flex-wrap gap-2">
+          {AVAILABLE_TERRAINS.map((name) => {
+            const selected = (formData.terrainNames || []).includes(name)
+            return (
+              <button
+                key={name}
+                type="button"
+                onClick={() => {
+                  const cur: string[] = formData.terrainNames || []
+                  const next = selected ? cur.filter((n) => n !== name) : [...cur, name]
+                  // Garde l'ordre de la liste fixe pour un affichage cohérent
+                  const ordered = AVAILABLE_TERRAINS.filter((t) => next.includes(t))
+                  updateFormField('terrainNames', ordered)
+                  updateFormField('terrains', Math.max(1, ordered.length))
+                }}
+                className={`w-11 h-11 rounded-lg font-mono text-base font-medium transition-colors ${
+                  selected
+                    ? 'bg-petanque-vert text-white border border-petanque-vert'
+                    : 'bg-white text-petanque-vert-fonce border border-petanque-sable-bord hover:border-petanque-vert/40'
+                }`}
+              >
+                {name}
+              </button>
+            )
+          })}
+        </div>
+        <p className="text-[11px] text-petanque-bois mt-2 font-mono">
+          {(formData.terrainNames || []).length} terrain{(formData.terrainNames || []).length > 1 ? 's' : ''} sélectionné{(formData.terrainNames || []).length > 1 ? 's' : ''}
+          {(formData.terrainNames || []).length > 0 ? ` : ${(formData.terrainNames || []).join(' · ')}` : ''}
+        </p>
       </div>
     </div>
   )

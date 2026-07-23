@@ -10,6 +10,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { sanitizeForExcel, cleanControlCharacters } from '@/lib/sanitize'
+import { terrainLabel } from '@/lib/tournament/terrains'
 import type { Joueur, Equipe, EquipeJoueur } from '@/lib/types'
 
 interface Tournament {
@@ -24,6 +25,7 @@ interface Tournament {
     time: string
     location?: string
     terrains: number
+    terrainNames?: string[]
     maxPoints: number
     pouleSize?: number
   }
@@ -365,7 +367,7 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
         pdf.text(`Lieu: ${tournament.settings.location}`, 20, yPosition)
         yPosition += 6
       }
-      pdf.text(`Terrains: ${tournament.settings.terrains}`, 20, yPosition)
+      pdf.text(`Terrains: ${(tournament.settings.terrainNames?.length ? tournament.settings.terrainNames.join(", ") : tournament.settings.terrains)}`, 20, yPosition)
       yPosition += 6
       pdf.text(`Points pour gagner: ${tournament.settings.maxPoints || 13}`, 20, yPosition)
       yPosition += 15
@@ -446,7 +448,7 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
             match.score_a?.toString() || '-',
             match.score_b?.toString() || '-',
             match.equipe_b?.name || '',
-            match.terrain ? `T${match.terrain}` : '-',
+            match.terrain ? terrainLabel(match.terrain, tournament.settings.terrainNames) : '-',
             match.status === 'termine' ? 'Termine' : match.status === 'en_cours' ? 'En cours' : 'A jouer'
           ])
 
@@ -556,7 +558,7 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
         ['Date', new Date(tournament.settings.date || '').toLocaleDateString('fr-FR')],
         ['Heure', tournament.settings.time],
         ['Lieu', tournament.settings.location || '-'],
-        ['Terrains', tournament.settings.terrains],
+        ['Terrains', tournament.settings.terrainNames?.length ? tournament.settings.terrainNames.join(', ') : tournament.settings.terrains],
         ['Points pour gagner', tournament.settings.maxPoints || 13],
         [''],
         ['Statistiques'],
@@ -610,7 +612,7 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
             m.score_a || '',
             m.score_b || '',
             sanitizeForExcel(m.equipe_b?.name),
-            m.terrain || '',
+            m.terrain ? terrainLabel(m.terrain, tournament.settings.terrainNames) : '',
             m.status === 'termine' ? 'Termine' : m.status === 'en_cours' ? 'En cours' : 'A jouer'
           ])
         ]

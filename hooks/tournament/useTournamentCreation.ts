@@ -185,6 +185,7 @@ export function useTournamentCreation({
         time: formData.time,
         location: formData.location?.trim() || null,
         terrains: formData.terrains,
+        terrainNames: formData.terrainNames,
         maxPoints: formData.maxPoints,
         timeLimit: formData.timeLimit,
         timeLimitMinutes: formData.timeLimit ? formData.timeLimitMinutes : 60,
