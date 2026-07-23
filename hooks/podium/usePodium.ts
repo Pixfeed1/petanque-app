@@ -127,9 +127,11 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
   const buildPodium = async (allMatches: Match[], tournoiId: string, t: any): Promise<PodiumTeam[]> => {
     const podiumData: PodiumTeam[] = []
 
-    // FIX : en mêlée tournante, le podium est INDIVIDUEL (les équipes changent à
-    // chaque rotation) — pas un classement d'équipe éphémère.
-    if (t?.mode === 'melee_tournante') {
+    // FIX : en mêlée tournante — et en mode personnalisé « recomposé » — le podium est
+    // INDIVIDUEL (les équipes changent à chaque manche) : on classe les joueurs, pas des
+    // équipes éphémères (sinon le podium affiche des noms d'équipes internes).
+    const engineRemixed = t?.mode === 'personnalise' && t?.settings?.ruleEngine?.formation?.method === 'remixed'
+    if (t?.mode === 'melee_tournante' || engineRemixed) {
       await buildPodiumFromIndividual(podiumData, allMatches, tournoiId, t)
       return podiumData
     }

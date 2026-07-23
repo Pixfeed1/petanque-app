@@ -17,7 +17,7 @@ interface Tournament {
   id: string
   name: string
   org_id?: string
-  mode: 'choisi' | 'melee_fixe' | 'melee_tournante'
+  mode: 'choisi' | 'melee_fixe' | 'melee_tournante' | 'personnalise'
   format: 'tete_a_tete' | 'doublette' | 'triplette'
   status: string
   settings: {

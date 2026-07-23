@@ -382,7 +382,8 @@ function Step2({ formData, updateFormField }: any) {
   const modes = [
     { value: 'choisi', title: 'Mode choisi', desc: "Tu composes les équipes toi-même.", variant: 'acier' as const },
     { value: 'melee_fixe', title: 'Mêlée fixe', desc: 'Équipes tirées au sort, gardées tout le tournoi.', variant: 'vert' as const, recommended: true },
-    { value: 'melee_tournante', title: 'Mêlée tournante', desc: 'Équipes redistribuées à chaque tour.', variant: 'cochonnet' as const }
+    { value: 'melee_tournante', title: 'Mêlée tournante', desc: 'Équipes redistribuées à chaque tour.', variant: 'cochonnet' as const },
+    { value: 'personnalise', title: 'Personnalisé', desc: 'Tu composes tes propres règles (moteur libre).', variant: 'acier' as const }
   ]
   const formats = [
     { value: 'tete_a_tete', num: '1', title: 'Tête à tête', desc: '1 joueur' },
@@ -395,7 +396,7 @@ function Step2({ formData, updateFormField }: any) {
     <div className="space-y-9">
       <div>
         <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-4">Mode de jeu</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {modes.map((mode) => {
             const sel = formData.mode === mode.value
             return (
@@ -720,6 +721,71 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
               </p>
             </div>
           </label>
+        </div>
+      )}
+
+      {formData.mode === 'personnalise' && (
+        <div className="space-y-5 border border-petanque-vert/30 bg-petanque-vert-pale/20 rounded-2xl p-5">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-petanque-vert font-medium">Moteur de règles libre</span>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Formation des équipes</label>
+            <select
+              value={formData.engineFormation}
+              onChange={(e) => updateFormField('engineFormation', e.target.value)}
+              className="w-full md:w-2/3 h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:outline-none text-sm text-petanque-vert-fonce"
+            >
+              <option value="random">Tirage au sort</option>
+              <option value="balanced">Équilibré par niveau (historique cumulé)</option>
+              <option value="remixed">Recomposé à chaque manche (classement individuel)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Structure</label>
+            <select
+              value={formData.engineStructure}
+              onChange={(e) => updateFormField('engineStructure', e.target.value)}
+              className="w-full md:w-2/3 h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:outline-none text-sm text-petanque-vert-fonce"
+            >
+              <option value="rounds">Manches libres (N parties)</option>
+              <option value="poules">Poules → élimination</option>
+            </select>
+          </div>
+
+          {formData.engineStructure === 'rounds' ? (
+            <div>
+              <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Nombre de manches</label>
+              <select
+                value={formData.nombreParties || 3}
+                onChange={(e) => updateFormField('nombreParties', parseInt(e.target.value) || 3)}
+                className="w-32 h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:outline-none text-center font-mono text-base text-petanque-vert-fonce"
+              >
+                {[2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+          ) : (
+            <p className="text-xs text-petanque-bois">Les poules et les qualifiés se règlent à la section « Répartition des poules » ci-dessus.</p>
+          )}
+
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.headToHeadFirst || false}
+              onChange={(e) => updateFormField('headToHeadFirst', e.target.checked)}
+              className="w-4 h-4 mt-0.5 rounded border-petanque-sable-bord text-petanque-vert focus:ring-petanque-vert/30"
+            />
+            <div>
+              <p className="text-sm text-petanque-vert-fonce font-medium">Confrontation directe prioritaire</p>
+              <p className="text-xs text-petanque-bois">En cas d'égalité de points, départager d'abord par confrontation directe (au lieu de la différence de points).</p>
+            </div>
+          </label>
+
+          <p className="text-xs text-petanque-bois border-t border-petanque-vert/20 pt-4">
+            Les autres règles (points, mixité, fair-play, petite finale) se composent avec les options ci-dessous — le moteur les combine et déroule le tournoi manche par manche.
+          </p>
         </div>
       )}
 

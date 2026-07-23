@@ -95,8 +95,8 @@ export const createTournoiSchema = z.object({
   date_debut: z.string().datetime('Date de début invalide'),
   date_fin: z.string().datetime('Date de fin invalide').optional().nullable(),
   lieu: z.string().max(200).optional().nullable(),
-  mode: z.enum(['choisi', 'melee_fixe', 'melee_tournante'], {
-    message: 'Mode invalide (choisi, melee_fixe ou melee_tournante)'
+  mode: z.enum(['choisi', 'melee_fixe', 'melee_tournante', 'personnalise'], {
+    message: 'Mode invalide (choisi, melee_fixe, melee_tournante ou personnalise)'
   }),
   format: z.enum(['tete_a_tete', 'doublette', 'triplette'], {
     message: 'Format invalide (tete_a_tete, doublette ou triplette)'
@@ -341,5 +341,62 @@ export function sanitizeTournoiSettings(input: unknown): SettingsInput {
     }
   }
 
+  // Mode « Personnalisé » : config du moteur de règles, re-construite proprement
+  // (jamais stockée telle quelle → aucune clé arbitraire ne passe).
+  if ('ruleEngineTeamCount' in src) out.ruleEngineTeamCount = clampInt(src.ruleEngineTeamCount, 0, 4096, 0)
+  if ('ruleEngine' in src) {
+    const clean = sanitizeRuleEngine(src.ruleEngine)
+    if (clean) out.ruleEngine = clean
+  }
+
   return out
+}
+
+/** Valide/nettoie une config de moteur de règles (whitelist stricte des champs). */
+function sanitizeRuleEngine(v: unknown): Record<string, unknown> | null {
+  if (!v || typeof v !== 'object') return null
+  const s = v as Record<string, unknown>
+  const f = (s.formation ?? {}) as Record<string, unknown>
+  const sc = (s.scoring ?? {}) as Record<string, unknown>
+  const methods = ['manual', 'random', 'balanced', 'remixed']
+  const tbAllowed = ['points', 'victories', 'goalDiff', 'goalsFor', 'headToHead', 'niveau']
+  const phaseTypes = ['rounds', 'poules', 'elimination']
+
+  const phasesRaw = Array.isArray(s.phases) ? s.phases : []
+  const phases = phasesRaw.slice(0, 4).map(p => {
+    const pp = (p ?? {}) as Record<string, unknown>
+    const type = phaseTypes.includes(pp.type as string) ? pp.type : 'rounds'
+    return {
+      type,
+      rounds: clampInt(pp.rounds, 1, 20, 3),
+      pouleSize: clampInt(pp.pouleSize, 2, 12, 4),
+      qualifiedPerPoule: clampInt(pp.qualifiedPerPoule, 1, 16, 2),
+      petiteFinale: toBool(pp.petiteFinale),
+    }
+  })
+  if (phases.length === 0) return null
+
+  const tiebreakers = (Array.isArray(s.tiebreakers) ? s.tiebreakers : [])
+    .filter((t): t is string => typeof t === 'string' && tbAllowed.includes(t))
+    .slice(0, 6)
+
+  return {
+    formation: {
+      method: methods.includes(f.method as string) ? f.method : 'random',
+      teamSize: clampInt(f.teamSize, 1, 3, 2),
+      mixiteEquipe: toBool(f.mixiteEquipe),
+      mixiteAdversaire: toBool(f.mixiteAdversaire),
+      antiRematch: toBool(f.antiRematch),
+    },
+    scoring: {
+      pointsToWin: clampInt(sc.pointsToWin, 5, 25, 13),
+      win: clampInt(sc.win, 0, 10, 3),
+      draw: clampInt(sc.draw, 0, 10, 1),
+      loss: clampInt(sc.loss, 0, 10, 0),
+      capDiff: clampInt(sc.capDiff, 0, 50, 0),
+    },
+    tiebreakers: tiebreakers.length ? tiebreakers : ['points', 'goalDiff', 'headToHead'],
+    phases,
+    seed: clampInt(s.seed, 0, 0xffffffff, 1),
+  }
 }

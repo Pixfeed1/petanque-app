@@ -34,12 +34,20 @@ export interface TournamentSettings {
   allowPhotos?: boolean
   sendNotifications?: boolean
   players: string[]
+  // Mode « Personnalisé » : config du moteur de règles libre + nombre d'équipes d'origine.
+  ruleEngine?: {
+    formation?: { method?: string; teamSize?: number }
+    phases?: { type: string }[]
+    [k: string]: unknown
+  }
+  ruleEngineTeamCount?: number
+  equilibrageNiveau?: boolean
 }
 
 export interface Tournament {
   id: string
   name: string
-  mode: 'choisi' | 'melee_fixe' | 'melee_tournante'
+  mode: 'choisi' | 'melee_fixe' | 'melee_tournante' | 'personnalise'
   format: 'tete_a_tete' | 'doublette' | 'triplette'
   status: 'preparation' | 'en_cours' | 'termine'
   settings: TournamentSettings

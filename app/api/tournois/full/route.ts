@@ -36,7 +36,7 @@ interface MatchInput {
 }
 
 const VALID_FORMATS = ['tete_a_tete', 'doublette', 'triplette']
-const VALID_MODES = ['choisi', 'melee_fixe', 'melee_tournante']
+const VALID_MODES = ['choisi', 'melee_fixe', 'melee_tournante', 'personnalise']
 
 export async function POST(request: NextRequest) {
   const rateLimitResponse = applyRateLimit(request, 'tournoi-full', RATE_LIMITS.batch)

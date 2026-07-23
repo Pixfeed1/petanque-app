@@ -18,6 +18,11 @@ import { readHistory } from '@/lib/services/playerHistory'
 import type { Joueur } from '@/lib/types'
 import type { TournamentFormData } from './useCreateTournament'
 import { buildTeamsAndMatches, type PlayerRef } from '@/lib/tournament/creationPayload'
+import { configFromForm } from '@/lib/engine/configFromForm'
+import { startTournament } from '@/lib/engine/incremental'
+import { engineTeamsToPayload, engineMatchesToPayload } from '@/lib/engine/adapter'
+import { Rng } from '@/lib/engine/rng'
+import type { EnginePlayer } from '@/lib/engine/types'
 
 // Validation email
 const isValidEmail = (email: string): boolean => {
@@ -130,7 +135,8 @@ export function useTournamentCreation({
         notify.error('Aucun joueur sélectionné')
         return
       }
-      const countValidation = ValidationService.validatePlayerCount(allPlayerIds.length, formData.format, formData.mode)
+      const countMode = formData.mode === 'personnalise' ? 'melee_fixe' : formData.mode
+      const countValidation = ValidationService.validatePlayerCount(allPlayerIds.length, formData.format, countMode)
       if (!countValidation.valid) {
         notify.error(countValidation.error || 'Nombre de joueurs invalide')
         return
@@ -164,20 +170,59 @@ export function useTournamentCreation({
     setSavingTournament(true)
 
     try {
-      // Construire équipes + matchs (indexés)
-      const { teams, matches, unassignedCount } = buildTeamsAndMatches(
-        {
+      // MODE PERSONNALISÉ : le moteur de règles libre compose la config, forme les
+      // équipes et génère le premier lot de matchs (le reste est généré au fil des
+      // scores via /api/tournois/[id]/engine-advance).
+      const isPersonnalise = formData.mode === 'personnalise'
+      let engineConfig: ReturnType<typeof configFromForm> | null = null
+      let engineTeamCount = 0
+
+      let teams: { name: string; joueur_ids: string[] }[]
+      let matches: Array<{ team_a_index: number; team_b_index: number | null; tour: number; terrain: number | null; type: string; poule: string | null; status: string }>
+      let unassignedCount = 0
+
+      if (isPersonnalise) {
+        engineConfig = configFromForm({
           format: formData.format,
-          mode: formData.mode,
+          maxPoints: formData.maxPoints,
+          fairPlay: formData.fairPlay,
           mixiteObligatoire: formData.mixiteObligatoire,
           mixiteAdversaire: formData.mixiteAdversaire,
-          nombreParties: formData.nombreParties || 0,
-          equilibrageNiveau: formData.equilibrageNiveau,
+          consolante: formData.consolante,
+          engineFormation: formData.engineFormation,
+          engineStructure: formData.engineStructure,
+          rounds: formData.nombreParties || 3,
           pouleSize: formData.pouleSize,
-          terrains: formData.terrains,
-        },
-        combinedPlayers
-      )
+          qualifiedPerPoule: formData.qualifiedPerPoule,
+          headToHeadFirst: formData.headToHeadFirst,
+          seed: Rng.seedFromString(formData.name.trim() + formData.date),
+        })
+        const enginePlayers: EnginePlayer[] = combinedPlayers.map(p => ({
+          id: p.id, gender: p.gender, niveau: p.niveau,
+        }))
+        const started = startTournament(engineConfig, enginePlayers)
+        engineTeamCount = started.teams.length
+        teams = engineTeamsToPayload(started.teams)
+        matches = engineMatchesToPayload(started.matches, engineConfig, formData.terrains)
+      } else {
+        // Construire équipes + matchs (indexés)
+        const built = buildTeamsAndMatches(
+          {
+            format: formData.format,
+            mode: formData.mode as 'choisi' | 'melee_fixe' | 'melee_tournante',
+            mixiteObligatoire: formData.mixiteObligatoire,
+            mixiteAdversaire: formData.mixiteAdversaire,
+            nombreParties: formData.nombreParties || 0,
+            equilibrageNiveau: formData.equilibrageNiveau,
+            pouleSize: formData.pouleSize,
+            terrains: formData.terrains,
+          },
+          combinedPlayers
+        )
+        teams = built.teams
+        matches = built.matches
+        unassignedCount = built.unassignedCount
+      }
       if (unassignedCount > 0) {
         notify.warning(`${unassignedCount} joueur(s) non assigné(s) en raison de la mixité`)
       }
@@ -214,6 +259,12 @@ export function useTournamentCreation({
       if (isMeleeTournante) {
         settings.melee_tournante_players = allPlayerIds
         settings.current_round = 1
+      }
+      if (isPersonnalise && engineConfig) {
+        // Config du moteur + nombre d'équipes d'origine (espace d'indices pour l'avance).
+        settings.ruleEngine = engineConfig
+        settings.ruleEngineTeamCount = engineTeamCount
+        settings.poules_created = true
       }
 
       const payload = {

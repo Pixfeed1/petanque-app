@@ -18,7 +18,7 @@ export interface TournamentFormData {
   terrainNames: string[]
 
   // Étape 2 - Configuration
-  mode: 'choisi' | 'melee_fixe' | 'melee_tournante'
+  mode: 'choisi' | 'melee_fixe' | 'melee_tournante' | 'personnalise'
   format: 'tete_a_tete' | 'doublette' | 'triplette'
   maxPoints: number
   timeLimit: boolean
@@ -36,6 +36,11 @@ export interface TournamentFormData {
   mixiteAdversaire: boolean
   // Équilibrage par niveau cumulé (historique inter-concours) : tirages homogènes au fil du temps.
   equilibrageNiveau: boolean
+
+  // Mode « Personnalisé » (moteur de règles libre)
+  engineFormation: 'random' | 'balanced' | 'remixed'
+  engineStructure: 'rounds' | 'poules'
+  headToHeadFirst: boolean
 
   // Étape 3 - Joueurs
   selectedPlayers: string[]
@@ -83,6 +88,9 @@ const initialFormData: TournamentFormData = {
   mixiteObligatoire: false,
   mixiteAdversaire: false,
   equilibrageNiveau: false,
+  engineFormation: 'random',
+  engineStructure: 'rounds',
+  headToHeadFirst: false,
   selectedPlayers: [],
   newPlayers: [],
   visibility: 'private',
