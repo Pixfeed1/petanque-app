@@ -70,6 +70,8 @@ describe('parseTournamentDescription', () => {
     it('fair-play', () => expect(parse('en mode fair-play').fields.fairPlay).toBe(true))
     it('"esprit club" → fair-play', () => expect(parse('esprit club').fields.fairPlay).toBe(true))
     it('double élimination', () => expect(parse('double élimination').fields.eliminationFormat).toBe('double'))
+    it('mixité des adversaires', () => expect(parse('avec mixité des adversaires').fields.mixiteAdversaire).toBe(true))
+    it('"adversaires équilibrés" → mixité adversaire', () => expect(parse('adversaires équilibrés').fields.mixiteAdversaire).toBe(true))
     it('rien coché par défaut', () => {
       const f = parse('doublette choisi').fields
       expect(f.mixiteObligatoire).toBeUndefined()

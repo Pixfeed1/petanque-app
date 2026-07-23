@@ -236,11 +236,8 @@ export function antiRematchTeamFormation(
   // contrainte de mixité optionnelle. Une équipe est « mixte » si elle contient
   // au moins un 'H' et un 'F'.
   const genderById = new Map<string, 'H' | 'F'>()
-  let totalH = 0, totalF = 0
   for (const p of players) {
-    const g = p.gender === 'F' ? 'F' : 'H'
-    genderById.set(p.id, g)
-    if (g === 'F') totalF++; else totalH++
+    genderById.set(p.id, p.gender === 'F' ? 'F' : 'H')
   }
   const isTeamMixed = (ids: string[]): boolean => {
     let hasH = false, hasF = false
@@ -250,12 +247,6 @@ export function antiRematchTeamFormation(
     }
     return hasH && hasF
   }
-  // Genre minoritaire : en triplette mixte on vise « 2 majorité + 1 minorité »
-  // pour ne pas épuiser le genre rare dans une seule équipe (ce qui laisserait
-  // une autre équipe non mixte).
-  const minorityGender: 'H' | 'F' = totalF <= totalH ? 'F' : 'H'
-  const minorityCount = (ids: string[]): number =>
-    ids.reduce((n, id) => n + (genderById.get(id) === minorityGender ? 1 : 0), 0)
 
   // Construire la matrice de pénalité
   // Pénalité coéquipier = 3, adversaire = 1
@@ -357,11 +348,31 @@ export function antiRematchTeamFormation(
       result.push({ joueur_ids: [first, bestPartner] })
     } else {
       // Triplette : classer les paires par qualité de mixité puis par pénalité.
-      //   rang 2 = équipe mixte avec EXACTEMENT 1 joueur du genre minoritaire
-      //            (2 majorité + 1 minorité → n'épuise pas le genre rare)
-      //   rang 1 = équipe mixte (mais 2 du genre minoritaire)
+      //   rang 2 = équipe mixte dont la MAJORITÉ (2 joueurs) est du genre encore le
+      //            plus abondant dans le vivier → consomme le genre en surplus et
+      //            garde le vivier équilibré (évite qu'une équipe finale soit 3H/3F).
+      //   rang 1 = équipe mixte (mais majorité du genre plus rare)
       //   rang 0 = équipe non mixte
       // Sans mixité, tout est rang 0 → on retombe sur la moindre pénalité.
+      //
+      // FIX : auparavant on préférait toujours « 1 joueur du genre minoritaire GLOBAL ».
+      // Quand H = F (vivier équilibré), ça faisait des équipes 2H+1F en série →
+      // épuisement des hommes → dernière équipe 3F (non mixte). L'équilibre est
+      // désormais recalculé À CHAQUE équipe sur le vivier restant.
+      let ph = 0
+      let pf = 0
+      for (const id of [first, ...candidates]) {
+        if (genderById.get(id) === 'F') pf++
+        else ph++
+      }
+      const preferMajority: 'H' | 'F' = ph >= pf ? 'H' : 'F'
+      const teamMajority = (ids: string[]): 'H' | 'F' => {
+        let h = 0
+        let f = 0
+        for (const id of ids) genderById.get(id) === 'F' ? f++ : h++
+        return h >= f ? 'H' : 'F'
+      }
+
       let bestPair = [candidates[0], candidates[1]]
       let bestScore = Infinity
       let bestRank = -1
@@ -371,7 +382,7 @@ export function antiRematchTeamFormation(
           const team = [first, candidates[i], candidates[j]]
           const score = teamPenalty(team)
           let rank = 0
-          if (mixite && isTeamMixed(team)) rank = minorityCount(team) === 1 ? 2 : 1
+          if (mixite && isTeamMixed(team)) rank = teamMajority(team) === preferMajority ? 2 : 1
           const better = rank > bestRank || (rank === bestRank && score < bestScore)
           if (better) {
             bestRank = rank

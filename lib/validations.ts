@@ -302,7 +302,7 @@ export function sanitizeTournoiSettings(input: unknown): SettingsInput {
   if ('current_round' in src) out.current_round = clampInt(src.current_round, 1, 100, 1)
 
   // Booléens
-  for (const key of ['timeLimit', 'consolante', 'fairPlay', 'recordMenes', 'allowPhotos', 'sendNotifications', 'mixiteObligatoire', 'poules_created'] as const) {
+  for (const key of ['timeLimit', 'consolante', 'fairPlay', 'recordMenes', 'allowPhotos', 'sendNotifications', 'mixiteObligatoire', 'mixiteAdversaire', 'poules_created'] as const) {
     if (key in src) out[key] = toBool(src[key])
   }
 

@@ -9,6 +9,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { MixiteService } from '@/lib/services/mixite.service'
 import { TirageService } from '@/lib/services'
+import { teamGenderProfile, pairRoundByMixite } from '@/lib/services/mixiteAdversaire'
 import type { Joueur } from '@/lib/types'
 import type { Tournament, Team, Match } from './useTournamentData'
 
@@ -122,7 +123,8 @@ export function useRotation({
    * Utilise l'historique des rotations précédentes pour minimiser les doublons
    */
   // Fix Bug #4 : calcule les équipes en mémoire (sans POST), retourne le tableau
-  const buildNewTeams = useCallback(async (): Promise<Array<{ name: string; joueur_ids: string[] }> | null> => {
+  // + une table des genres (pour la mixité des adversaires au moment de l'appariement).
+  const buildNewTeams = useCallback(async (): Promise<{ teams: Array<{ name: string; joueur_ids: string[] }>; genderById: Map<string, 'H' | 'F'> } | null> => {
     if (!organization || !tournament?.settings.players) return null
 
     try {
@@ -137,6 +139,9 @@ export function useRotation({
         tournament.settings.players.includes(p.id)
       )
       if (players.length === 0) return null
+
+      const genderById = new Map<string, 'H' | 'F'>()
+      for (const p of players as Joueur[]) genderById.set(p.id, p.gender === 'F' ? 'F' : 'H')
 
       const isTeteATete = tournament.format === 'tete_a_tete'
       const teamSize = isTeteATete ? 1 : (tournament.format === 'doublette' ? 2 : 3)
@@ -243,10 +248,13 @@ export function useRotation({
         }
       }
 
-      return teamCompositions.map(team => ({
-        name: `R${newRotation}-Équipe ${teamNumber++}`,
-        joueur_ids: team.joueur_ids
-      }))
+      return {
+        teams: teamCompositions.map(team => ({
+          name: `R${newRotation}-Équipe ${teamNumber++}`,
+          joueur_ids: team.joueur_ids
+        })),
+        genderById
+      }
     } catch (error) {
       console.error('Erreur calcul équipes:', error)
       return null
@@ -259,7 +267,8 @@ export function useRotation({
   // Fix Bug #4 : calcule les matchs en mémoire avec team_a_index (référence par index, pas UUID)
   const buildMatchesForRotation = useCallback((
     rotationNumber: number,
-    newTeams: Array<{ name: string; joueur_ids: string[] }>
+    newTeams: Array<{ name: string; joueur_ids: string[] }>,
+    genderById?: Map<string, 'H' | 'F'>
   ): Array<{
     tour: number
     terrain: number | null
@@ -276,6 +285,30 @@ export function useRotation({
       id: String(idx),
       name: t.name
     }))
+
+    // MIXITÉ DES ADVERSAIRES (doublette/triplette) : une rotation = UN match par
+    // équipe contre un adversaire de profil de genre compatible (jamais 2F+1H
+    // contre 2H+1F). Sinon : comportement existant (round-robin / Berger).
+    if (
+      tournament.format !== 'tete_a_tete' &&
+      tournament.settings.mixiteAdversaire &&
+      genderById
+    ) {
+      const profiles = newTeams.map(t => teamGenderProfile(t.joueur_ids, genderById))
+      const { pairs } = pairRoundByMixite(profiles)
+      const forTerrain = pairs.map(([a, b], idx) => ({ id: `rot_${idx}`, equipe_a_id: String(a), equipe_b_id: String(b), tour: rotationNumber }))
+      const terrains = tournament.settings.terrains || 0
+      const tMap = terrains > 0 ? TirageService.smartTerrainAssignment(forTerrain, terrains) : null
+      return pairs.map(([a, b], idx) => ({
+        tour: rotationNumber,
+        terrain: tMap?.get(`rot_${idx}`) || null,
+        team_a_index: a,
+        team_b_index: b,
+        type: 'poule',
+        poule: null,
+        status: 'a_jouer'
+      }))
+    }
 
     // Tête-à-tête : une rotation = UNE ronde de Berger (chaque joueur un nouvel adversaire).
     // Doublette/triplette : round-robin complet sur les équipes rebrassées (comportement existant).
@@ -392,13 +425,14 @@ export function useRotation({
       }
 
       // Fix Bug #4 : calcul des équipes ET matchs EN MÉMOIRE
-      const newTeams = await buildNewTeams()
-      if (!newTeams || newTeams.length === 0) {
+      const built = await buildNewTeams()
+      if (!built || built.teams.length === 0) {
         notify.error('Échec du calcul des équipes pour la rotation')
         return
       }
+      const newTeams = built.teams
 
-      const newMatches = buildMatchesForRotation(newRotation, newTeams)
+      const newMatches = buildMatchesForRotation(newRotation, newTeams, built.genderById)
       if (newMatches.length === 0) {
         notify.error('Échec du calcul des matchs pour la rotation')
         return

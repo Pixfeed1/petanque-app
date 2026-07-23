@@ -662,6 +662,20 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
             <option value="par_tour">Par tour (recommandé)</option>
             <option value="par_match">Par match</option>
           </select>
+          <label className="flex items-start gap-3 cursor-pointer mt-4">
+            <input
+              type="checkbox"
+              checked={formData.mixiteAdversaire || false}
+              onChange={(e) => updateFormField('mixiteAdversaire', e.target.checked)}
+              className="w-4 h-4 mt-0.5 rounded border-petanque-sable-bord text-petanque-vert focus:ring-petanque-vert/30"
+            />
+            <div>
+              <p className="text-sm text-petanque-vert-fonce font-medium">Mixité des adversaires</p>
+              <p className="text-xs text-petanque-bois">
+                Chaque partie oppose des équipes de profil compatible (une équipe à majorité féminine ne tombe pas contre une équipe à majorité masculine). Exception tolérée si impossible.
+              </p>
+            </div>
+          </label>
         </div>
       )}
 

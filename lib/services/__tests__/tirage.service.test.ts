@@ -454,6 +454,19 @@ describe('antiRematchTeamFormation', () => {
       const { teams } = antiRematchTeamFormation(players, [], [], 2, [], true)
       expect(teams.length).toBe(2) // repli propre, personne exclu
     })
+
+    it('triplette mixité ÉQUILIBRÉE (6H+6F): aucune équipe 3H/3F (bug d\'épuisement)', () => {
+      // Régression : avant, l\'algo faisait 3×(2H1F) puis une équipe 3F.
+      const players = [H(1), H(2), H(3), H(4), H(5), H(6), F(1), F(2), F(3), F(4), F(5), F(6)]
+      // 5 tirages : la répartition doit rester mixte à chaque fois.
+      for (let run = 0; run < 5; run++) {
+        const { teams } = antiRematchTeamFormation(players, [], [], 3, [], true)
+        expect(teams.length).toBe(4)
+        for (const t of teams) {
+          expect(isMixed(t.joueur_ids), `run ${run}: ${t.joueur_ids.join(',')}`).toBe(true)
+        }
+      }
+    })
   })
 })
 

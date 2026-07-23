@@ -25,6 +25,29 @@ describe('buildTeamsAndMatches', () => {
     expect(r.matches).toHaveLength(0)
   })
 
+  it('mêlée tournante + mixité adversaire : R1 = une seule ronde, appariée par profil de genre', () => {
+    // 4 hommes + 4 femmes en doublette → 4 équipes, une ronde (2 matchs) au tour 1.
+    const ps: PlayerRef[] = [
+      ...Array.from({ length: 4 }, (_, i) => ({ id: `h${i}`, name: `H${i}`, gender: 'H' as const })),
+      ...Array.from({ length: 4 }, (_, i) => ({ id: `f${i}`, name: `F${i}`, gender: 'F' as const })),
+    ]
+    const cfg: CreationComposition = { format: 'doublette', mode: 'melee_tournante', mixiteObligatoire: false, mixiteAdversaire: true, pouleSize: 4, terrains: 2 }
+    const { teams, matches } = buildTeamsAndMatches(cfg, ps)
+    assertValid(teams, matches)
+    // Une seule ronde : un match par équipe (pas un round-robin)
+    expect(matches.length).toBe(teams.length / 2)
+    expect(matches.every(m => m.tour === 1)).toBe(true)
+    // Chaque match oppose des profils de genre compatibles (jamais F-maj vs M-maj)
+    const genderById = new Map(ps.map(p => [p.id, p.gender!]))
+    const profile = (ids: string[]) => { let f = 0, h = 0; ids.forEach(id => genderById.get(id) === 'F' ? f++ : h++); return f > h ? 'F' : h > f ? 'M' : 'N' }
+    for (const m of matches) {
+      const a = profile(teams[m.team_a_index].joueur_ids)
+      const b = profile(teams[m.team_b_index!].joueur_ids)
+      const compatible = a === 'N' || b === 'N' || a === b
+      expect(compatible, `${a} vs ${b}`).toBe(true)
+    }
+  })
+
   it('doublette mêlée fixe, 8 joueurs → 4 équipes, matchs de poule valides', () => {
     const cfg: CreationComposition = { format: 'doublette', mode: 'melee_fixe', mixiteObligatoire: false, pouleSize: 4, terrains: 4 }
     const r = buildTeamsAndMatches(cfg, players(8))

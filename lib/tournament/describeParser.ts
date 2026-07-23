@@ -99,6 +99,10 @@ export function parseTournamentDescription(input: string): ParsedTournament {
   }
 
   // ── OPTIONS BOOLÉENNES ──────────────────────────────────────────────
+  if (/mixite des adversaires|adversaires? (equilibres?|mixtes?)|equilibre des adversaires/.test(t)) {
+    fields.mixiteAdversaire = true
+    detected.push('Mixité des adversaires')
+  }
   if (/mixite|\bmixte\b|hommes? et femmes?|\bh et f\b|paritaire/.test(t)) {
     fields.mixiteObligatoire = true
     detected.push('Mixité obligatoire')

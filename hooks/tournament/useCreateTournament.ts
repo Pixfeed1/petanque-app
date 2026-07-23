@@ -30,6 +30,7 @@ export interface TournamentFormData {
   qualifiedPerPoule: number
   consolante: boolean
   mixiteObligatoire: boolean
+  mixiteAdversaire: boolean
 
   // Étape 3 - Joueurs
   selectedPlayers: string[]
@@ -73,6 +74,7 @@ const initialFormData: TournamentFormData = {
   qualifiedPerPoule: 2,
   consolante: false,
   mixiteObligatoire: false,
+  mixiteAdversaire: false,
   selectedPlayers: [],
   newPlayers: [],
   visibility: 'private',
