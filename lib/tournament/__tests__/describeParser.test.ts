@@ -90,11 +90,15 @@ describe('parseTournamentDescription', () => {
     it('double élimination', () => expect(parse('double élimination').fields.eliminationFormat).toBe('double'))
     it('mixité des adversaires', () => expect(parse('avec mixité des adversaires').fields.mixiteAdversaire).toBe(true))
     it('"adversaires équilibrés" → mixité adversaire', () => expect(parse('adversaires équilibrés').fields.mixiteAdversaire).toBe(true))
+    it('« équilibrage par niveau » → equilibrageNiveau', () => expect(parse('avec équilibrage par niveau').fields.equilibrageNiveau).toBe(true))
+    it('« niveau cumulé » → equilibrageNiveau', () => expect(parse('équilibrer selon le niveau cumulé').fields.equilibrageNiveau).toBe(true))
+    it('« équipes équilibrées » → equilibrageNiveau', () => expect(parse('je veux des équipes équilibrées').fields.equilibrageNiveau).toBe(true))
     it('rien coché par défaut', () => {
       const f = parse('doublette choisi').fields
       expect(f.mixiteObligatoire).toBeUndefined()
       expect(f.consolante).toBeUndefined()
       expect(f.fairPlay).toBeUndefined()
+      expect(f.equilibrageNiveau).toBeUndefined()
     })
   })
 

@@ -133,6 +133,10 @@ export function parseTournamentDescription(input: string): ParsedTournament {
     fields.fairPlay = true
     detected.push('Mode fair-play')
   }
+  if (/equilibr\w*\s+(par\s+)?niveau|niveau\s+cumul|selon\s+le\s+niveau|par\s+niveau|equipes?\s+equilibr/.test(t)) {
+    fields.equilibrageNiveau = true
+    detected.push('Équilibrage par niveau')
+  }
   if (/double[ -]?elim/.test(t)) {
     fields.eliminationFormat = 'double'
     detected.push('Double élimination')

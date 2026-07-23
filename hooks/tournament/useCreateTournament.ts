@@ -34,6 +34,8 @@ export interface TournamentFormData {
   consolante: boolean
   mixiteObligatoire: boolean
   mixiteAdversaire: boolean
+  // Équilibrage par niveau cumulé (historique inter-concours) : tirages homogènes au fil du temps.
+  equilibrageNiveau: boolean
 
   // Étape 3 - Joueurs
   selectedPlayers: string[]
@@ -80,6 +82,7 @@ const initialFormData: TournamentFormData = {
   consolante: false,
   mixiteObligatoire: false,
   mixiteAdversaire: false,
+  equilibrageNiveau: false,
   selectedPlayers: [],
   newPlayers: [],
   visibility: 'private',

@@ -8,6 +8,7 @@ import {
   PageHeader, SearchInput, PillToggle, EmptyState, PlayerAvatar
 } from '@/components/ui'
 import { Loader, Users } from '@/components/Icons'
+import { readHistory } from '@/lib/services/playerHistory'
 
 interface Joueur {
   id: string
@@ -15,6 +16,7 @@ interface Joueur {
   email?: string
   phone?: string
   gender?: 'H' | 'F'
+  stats?: unknown
   created_at?: string
 }
 
@@ -169,7 +171,9 @@ export default function JoueursPage() {
                   </>
                 )}
               </div>
-              {filteredJoueurs.map((joueur) => (
+              {filteredJoueurs.map((joueur) => {
+                const hist = readHistory(joueur.stats)
+                return (
                 <button
                   key={joueur.id}
                   onClick={() => router.push(`/joueurs/${joueur.id}-${createSlug(joueur.name)}`)}
@@ -184,13 +188,28 @@ export default function JoueursPage() {
                       <span className="font-mono uppercase tracking-[0.14em]">
                         {joueur.gender === 'H' ? 'Homme' : joueur.gender === 'F' ? 'Femme' : 'Non spécifié'}
                       </span>
+                      {hist.concours > 0 && (
+                        <>
+                          <span className="text-petanque-sable-bord">·</span>
+                          <span className="font-mono">{hist.victoires}V / {hist.parties - hist.victoires - hist.nuls}D · {hist.concours} concours</span>
+                        </>
+                      )}
                       {joueur.email && (<><span className="text-petanque-sable-bord">·</span><span className="truncate">{joueur.email}</span></>)}
                       {joueur.phone && (<><span className="text-petanque-sable-bord">·</span><span>{joueur.phone}</span></>)}
                     </div>
                   </div>
+                  {hist.concours > 0 && (
+                    <span
+                      className="flex-shrink-0 font-mono text-sm font-medium text-petanque-vert-fonce bg-petanque-sable-pale border border-petanque-sable-bord/60 rounded-lg px-2.5 py-1"
+                      title="Niveau cumulé (historique entre concours)"
+                    >
+                      {hist.niveau}
+                    </span>
+                  )}
                   <span className="text-lg text-petanque-bois group-hover:text-petanque-vert transition-colors flex-shrink-0">→</span>
                 </button>
-              ))}
+                )
+              })}
             </div>
           )}
         </FadeIn>

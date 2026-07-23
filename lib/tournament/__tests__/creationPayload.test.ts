@@ -58,6 +58,30 @@ describe('buildTeamsAndMatches', () => {
     expect(matches.every(m => m.tour === 1)).toBe(true)
   })
 
+  it('équilibrage par niveau : doublette compose des équipes de force homogène', () => {
+    // 2 forts (niveau 1400), 2 faibles (600) → chaque équipe = 1 fort + 1 faible (total égal).
+    const ps: PlayerRef[] = [
+      { id: 'a', name: 'A', niveau: 1400 },
+      { id: 'b', name: 'B', niveau: 1400 },
+      { id: 'c', name: 'C', niveau: 600 },
+      { id: 'd', name: 'D', niveau: 600 },
+    ]
+    const cfg: CreationComposition = { format: 'doublette', mode: 'melee_fixe', mixiteObligatoire: false, equilibrageNiveau: true, pouleSize: 2, terrains: 2 }
+    const { teams } = buildTeamsAndMatches(cfg, ps)
+    expect(teams).toHaveLength(2)
+    const byId = new Map(ps.map(p => [p.id, p.niveau!]))
+    const totals = teams.map(t => t.joueur_ids.reduce((s, id) => s + byId.get(id)!, 0))
+    expect(totals[0]).toBe(totals[1]) // 2000 chacun : fort+faible dans chaque équipe
+  })
+
+  it('équilibrage par niveau ignoré si mixité obligatoire (contrainte de genre prioritaire)', () => {
+    const refs = [...players(2, 'H'), ...players(2, 'F').map((p, i) => ({ ...p, id: `f${i}`, niveau: 1400 }))]
+    const cfg: CreationComposition = { format: 'doublette', mode: 'melee_fixe', mixiteObligatoire: true, equilibrageNiveau: true, pouleSize: 2, terrains: 2 }
+    const { teams } = buildTeamsAndMatches(cfg, refs)
+    expect(teams).toHaveLength(2)
+    assertValid(teams, [])
+  })
+
   it('doublette mêlée fixe, 8 joueurs → 4 équipes, matchs de poule valides', () => {
     const cfg: CreationComposition = { format: 'doublette', mode: 'melee_fixe', mixiteObligatoire: false, pouleSize: 4, terrains: 4 }
     const r = buildTeamsAndMatches(cfg, players(8))

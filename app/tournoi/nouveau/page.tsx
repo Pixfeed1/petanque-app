@@ -600,7 +600,8 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
   const advancedOptions = [
     { key: 'mixiteObligatoire', label: 'Mixité obligatoire', desc: 'H et F dans chaque équipe' },
     { key: 'consolante', label: 'Petite finale', desc: 'Match pour la 3e place' },
-    { key: 'fairPlay', label: 'Mode fair-play', desc: 'Pénalités douces, esprit club' }
+    { key: 'fairPlay', label: 'Mode fair-play', desc: 'Pénalités douces, esprit club' },
+    { key: 'equilibrageNiveau', label: 'Équilibrage par niveau', desc: 'Compose des équipes et des poules homogènes à partir du niveau cumulé des joueurs (historique entre concours)' }
   ]
 
   const playersPerTeam = formData.format === 'tete_a_tete' ? 1 : formData.format === 'doublette' ? 2 : 3

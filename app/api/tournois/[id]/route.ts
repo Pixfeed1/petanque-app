@@ -8,6 +8,7 @@ import { queryOne, query } from '@/lib/db'
 import { SQLValue } from '@/lib/types'
 import { emitTournamentEvent } from '@/lib/tournament-events'
 import { sanitizeTournoiSettings } from '@/lib/validations'
+import { applyPlayerHistoryForTournament } from '@/lib/server/applyPlayerHistory'
 
 // GET - Récupérer un tournoi par ID
 export async function GET(
@@ -73,6 +74,23 @@ export async function PUT(
       return apiError('Accès refusé', 403)
     }
 
+    // Settings existants (parsés une fois : réutilisés pour la clôture et le merge).
+    const existingSettings: Record<string, unknown> = typeof existingTournoi.settings === 'string'
+      ? JSON.parse(existingTournoi.settings)
+      : (existingTournoi.settings || {})
+
+    // Clôture d'un concours (en_cours → termine) : cumuler l'historique de niveau des
+    // joueurs UNE seule fois (idempotent via le drapeau playerStatsApplied). On l'exécute
+    // AVANT l'UPDATE : si le cumul échoue, le tournoi reste en_cours et le drapeau n'est pas
+    // posé → l'opération est ré-essayable sans double comptage.
+    const finalizing =
+      body.status === 'termine' &&
+      existingTournoi.status === 'en_cours' &&
+      existingSettings.playerStatsApplied !== true
+    if (finalizing) {
+      await applyPlayerHistoryForTournament(id)
+    }
+
     // Construire la requête de mise à jour
     const updates: string[] = []
     const values: SQLValue[] = []
@@ -107,14 +125,16 @@ export async function PUT(
       }
     }
 
-    if (body.settings !== undefined) {
+    if (body.settings !== undefined || finalizing) {
       // FIX SÉCURITÉ / BUG : merger avec l'existant (au lieu de remplacer tout le
       // JSONB) et sanitize (whitelist + coercition). Avant, un simple membre
       // pouvait écraser tous les settings (maxPoints:999, effacer melee_*...).
-      const existingSettings = typeof existingTournoi.settings === 'string'
-        ? JSON.parse(existingTournoi.settings)
-        : (existingTournoi.settings || {})
-      const mergedSettings = { ...existingSettings, ...sanitizeTournoiSettings(body.settings) }
+      // À la clôture, on pose aussi le drapeau d'idempotence de l'historique de niveau.
+      const mergedSettings = {
+        ...existingSettings,
+        ...(body.settings !== undefined ? sanitizeTournoiSettings(body.settings) : {}),
+        ...(finalizing ? { playerStatsApplied: true } : {}),
+      }
       updates.push(`settings = $${paramIndex++}::jsonb`)
       values.push(mergedSettings)
     }

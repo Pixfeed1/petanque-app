@@ -43,10 +43,14 @@ export function fisherYatesShuffle<T>(array: T[]): T[] {
  */
 export function snakeDraftDistribution(
   teams: TeamForDraw[],
-  poolSize: number
+  poolSize: number,
+  preRanked: boolean = false
 ): PoolAssignment {
   const nbPools = Math.ceil(teams.length / poolSize)
-  const shuffled = fisherYatesShuffle(teams)
+  // `preRanked` : les équipes arrivent DÉJÀ classées par force (ensemencement par
+  // niveau cumulé) → on respecte cet ordre au lieu de mélanger, pour que le
+  // serpentin produise des poules réellement équilibrées.
+  const shuffled = preRanked ? [...teams] : fisherYatesShuffle(teams)
 
   // Initialiser les poules
   const pools: PoolAssignment = {}

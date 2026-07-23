@@ -10,6 +10,8 @@
 import { TirageService } from '@/lib/services'
 import { MixiteService } from '@/lib/services/mixite.service'
 import { teamGenderProfile, pairRoundByMixite } from '@/lib/services/mixiteAdversaire'
+import { balancedTeamsByLevel, seedTeamsByLevel } from '@/lib/services/levelBalancing'
+import { NIVEAU_BASE } from '@/lib/services/playerHistory'
 import type { Joueur } from '@/lib/types'
 
 export interface FullTeamInput { name: string; joueur_ids: string[] }
@@ -22,7 +24,7 @@ export interface FullMatchInput {
   poule: string | null
   status: string
 }
-export interface PlayerRef { id: string; name: string; gender?: 'H' | 'F'; email?: string }
+export interface PlayerRef { id: string; name: string; gender?: 'H' | 'F'; email?: string; niveau?: number }
 
 export interface CreationComposition {
   format: 'tete_a_tete' | 'doublette' | 'triplette'
@@ -32,6 +34,9 @@ export interface CreationComposition {
   mixiteAdversaire?: boolean
   /** Nombre de parties fixé (2/3/4). Structure le tournoi en rondes : une partie = un match par équipe. */
   nombreParties?: number
+  /** Équilibrage par niveau cumulé : compose des équipes homogènes et ensemence les poules
+   * à partir de l'historique inter-concours des joueurs (au lieu d'un tirage aléatoire). */
+  equilibrageNiveau?: boolean
   pouleSize: number
   terrains: number
 }
@@ -56,6 +61,10 @@ export function buildTeamsAndMatches(
   let teams: FullTeamInput[] = []
   let unassignedCount = 0
 
+  // Niveau cumulé par joueur (défaut neutre) pour l'équilibrage optionnel.
+  const niveauById = new Map<string, number>()
+  for (const p of combinedPlayers) niveauById.set(p.id, p.niveau ?? NIVEAU_BASE)
+
   if (cfg.format === 'tete_a_tete') {
     if (cfg.mode === 'melee_tournante') {
       // Équipes individuelles STABLES (ordre = allPlayerIds), préfixe R1-
@@ -65,6 +74,20 @@ export function buildTeamsAndMatches(
       const shuffled = TirageService.fisherYatesShuffle(allPlayerIds)
       teams = shuffled.map((pid, i) => ({ name: `Équipe ${i + 1}`, joueur_ids: [pid] }))
     }
+  } else if (cfg.equilibrageNiveau && !cfg.mixiteObligatoire) {
+    // ÉQUILIBRAGE PAR NIVEAU : composer des équipes homogènes (un fort avec un faible)
+    // à partir de l'historique cumulé. Incompatible avec la mixité obligatoire (contrainte
+    // de genre prioritaire) → dans ce cas on retombe sur la branche mixité ci-dessous.
+    const balanced = balancedTeamsByLevel(
+      combinedPlayers.map(p => ({ id: p.id, niveau: niveauById.get(p.id) })),
+      playersPerTeam
+    )
+    unassignedCount = balanced.unassigned.length
+    const prefix = cfg.mode === 'melee_tournante' ? 'R1-' : ''
+    teams = balanced.teams.map((t, i) => ({
+      name: prefix ? `${prefix}Équipe ${i + 1}` : `Équipe ${i + 1}`,
+      joueur_ids: t.joueur_ids,
+    }))
   } else {
     // Doublette / triplette : mixité
     const players = combinedPlayers as unknown as Joueur[]
@@ -113,8 +136,13 @@ export function buildTeamsAndMatches(
       matches.push({ team_a_index: m.a, team_b_index: m.b, tour: m.tour, terrain: m.terrain, type: 'poule', poule: m.poule, status: 'a_jouer' })
     }
   } else {
-    // Poules : distribution serpentin + planning Berger par poule
-    const poules = TirageService.snakeDraftDistribution(teamsForDraw, cfg.pouleSize)
+    // Poules : distribution serpentin + planning Berger par poule.
+    // Équilibrage par niveau : on ensemence les équipes par force décroissante puis on
+    // laisse le serpentin les répartir (poules homogènes) au lieu d'un ordre aléatoire.
+    const seeded = cfg.equilibrageNiveau
+      ? seedTeamsByLevel(teamsForDraw, niveauById)
+      : teamsForDraw
+    const poules = TirageService.snakeDraftDistribution(seeded, cfg.pouleSize, !!cfg.equilibrageNiveau)
     const raw: Array<{ a: number; b: number; tour: number; poule: string | null }> = []
     for (const [pouleName, pouleTeams] of Object.entries(poules)) {
       const berger = TirageService.generateBergerMatches(pouleTeams, pouleName)

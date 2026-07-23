@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { ValidationService } from '@/lib/services'
 import { MixiteService } from '@/lib/services/mixite.service'
+import { readHistory } from '@/lib/services/playerHistory'
 import type { Joueur } from '@/lib/types'
 import type { TournamentFormData } from './useCreateTournament'
 import { buildTeamsAndMatches, type PlayerRef } from '@/lib/tournament/creationPayload'
@@ -96,7 +97,8 @@ export function useTournamentCreation({
     const selectedExisting: PlayerRef[] = formData.selectedPlayers
       .map(id => availablePlayers.find(p => p.id === id))
       .filter((p): p is Joueur => !!p)
-      .map(p => ({ id: p.id, name: p.name, gender: p.gender, email: p.email }))
+      // niveau cumulé (historique inter-concours) attaché pour l'équilibrage optionnel des tirages
+      .map(p => ({ id: p.id, name: p.name, gender: p.gender, email: p.email, niveau: readHistory((p as { stats?: unknown }).stats).niveau }))
 
     const combinedPlayers: PlayerRef[] = [...selectedExisting, ...newPlayerRefs]
     const allPlayerIds = combinedPlayers.map(p => p.id)
@@ -170,6 +172,7 @@ export function useTournamentCreation({
           mixiteObligatoire: formData.mixiteObligatoire,
           mixiteAdversaire: formData.mixiteAdversaire,
           nombreParties: formData.nombreParties || 0,
+          equilibrageNiveau: formData.equilibrageNiveau,
           pouleSize: formData.pouleSize,
           terrains: formData.terrains,
         },
@@ -200,6 +203,7 @@ export function useTournamentCreation({
         recordMenes: formData.recordMenes,
         mixiteObligatoire: formData.mixiteObligatoire,
         mixiteAdversaire: formData.mixiteAdversaire,
+        equilibrageNiveau: formData.equilibrageNiveau,
         allowPhotos: formData.allowPhotos,
         sendNotifications: formData.sendNotifications,
         players: allPlayerIds,
