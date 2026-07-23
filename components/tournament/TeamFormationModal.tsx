@@ -202,7 +202,7 @@ export default function TeamFormationModal({
                             {player.name?.charAt(0).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-petanque-vert-fonce truncate">{player.name}</p>
+                            <p className="text-base font-medium text-petanque-vert-fonce truncate">{player.name}</p>
                             <span className={`text-xs px-2 py-0.5 rounded-full ${
                               player.gender === 'F'
                                 ? 'bg-petanque-cochonnet/15 text-petanque-cochonnet-fonce'

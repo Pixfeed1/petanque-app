@@ -17,16 +17,20 @@ interface Props {
   poule: string
   teams: TeamStanding[]
   qualifiedCount?: number
+  /** Titre personnalisé (sinon « Poule {poule} »). */
+  title?: string
 }
 
-export default function StandingsTable({ poule, teams, qualifiedCount = 2 }: Props) {
+export default function StandingsTable({ poule, teams, qualifiedCount = 2, title }: Props) {
   return (
     <div className="bg-white border border-petanque-sable-bord/60 rounded-xl overflow-hidden">
       <div className="px-5 py-3 bg-petanque-vert-fonce flex items-center justify-between">
-        <h3 className="text-petanque-sable text-sm font-medium">Poule {poule}</h3>
-        <span className="text-petanque-sable/70 text-[10px] uppercase tracking-widest">
-          {qualifiedCount} qualifié{qualifiedCount > 1 ? 's' : ''}
-        </span>
+        <h3 className="text-petanque-sable text-sm font-medium">{title || `Poule ${poule}`}</h3>
+        {qualifiedCount > 0 && (
+          <span className="text-petanque-sable/70 text-[10px] uppercase tracking-widest">
+            {qualifiedCount} qualifié{qualifiedCount > 1 ? 's' : ''}
+          </span>
+        )}
       </div>
       <table className="w-full">
         <thead className="bg-petanque-sable-pale border-b border-petanque-sable-bord/60">
@@ -43,7 +47,7 @@ export default function StandingsTable({ poule, teams, qualifiedCount = 2 }: Pro
         </thead>
         <tbody className="divide-y divide-petanque-sable-bord/40">
           {teams.map((t, i) => {
-            const isQualified = i < qualifiedCount
+            const isQualified = qualifiedCount > 0 && i < qualifiedCount
             return (
               <tr key={t.id} className={`hover:bg-petanque-sable-pale/40 transition-colors ${isQualified ? 'border-l-[3px] border-l-petanque-vert' : ''}`}>
                 <td className="px-5 py-3.5 font-mono text-xs text-petanque-bois w-12">{String(i + 1).padStart(2, '0')}</td>

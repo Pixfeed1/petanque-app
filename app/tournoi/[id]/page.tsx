@@ -1071,6 +1071,7 @@ export default function TournamentDetailPage() {
                   <StandingsTable
                     key={poule}
                     poule={poule}
+                    title={tournament.settings.nombreParties ? 'Classement général' : undefined}
                     teams={teamsByPoule[poule].map((t: any) => ({
                       id: t.id, name: t.name, played: t.played || 0,
                       victories: t.victories || 0, defeats: t.defeats || 0, draws: t.draws || 0,
@@ -1078,7 +1079,7 @@ export default function TournamentDetailPage() {
                       difference: t.difference || 0,
                       points: (t.victories || 0) * 3 + (t.draws || 0)
                     }))}
-                    qualifiedCount={tournament.settings.qualifiedPerPoule || 2}
+                    qualifiedCount={tournament.settings.nombreParties ? 0 : (tournament.settings.qualifiedPerPoule || 2)}
                   />
                 ))}
                 <div className="text-center pt-2">
@@ -1125,14 +1126,14 @@ export default function TournamentDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {teams.map(team => (
                 <div key={team.id} className="bg-white border border-petanque-sable-bord/60 rounded-xl p-5">
-                  <h3 className="text-base font-medium text-petanque-vert-fonce mb-3">{team.name}</h3>
-                  <div className="space-y-2">
+                  <h3 className="text-lg font-medium text-petanque-vert-fonce mb-3">{team.name}</h3>
+                  <div className="space-y-2.5">
                     {team.equipes_joueurs?.map((ej: any, i: number) => (
-                      <div key={i} className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium bg-petanque-sable text-petanque-vert-fonce">
+                      <div key={i} className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium bg-petanque-sable text-petanque-vert-fonce">
                           {ej.joueur?.name?.charAt(0)}
                         </div>
-                        <span className="text-sm text-petanque-bois">{ej.joueur?.name}</span>
+                        <span className="text-base text-petanque-vert-fonce">{ej.joueur?.name}</span>
                       </div>
                     ))}
                   </div>
