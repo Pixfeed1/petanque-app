@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { useToast } from '@/components/ui/Toast'
@@ -12,6 +12,7 @@ import {
 import { Button, BouleSvg, FadeIn } from '@/components/ui'
 import { Loader, Plus, X, Check } from '@/components/Icons'
 import { computePouleDistributions } from '@/lib/tournament/pouleDistributions'
+import { parseTournamentDescription } from '@/lib/tournament/describeParser'
 
 export default function CreateTournamentPage() {
   const router = useRouter()
@@ -229,9 +230,64 @@ export default function CreateTournamentPage() {
 // =============================================================
 // Étape 1 — Le tournoi
 // =============================================================
+function DescribeTournament({ updateFormField }: any) {
+  const [text, setText] = useState('')
+  const [detected, setDetected] = useState<string[] | null>(null)
+
+  const apply = () => {
+    const { fields, detected } = parseTournamentDescription(text)
+    // Pré-remplit les champs reconnus ; l'organisateur relit ensuite le wizard.
+    ;(Object.keys(fields) as Array<keyof typeof fields>).forEach((k) => {
+      updateFormField(k, fields[k])
+    })
+    setDetected(detected)
+  }
+
+  return (
+    <div className="bg-petanque-vert-pale/25 border border-petanque-vert/25 rounded-xl p-4 sm:p-5">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-petanque-vert-fonce font-medium">Décris ton tournoi</span>
+        <span className="text-[10px] text-petanque-bois">— optionnel</span>
+      </div>
+      <p className="text-xs text-petanque-bois mb-3">
+        Écris en une phrase, et on pré-remplit les réglages. Tu pourras tout relire et ajuster ensuite.
+      </p>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value.slice(0, 300))}
+        rows={2}
+        placeholder="Ex : Doublette mêlée tournante, en 11 points, mixité obligatoire, 4 terrains"
+        className="w-full px-4 py-3 bg-white border border-petanque-sable-bord rounded-lg focus:border-petanque-vert focus:outline-none text-sm text-petanque-vert-fonce placeholder:text-petanque-bois/50 resize-none"
+      />
+      <div className="flex items-center justify-between gap-3 mt-3 flex-wrap">
+        <Button variant="primary" size="sm" onClick={apply} disabled={!text.trim()}>
+          Pré-remplir le formulaire
+        </Button>
+        {detected && (
+          <p className="text-xs text-petanque-bois">
+            {detected.length === 0
+              ? "Rien de reconnu — remplis le formulaire à la main."
+              : `Compris : ${detected.length} réglage${detected.length > 1 ? 's' : ''}`}
+          </p>
+        )}
+      </div>
+      {detected && detected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {detected.map((d, i) => (
+            <span key={i} className="inline-flex items-center gap-1 bg-white border border-petanque-vert/25 rounded-full px-2.5 py-1 text-[11px] text-petanque-vert-fonce">
+              <Check className="w-3 h-3 text-petanque-vert" />{d}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Step1({ formData, updateFormField }: any) {
   return (
     <div className="space-y-7">
+      <DescribeTournament updateFormField={updateFormField} />
       <div>
         <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">
           Nom du tournoi *
