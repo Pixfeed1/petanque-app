@@ -6,6 +6,7 @@ import "./globals.css"
 import { AuthProvider } from "./providers/AuthProvider"
 import { ToastProvider } from "@/components/ui/Toast"
 import { FeedbackWidget } from "@/components/FeedbackWidget"
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister"
 
 // Polices servies localement (zéro appel réseau au build).
 // Geist + Geist Mono : fournis bundlés par le package "geist".
@@ -30,12 +31,23 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     siteName: "Pétanque Pro",
   },
+  // PWA : nom court sur l'écran d'accueil iOS + icône Apple.
+  appleWebApp: {
+    capable: true,
+    title: "Pétanque Pro",
+    statusBarStyle: "default",
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icons/apple-touch-icon.png",
+  },
 }
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  themeColor: "#1a3322",
 }
 
 export default function RootLayout({
@@ -50,6 +62,7 @@ export default function RootLayout({
           <ToastProvider>
             {children}
             <FeedbackWidget />
+            <ServiceWorkerRegister />
           </ToastProvider>
         </AuthProvider>
       </body>
