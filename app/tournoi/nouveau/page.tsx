@@ -783,8 +783,23 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
             </div>
           </label>
 
+          {formData.format !== 'tete_a_tete' && (
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.mixiteAdversaire || false}
+                onChange={(e) => updateFormField('mixiteAdversaire', e.target.checked)}
+                className="w-4 h-4 mt-0.5 rounded border-petanque-sable-bord text-petanque-vert focus:ring-petanque-vert/30"
+              />
+              <div>
+                <p className="text-sm text-petanque-vert-fonce font-medium">Mixité des adversaires</p>
+                <p className="text-xs text-petanque-bois">Chaque partie oppose des équipes de profil compatible (une équipe à majorité féminine ne tombe pas contre une majorité masculine). Exception tolérée si impossible.</p>
+              </div>
+            </label>
+          )}
+
           <p className="text-xs text-petanque-bois border-t border-petanque-vert/20 pt-4">
-            Les autres règles (points, mixité, fair-play, petite finale) se composent avec les options ci-dessous — le moteur les combine et déroule le tournoi manche par manche.
+            Les autres règles (points, mixité d'équipe, fair-play, petite finale) se composent avec les options ci-dessous — le moteur les combine et déroule le tournoi manche par manche.
           </p>
         </div>
       )}
