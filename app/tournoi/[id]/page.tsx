@@ -603,8 +603,9 @@ export default function TournamentDetailPage() {
               </FadeIn>
             )}
 
-            {/* Action requise — phases finales à générer (pas en mode « N parties ») */}
-            {tournament.status === 'en_cours' && isAdmin && tournament.mode !== 'melee_tournante' && !tournament.settings.nombreParties &&
+            {/* Action requise — phases finales à générer (pas en « N parties », ni en mode
+                personnalisé où c'est le moteur qui pilote l'avance). */}
+            {tournament.status === 'en_cours' && isAdmin && tournament.mode !== 'melee_tournante' && !isPersonnalise && !tournament.settings.nombreParties &&
              matches.some(m => m.type === 'poule' && m.status === 'termine') &&
              matches.filter(m => m.type === 'poule').every(m => m.status === 'termine') &&
              !matches.some(m => ['huitieme', 'quart', 'demi', 'finale'].includes(m.type || '')) && (
@@ -621,8 +622,8 @@ export default function TournamentDetailPage() {
               </FadeIn>
             )}
 
-            {/* Action requise — quarts/demis/finale */}
-            {tournament.status === 'en_cours' && isAdmin && (() => {
+            {/* Action requise — quarts/demis/finale (piloté par le moteur en mode perso) */}
+            {tournament.status === 'en_cours' && isAdmin && !isPersonnalise && (() => {
               const huit = matches.filter(m => m.type === 'huitieme')
               const quart = matches.filter(m => m.type === 'quart')
               const demi = matches.filter(m => m.type === 'demi')
@@ -949,7 +950,7 @@ export default function TournamentDetailPage() {
                       const score = m.score_a > m.score_b ? `${m.score_a}–${m.score_b}` : `${m.score_b}–${m.score_a}`
                       const loser = m.score_a > m.score_b ? eqB : eqA
                       const phaseLabel = (() => {
-                        if (m.type === 'poule') return m.poule ? `Poule ${m.poule}` : 'Poule'
+                        if (m.type === 'poule') return m.poule ? `Poule ${m.poule}` : (engineRounds ? `Manche ${m.tour}` : 'Poule')
                         if (m.type === 'huitieme') return '8e de finale'
                         if (m.type === 'quart') return 'Quart de finale'
                         if (m.type === 'demi') return 'Demi-finale'

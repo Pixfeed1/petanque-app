@@ -30,14 +30,23 @@ describe('adapter moteur ↔ payload', () => {
     expect(pm[1]).toMatchObject({ team_a_index: 2, team_b_index: null, type: 'bye', terrain: null })
   })
 
-  it('élimination + petite finale : types corrects', () => {
+  it('élimination : la finale (1 match) est typée « finale », la petite « petite_finale »', () => {
     const elimCfg: RuleConfig = { ...cfg, phases: [{ type: 'poules', pouleSize: 4, qualifiedPerPoule: 2 }, { type: 'elimination', petiteFinale: true }] }
     const pm = engineMatchesToPayload([
-      { a: 0, b: 1, phase: 1, round: 1 },
+      { a: 0, b: 1, phase: 1, round: 2 },
       { a: 2, b: 3, phase: 1, round: 2, poule: 'petite' },
     ], elimCfg, 0)
-    expect(pm[0].type).toBe('elimination')
+    expect(pm[0].type).toBe('finale')          // 1 seul match du tour → finale (podium détecte le champion)
     expect(pm[1].type).toBe('petite_finale')
+  })
+
+  it('élimination : un tour de 2 matchs → « demi »', () => {
+    const elimCfg: RuleConfig = { ...cfg, phases: [{ type: 'poules', pouleSize: 4, qualifiedPerPoule: 2 }, { type: 'elimination' }] }
+    const pm = engineMatchesToPayload([
+      { a: 0, b: 1, phase: 1, round: 1 },
+      { a: 2, b: 3, phase: 1, round: 1 },
+    ], elimCfg, 0)
+    expect(pm.every(m => m.type === 'demi')).toBe(true)
   })
 
   it('DB → moteur → avance : round-trip cohérent (équipes stables)', () => {

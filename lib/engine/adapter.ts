@@ -20,11 +20,22 @@ export interface PayloadMatch {
   status: string
 }
 
-/** Type de match DB à partir de la phase/poule moteur. */
-export function engineMatchType(m: EngineMatch, config: RuleConfig): string {
+/** Nombre de rencontres → tour d'élimination nommé (pour que le podium et l'UI
+ * reconnaissent la finale, la demie, etc. — sinon le champion n'est jamais détecté). */
+function elimRoundType(nbMatches: number): string {
+  if (nbMatches <= 1) return 'finale'
+  if (nbMatches === 2) return 'demi'
+  if (nbMatches <= 4) return 'quart'
+  if (nbMatches <= 8) return 'huitieme'
+  return 'elimination'
+}
+
+/** Type de match DB à partir de la phase/poule moteur. `elimRoundSize` = nb de matchs
+ * (hors bye) de ce tour d'élimination, pour nommer finale/demi/quart. */
+export function engineMatchType(m: EngineMatch, config: RuleConfig, elimRoundSize = 0): string {
   if (m.poule === 'petite') return 'petite_finale'
   const phase = config.phases[m.phase]
-  if (phase?.type === 'elimination') return 'elimination'
+  if (phase?.type === 'elimination') return elimRoundType(elimRoundSize)
   return 'poule'
 }
 
@@ -35,6 +46,10 @@ export function engineTeamsToPayload(teams: EngineTeam[], prefix = ''): PayloadT
 export function engineMatchesToPayload(
   matches: EngineMatch[], config: RuleConfig, terrains: number,
 ): PayloadMatch[] {
+  // Taille du tour d'élimination (hors bye, hors petite finale) → nommage finale/demi/quart.
+  const elimRoundSize = matches.filter(m =>
+    m.b !== null && m.poule !== 'petite' && config.phases[m.phase]?.type === 'elimination'
+  ).length
   let terrainCursor = 0
   return matches.map(m => {
     const isBye = m.b === null
@@ -44,7 +59,7 @@ export function engineMatchesToPayload(
       team_b_index: m.b,
       tour: m.round,
       terrain,
-      type: isBye ? 'bye' : engineMatchType(m, config),
+      type: isBye ? 'bye' : engineMatchType(m, config, elimRoundSize),
       poule: m.poule === 'petite' ? null : (m.poule ?? null),
       status: 'a_jouer',
     }
