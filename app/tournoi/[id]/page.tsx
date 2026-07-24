@@ -533,6 +533,8 @@ export default function TournamentDetailPage() {
                   ? <>{playerCount} joueur{playerCount > 1 ? 's' : ''}{tournament.status !== 'preparation' ? (tournament.settings.nombreParties ? ` · Partie ${Math.min(currentRotation, tournament.settings.nombreParties)} / ${tournament.settings.nombreParties}` : ` · Rotation ${currentRotation}`) : ''}</>
                   : engineRemixed
                   ? <>{playerCount} joueur{playerCount > 1 ? 's' : ''}</>
+                  : tournament.format === 'tete_a_tete'
+                  ? <>{teams.length} joueur{teams.length > 1 ? 's' : ''}</>
                   : <>{teams.length} équipe{teams.length > 1 ? 's' : ''}</>}
                 {' · '}{tournament.settings.terrains} terrain{tournament.settings.terrains > 1 ? 's' : ''}
               </p>

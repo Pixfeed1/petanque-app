@@ -830,7 +830,11 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
       )}
 
       <div className="space-y-3 border-t border-petanque-sable-bord/50 pt-6">
-        {advancedOptions.map(({ key, label, desc }) => (
+        {advancedOptions
+          // En mode Personnalisé, l'équilibrage par niveau se règle via « Formation des
+          // équipes » de l'éditeur → la case partagée ferait doublon.
+          .filter(({ key }) => formData.mode !== 'personnalise' || key !== 'equilibrageNiveau')
+          .map(({ key, label, desc }) => (
           <label key={key} className="flex items-start gap-3 cursor-pointer py-1">
             <input
               type="checkbox"
@@ -889,19 +893,22 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
               />
             </div>
           )}
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.eliminationFormat === 'double'}
-              onChange={(e) => updateFormField('eliminationFormat', e.target.checked ? 'double' : 'simple')}
-              disabled={!isClubPlan}
-              className="w-4 h-4 mt-0.5 rounded border-petanque-sable-bord text-petanque-vert focus:ring-petanque-vert/30 disabled:cursor-not-allowed"
-            />
-            <div>
-              <p className="text-sm text-petanque-vert-fonce font-medium">Double élimination</p>
-              <p className="text-xs text-petanque-bois">Une équipe doit perdre 2 matchs avant d'être éliminée</p>
-            </div>
-          </label>
+          {/* La double élimination n'est pas (encore) une brique du moteur → cachée en perso. */}
+          {formData.mode !== 'personnalise' && (
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.eliminationFormat === 'double'}
+                onChange={(e) => updateFormField('eliminationFormat', e.target.checked ? 'double' : 'simple')}
+                disabled={!isClubPlan}
+                className="w-4 h-4 mt-0.5 rounded border-petanque-sable-bord text-petanque-vert focus:ring-petanque-vert/30 disabled:cursor-not-allowed"
+              />
+              <div>
+                <p className="text-sm text-petanque-vert-fonce font-medium">Double élimination</p>
+                <p className="text-xs text-petanque-bois">Une équipe doit perdre 2 matchs avant d'être éliminée</p>
+              </div>
+            </label>
+          )}
         </div>
       </div>
     </div>
