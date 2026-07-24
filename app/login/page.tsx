@@ -571,20 +571,16 @@ function SocialLoginButtons({ onSocialLogin }: SocialLoginButtonsProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* Apple temporairement masqué : nécessite un compte Apple Developer (99 €/an)
+          + les identifiants (Services ID, Team ID, Key ID, clé .p8). Réactiver le bouton
+          et repasser en grid-cols-2 une fois « Sign in with Apple » configuré. */}
+      <div className="grid grid-cols-1 gap-3">
         <button
           onClick={() => onSocialLogin('google')}
           className="flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all hover:shadow-md"
         >
           {Icons.google}
           <span className="ml-2 text-sm font-medium text-gray-700">Google</span>
-        </button>
-        <button
-          onClick={() => onSocialLogin('apple')}
-          className="flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all hover:shadow-md"
-        >
-          {Icons.apple}
-          <span className="ml-2 text-sm font-medium text-gray-700">Apple</span>
         </button>
       </div>
     </>
