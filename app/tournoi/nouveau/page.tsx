@@ -625,6 +625,9 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
 
   return (
     <div className="space-y-9">
+      {/* En mode Personnalisé, poules / qualifiés / nombre de parties se règlent dans
+          l'éditeur de règles ci-dessous (pas de doublon). */}
+      {formData.mode !== 'personnalise' && (<>
       <div className="space-y-3">
         <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em]">Répartition des poules</label>
         {nbEquipes < 3 ? (
@@ -695,6 +698,7 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
             : 'Nombre de parties fixé : mêmes équipes, adversaires re-tirés à chaque partie, puis classement par équipe. (Sinon : poules → phases finales.)'}
         </p>
       </div>
+      </>)}
 
       {formData.mode === 'melee_tournante' && (
         <div>
@@ -767,7 +771,28 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
               </select>
             </div>
           ) : (
-            <p className="text-xs text-petanque-bois">Les poules et les qualifiés se règlent à la section « Répartition des poules » ci-dessus.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Taille de poule</label>
+                <select
+                  value={formData.pouleSize}
+                  onChange={(e) => updateFormField('pouleSize', parseInt(e.target.value))}
+                  className="w-full h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:outline-none text-sm text-petanque-vert-fonce"
+                >
+                  {[3, 4, 5, 6].map(n => <option key={n} value={n}>{n} équipes</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Qualifiés par poule</label>
+                <select
+                  value={formData.qualifiedPerPoule}
+                  onChange={(e) => updateFormField('qualifiedPerPoule', parseInt(e.target.value))}
+                  className="w-full h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:outline-none text-sm text-petanque-vert-fonce"
+                >
+                  {[1, 2, 3].map(n => <option key={n} value={n}>{n} qualifié{n > 1 ? 's' : ''}</option>)}
+                </select>
+              </div>
+            </div>
           )}
 
           <label className="flex items-start gap-3 cursor-pointer">
