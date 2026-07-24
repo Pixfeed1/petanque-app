@@ -118,9 +118,14 @@ export function buildTeamsAndMatches(
     for (const m of withTerrain) {
       matches.push({ team_a_index: m.a, team_b_index: m.b, tour: m.tour, terrain: m.terrain, type: 'poule', poule: m.poule, status: 'a_jouer' })
     }
-  } else if (cfg.mode === 'melee_tournante' && (cfg.mixiteAdversaire || cfg.nombreParties)) {
+  } else if (
+    (cfg.mode === 'melee_tournante' && (cfg.mixiteAdversaire || cfg.nombreParties)) ||
+    (cfg.mode === 'melee_fixe' && cfg.nombreParties)
+  ) {
     // MODE « PARTIES » / MIXITÉ ADVERSAIRE : la partie 1 est UN match par équipe
-    // (pas un round-robin). Si mixité adversaire : appariement par profil de genre
+    // (pas un round-robin de poules). Vaut aussi pour la MÊLÉE FIXE en N parties
+    // (mêmes équipes, adversaires re-tirés à chaque partie) — sinon on générait des
+    // poules au lieu de parties. Si mixité adversaire : appariement par profil de genre
     // compatible (jamais 2F+1H contre 2H+1F) ; sinon appariement simple.
     const genderById = new Map<string, 'H' | 'F'>()
     for (const p of combinedPlayers) genderById.set(p.id, p.gender === 'F' ? 'F' : 'H')

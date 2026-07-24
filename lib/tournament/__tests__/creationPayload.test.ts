@@ -58,6 +58,21 @@ describe('buildTeamsAndMatches', () => {
     expect(matches.every(m => m.tour === 1)).toBe(true)
   })
 
+  it('MÊLÉE FIXE + N parties : partie 1 = une ronde (PAS des poules) — toutes les équipes jouent', () => {
+    // Régression : la mêlée fixe en N parties générait des poules (matchs type=poule A/B)
+    // au lieu de parties → certaines équipes ne jouaient pas chaque partie.
+    const cfg: CreationComposition = { format: 'doublette', mode: 'melee_fixe', mixiteObligatoire: false, nombreParties: 3, pouleSize: 4, terrains: 2 }
+    const { teams, matches } = buildTeamsAndMatches(cfg, players(12)) // 6 équipes
+    assertValid(teams, matches)
+    expect(teams).toHaveLength(6)
+    expect(matches.length).toBe(teams.length / 2) // 3 matchs = une ronde, pas des poules
+    expect(matches.every(m => m.tour === 1)).toBe(true)
+    expect(matches.every(m => m.poule === null)).toBe(true) // pas de poule
+    // Toutes les équipes jouent la partie 1 (aucune laissée sur le banc)
+    const playing = new Set(matches.flatMap(m => [m.team_a_index, m.team_b_index]))
+    expect(playing.size).toBe(6)
+  })
+
   it('équilibrage par niveau : doublette compose des équipes de force homogène', () => {
     // 2 forts (niveau 1400), 2 faibles (600) → chaque équipe = 1 fort + 1 faible (total égal).
     const ps: PlayerRef[] = [
