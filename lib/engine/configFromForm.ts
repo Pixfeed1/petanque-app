@@ -19,8 +19,9 @@ export interface EngineFormValues {
   rounds?: number
   pouleSize?: number
   qualifiedPerPoule?: number
-  /** Ordre de départage ; défaut FIPJP. Si headToHeadFirst, la confrontation directe passe avant la différence. */
-  headToHeadFirst?: boolean
+  /** Départage : par défaut FIPJP (points → confrontation directe → différence).
+   * Si diffFirst, la différence de points passe AVANT la confrontation directe. */
+  diffFirst?: boolean
   seed?: number
 }
 
@@ -31,9 +32,10 @@ export function configFromForm(v: EngineFormValues): RuleConfig {
   const teamSize = teamSizeOf(v.format)
   const method: FormationMethod = v.engineFormation ?? 'random'
 
-  const tiebreakers: TiebreakCriterion[] = v.headToHeadFirst
-    ? ['points', 'headToHead', 'goalDiff', 'goalsFor']
-    : ['points', 'goalDiff', 'headToHead', 'goalsFor']
+  // Défaut = FIPJP (confrontation directe avant différence). diffFirst inverse ces deux.
+  const tiebreakers: TiebreakCriterion[] = v.diffFirst
+    ? ['points', 'goalDiff', 'headToHead', 'goalsFor']
+    : ['points', 'headToHead', 'goalDiff', 'goalsFor']
 
   const structure = v.engineStructure ?? 'rounds'
   const phases: PhaseRule[] = structure === 'poules'

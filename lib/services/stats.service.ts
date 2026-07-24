@@ -381,6 +381,63 @@ export function sortTeamsByFIPJPRules(
   return result
 }
 
+/** Critères de départage composables (mode Personnalisé). */
+export type SortCriterion = 'points' | 'victories' | 'goalDiff' | 'goalsFor' | 'headToHead' | 'niveau'
+
+/**
+ * Trie les équipes selon une LISTE ORDONNÉE de critères choisie par l'organisateur
+ * (mode Personnalisé). C'est ce qui rend le départage réellement « perso » : l'ordre
+ * décidé dans l'éditeur pilote le classement AFFICHÉ, pas seulement le moteur interne.
+ *
+ * La confrontation directe est évaluée entre les deux équipes comparées (différence de
+ * points sur leurs face-à-face, éventuellement restreinte à une poule). Départage final
+ * stable : ordre alphabétique.
+ */
+export function sortTeamsByCriteria(
+  teams: TeamStats[],
+  matches: Match[] | undefined,
+  criteria: SortCriterion[],
+  poule?: string,
+  niveauById?: Map<string, number>,
+): TeamStats[] {
+  const headToHead = (a: TeamStats, b: TeamStats): number => {
+    if (!matches) return 0
+    let diff = 0
+    for (const m of matches) {
+      if (m.status !== 'termine') continue
+      if (poule && m.poule !== poule) continue
+      const aId = m.equipe_a_id, bId = m.equipe_b_id
+      if (!aId || !bId) continue
+      const sa = m.score_a ?? 0, sb = m.score_b ?? 0
+      if (aId === a.id && bId === b.id) diff += sa - sb
+      else if (aId === b.id && bId === a.id) diff += sb - sa
+    }
+    return diff
+  }
+  const value = (t: TeamStats, c: SortCriterion): number => {
+    switch (c) {
+      case 'points': return t.points
+      case 'victories': return t.victories
+      case 'goalDiff': return t.difference
+      case 'goalsFor': return t.pointsFor
+      case 'niveau': return niveauById?.get(t.id) ?? 0
+      default: return 0
+    }
+  }
+  return [...teams].sort((a, b) => {
+    for (const c of criteria) {
+      if (c === 'headToHead') {
+        const h = headToHead(a, b)
+        if (h !== 0) return -h
+        continue
+      }
+      const d = value(b, c) - value(a, c)
+      if (d !== 0) return d
+    }
+    return a.name.localeCompare(b.name)
+  })
+}
+
 /**
  * Trie les joueurs selon les règles FIPJP
  * Mêmes règles que pour les équipes

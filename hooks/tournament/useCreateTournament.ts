@@ -40,7 +40,7 @@ export interface TournamentFormData {
   // Mode « Personnalisé » (moteur de règles libre)
   engineFormation: 'random' | 'balanced' | 'remixed'
   engineStructure: 'rounds' | 'poules'
-  headToHeadFirst: boolean
+  diffFirst: boolean
 
   // Étape 3 - Joueurs
   selectedPlayers: string[]
@@ -90,7 +90,7 @@ const initialFormData: TournamentFormData = {
   equilibrageNiveau: false,
   engineFormation: 'random',
   engineStructure: 'rounds',
-  headToHeadFirst: false,
+  diffFirst: false,
   selectedPlayers: [],
   newPlayers: [],
   visibility: 'private',

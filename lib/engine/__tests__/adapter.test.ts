@@ -88,10 +88,15 @@ describe('configFromForm', () => {
     expect(c.phases[1].petiteFinale).toBe(true)
   })
 
-  it('fair-play → capDiff 5 ; headToHeadFirst réordonne le départage', () => {
-    const c = configFromForm({ format: 'triplette', fairPlay: true, headToHeadFirst: true })
+  it('fair-play → capDiff 5 ; défaut FIPJP (confrontation directe avant différence)', () => {
+    const c = configFromForm({ format: 'triplette', fairPlay: true })
     expect(c.scoring.capDiff).toBe(5)
-    expect(c.tiebreakers.slice(0, 2)).toEqual(['points', 'headToHead'])
+    expect(c.tiebreakers.slice(0, 3)).toEqual(['points', 'headToHead', 'goalDiff'])
+  })
+
+  it('diffFirst → la différence passe avant la confrontation directe', () => {
+    const c = configFromForm({ format: 'triplette', diffFirst: true })
+    expect(c.tiebreakers.slice(0, 3)).toEqual(['points', 'goalDiff', 'headToHead'])
   })
 
   it('recomposé → antiRematch activé', () => {

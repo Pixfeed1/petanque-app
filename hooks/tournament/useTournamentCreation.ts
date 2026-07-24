@@ -194,7 +194,7 @@ export function useTournamentCreation({
           rounds: formData.nombreParties || 3,
           pouleSize: formData.pouleSize,
           qualifiedPerPoule: formData.qualifiedPerPoule,
-          headToHeadFirst: formData.headToHeadFirst,
+          diffFirst: formData.diffFirst,
           seed: Rng.seedFromString(formData.name.trim() + formData.date),
         })
         const enginePlayers: EnginePlayer[] = combinedPlayers.map(p => ({

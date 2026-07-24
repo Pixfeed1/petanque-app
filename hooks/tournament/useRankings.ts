@@ -125,12 +125,13 @@ export function useRankings({
         points: (team.victories ?? 0) * 3 + (team.draws ?? 0)
       }))
 
-      // Utiliser le service avec confrontation directe
-      const sorted = StatsService.sortTeamsByFIPJPRules(
-        teamsStats,
-        matches as unknown as MatchType[],
-        poule
-      )
+      // Mode Personnalisé : respecter l'ORDRE de départage choisi dans l'éditeur
+      // (sinon le classement affiché ignorerait la règle perso). Sinon : FIPJP standard.
+      const engineTiebreakers = tournament?.settings?.ruleEngine?.tiebreakers as
+        StatsService.SortCriterion[] | undefined
+      const sorted = engineTiebreakers && engineTiebreakers.length > 0
+        ? StatsService.sortTeamsByCriteria(teamsStats, matches as unknown as MatchType[], engineTiebreakers, poule)
+        : StatsService.sortTeamsByFIPJPRules(teamsStats, matches as unknown as MatchType[], poule)
 
       // Remplacer la poule triée en gardant les propriétés complètes
       const originalPouleTeams = poules[poule]
@@ -140,7 +141,7 @@ export function useRankings({
     })
 
     return poules
-  }, [teamsWithStats, matches])
+  }, [teamsWithStats, matches, tournament])
 
   /**
    * Charge le classement individuel (pour mêlée tournante)

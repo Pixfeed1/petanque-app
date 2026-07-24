@@ -798,13 +798,13 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
           <label className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"
-              checked={formData.headToHeadFirst || false}
-              onChange={(e) => updateFormField('headToHeadFirst', e.target.checked)}
+              checked={formData.diffFirst || false}
+              onChange={(e) => updateFormField('diffFirst', e.target.checked)}
               className="w-4 h-4 mt-0.5 rounded border-petanque-sable-bord text-petanque-vert focus:ring-petanque-vert/30"
             />
             <div>
-              <p className="text-sm text-petanque-vert-fonce font-medium">Confrontation directe prioritaire</p>
-              <p className="text-xs text-petanque-bois">En cas d'égalité de points, départager d'abord par confrontation directe (au lieu de la différence de points).</p>
+              <p className="text-sm text-petanque-vert-fonce font-medium">Différence de points prioritaire</p>
+              <p className="text-xs text-petanque-bois">Par défaut (FIPJP), l'égalité de points se départage par confrontation directe. Coche pour départager d'abord par différence de points.</p>
             </div>
           </label>
 

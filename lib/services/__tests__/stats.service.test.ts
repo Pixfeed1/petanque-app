@@ -7,8 +7,10 @@ import {
   calculateTeamStats,
   calculatePlayerStats,
   sortTeamsByFIPJPRules,
+  sortTeamsByCriteria,
   sortPlayersByFIPJPRules,
-  groupTeamsByPoule
+  groupTeamsByPoule,
+  type TeamStats,
 } from '../stats.service'
 import type { Match, Joueur } from '@/lib/types'
 
@@ -294,6 +296,35 @@ describe('StatsService', () => {
 
       expect(sorted[0].name).toBe('Aigles') // Ordre alphabétique
       expect(sorted[1].name).toBe('Zèbres')
+    })
+  })
+
+  describe('sortTeamsByCriteria (départage composable — mode Personnalisé)', () => {
+    // A et B à égalité de points : A a battu B en direct, mais B a une meilleure
+    // différence générale → l'ORDRE des critères choisi doit inverser le classement.
+    const mk = (id: string, name: string, difference: number): TeamStats => ({
+      id, name, played: 2, victories: 1, defeats: 1, draws: 0,
+      pointsFor: 0, pointsAgainst: 0, difference, points: 3,
+    })
+    const teams = [mk('A', 'Alpha', 3), mk('B', 'Bravo', 5)]
+    const matches = [
+      { id: 'm1', equipe_a_id: 'A', equipe_b_id: 'B', score_a: 13, score_b: 7, status: 'termine', poule: 'A' },
+    ] as unknown as Match[]
+
+    it('confrontation directe prioritaire → A devant B (A a gagné le face-à-face)', () => {
+      const sorted = sortTeamsByCriteria(teams, matches, ['points', 'headToHead', 'goalDiff'])
+      expect(sorted.map(t => t.id)).toEqual(['A', 'B'])
+    })
+
+    it('différence prioritaire → B devant A (meilleure différence générale)', () => {
+      const sorted = sortTeamsByCriteria(teams, matches, ['points', 'goalDiff', 'headToHead'])
+      expect(sorted.map(t => t.id)).toEqual(['B', 'A'])
+    })
+
+    it('l’ordre des critères change réellement le classement', () => {
+      const h2h = sortTeamsByCriteria(teams, matches, ['points', 'headToHead', 'goalDiff']).map(t => t.id)
+      const diff = sortTeamsByCriteria(teams, matches, ['points', 'goalDiff', 'headToHead']).map(t => t.id)
+      expect(h2h).not.toEqual(diff)
     })
   })
 
