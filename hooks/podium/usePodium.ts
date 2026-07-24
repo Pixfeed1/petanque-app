@@ -361,11 +361,13 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
   }
 
   const animatePodium = () => {
-    // Stocker les timeouts pour cleanup
+    // Révélation cumulative : 3e (step 1), puis 2e (step 2), puis champion (step 3).
+    // FIX : l'ancienne séquence 3→2→1 finissait à step 1 et MASQUAIT les 2e/3e places
+    // (isVisible = step >= 4 - position). On monte donc 1→2→3 pour tout garder affiché.
     animationTimeoutsRef.current = [
-      setTimeout(() => setAnimationStep(3), 300),  // 3eme
-      setTimeout(() => setAnimationStep(2), 600),  // 2eme
-      setTimeout(() => setAnimationStep(1), 900),  // 1er
+      setTimeout(() => setAnimationStep(1), 300),  // 3e révélé
+      setTimeout(() => setAnimationStep(2), 600),  // 2e révélé
+      setTimeout(() => setAnimationStep(3), 900),  // champion révélé
       setTimeout(() => fireConfetti(), 1200)
     ]
   }

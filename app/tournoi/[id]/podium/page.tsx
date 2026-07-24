@@ -256,7 +256,8 @@ interface PodiumSpotProps {
 }
 
 function PodiumSpot({ position, team, animationStep, generatingCertificate, onGenerateCertificate }: PodiumSpotProps) {
-  const isVisible = animationStep >= position
+  // Révélation cumulative 3e → 2e → champion : chaque place reste visible une fois révélée.
+  const isVisible = animationStep >= (4 - position)
   const isFirst = position === 1
 
   const variant: 'acier' | 'cochonnet' | 'vert' = isFirst ? 'acier' : position === 2 ? 'cochonnet' : 'vert'
