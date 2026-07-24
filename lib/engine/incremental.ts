@@ -43,13 +43,28 @@ function genderProfiles(teams: EngineTeam[], players: EnginePlayer[]): GenderPro
   return teams.map(t => teamGenderProfile(t.joueur_ids, g))
 }
 
-/** Appariement d'une manche (glouton, mixité + anti-rematch), ordre à graine. */
+/**
+ * Appariement d'une manche (glouton, mixité + anti-rematch), ordre à graine.
+ * `byeCount` (optionnel) = nombre de fois où chaque équipe a déjà été exempte : à
+ * effectif impair, l'exempt est donné à l'équipe la MOINS exemptée jusqu'ici (égalités
+ * départagées à la graine) → le bye TOURNE équitablement, personne n'est largué.
+ */
 function pairTeams(
   teams: EngineTeam[], rng: Rng, profiles: GenderProfile[] | null,
-  played: Set<string>, useMixite: boolean,
+  played: Set<string>, useMixite: boolean, byeCount?: Map<string, number>,
 ): Array<[number, number | null]> {
-  const remaining = rng.shuffle(teams.map((_, i) => i))
+  let shuffled = rng.shuffle(teams.map((_, i) => i))
   const pairs: Array<[number, number | null]> = []
+
+  // Effectif impair : choisir l'exempt le plus « frais » AVANT d'apparier le reste.
+  let forcedBye: number | null = null
+  if (shuffled.length % 2 === 1 && byeCount) {
+    forcedBye = shuffled.reduce((best, i) =>
+      (byeCount.get(teams[i].id) ?? 0) < (byeCount.get(teams[best].id) ?? 0) ? i : best, shuffled[0])
+    shuffled = shuffled.filter(i => i !== forcedBye)
+  }
+
+  const remaining = shuffled
   while (remaining.length > 1) {
     const a = remaining.shift() as number
     let best = 0, bestScore = -1
@@ -63,7 +78,9 @@ function pairTeams(
     const b = remaining.splice(best, 1)[0]
     pairs.push([a, b])
   }
-  if (remaining.length === 1) pairs.push([remaining[0], null])
+  // Exempt : soit celui choisi équitablement, soit le dernier non apparié.
+  if (forcedBye !== null) pairs.push([forcedBye, null])
+  else if (remaining.length === 1) pairs.push([remaining[0], null])
   return pairs
 }
 
@@ -168,11 +185,16 @@ export function advance(
       const pairs = pairTeams(nt, rng, profiles, new Set(), useMixite)
       return none({ phaseIndex, newTeams: nt, newMatches: mkMatches(pairs, nt, phaseIndex, nextRound, null) })
     }
-    // Équipes stables : anti-rematch d'adversaires sur les rencontres déjà jouées.
+    // Équipes stables : anti-rematch d'adversaires sur les rencontres déjà jouées,
+    // et historique des exempts pour faire TOURNER le bye équitablement.
     const played = new Set<string>()
-    for (const m of phaseMatches) if (m.b !== null) played.add(pairKey(teams[m.a].id, teams[m.b as number].id))
+    const byeCount = new Map<string, number>()
+    for (const m of phaseMatches) {
+      if (m.b !== null) played.add(pairKey(teams[m.a].id, teams[m.b as number].id))
+      else if (teams[m.a]) byeCount.set(teams[m.a].id, (byeCount.get(teams[m.a].id) ?? 0) + 1)
+    }
     const profiles = useMixite ? genderProfiles(teams, players) : null
-    const pairs = pairTeams(teams, rng, profiles, played, useMixite)
+    const pairs = pairTeams(teams, rng, profiles, played, useMixite, byeCount)
     return none({ phaseIndex, newMatches: mkMatches(pairs, teams, phaseIndex, nextRound, null) })
   }
 

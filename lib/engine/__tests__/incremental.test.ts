@@ -93,6 +93,37 @@ describe('exécution incrémentale — flux de production', () => {
     void teams
   })
 
+  it('effectif impair (équipes stables) : le bye TOURNE — aucune équipe exempte 2× avant que toutes le soient', () => {
+    // 10 joueurs en doublette → 5 équipes → une exempte par manche. Sur 4 manches,
+    // les 4 exempts doivent être 4 équipes distinctes (rotation équitable).
+    const config = presetNParties({ teamSize: 2, rounds: 4, seed: 11 })
+    const players = makePlayers(10, 11)
+    const start = startTournament(config, players)
+    const teams = start.teams.map((t, i) => ({ ...t, id: t.id || String(i) }))
+    const matches: EngineMatch[] = []
+    const rng = new Rng(123)
+    const pushScored = (batch: EngineMatch[]) => {
+      for (const m of batch) {
+        if (m.b === null) { matches.push({ ...m }); continue }
+        const loser = rng.int(13)
+        const aWins = rng.next() < 0.5
+        matches.push({ ...m, scoreA: aWins ? 13 : loser, scoreB: aWins ? loser : 13 })
+      }
+    }
+    pushScored(start.matches)
+    for (let i = 0; i < 4; i++) {
+      const res = advance(config, players, teams, matches)
+      if (res.done) break
+      pushScored(res.newMatches)
+    }
+    const byeTeamsByRound = new Map<number, string>()
+    for (const m of matches) if (m.b === null) byeTeamsByRound.set(m.round, teams[m.a].id)
+    const byes = [...byeTeamsByRound.values()]
+    expect(byes.length).toBeGreaterThanOrEqual(3)
+    // 4 manches ≤ 5 équipes → tous les exempts distincts
+    expect(new Set(byes).size).toBe(byes.length)
+  })
+
   it('déterminisme : même config → même prochain lot après rechargement', () => {
     const config = presetNParties({ teamSize: 2, rounds: 3, seed: 42 })
     const players = makePlayers(8, 42)
