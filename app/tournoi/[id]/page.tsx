@@ -382,6 +382,12 @@ export default function TournamentDetailPage() {
   const isPersonnalise = tournament.mode === 'personnalise'
   const engineRounds = isPersonnalise && (tournament.settings?.ruleEngine as { phases?: { type: string }[] } | undefined)?.phases?.[0]?.type === 'rounds'
   const engineRemixed = isPersonnalise && (tournament.settings?.ruleEngine as { formation?: { method?: string } } | undefined)?.formation?.method === 'remixed'
+  // Mode « N parties » (mêlée fixe/tournante) : structure en parties, PAS en poules →
+  // on coupe le vocabulaire « poules » (entête, stepper, composition).
+  const partiesMode = !!tournament.settings?.nombreParties
+  // Structure sans poules ni phases finales (parties libres / manches du moteur).
+  const noPouleStructure = engineRounds || partiesMode
+  const structureLabel = engineRounds ? 'Manches' : 'Parties'
   const modeLabel = tournament.mode === 'choisi' ? 'choisi'
     : tournament.mode === 'melee_fixe' ? 'mêlée fixe'
     : tournament.mode === 'personnalise' ? 'personnalisé'
@@ -505,7 +511,7 @@ export default function TournamentDetailPage() {
             <FadeIn>
               <p className="text-[11px] font-medium text-petanque-bois uppercase tracking-[0.18em] mb-3">
                 {tournament.status === 'preparation' ? 'En préparation' :
-                 tournament.status === 'en_cours' ? `En cours · ${engineRounds ? 'Manches' : currentPhase === 'poules' ? 'Phase de poules' : currentPhase === 'elimination' ? 'Phases finales' : 'Finale'}` :
+                 tournament.status === 'en_cours' ? `En cours · ${noPouleStructure ? structureLabel : currentPhase === 'poules' ? 'Phase de poules' : currentPhase === 'elimination' ? 'Phases finales' : 'Finale'}` :
                  'Tournoi terminé'}
               </p>
               <h2 className="text-4xl md:text-5xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.05] mb-3">
@@ -517,7 +523,7 @@ export default function TournamentDetailPage() {
                   )
                 )}
                 {tournament.status === 'en_cours' && liveMatches.length > 0 && (
-                  <>{liveMatches.length} match{liveMatches.length > 1 ? 's' : ''} en parallèle, <span className="accent-italic text-petanque-vert">{engineRounds ? 'les manches avancent.' : currentPhase === 'poules' ? 'la phase de poules avance.' : 'phases finales.'}</span></>
+                  <>{liveMatches.length} match{liveMatches.length > 1 ? 's' : ''} en parallèle, <span className="accent-italic text-petanque-vert">{noPouleStructure ? (engineRounds ? 'les manches avancent.' : 'les parties avancent.') : currentPhase === 'poules' ? 'la phase de poules avance.' : 'phases finales.'}</span></>
                 )}
                 {tournament.status === 'en_cours' && liveMatches.length === 0 && (
                   <>Tour en attente, <span className="accent-italic text-petanque-vert">prochain tour à lancer.</span></>
@@ -541,7 +547,7 @@ export default function TournamentDetailPage() {
             </FadeIn>
 
             {/* Stepper de phases (en_cours et termine seulement, pas mêlée tournante) */}
-            {tournament.status !== 'preparation' && tournament.mode !== 'melee_tournante' && !engineRounds && phasesSteps.length > 0 && (
+            {tournament.status !== 'preparation' && tournament.mode !== 'melee_tournante' && !noPouleStructure && phasesSteps.length > 0 && (
               <FadeIn delay={80}>
                 <div className="my-8 py-5 border-y border-petanque-sable-bord/50 flex items-center overflow-x-auto">
                   {phasesSteps.map((step, i) => (
@@ -835,7 +841,7 @@ export default function TournamentDetailPage() {
               </FadeIn>
             )}
 
-            {tournament.status === 'en_cours' && currentPhase === 'poules' && tournament.mode !== 'melee_tournante' && !engineRounds && leadersByPoule.length > 0 && teamsByPoule && !matches.some(m => m.type === 'poule' && m.status === 'termine') && (
+            {tournament.status === 'en_cours' && currentPhase === 'poules' && tournament.mode !== 'melee_tournante' && !noPouleStructure && leadersByPoule.length > 0 && teamsByPoule && !matches.some(m => m.type === 'poule' && m.status === 'termine') && (
               <FadeIn delay={200}>
                 <div className="mt-14">
                   <div className="flex items-baseline justify-between mb-4">
@@ -860,7 +866,7 @@ export default function TournamentDetailPage() {
             )}
 
             {/* LEADERS de chaque poule */}
-            {tournament.status === 'en_cours' && currentPhase === 'poules' && tournament.mode !== 'melee_tournante' && !engineRounds && leadersByPoule.length > 0 && matches.some(m => m.type === 'poule' && m.status === 'termine') && (
+            {tournament.status === 'en_cours' && currentPhase === 'poules' && tournament.mode !== 'melee_tournante' && !noPouleStructure && leadersByPoule.length > 0 && matches.some(m => m.type === 'poule' && m.status === 'termine') && (
               <FadeIn delay={200}>
                 <div className="mt-14">
                   <div className="flex items-baseline justify-between mb-4">
