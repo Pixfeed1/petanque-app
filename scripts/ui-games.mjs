@@ -20,7 +20,12 @@ const tryClick = async (t, to = 3500) => { try { await click(t, to); return true
 const conf = async () => { await page.waitForTimeout(600); await page.getByRole('button', { name: 'Démarrer', exact: true }).first().click({ timeout: 4000 }).catch(() => {}); await page.waitForTimeout(1800) }
 const getTournoi = async (tid) => (await (await fetch(`${BASE}/api/tournois/${tid}`, { headers: H })).json())
 const pendingMatches = async (tid) => { const d = await (await fetch(`${BASE}/api/matches?tournoi_id=${tid}`, { headers: H })).json(); const ms = Array.isArray(d) ? d : d.matches || []; return ms.filter(m => m.equipe_b && m.status !== 'termine').map(m => m.id) }
-const reload = async (tid) => { await page.goto(`${BASE}/tournoi/${tid}`, { waitUntil: 'domcontentloaded' }); await page.waitForTimeout(1600) }
+const reload = async (tid) => {
+  await page.goto(`${BASE}/tournoi/${tid}`, { waitUntil: 'domcontentloaded' })
+  // Le serveur de dev est lent à compiler : attendre le vrai contenu (plus « Chargement… »).
+  await page.waitForFunction(() => !document.body.innerText.includes('Chargement'), { timeout: 30000 }).catch(() => {})
+  await page.waitForTimeout(1200)
+}
 
 // Joue UN match dans la vraie page /match : mènes jusqu'à 13 pour l'équipe A, puis Confirmer.
 async function playMatchUI(mid) {
@@ -68,10 +73,10 @@ async function playTournament(name) {
     for (const mid of pend) { await playMatchUI(mid) }
     await reload(tid)
     if ((await getTournoi(tid)).status === 'termine') break
-    const advanced = await tryClick('Lancer les phases finales', 3000)
-      || await tryClick('Lancer les quarts', 2500)
-      || await tryClick('Lancer les demi', 2500)
-      || await tryClick('Lancer la finale', 2500)
+    const advanced = await tryClick('Lancer les phases finales', 6000)
+      || await tryClick('Lancer les quarts', 5000)
+      || await tryClick('Lancer les demi', 5000)
+      || await tryClick('Lancer la finale', 5000)
     await page.waitForTimeout(1500)
     if (!advanced) {
       // plus de phase à lancer et il reste peut-être la clôture
