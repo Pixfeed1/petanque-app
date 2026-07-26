@@ -32,6 +32,15 @@ export async function POST(request: NextRequest) {
     // Authentification
     const session = await authenticateUser(email, password)
 
+    // Auto-liaison des fiches joueur dont l'email correspond (best-effort, ne bloque
+    // jamais la connexion). Rattache une fiche non liée créée par un organisateur.
+    try {
+      const { autoLinkByEmail } = await import('@/lib/services/playerAccounts')
+      await autoLinkByEmail(session.user.id, session.user.email)
+    } catch (e) {
+      console.error('auto-link joueur (login, non bloquant):', e)
+    }
+
     // Connexion réussie : réinitialiser le rate limit pour cet IP
     resetRateLimit(request, 'login')
 

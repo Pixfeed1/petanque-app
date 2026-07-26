@@ -93,6 +93,16 @@ export async function POST(request: NextRequest) {
       return { user, organisation, token }
     })
 
+    // Auto-liaison des fiches joueur dont l'email correspond (best-effort). Permet à
+    // un joueur invité (fiche créée par un organisateur avec son email) de récupérer
+    // sa fiche dès l'inscription.
+    try {
+      const { autoLinkByEmail } = await import('@/lib/services/playerAccounts')
+      await autoLinkByEmail(result.user.id, result.user.email)
+    } catch (e) {
+      console.error('auto-link joueur (signup, non bloquant):', e)
+    }
+
     // Inscription réussie : reset du rate limit pour cet IP
     resetRateLimit(request, 'signup')
 
