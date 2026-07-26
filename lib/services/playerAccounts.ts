@@ -89,37 +89,59 @@ export async function userIdForJoueur(joueurId: string): Promise<string | null> 
 }
 
 /**
- * Lie une fiche à un utilisateur. Échoue proprement si :
+ * Lie une fiche à un utilisateur, de façon ATOMIQUE (verrou FOR UPDATE) pour éviter
+ * qu'un même fiche soit réclamée par deux comptes en même temps (code club).
+ * Échoue proprement si :
  *  - la fiche est déjà liée à un AUTRE utilisateur (LINKED_TO_OTHER)
  *  - l'utilisateur a déjà une fiche dans cette organisation (ALREADY_HAS_PROFILE)
  * Idempotent si la fiche est déjà liée à ce même utilisateur.
  */
 export async function linkJoueurToUser(joueurId: string, userId: string): Promise<void> {
-  const joueur = await queryOne<JoueurRow>(
-    'SELECT id, org_id, name, email, user_id FROM joueurs WHERE id = $1',
-    [joueurId]
-  )
-  if (!joueur) throw new Error('JOUEUR_NOT_FOUND')
-  if (joueur.user_id === userId) return // déjà lié à ce compte
-  if (joueur.user_id) throw new Error('LINKED_TO_OTHER')
+  await transaction(async (client) => {
+    const joueur = (await client.query<JoueurRow>(
+      'SELECT id, org_id, name, email, user_id FROM joueurs WHERE id = $1 FOR UPDATE',
+      [joueurId]
+    )).rows[0]
+    if (!joueur) throw new Error('JOUEUR_NOT_FOUND')
+    if (joueur.user_id === userId) return // déjà lié à ce compte
+    if (joueur.user_id) throw new Error('LINKED_TO_OTHER')
 
-  const existing = await queryOne<{ id: string }>(
-    'SELECT id FROM joueurs WHERE org_id = $1 AND user_id = $2',
-    [joueur.org_id, userId]
-  )
-  if (existing) throw new Error('ALREADY_HAS_PROFILE')
+    const existing = (await client.query<{ id: string }>(
+      'SELECT id FROM joueurs WHERE org_id = $1 AND user_id = $2',
+      [joueur.org_id, userId]
+    )).rows[0]
+    if (existing) throw new Error('ALREADY_HAS_PROFILE')
 
-  await query('UPDATE joueurs SET user_id = $1, updated_at = NOW() WHERE id = $2', [userId, joueurId])
+    // Garde AND user_id IS NULL : verrou de sécurité même en cas de course.
+    const upd = await client.query(
+      'UPDATE joueurs SET user_id = $1, updated_at = NOW() WHERE id = $2 AND user_id IS NULL',
+      [userId, joueurId]
+    )
+    if (upd.rowCount === 0) throw new Error('LINKED_TO_OTHER')
+  })
 }
 
 /**
  * Auto-liaison à l'inscription/connexion : rattache les fiches non liées dont
  * l'email correspond à celui du compte, en respectant « une fiche par org ».
  * Retourne le nombre de fiches nouvellement rattachées.
+ *
+ * SÉCURITÉ : ne s'active QUE si l'email du compte est VÉRIFIÉ (email_verified).
+ * Sinon, n'importe qui connaissant l'email d'un joueur (donnée peu secrète, saisie
+ * par l'organisateur) pourrait s'inscrire avec cet email et s'approprier sa fiche.
+ * Aujourd'hui seul l'OAuth (Google/Apple) fournit un email vérifié ; les inscriptions
+ * par mot de passe ne déclenchent donc pas l'auto-liaison (elles passent par
+ * l'invitation ou le code club).
  */
 export async function autoLinkByEmail(userId: string, email: string): Promise<number> {
   const norm = normalizeEmail(email)
   if (!norm) return 0
+
+  const account = await queryOne<{ email_verified: boolean }>(
+    'SELECT email_verified FROM users WHERE id = $1',
+    [userId]
+  )
+  if (!account?.email_verified) return 0
   // Fiches candidates : email correspondant, non liées, et l'utilisateur n'a pas
   // déjà une fiche dans la même organisation.
   const candidates = await queryMany<JoueurRow>(

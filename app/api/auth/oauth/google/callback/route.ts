@@ -179,6 +179,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Auto-liaison des fiches joueur (email vérifié par Google → sûr), best-effort.
+    try {
+      const { autoLinkByEmail } = await import('@/lib/services/playerAccounts')
+      await autoLinkByEmail(String(user.id), user.email)
+    } catch (e) {
+      console.error('auto-link joueur (google, non bloquant):', e)
+    }
+
     // 5. Générer un token JWT
     const token = generateToken({
       userId: String(user.id),

@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
 
     const authResult = await requireAuth(request)
     if (authResult instanceof Response) return authResult
+    const { user } = authResult
 
     const parsed = await parseJsonBody<Body>(request)
     if ('error' in parsed) return parsed.error
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
     if (!body.endpoint && !body.fcmToken) {
       return apiError('endpoint ou fcmToken requis', 400)
     }
-    await deleteSubscription({ endpoint: body.endpoint, fcmToken: body.fcmToken })
+    await deleteSubscription({ endpoint: body.endpoint, fcmToken: body.fcmToken, userId: user.id })
     return apiSuccess({ unsubscribed: true })
   } catch (error) {
     console.error('❌ push/unsubscribe:', error)

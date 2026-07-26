@@ -71,12 +71,19 @@ export async function saveFcmToken(userId: string, token: string, userAgent?: st
   )
 }
 
-/** Supprime un abonnement (désinscription volontaire ou expiration). */
-export async function deleteSubscription(match: { endpoint?: string; fcmToken?: string }): Promise<void> {
+/**
+ * Supprime un abonnement (désinscription volontaire ou expiration).
+ * Si `userId` est fourni, la suppression est bornée à cet utilisateur (défense en
+ * profondeur : on ne peut pas désinscrire l'appareil d'un tiers dont on connaîtrait
+ * l'endpoint). Les purges internes (410/404) appellent sans userId.
+ */
+export async function deleteSubscription(match: { endpoint?: string; fcmToken?: string; userId?: string }): Promise<void> {
   if (match.endpoint) {
-    await query('DELETE FROM push_subscriptions WHERE endpoint = $1', [match.endpoint])
+    if (match.userId) await query('DELETE FROM push_subscriptions WHERE endpoint = $1 AND user_id = $2', [match.endpoint, match.userId])
+    else await query('DELETE FROM push_subscriptions WHERE endpoint = $1', [match.endpoint])
   } else if (match.fcmToken) {
-    await query('DELETE FROM push_subscriptions WHERE fcm_token = $1', [match.fcmToken])
+    if (match.userId) await query('DELETE FROM push_subscriptions WHERE fcm_token = $1 AND user_id = $2', [match.fcmToken, match.userId])
+    else await query('DELETE FROM push_subscriptions WHERE fcm_token = $1', [match.fcmToken])
   }
 }
 
