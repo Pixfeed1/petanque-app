@@ -10,6 +10,7 @@ import { useDashboardData } from './hooks/useDashboardData'
 import { Users, Plus, Logout, Settings, Archive } from '@/components/Icons'
 import { Button, Badge, Section, Stat, Boule, BouleSvg, useToast, useConfirm } from '@/components/ui'
 import type { ActionItem } from '@/lib/types'
+import { NativeBanner } from '@/components/NativeBanner'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -116,6 +117,8 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-petanque-sable-pale">
+      {/* Bannière AdMob (app native uniquement, inerte sur le web) */}
+      <NativeBanner />
 
       <header className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-petanque-sable-bord/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

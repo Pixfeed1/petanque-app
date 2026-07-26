@@ -1,17 +1,25 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import { useParams, useRouter } from 'next/navigation'
 import { usePodium, PodiumTeam } from '@/hooks/podium'
 import { useToast } from '@/components/ui/Toast'
 import { Button, BouleSvg, FadeIn } from '@/components/ui'
 import { Loader, Download, Sparkles } from '@/components/Icons'
+import { showInterstitial } from '@/lib/native/ads'
 
 export default function PodiumPage() {
   const params = useParams()
   const router = useRouter()
   const { showSuccess } = useToast()
   const [showShareMenu, setShowShareMenu] = useState(false)
+
+  // App native : interstitiel à l'arrivée sur le podium (pause naturelle de fin de
+  // tournoi). Inerte sur le web. Un léger délai laisse l'animation du podium démarrer.
+  useEffect(() => {
+    const t = setTimeout(() => { showInterstitial() }, 2500)
+    return () => clearTimeout(t)
+  }, [])
 
   const {
     loading,

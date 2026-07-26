@@ -67,6 +67,12 @@ export async function initNative(): Promise<void> {
       if (url) window.location.assign(url)
     })
   } catch { /* plugin absent : on ignore */ }
+
+  // Initialise la pub native (AdMob) — no-op sur le web.
+  try {
+    const { initAds } = await import('./ads')
+    await initAds()
+  } catch { /* ignore */ }
 }
 
 /**
