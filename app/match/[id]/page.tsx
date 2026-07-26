@@ -12,6 +12,7 @@ import {
   Trophy, Plus, Minus, Check, Clock, ArrowLeft,
   Undo, Loader, Save, Play
 } from '@/components/Icons'
+import { keepAwake, allowSleep, hapticTap } from '@/lib/native'
 
 
 export default function MatchScorePage() {
@@ -54,6 +55,13 @@ export default function MatchScorePage() {
 
   useEffect(() => {
     setMounted(true) }, [])
+
+  // App native : garder l'écran allumé pendant le score d'un match (l'écran ne doit
+  // pas s'éteindre au milieu d'une mène). Inerte dans un navigateur.
+  useEffect(() => {
+    keepAwake()
+    return () => { allowSleep() }
+  }, [])
 
   if (loading) {
     return (
@@ -273,7 +281,7 @@ export default function MatchScorePage() {
               )}
               <div className="mt-6 pt-5 border-t border-petanque-sable-bord/50 flex items-center justify-between gap-3 flex-wrap">
                 <button
-                  onClick={finishManche}
+                  onClick={() => { hapticTap(); finishManche() }}
                   disabled={saving}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-petanque-vert text-petanque-sable rounded-lg font-medium text-sm hover:bg-petanque-vert-fonce disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
                 >

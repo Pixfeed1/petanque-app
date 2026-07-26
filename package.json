@@ -13,8 +13,14 @@
     "android:open": "npx cap open android"
   },
   "dependencies": {
+    "@capacitor-community/keep-awake": "^5.0.1",
     "@capacitor/android": "^6.2.1",
+    "@capacitor/app": "^6.0.3",
     "@capacitor/core": "^6.2.1",
+    "@capacitor/haptics": "^6.0.3",
+    "@capacitor/share": "^6.0.4",
+    "@capacitor/splash-screen": "^6.0.4",
+    "@capacitor/status-bar": "^6.0.3",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@types/canvas-confetti": "^1.9.0",

@@ -60,12 +60,24 @@ Les sources sont générées depuis `app/icon.svg` :
 npm run android:assets    # régénère assets/ puis les mipmaps Android
 ```
 
+### Fonctions natives déjà branchées
+La couche `lib/native/` (guardée : inerte dans un navigateur, active dans l'app) fournit déjà :
+| Fonction | Où | Effet dans l'app |
+|---|---|---|
+| Barre de statut verte + splash masqué au chargement | `components/NativeBridge.tsx` (monté globalement) | Intégration visuelle |
+| Bouton **retour** Android géré | idem | Revient en arrière au lieu de quitter brutalement |
+| **Écran maintenu allumé** pendant un match | `app/match/[id]/page.tsx` | L'écran ne s'éteint pas en pleine mène |
+| **Retour haptique** à la validation d'une mène | idem | Vibration courte |
+| **Partage natif** du podium | `hooks/podium/usePodium.ts` | Feuille de partage Android (repli : copie du lien sur le web) |
+
+Ces appels passent par `lib/native/index.ts` — chaque helper vérifie `isNative()` et ne fait rien hors app native.
+
 ### Ajouter un plugin natif plus tard (exemple : notifications push)
 ```bash
 npm install @capacitor/push-notifications
 npm run android:sync
 ```
-puis utiliser l'API du plugin dans le code web (elle no-op sur le navigateur, active sur l'app).
+puis appeler l'API du plugin depuis `lib/native/` (guardée par `isNative()` pour rester sans effet sur le web).
 
 ---
 

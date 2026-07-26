@@ -413,6 +413,14 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
 
   const handleShare = async () => {
     const url = window.location.href
+    // App native : feuille de partage Android. Sinon (web) : copie du lien.
+    const { shareNative } = await import('@/lib/native')
+    const shared = await shareNative({
+      title: tournament?.name || 'Podium',
+      text: `${tournament?.name || 'Tournoi'} — découvrez le podium !`,
+      url,
+    })
+    if (shared) return
     try {
       await navigator.clipboard.writeText(url)
       onSuccess?.('Lien copié dans le presse-papier !')

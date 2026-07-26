@@ -7,6 +7,7 @@ import { AuthProvider } from "./providers/AuthProvider"
 import { ToastProvider } from "@/components/ui/Toast"
 import { FeedbackWidget } from "@/components/FeedbackWidget"
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister"
+import { NativeBridge } from "@/components/NativeBridge"
 
 // Polices servies localement (zéro appel réseau au build).
 // Geist + Geist Mono : fournis bundlés par le package "geist".
@@ -63,6 +64,7 @@ export default function RootLayout({
             {children}
             <FeedbackWidget />
             <ServiceWorkerRegister />
+            <NativeBridge />
           </ToastProvider>
         </AuthProvider>
       </body>
