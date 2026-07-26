@@ -111,6 +111,12 @@ export async function POST(
     if (result.createdTeams > 0) emitTournamentEvent('team:created', tournoiId, { count: result.createdTeams })
     emitTournamentEvent('match:created', tournoiId, { count: result.matches.length })
 
+    // Notifie les joueurs liés (« c'est à toi de jouer »), best-effort.
+    try {
+      const { notifyPlayersMatchesReady } = await import('@/lib/push/notifyPlayers')
+      await notifyPlayersMatchesReady(result.matches.map((m: { id: string }) => m.id))
+    } catch (e) { console.error('push joueurs (engine-advance, non bloquant):', e) }
+
     return apiSuccess({ waiting: false, done: false, matches_created: result.matches.length, teams_created: result.createdTeams, matches: result.matches }, 201)
   } catch (error: unknown) {
     console.error('❌ Erreur POST /api/tournois/[id]/engine-advance:', error)

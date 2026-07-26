@@ -171,6 +171,12 @@ export async function POST(
     emitTournamentEvent('team:created', tournoiId, { count: result.teams_created })
     emitTournamentEvent('match:created', tournoiId, { count: result.matches_created })
 
+    // Notifie les joueurs liés (« c'est à toi de jouer ») pour la nouvelle ronde, best-effort.
+    try {
+      const { notifyPlayersMatchesReady } = await import('@/lib/push/notifyPlayers')
+      await notifyPlayersMatchesReady((result.matches as Array<{ id: string }>).map(m => m.id))
+    } catch (e) { console.error('push joueurs (new-rotation, non bloquant):', e) }
+
     return apiSuccess(result, 201)
   } catch (error: any) {
     console.error('❌ Erreur POST /api/tournois/[id]/new-rotation:', error)
