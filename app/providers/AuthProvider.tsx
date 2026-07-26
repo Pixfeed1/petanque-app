@@ -73,13 +73,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         '/contact',
       ]
 
-      // Vérifier si la route est publique (exact match ou wildcard pour /legal/*)
-      const isPublicRoute = publicRoutes.includes(pathname ?? '') || (pathname?.startsWith('/legal/') ?? false)
+      // Vérifier si la route est publique (exact match ou wildcard pour /legal/* et /rejoindre/*)
+      const isPublicRoute = publicRoutes.includes(pathname ?? '')
+        || (pathname?.startsWith('/legal/') ?? false)
+        || (pathname?.startsWith('/rejoindre/') ?? false)
 
       if (user) {
         // Si l'utilisateur est connecté et tente d'accéder à login/signup, rediriger vers dashboard
         if (pathname === '/login' || pathname === '/signup') {
           router.push('/dashboard')
+        } else if (!organization && pathname === '/dashboard') {
+          // Compte joueur (sans organisation) : l'espace organisateur ne le concerne pas.
+          router.push('/moi')
         }
       } else {
         // Si l'utilisateur n'est pas connecté et tente d'accéder à une route protégée

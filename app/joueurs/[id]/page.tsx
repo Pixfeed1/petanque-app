@@ -8,6 +8,7 @@ import {
   PageHeader, PlayerAvatar
 } from '@/components/ui'
 import { Loader } from '@/components/Icons'
+import { InvitePlayerCard } from '@/components/InvitePlayerCard'
 
 interface JoueurDetail {
   id: string
@@ -16,6 +17,7 @@ interface JoueurDetail {
   phone?: string
   gender?: 'H' | 'F'
   created_at?: string
+  user_id?: string | null
   stats?: {
     tournois?: number
     victoires?: number
@@ -157,6 +159,12 @@ export default function JoueurDetailPage() {
             </section>
           </FadeIn>
         )}
+
+        <FadeIn delay={120}>
+          <div className="mb-10">
+            <InvitePlayerCard joueurId={joueur.id} alreadyLinked={!!joueur.user_id} />
+          </div>
+        </FadeIn>
 
         <FadeIn delay={140}>
           <section>
