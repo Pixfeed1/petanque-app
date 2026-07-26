@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/Toast'
 import { Button, BouleSvg, FadeIn } from '@/components/ui'
 import { Loader, Check, X } from '@/components/Icons'
 import { NotificationsCard } from '@/components/NotificationsCard'
+import { JoinCodeCard } from '@/components/JoinCodeCard'
 
 export default function Parametres() {
   const router = useRouter()
@@ -306,6 +307,13 @@ export default function Parametres() {
                 </Button>
               </div>
             </section>
+          </FadeIn>
+        )}
+
+        {/* === Section Code club (organisateur) === */}
+        {organization?.id && (
+          <FadeIn delay={isClub ? 220 : 160}>
+            <JoinCodeCard orgId={String(organization.id)} />
           </FadeIn>
         )}
 

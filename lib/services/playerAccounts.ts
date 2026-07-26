@@ -45,6 +45,22 @@ export function generateInviteToken(): string {
   return randomBytes(32).toString('base64url')
 }
 
+// Alphabet sans caractères ambigus (0/O, 1/I/L) pour un code lisible à voix haute.
+const JOIN_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+
+/** Génère un code club de 8 caractères lisibles (assez d'entropie pour rester secret). */
+export function generateJoinCode(): string {
+  const bytes = randomBytes(8)
+  let code = ''
+  for (let i = 0; i < 8; i++) code += JOIN_CODE_ALPHABET[bytes[i] % JOIN_CODE_ALPHABET.length]
+  return code
+}
+
+/** Normalise un code club saisi (majuscules, sans espaces). */
+export function normalizeJoinCode(code: string | null | undefined): string {
+  return (code || '').trim().toUpperCase().replace(/\s+/g, '')
+}
+
 // ─────────────────────────── Accès base de données ───────────────────────────
 
 export interface JoueurRow {

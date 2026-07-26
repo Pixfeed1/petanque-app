@@ -71,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         '/guide',
         '/faq',
         '/contact',
+        '/rejoindre',
       ]
 
       // Vérifier si la route est publique (exact match ou wildcard pour /legal/* et /rejoindre/*)

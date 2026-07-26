@@ -18,7 +18,9 @@ exactement comme avant (gestion 100 % organisateur).
 2. **Auto par email** — si l'organisateur met l'email du joueur sur sa fiche, le joueur
    qui s'inscrit/se connecte avec ce même email est lié automatiquement
    (`autoLinkByEmail`, branché sur login / signup / signup-player).
-3. **Code club** — *(à venir : prochaine sous-étape)* un code unique par organisation.
+3. **Code club** — code unique par organisation (Paramètres → « Code club », `JoinCodeCard`).
+   Le joueur va sur `/rejoindre`, entre le code, choisit son nom dans la liste des fiches
+   non liées, puis se connecte/s'inscrit → fiche liée.
 
 ## Parcours joueur
 - `/rejoindre/[token]` : aperçu (nom + club), puis liaison. Un nouveau joueur crée un
@@ -50,7 +52,6 @@ avec l'adversaire, le terrain et un lien direct vers le match. Best-effort, jama
 | `app/rejoindre/[token]`, `app/moi` | Pages joueur |
 | `components/InvitePlayerCard` | Lien + QR côté organisateur |
 
-## Reste à faire (sous-étapes suivantes du chantier)
-- **Code club** (3ᵉ voie de liaison).
+## Reste à faire (améliorations futures)
 - Notifier aussi au **démarrage** du tournoi (1er match), option côté organisateur.
 - Espace joueur : historique/classement personnel.

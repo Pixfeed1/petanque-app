@@ -4,6 +4,8 @@ import {
   emailsMatch,
   isInvitationValid,
   generateInviteToken,
+  generateJoinCode,
+  normalizeJoinCode,
 } from '../playerAccounts'
 
 describe('playerAccounts — logique pure', () => {
@@ -65,6 +67,24 @@ describe('playerAccounts — logique pure', () => {
       expect(a).not.toBe(b)
       expect(a.length).toBeGreaterThanOrEqual(32)
       expect(a).toMatch(/^[A-Za-z0-9_-]+$/) // base64url : pas de +/= ni d’espace
+    })
+  })
+
+  describe('generateJoinCode', () => {
+    it('produit un code de 8 caractères lisibles (sans 0/O/1/I/L)', () => {
+      const c = generateJoinCode()
+      expect(c).toHaveLength(8)
+      expect(c).toMatch(/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/)
+    })
+    it('varie d’un appel à l’autre', () => {
+      expect(generateJoinCode()).not.toBe(generateJoinCode())
+    })
+  })
+
+  describe('normalizeJoinCode', () => {
+    it('met en majuscules et retire les espaces', () => {
+      expect(normalizeJoinCode('  ab cd 23 ')).toBe('ABCD23')
+      expect(normalizeJoinCode(null)).toBe('')
     })
   })
 })
