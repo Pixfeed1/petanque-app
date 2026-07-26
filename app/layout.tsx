@@ -8,6 +8,8 @@ import { ToastProvider } from "@/components/ui/Toast"
 import { FeedbackWidget } from "@/components/FeedbackWidget"
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister"
 import { NativeBridge } from "@/components/NativeBridge"
+import { ConsentBanner } from "@/components/ConsentBanner"
+import { ConsentedScripts } from "@/components/ConsentedScripts"
 
 // Polices servies localement (zéro appel réseau au build).
 // Geist + Geist Mono : fournis bundlés par le package "geist".
@@ -59,12 +61,16 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${GeistSans.variable} ${GeistMono.variable} ${cormorant.variable}`}>
       <body className="antialiased text-petanque-vert-fonce font-sans overflow-x-hidden">
+        {/* Accessibilité : lien d'évitement pour aller directement au contenu (clavier). */}
+        <a href="#contenu" className="skip-link">Aller au contenu</a>
         <AuthProvider>
           <ToastProvider>
-            {children}
+            <div id="contenu">{children}</div>
             <FeedbackWidget />
             <ServiceWorkerRegister />
             <NativeBridge />
+            <ConsentBanner />
+            <ConsentedScripts />
           </ToastProvider>
         </AuthProvider>
       </body>

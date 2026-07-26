@@ -8,6 +8,7 @@ import { Button, BouleSvg, FadeIn } from '@/components/ui'
 import { Loader, Check, X } from '@/components/Icons'
 import { NotificationsCard } from '@/components/NotificationsCard'
 import { JoinCodeCard } from '@/components/JoinCodeCard'
+import { reopenConsent } from '@/lib/consent'
 
 export default function Parametres() {
   const router = useRouter()
@@ -337,6 +338,12 @@ export default function Parametres() {
               description="Conformité RGPD · export complet (compte, organisation, tournois, joueurs)."
               onClick={handleExportRGPD}
               loading={exportingData}
+            />
+            <DataLink
+              title="Gérer mes cookies"
+              description="Modifier ton consentement (mesure d'audience, publicité)."
+              onClick={reopenConsent}
+              loading={false}
             />
           </section>
         </FadeIn>

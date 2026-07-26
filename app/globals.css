@@ -136,3 +136,37 @@ em, .accent-italic {
   to { transform: rotate(360deg); }
 }
 .animate-spin-slow { animation: spin-slow 12s linear infinite; }
+
+/* Accessibilité : lien d'évitement (visible seulement au focus clavier). */
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -48px;
+  z-index: 200;
+  background: #1a3322;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 12px;
+  outline: 2px solid #97c459;
+  outline-offset: 2px;
+}
+
+/* Accessibilité : respecter « réduire les animations » (préférence système).
+   Coupe les animations décoratives et adoucit les transitions pour les personnes
+   sensibles au mouvement (vestibulaire), sans casser la mise en page. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
