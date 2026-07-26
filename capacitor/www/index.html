@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Pétanque Pro</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #e8f3da; color: #1a3322;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .wrap { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; }
+    img { width: 88px; height: 88px; }
+    .spin { width: 26px; height: 26px; border: 3px solid #2d5530; border-top-color: transparent;
+      border-radius: 50%; animation: r 0.8s linear infinite; }
+    @keyframes r { to { transform: rotate(360deg); } }
+    p { margin: 0; color: #2d5530; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <!-- Écran de repli embarqué : affiché le temps que le site en production se charge. -->
+  <div class="wrap">
+    <img src="./icon.png" alt="Pétanque Pro" onerror="this.style.display='none'" />
+    <div class="spin"></div>
+    <p>Chargement de Pétanque Pro…</p>
+  </div>
+</body>
+</html>
