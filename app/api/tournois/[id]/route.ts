@@ -156,6 +156,21 @@ export async function PUT(
 
     emitTournamentEvent('tournament:updated', id, { status: body.status })
 
+    // À la clôture : notification push (best-effort, ne bloque jamais la réponse).
+    if (finalizing) {
+      try {
+        const { sendPushToUser } = await import('@/lib/push/server')
+        await sendPushToUser(user.id, {
+          title: '🏆 Tournoi terminé',
+          body: `« ${result.rows[0].name} » est clôturé — le podium est disponible.`,
+          url: `/tournoi/${id}/podium`,
+          tag: `tournoi-${id}`,
+        })
+      } catch (e) {
+        console.error('push clôture (non bloquant):', e)
+      }
+    }
+
     return apiSuccess(result.rows[0])
   } catch (error) {
     console.error('❌ Erreur PUT /api/tournois/[id]:', error)

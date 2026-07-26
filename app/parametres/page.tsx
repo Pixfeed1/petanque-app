@@ -6,6 +6,7 @@ import { useAuth } from '../providers/AuthProvider'
 import { useToast } from '@/components/ui/Toast'
 import { Button, BouleSvg, FadeIn } from '@/components/ui'
 import { Loader, Check, X } from '@/components/Icons'
+import { NotificationsCard } from '@/components/NotificationsCard'
 
 export default function Parametres() {
   const router = useRouter()
@@ -307,6 +308,11 @@ export default function Parametres() {
             </section>
           </FadeIn>
         )}
+
+        {/* === Section Notifications === */}
+        <FadeIn delay={isClub ? 240 : 180}>
+          <NotificationsCard />
+        </FadeIn>
 
         {/* === Section Données === */}
         <FadeIn delay={isClub ? 260 : 200}>

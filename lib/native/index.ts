@@ -58,6 +58,15 @@ export async function initNative(): Promise<void> {
       backHandlerBound = true
     } catch { /* ignore */ }
   }
+
+  // Notification native tapée → naviguer vers l'URL portée par le message (data.url).
+  try {
+    const { PushNotifications } = await import('@capacitor/push-notifications')
+    await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+      const url = (action.notification?.data as { url?: string } | undefined)?.url
+      if (url) window.location.assign(url)
+    })
+  } catch { /* plugin absent : on ignore */ }
 }
 
 /**
