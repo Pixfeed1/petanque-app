@@ -35,6 +35,14 @@ export const signupSchema = z.object({
   organizationName: z.string().optional()
 })
 
+// Inscription « joueur » : compte SANS organisation (le joueur rejoint un club
+// via une invitation, il ne crée pas de club).
+export const signupPlayerSchema = z.object({
+  email: z.string().email('Email invalide'),
+  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
+  fullName: z.string().min(1, 'Le nom est requis')
+})
+
 export const resetPasswordSchema = z.object({
   email: z.string().email('Email invalide')
 })

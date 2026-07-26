@@ -6,8 +6,11 @@
 -- Un utilisateur a AU PLUS une fiche par organisation (UNIQUE org_id+user_id).
 -- Une fiche peut ne pas être liée (user_id NULL) : la gestion 100 % organisateur
 -- (fiches sans compte) continue de fonctionner exactement comme avant.
+--
+-- NB : ids en BIGINT/SERIAL pour matcher le schéma de production
+-- (users.id, joueurs.id, organisations.id sont des BIGINT).
 
-ALTER TABLE joueurs ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE joueurs ADD COLUMN IF NOT EXISTS user_id BIGINT REFERENCES users(id) ON DELETE SET NULL;
 
 -- Un même utilisateur ne peut être lié qu'à une seule fiche par organisation.
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_joueur_user_per_org
@@ -19,14 +22,14 @@ COMMENT ON COLUMN joueurs.user_id IS 'Compte utilisateur lié à cette fiche jou
 
 -- Invitations : jeton envoyé/partagé à un joueur pour qu'il réclame sa fiche.
 CREATE TABLE IF NOT EXISTS joueur_invitations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  joueur_id UUID NOT NULL REFERENCES joueurs(id) ON DELETE CASCADE,
-  org_id UUID NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+  id BIGSERIAL PRIMARY KEY,
+  joueur_id BIGINT NOT NULL REFERENCES joueurs(id) ON DELETE CASCADE,
+  org_id BIGINT NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
   email VARCHAR(255),
   token VARCHAR(255) NOT NULL UNIQUE,
   status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending | accepted | revoked
-  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
-  accepted_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  accepted_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '30 days'),
   accepted_at TIMESTAMPTZ

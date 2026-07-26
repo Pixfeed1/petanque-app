@@ -3,10 +3,11 @@
 --   - platform 'web'     : Web Push (VAPID) — endpoint + clés p256dh/auth
 --   - platform 'android' : notification native (FCM) — jeton fcm_token
 -- Un utilisateur peut avoir plusieurs abonnements (plusieurs appareils).
+-- NB : ids en BIGINT/SERIAL pour matcher le schéma de production (users.id BIGINT).
 
 CREATE TABLE IF NOT EXISTS push_subscriptions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   platform VARCHAR(20) NOT NULL DEFAULT 'web',
   -- Web Push
   endpoint TEXT,
