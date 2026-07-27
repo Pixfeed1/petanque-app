@@ -10,6 +10,7 @@ import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister"
 import { NativeBridge } from "@/components/NativeBridge"
 import { ConsentBanner } from "@/components/ConsentBanner"
 import { ConsentedScripts } from "@/components/ConsentedScripts"
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner"
 
 // Polices servies localement (zéro appel réseau au build).
 // Geist + Geist Mono : fournis bundlés par le package "geist".
@@ -65,6 +66,7 @@ export default function RootLayout({
         <a href="#contenu" className="skip-link">Aller au contenu</a>
         <AuthProvider>
           <ToastProvider>
+            <EmailVerificationBanner />
             <div id="contenu">{children}</div>
             <FeedbackWidget />
             <ServiceWorkerRegister />

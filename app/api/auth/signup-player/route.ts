@@ -42,6 +42,16 @@ export async function POST(request: NextRequest) {
       console.error('auto-link joueur (signup-player, non bloquant):', e)
     }
 
+    // Email d'activation (best-effort).
+    try {
+      const { issueVerificationToken } = await import('@/lib/services/emailVerification')
+      const { sendVerificationEmail } = await import('@/lib/server/mailer')
+      const token = await issueVerificationToken(user.id)
+      await sendVerificationEmail(user.email, token, user.full_name || undefined)
+    } catch (e) {
+      console.error('email activation (signup-player, non bloquant):', e)
+    }
+
     resetRateLimit(request, 'signup')
     const token = generateToken({ userId: user.id, email: user.email })
     const response = apiSuccess({ user: { id: user.id, email: user.email, full_name: user.full_name }, token }, 201)

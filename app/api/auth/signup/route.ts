@@ -103,6 +103,16 @@ export async function POST(request: NextRequest) {
       console.error('auto-link joueur (signup, non bloquant):', e)
     }
 
+    // Email d'activation (double opt-in), best-effort — n'interrompt jamais l'inscription.
+    try {
+      const { issueVerificationToken } = await import('@/lib/services/emailVerification')
+      const { sendVerificationEmail } = await import('@/lib/server/mailer')
+      const token = await issueVerificationToken(result.user.id)
+      await sendVerificationEmail(result.user.email, token, result.user.full_name || undefined)
+    } catch (e) {
+      console.error('email activation (signup, non bloquant):', e)
+    }
+
     // Inscription réussie : reset du rate limit pour cet IP
     resetRateLimit(request, 'signup')
 
