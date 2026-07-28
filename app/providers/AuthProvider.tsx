@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     }
-  }, [user, loading, pathname, router])
+  }, [user, organization, loading, pathname, router])
 
   const checkUser = async () => {
     try {

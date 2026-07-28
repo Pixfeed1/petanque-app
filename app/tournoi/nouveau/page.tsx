@@ -13,7 +13,7 @@ import { Button, BouleSvg, FadeIn } from '@/components/ui'
 import { Loader, Plus, X, Check } from '@/components/Icons'
 import { computePouleDistributions } from '@/lib/tournament/pouleDistributions'
 import { parseTournamentDescription } from '@/lib/tournament/describeParser'
-import { AVAILABLE_TERRAINS } from '@/lib/tournament/terrains'
+import { SUGGESTED_TERRAINS } from '@/lib/tournament/terrains'
 
 export default function CreateTournamentPage() {
   const router = useRouter()
@@ -286,6 +286,22 @@ function DescribeTournament({ updateFormField }: any) {
 }
 
 function Step1({ formData, updateFormField }: any) {
+  const [terrainInput, setTerrainInput] = useState('')
+  const terrains: string[] = formData.terrainNames || []
+  const addTerrain = (raw: string) => {
+    const name = String(raw).trim().slice(0, 24)
+    if (!name) return
+    if (terrains.some((t) => t.toUpperCase() === name.toUpperCase())) { setTerrainInput(''); return }
+    const next = [...terrains, name]
+    updateFormField('terrainNames', next)
+    updateFormField('terrains', next.length)
+    setTerrainInput('')
+  }
+  const removeTerrain = (name: string) => {
+    const next = terrains.filter((t) => t !== name)
+    updateFormField('terrainNames', next)
+    updateFormField('terrains', next.length)
+  }
   return (
     <div className="space-y-7">
       <DescribeTournament updateFormField={updateFormField} />
@@ -339,36 +355,52 @@ function Step1({ formData, updateFormField }: any) {
 
       <div>
         <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2">Terrains de jeu</label>
-        <p className="text-xs text-petanque-bois mb-3">Sélectionne les terrains disponibles sur le lieu du concours.</p>
-        <div className="flex flex-wrap gap-2">
-          {AVAILABLE_TERRAINS.map((name) => {
-            const selected = (formData.terrainNames || []).includes(name)
-            return (
-              <button
-                key={name}
-                type="button"
-                onClick={() => {
-                  const cur: string[] = formData.terrainNames || []
-                  const next = selected ? cur.filter((n) => n !== name) : [...cur, name]
-                  // Garde l'ordre de la liste fixe pour un affichage cohérent
-                  const ordered = AVAILABLE_TERRAINS.filter((t) => next.includes(t))
-                  updateFormField('terrainNames', ordered)
-                  updateFormField('terrains', Math.max(1, ordered.length))
-                }}
-                className={`w-11 h-11 rounded-lg font-mono text-base font-medium transition-colors ${
-                  selected
-                    ? 'bg-petanque-vert text-white border border-petanque-vert'
-                    : 'bg-white text-petanque-vert-fonce border border-petanque-sable-bord hover:border-petanque-vert/40'
-                }`}
-              >
-                {name}
-              </button>
-            )
-          })}
+        <p className="text-xs text-petanque-bois mb-3">Nomme tes terrains comme tu veux (« A », « 12 », « Platane »…). Ajoute-les un par un.</p>
+
+        {/* Saisie libre : champ + Ajouter (ou Entrée) */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={terrainInput}
+            onChange={(e) => setTerrainInput(e.target.value.slice(0, 24))}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTerrain(terrainInput) } }}
+            className="flex-1 h-11 px-4 bg-white border border-petanque-sable-bord rounded-xl focus:border-petanque-vert focus:ring-2 focus:ring-petanque-vert/20 focus:outline-none text-base text-petanque-vert-fonce"
+            placeholder="Nom du terrain, puis Entrée"
+          />
+          <button
+            type="button"
+            onClick={() => addTerrain(terrainInput)}
+            disabled={!terrainInput.trim()}
+            className="px-4 h-11 rounded-xl bg-petanque-vert text-white text-sm font-medium hover:bg-petanque-vert-fonce disabled:opacity-40 transition-colors"
+          >
+            Ajouter
+          </button>
         </div>
+
+        {/* Suggestions rapides (facultatif) */}
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {SUGGESTED_TERRAINS.filter((s) => !terrains.some((t) => t.toUpperCase() === s.toUpperCase())).map((s) => (
+            <button key={s} type="button" onClick={() => addTerrain(s)}
+              className="px-2.5 h-8 rounded-lg bg-white border border-petanque-sable-bord text-petanque-vert-fonce text-sm font-mono hover:border-petanque-vert/40">
+              + {s}
+            </button>
+          ))}
+        </div>
+
+        {/* Terrains retenus (supprimables) */}
+        {terrains.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-4">
+            {terrains.map((name) => (
+              <span key={name} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 h-9 rounded-lg bg-petanque-vert text-white text-sm font-medium">
+                {name}
+                <button type="button" onClick={() => removeTerrain(name)} aria-label={`Retirer ${name}`}
+                  className="w-6 h-6 rounded-md hover:bg-white/20 flex items-center justify-center">✕</button>
+              </span>
+            ))}
+          </div>
+        )}
         <p className="text-[11px] text-petanque-bois mt-2 font-mono">
-          {(formData.terrainNames || []).length} terrain{(formData.terrainNames || []).length > 1 ? 's' : ''} sélectionné{(formData.terrainNames || []).length > 1 ? 's' : ''}
-          {(formData.terrainNames || []).length > 0 ? ` : ${(formData.terrainNames || []).join(' · ')}` : ''}
+          {terrains.length} terrain{terrains.length > 1 ? 's' : ''}{terrains.length > 0 ? ` : ${terrains.join(' · ')}` : ' (aucun — assignation automatique désactivée)'}
         </p>
       </div>
     </div>

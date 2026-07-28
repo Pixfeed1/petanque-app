@@ -73,7 +73,7 @@ const initialFormData: TournamentFormData = {
   time: '09:00',
   location: '',
   terrains: 4,
-  terrainNames: ['A', 'B', 'C', '3'],
+  terrainNames: ['A', 'B', 'C', 'D'],
   mode: 'melee_fixe',
   format: 'doublette',
   maxPoints: 13,

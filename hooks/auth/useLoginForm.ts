@@ -112,7 +112,7 @@ export function useLoginForm(): UseLoginFormReturn {
     try {
       const response = await fetch('/api/auth/me', { credentials: 'include' })
       if (response.ok) {
-        router.push('/dashboard')
+        window.location.href = '/dashboard'
       }
     } catch {
       // Not logged in, that's normal
@@ -165,7 +165,10 @@ export function useLoginForm(): UseLoginFormReturn {
       } else {
         setSuccessAnimation(true)
         await new Promise(resolve => setTimeout(resolve, 800))
-        router.push('/dashboard')
+        // Rechargement complet (pas router.push) : réinitialise proprement l'état
+        // d'auth (AuthProvider) avec le nouveau cookie → évite la boucle de
+        // redirection /login ↔ /dashboard (clignotement).
+        window.location.href = '/dashboard'
       }
     } catch {
       setError('Une erreur est survenue. Veuillez reessayer.')
@@ -224,7 +227,7 @@ export function useLoginForm(): UseLoginFormReturn {
 
       setSuccess('Compte cree avec succes !')
       await new Promise(resolve => setTimeout(resolve, 1000))
-      router.push('/dashboard')
+      window.location.href = '/dashboard'
     } catch {
       setError("Une erreur est survenue lors de l'inscription")
     } finally {

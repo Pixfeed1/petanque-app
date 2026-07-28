@@ -1,17 +1,21 @@
 import { describe, it, expect } from 'vitest'
-import { AVAILABLE_TERRAINS, sanitizeTerrainNames, terrainLabel } from '../terrains'
+import { SUGGESTED_TERRAINS, sanitizeTerrainNames, terrainLabel } from '../terrains'
 
-describe('terrains nommés', () => {
-  it('la liste fixe contient bien A/B/C/3-9', () => {
-    expect([...AVAILABLE_TERRAINS]).toEqual(['A', 'B', 'C', '3', '4', '5', '6', '7', '8', '9'])
+describe('terrains nommés (saisie libre)', () => {
+  it('des suggestions rapides existent', () => {
+    expect(SUGGESTED_TERRAINS.length).toBeGreaterThan(0)
   })
 
   describe('sanitizeTerrainNames', () => {
-    it('garde uniquement les noms autorisés', () => {
-      expect(sanitizeTerrainNames(['A', 'B', '7', 'Z', '99'])).toEqual(['A', 'B', '7'])
+    it('accepte des noms LIBRES (plus de liste fermée)', () => {
+      expect(sanitizeTerrainNames(['A', 'Platane', '12', 'Boulodrome'])).toEqual(['A', 'Platane', '12', 'Boulodrome'])
     })
-    it('normalise la casse et supprime les doublons', () => {
-      expect(sanitizeTerrainNames(['a', 'A', 'b'])).toEqual(['A', 'B'])
+    it('supprime les doublons (insensible à la casse) en gardant la casse d\'origine', () => {
+      expect(sanitizeTerrainNames(['Platane', 'PLATANE', 'a', 'A'])).toEqual(['Platane', 'a'])
+    })
+    it('trim, ignore les vides, borne la longueur', () => {
+      expect(sanitizeTerrainNames(['  B  ', '', '   '])).toEqual(['B'])
+      expect(sanitizeTerrainNames(['x'.repeat(40)])[0].length).toBe(24)
     })
     it('non-tableau → vide', () => {
       expect(sanitizeTerrainNames('A')).toEqual([])

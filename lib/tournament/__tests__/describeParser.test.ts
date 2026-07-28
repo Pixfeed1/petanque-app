@@ -43,11 +43,11 @@ describe('parseTournamentDescription', () => {
     it('hors bornes (60) → ignoré', () => expect(parse('60 terrains').fields.terrains).toBeUndefined())
     it('nommés "terrains A, B, 5" → liste + count', () => {
       const f = parse('sur les terrains A, B, 5').fields
-      expect(f.terrainNames).toEqual(['A', 'B', '5'])
+      expect(f.terrainNames).toEqual(['a', 'b', '5']) // parseur en minuscules, noms libres conservés tels quels
       expect(f.terrains).toBe(3)
     })
-    it('nommés "terrains a b c" (casse) → A B C', () => {
-      expect(parse('terrains a b c').fields.terrainNames).toEqual(['A', 'B', 'C'])
+    it('nommés "terrains a b c" → casse conservée (noms libres)', () => {
+      expect(parse('terrains a b c').fields.terrainNames).toEqual(['a', 'b', 'c'])
     })
     it('nommés avec "et" : "terrains 7 et 8"', () => {
       expect(parse('terrains 7 et 8').fields.terrainNames).toEqual(['7', '8'])

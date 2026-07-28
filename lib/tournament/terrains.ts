@@ -1,27 +1,37 @@
 /**
- * Terrains nommés.
+ * Terrains nommés — SAISIE LIBRE.
  *
- * Les terrains physiques du club ont des noms fixes (lettres et chiffres). En
- * interne, l'assignation reste numérique (index 1..N) ; on mappe l'index vers le
- * nom choisi pour l'affichage et l'impression. Pas de changement de schéma
- * (matches.terrain reste un entier = index dans la liste des terrains retenus).
+ * L'organisateur nomme ses terrains comme il veut (« A », « 12 », « Boulodrome »,
+ * « Platane »…). En interne, l'assignation reste numérique (index 1..N) ; on mappe
+ * l'index vers le nom choisi pour l'affichage et l'impression. Aucun changement de
+ * schéma (matches.terrain reste un entier = index dans la liste des terrains retenus).
  */
 
-/** Terrains disponibles du club, dans l'ordre d'affichage. */
-export const AVAILABLE_TERRAINS = ['A', 'B', 'C', '3', '4', '5', '6', '7', '8', '9'] as const
+/** Suggestions rapides (facultatives) proposées dans l'UI — l'utilisateur reste libre. */
+export const SUGGESTED_TERRAINS = ['A', 'B', 'C', 'D', '1', '2', '3', '4', '5', '6', '7', '8'] as const
 
-/** Filtre/normalise une liste de noms de terrains vers l'ensemble autorisé, sans doublon. */
+/** Rétrocompat : ancien nom encore importé ailleurs. Ce ne sont que des suggestions. */
+export const AVAILABLE_TERRAINS = SUGGESTED_TERRAINS
+
+const MAX_TERRAINS = 60
+const MAX_NAME_LEN = 24
+
+/**
+ * Normalise une liste de noms de terrains LIBRES : trim, longueur bornée, sans
+ * doublon (comparaison insensible à la casse) et casse d'origine conservée.
+ */
 export function sanitizeTerrainNames(input: unknown): string[] {
   if (!Array.isArray(input)) return []
-  const allowed = new Set<string>(AVAILABLE_TERRAINS)
   const seen = new Set<string>()
   const out: string[] = []
   for (const v of input) {
-    const s = String(v).trim().toUpperCase()
-    if (allowed.has(s) && !seen.has(s)) {
-      seen.add(s)
-      out.push(s)
-    }
+    const s = String(v).trim().slice(0, MAX_NAME_LEN)
+    if (!s) continue
+    const key = s.toUpperCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(s)
+    if (out.length >= MAX_TERRAINS) break
   }
   return out
 }
