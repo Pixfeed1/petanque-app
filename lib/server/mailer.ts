@@ -6,10 +6,16 @@
 import nodemailer from 'nodemailer'
 
 function transporter() {
+  const port = parseInt(process.env.SMTP_PORT || '25')
+  // Port 465 = SSL implicite (secure:true). 587/25 = STARTTLS/clair (secure:false).
+  // Surchargeable via SMTP_SECURE=true/false.
+  const secure = process.env.SMTP_SECURE
+    ? process.env.SMTP_SECURE === 'true'
+    : port === 465
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'localhost',
-    port: parseInt(process.env.SMTP_PORT || '25'),
-    secure: false,
+    port,
+    secure,
     auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
   })
 }

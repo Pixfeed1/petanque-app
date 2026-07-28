@@ -61,15 +61,16 @@ export async function POST(request: NextRequest) {
     // SMTP_PASS (optionnel)
     // SMTP_FROM (défaut: noreply@petanquepro.fr)
 
+    const smtpPort = parseInt(process.env.SMTP_PORT || '25')
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'localhost',
-      port: parseInt(process.env.SMTP_PORT || '25'),
-      secure: false, // true pour port 465, false pour autres ports
+      port: smtpPort,
+      // Port 465 = SSL implicite (secure:true). Surchargeable via SMTP_SECURE.
+      secure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === 'true' : smtpPort === 465,
       auth: process.env.SMTP_USER ? {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
       } : undefined,
-      // Options pour dev/test sans SSL
       tls: {
         rejectUnauthorized: false
       }
