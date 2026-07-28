@@ -139,9 +139,15 @@ export default function Parametres() {
     if (deleteConfirmation !== 'SUPPRIMER') return
     setLoading(true)
     try {
-      showSuccess('Pour supprimer ton compte, contacte support@petanquepro.fr')
-      setShowDeleteModal(false)
-      setDeleteConfirmation('')
+      const res = await fetch('/api/auth/account', { method: 'DELETE', credentials: 'include' })
+      if (!res.ok) {
+        showError('Erreur lors de la suppression du compte')
+        return
+      }
+      // Compte supprimé + session invalidée côté serveur : on redirige (rechargement
+      // complet pour repartir d'un état propre, sans cache d'auth).
+      showSuccess('Ton compte a été supprimé. À bientôt !')
+      window.location.href = '/'
     } catch {
       showError('Erreur lors de la suppression du compte')
     } finally {
@@ -387,13 +393,8 @@ export default function Parametres() {
                 </button>
               </div>
               <p className="text-sm text-petanque-bois mb-1 leading-relaxed">
-                Tes données seront supprimées après 30 jours.
+                Ton compte et tes données personnelles seront <strong className="text-petanque-vert-fonce">supprimés immédiatement</strong>. Les clubs dont tu es le seul membre (avec leurs tournois et joueurs) seront également supprimés. Cette action est définitive.
               </p>
-              {isPremium && (
-                <p className="text-sm text-petanque-vert-fonce italic mb-5 leading-relaxed">
-                  Ton abonnement est conservé. Si tu te réinscris avec <strong className="font-medium">{user?.email}</strong>, ton plan sera restauré.
-                </p>
-              )}
 
               <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-2 mt-2">
                 Tape <span className="text-petanque-cochonnet-fonce font-mono">SUPPRIMER</span> pour confirmer

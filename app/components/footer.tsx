@@ -100,6 +100,11 @@ export default function Footer({ scrollToSection }: FooterProps) {
                 </Link>
               </li>
               <li>
+                <Link href="/legal/suppression-compte" className="hover:text-white transition">
+                  Supprimer mon compte
+                </Link>
+              </li>
+              <li>
                 <Link href="/legal/terms" className="hover:text-white transition">
                   Conditions d'utilisation
                 </Link>
