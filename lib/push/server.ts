@@ -24,7 +24,7 @@ function ensureVapid(): boolean {
   const priv = process.env.VAPID_PRIVATE_KEY
   if (!pub || !priv) return false
   if (!vapidReady) {
-    webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:contact@petanquepro.fr', pub, priv)
+    webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:hello@petanquepro.fr', pub, priv)
     vapidReady = true
   }
   return true

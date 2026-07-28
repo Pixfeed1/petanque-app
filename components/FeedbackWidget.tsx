@@ -119,7 +119,7 @@ export function FeedbackWidget() {
           {/* Contact direct */}
           <div className="border-b border-petanque-sable-bord bg-petanque-vert-pale px-5 py-4">
             <p className="text-xs text-petanque-bois">
-              Une question ? Écrivez-nous : <a href="mailto:support@petanquepro.fr" className="font-medium text-petanque-vert underline">support@petanquepro.fr</a>
+              Une question ? Écrivez-nous : <a href="mailto:hello@petanquepro.fr" className="font-medium text-petanque-vert underline">hello@petanquepro.fr</a>
             </p>
           </div>
 

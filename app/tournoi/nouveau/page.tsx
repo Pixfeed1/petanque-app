@@ -955,7 +955,7 @@ function Step5({ formData, getTotalPlayers, getEstimatedTeams, getEstimatedPools
     { label: 'Nom', value: formData.name || '—' },
     { label: 'Date', value: formData.date || '—' },
     { label: 'Lieu', value: formData.location || '—' },
-    { label: 'Mode', value: formData.mode === 'choisi' ? 'Choisi' : formData.mode === 'melee_fixe' ? 'Mêlée fixe' : 'Mêlée tournante' },
+    { label: 'Mode', value: formData.mode === 'choisi' ? 'Choisi' : formData.mode === 'melee_fixe' ? 'Mêlée fixe' : formData.mode === 'personnalise' ? 'Personnalisé' : 'Mêlée tournante' },
     { label: 'Format', value: formData.format === 'tete_a_tete' ? 'Tête à tête' : formData.format === 'doublette' ? 'Doublette' : 'Triplette' },
     { label: 'Points max', value: formData.maxPoints },
     { label: 'Joueurs', value: getTotalPlayers() },

@@ -35,7 +35,7 @@ export default function Terms() {
           L'inscription nécessite la fourniture d'une adresse email valide, d'un mot de passe et de ton nom. Tu déclares avoir au moins 18 ans ou agir avec l'autorisation d'un représentant légal.
         </LegalP>
         <LegalP>
-          Tu es seul responsable de la confidentialité de tes identifiants. Tout accès non autorisé doit être signalé immédiatement à <LegalLink href="mailto:contact@petanquepro.fr">contact@petanquepro.fr</LegalLink>.
+          Tu es seul responsable de la confidentialité de tes identifiants. Tout accès non autorisé doit être signalé immédiatement à <LegalLink href="mailto:hello@petanquepro.fr">hello@petanquepro.fr</LegalLink>.
         </LegalP>
       </LegalSection>
 

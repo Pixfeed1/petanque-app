@@ -94,11 +94,14 @@ export async function GET(request: NextRequest) {
       */
     }
 
+    // NB : l'intégration réelle de l'API Google Play n'est pas encore branchée
+    // (code réel commenté ci-dessus). Tant que ce n'est pas fait, on ne prétend
+    // PAS que la synchro est active — on renvoie un statut honnête « non implémentée ».
     return apiSuccess({
-      message: 'Synchronisation Google Play terminée',
+      message: 'Synchronisation Google Play non implémentée (intégration API à venir)',
       synced: syncedCount,
       skipped: skippedCount,
-      status: 'active'
+      status: 'not_implemented'
     })
   } catch (error) {
     console.error('❌ Erreur sync Google Play:', error)

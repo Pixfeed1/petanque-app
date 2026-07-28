@@ -19,7 +19,7 @@ export default function PrivacyPolicy() {
         <LegalP>
           Le responsable de traitement des données collectées sur petanquepro.fr est <strong className="text-petanque-vert-fonce">PixFeed</strong>, immatriculée sous le SIRET 852 393 735 00018, sise à Franconville (95130).
         </LegalP>
-        <LegalKV label="Contact" value={<LegalLink href="mailto:contact@petanquepro.fr">contact@petanquepro.fr</LegalLink>} />
+        <LegalKV label="Contact" value={<LegalLink href="mailto:hello@petanquepro.fr">hello@petanquepro.fr</LegalLink>} />
       </LegalSection>
 
       <LegalSection num="02" title="Données collectées">
@@ -82,7 +82,7 @@ export default function PrivacyPolicy() {
           <LegalLI><strong>Droit à la limitation</strong> : geler temporairement un traitement</LegalLI>
         </LegalList>
         <Callout label="Comment exercer tes droits">
-          Envoie un email à <LegalLink href="mailto:contact@petanquepro.fr">contact@petanquepro.fr</LegalLink> avec une copie d'une pièce d'identité. Réponse sous 30 jours maximum.
+          Envoie un email à <LegalLink href="mailto:hello@petanquepro.fr">hello@petanquepro.fr</LegalLink> avec une copie d'une pièce d'identité. Réponse sous 30 jours maximum.
         </Callout>
         <LegalP>
           En cas de désaccord, tu peux saisir la <LegalLink href="https://www.cnil.fr/fr/plaintes" external>CNIL</LegalLink>, autorité de contrôle française.

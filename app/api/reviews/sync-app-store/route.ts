@@ -92,11 +92,13 @@ export async function GET(request: NextRequest) {
       */
     }
 
+    // NB : l'intégration réelle de l'API App Store n'est pas encore branchée
+    // (code réel commenté ci-dessus). On ne prétend pas que la synchro est active.
     return apiSuccess({
-      message: 'Synchronisation App Store terminée',
+      message: 'Synchronisation App Store non implémentée (intégration API à venir)',
       synced: syncedCount,
       skipped: skippedCount,
-      status: 'active'
+      status: 'not_implemented'
     })
   } catch (error) {
     console.error('❌ Erreur sync App Store:', error)

@@ -124,7 +124,7 @@ export default function AdminDashboard() {
           Vue <span className="accent-italic text-petanque-vert">d'ensemble.</span>
         </h1>
         <p className="text-base text-petanque-bois leading-relaxed mb-12 max-w-2xl">
-          Connecté en tant que {user?.email}. Tu peux suivre l'activité, modérer le contenu et gérer le mode beta.
+          Connecté en tant que {user?.email}. Tu peux suivre l'activité et modérer le contenu.
         </p>
       </FadeIn>
 

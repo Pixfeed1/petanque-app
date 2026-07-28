@@ -71,7 +71,7 @@ export default function Footer({ scrollToSection }: FooterProps) {
             <h4 className="text-white font-semibold mb-4">Support</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="mailto:support@petanquepro.fr" className="hover:text-white transition">
+                <a href="mailto:hello@petanquepro.fr" className="hover:text-white transition">
                   Contact
                 </a>
               </li>

@@ -21,7 +21,7 @@ export default function MentionsLegales() {
         <LegalKV label="SIRET" value="852 393 735 00018" />
         <LegalKV label="Directeur de la publication" value="PixFeed" />
         <LegalKV label="Adresse" value="Franconville (95130), France" />
-        <LegalKV label="E-mail" value={<LegalLink href="mailto:contact@petanquepro.fr">contact@petanquepro.fr</LegalLink>} />
+        <LegalKV label="E-mail" value={<LegalLink href="mailto:hello@petanquepro.fr">hello@petanquepro.fr</LegalLink>} />
         <LegalKV label="TVA" value="Non applicable, art. 293 B du CGI (franchise en base)" />
       </LegalSection>
 
