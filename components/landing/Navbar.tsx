@@ -59,7 +59,7 @@ export function Navbar() {
               </div>
             </div>
             <span className="text-base font-medium text-petanque-vert-fonce tracking-tight">
-              Petanque Pro
+              Pétanque Pro
             </span>
           </Link>
 

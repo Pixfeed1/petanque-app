@@ -333,7 +333,7 @@ function SignupForm({ form }: FormProps) {
             onChange={(e) => form.setOrganizationName(e.target.value)}
             onKeyPress={form.handleKeyPress}
             className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-            placeholder="Club de Petanque de Marseille"
+            placeholder="Club de Pétanque de Marseille"
           />
         </div>
       </div>
@@ -352,7 +352,7 @@ function SignupForm({ form }: FormProps) {
         onKeyPress={form.handleKeyPress}
         showPassword={form.showPassword}
         onToggleShow={() => form.setShowPassword(!form.showPassword)}
-        placeholder="Minimum 6 caracteres"
+        placeholder="Minimum 6 caractères"
       />
 
       <div>

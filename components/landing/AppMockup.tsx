@@ -8,11 +8,11 @@ export function AppMockup({ className = '' }: { className?: string }) {
       <div className="bg-petanque-sable-pale border-b border-petanque-sable-bord/50 px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BouleSvg size={20} variant="acier" stries />
-          <span className="text-xs font-medium text-petanque-vert-fonce">Petanque Pro</span>
+          <span className="text-xs font-medium text-petanque-vert-fonce">Pétanque Pro</span>
         </div>
         <div className="flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-petanque-vert" />
-          <span className="text-[10px] text-petanque-bois">Live</span>
+          <span className="text-[10px] text-petanque-bois">En direct</span>
         </div>
       </div>
 

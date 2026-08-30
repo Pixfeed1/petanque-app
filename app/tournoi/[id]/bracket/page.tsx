@@ -457,7 +457,7 @@ function MatchCard({ match, labelA, labelB, isFinale, matchIdx, top, height, onC
         {isLive && (
           <span className="font-mono text-[9px] text-petanque-vert uppercase tracking-[0.14em] font-medium flex items-center gap-1 flex-shrink-0">
             <span className="w-1 h-1 rounded-full bg-petanque-vert animate-pulse"></span>
-            Live
+            En direct
           </span>
         )}
         {isBye && (
@@ -626,7 +626,7 @@ function DEMatchCard({ match, onMatchClick }: { match: BracketMatch; onMatchClic
   const liveB = isLive && match.score_b > match.score_a
 
   let statusPill: React.ReactNode
-  if (isLive) statusPill = <span className="text-petanque-vert flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-petanque-vert animate-pulse"></span>Live</span>
+  if (isLive) statusPill = <span className="text-petanque-vert flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-petanque-vert animate-pulse"></span>En direct</span>
   else if (isBye) statusPill = <span className="text-petanque-vert">Qualifié</span>
   else if (isDone) statusPill = <span>Terminé</span>
   else if (isWaiting) statusPill = <span className="italic">En attente</span>
@@ -704,7 +704,7 @@ function PetiteFinaleCard({ match, onClick }: PetiteFinaleCardProps) {
     >
       <div className="flex items-center justify-between gap-2 mb-2">
         <span className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em]">Match consolante</span>
-        {isLive && <span className="font-mono text-[9px] text-petanque-vert uppercase tracking-[0.14em] font-medium flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-petanque-vert animate-pulse"></span>Live</span>}
+        {isLive && <span className="font-mono text-[9px] text-petanque-vert uppercase tracking-[0.14em] font-medium flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-petanque-vert animate-pulse"></span>En direct</span>}
         {isDone && <span className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em]">Terminé</span>}
         {!isDone && !isLive && <span className="font-mono text-[9px] text-petanque-cochonnet uppercase tracking-[0.14em]">À jouer</span>}
       </div>

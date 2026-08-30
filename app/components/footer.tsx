@@ -61,7 +61,7 @@ export default function Footer({ scrollToSection }: FooterProps) {
               </li>
               <li>
                 <Link href="/dashboard" className="hover:text-white transition">
-                  Dashboard
+                  Tableau de bord
                 </Link>
               </li>
             </ul>
