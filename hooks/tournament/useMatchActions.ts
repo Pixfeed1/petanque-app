@@ -22,7 +22,7 @@ interface UseMatchActionsProps {
   onSuccess?: (message: string) => void
   onError?: (message: string) => void
   onWarning?: (message: string) => void
-  onConfirmTerrainConflict?: (message: string) => Promise<boolean>
+  onConfirmTerrainConflict?: (message: string, opts?: { title?: string; confirmText?: string }) => Promise<boolean>
 }
 
 interface UseMatchActionsReturn {
@@ -204,7 +204,7 @@ export function useMatchActions({
       }
       const message = 'Des poules existent déjà. Tu veux les supprimer et en régénérer de nouvelles ?'
       const confirmed = onConfirmTerrainConflict
-        ? await onConfirmTerrainConflict(message)
+        ? await onConfirmTerrainConflict(message, { title: 'Refaire le tirage', confirmText: 'Refaire le tirage' })
         : window.confirm(message)
       if (!confirmed) return false
     }

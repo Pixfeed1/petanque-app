@@ -241,6 +241,9 @@ export async function PUT(
     // supprimer avant de corriger). La double élim ("de:*") est exclue : elle
     // recalcule tout via advanceDoubleElimination.
     const ELIM_LATER_ROUNDS: Record<string, string[]> = {
+      // Un match de poule corrigé après la génération du bracket fausserait la
+      // qualification (le seeding ne serait pas recalculé) : on bloque aussi.
+      poule: ['huitieme', 'quart', 'demi', 'finale', 'petite_finale'],
       huitieme: ['quart', 'demi', 'finale', 'petite_finale'],
       quart: ['demi', 'finale', 'petite_finale'],
       demi: ['finale', 'petite_finale'],
@@ -251,12 +254,15 @@ export async function PUT(
       body.winner_id !== undefined || body.status !== undefined
     if (editsOutcome && existingMatch.status === 'termine' && ELIM_LATER_ROUNDS[existingType]) {
       const later = await queryOne(
-        `SELECT 1 FROM matches WHERE tournoi_id = $1 AND type = ANY($2::text[]) LIMIT 1`,
-        [existingMatch.tournoi_id, ELIM_LATER_ROUNDS[existingType]]
+        `SELECT 1 FROM matches
+         WHERE tournoi_id = $1
+           AND (type = ANY($2::text[]) OR ($3 AND type LIKE 'de:%'))
+         LIMIT 1`,
+        [existingMatch.tournoi_id, ELIM_LATER_ROUNDS[existingType], existingType === 'poule']
       )
       if (later) {
         return apiError(
-          'Ce match a déjà été propagé au tour suivant. Supprimez le tour suivant avant de corriger ce résultat.',
+          'Ce match a déjà été propagé au tour suivant. Supprime le tour suivant avant de corriger ce résultat.',
           409
         )
       }

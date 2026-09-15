@@ -88,10 +88,13 @@ export default function TournamentDetailPage() {
     onSuccess: showSuccess, onError: showError, onWarning: showWarning
   })
 
-  const handleConfirmTerrainConflict = useCallback(async (message: string) => {
+  const handleConfirmTerrainConflict = useCallback(async (
+    message: string,
+    opts?: { title?: string; confirmText?: string }
+  ) => {
     return await confirm({
-      title: 'Conflit de terrain', message,
-      confirmText: 'Assigner quand même', variant: 'warning'
+      title: opts?.title || 'Conflit de terrain', message,
+      confirmText: opts?.confirmText || 'Assigner quand même', variant: 'warning'
     })
   }, [confirm])
 
@@ -1099,6 +1102,15 @@ export default function TournamentDetailPage() {
               ) : (
                 <>
                   <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
+                    {/* Préparation : le tirage peut être relancé tant que rien
+                        n'est joué (répartition des poules + ordre des matchs). */}
+                    {isAdmin && tournament.status === 'preparation' &&
+                      matches.some(m => m.type === 'poule') &&
+                      !matches.some(m => m.status === 'en_cours' || m.status === 'termine') && (
+                      <Button variant="secondary" onClick={generatePoules}>
+                        <Refresh className="w-4 h-4 mr-1.5" />Refaire le tirage des poules
+                      </Button>
+                    )}
                     <div className="flex flex-wrap gap-2.5">
                       {([
                         { id: 'all', label: 'Tous' },

@@ -161,7 +161,38 @@ export default function MatchScorePage() {
             ) : (
               <span>Terminé</span>
             )}
-            {match.terrain && (<><span className="text-petanque-sable-bord">·</span><span>Terrain {terrainLabel(match.terrain, (match as any).tournoi?.settings?.terrainNames)}</span></>)}
+            {/* Terrain : modifiable par l'organisateur tant que le match n'est pas fini */}
+            {(match.terrain || (isAdmin && !winner)) && (<>
+              <span className="text-petanque-sable-bord">·</span>
+              {isAdmin && !winner ? (
+                <label className="inline-flex items-center gap-1.5">
+                  <span>Terrain</span>
+                  <select
+                    value={match.terrain || ''}
+                    onChange={async (e) => {
+                      const t = parseInt(e.target.value)
+                      if (!t) return
+                      const res = await fetch(`/api/matches/${params?.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ terrain: t })
+                      })
+                      if (res.ok) { showSuccess(`Terrain ${terrainLabel(t, (match as any).tournoi?.settings?.terrainNames)} assigné`); window.location.reload() }
+                      else showError('Impossible de changer le terrain')
+                    }}
+                    className="bg-white border border-petanque-sable-bord/60 rounded px-1.5 py-0.5 text-[11px] uppercase tracking-[0.14em] text-petanque-vert-fonce focus:border-petanque-vert focus:outline-none"
+                  >
+                    {!match.terrain && <option value="">—</option>}
+                    {Array.from({ length: (match as any).tournoi?.settings?.terrains || 0 }, (_, i) => (
+                      <option key={i + 1} value={i + 1}>{terrainLabel(i + 1, (match as any).tournoi?.settings?.terrainNames)}</option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <span>Terrain {terrainLabel(match.terrain!, (match as any).tournoi?.settings?.terrainNames)}</span>
+              )}
+            </>)}
             {!winner && (<><span className="text-petanque-sable-bord">·</span><span>Mène {currentManche}</span></>)}
           </p>
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-medium text-petanque-vert-fonce tracking-tight leading-[1.1] mb-8">
@@ -345,6 +376,37 @@ export default function MatchScorePage() {
                 </div>
               )}
             </div>
+            {/* Correction d'une erreur de saisie : rouvre le match. Le serveur
+                refuse si le résultat a déjà été propagé au tour suivant. */}
+            {isAdmin && (
+              <div className="text-center -mt-2 mb-6">
+                <button
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: 'Corriger le score',
+                      message: 'Rouvrir ce match pour corriger la saisie ? Tu pourras annuler les dernières mènes puis le reterminer — le classement sera recalculé.'
+                    })
+                    if (!ok) return
+                    const res = await fetch(`/api/matches/${params?.id}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify({ status: 'en_cours' })
+                    })
+                    if (res.ok) {
+                      window.location.reload()
+                    } else {
+                      const e = await res.json().catch(() => ({}))
+                      showError(e.error || 'Impossible de rouvrir ce match.')
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs text-petanque-bois hover:text-petanque-vert-fonce hover:bg-white border border-petanque-sable-bord/60 rounded-lg font-medium transition-colors"
+                >
+                  <Undo className="w-3.5 h-3.5" />
+                  Corriger le score
+                </button>
+              </div>
+            )}
           </FadeIn>
         )}
 
