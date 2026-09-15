@@ -57,6 +57,32 @@ export default function ExportTournamentPage() {
   const isMeleeTournante = tournament?.mode === 'melee_tournante'
   const playedMatchesCount = matches.filter((m: any) => m.status === 'termine').length
 
+  // Tournoi terminé : le top 3 affiché est le VRAI podium (vainqueur de la
+  // finale, finaliste, vainqueur de la petite finale / 3e de double élim) —
+  // pas le classement aux points cumulés, qui peut mettre la championne 3e.
+  const isFinished = tournament?.status === 'termine'
+  const finalPodium = (() => {
+    if (!isFinished || isMeleeTournante || rankings.length === 0) return null
+    const byId = new Map(rankings.map((t: any) => [String(t.id), t]))
+    const findDone = (types: string[]) => matches.find((m: any) =>
+      types.includes(m.type) && m.status === 'termine' && m.equipe_a?.id && m.equipe_b?.id)
+    const gf2 = findDone(['de:GF2'])
+    const finale: any = gf2 || findDone(['de:GF']) || findDone(['finale'])
+    if (!finale) return null
+    const aId = finale.equipe_a?.id, bId = finale.equipe_b?.id
+    const winId = finale.winner_id
+      || ((finale.score_a ?? 0) > (finale.score_b ?? 0) ? aId : bId)
+    const loseId = String(winId) === String(aId) ? bId : aId
+    const podium = [byId.get(String(winId)), byId.get(String(loseId))]
+    const pf: any = findDone(['petite_finale'])
+    if (pf) {
+      const pfWin = pf.winner_id
+        || ((pf.score_a ?? 0) > (pf.score_b ?? 0) ? pf.equipe_a?.id : pf.equipe_b?.id)
+      podium.push(byId.get(String(pfWin)))
+    }
+    return podium.filter(Boolean)
+  })()
+
   const modeLabel = tournament?.mode === 'choisi' ? 'Équipes choisies' :
                     tournament?.mode === 'melee_fixe' ? 'Mêlée fixe' :
                     tournament?.mode === 'melee_tournante' ? 'Mêlée tournante' : '—'
@@ -162,10 +188,10 @@ export default function ExportTournamentPage() {
                 <section className="pb-8 border-b border-petanque-sable-bord/50">
                   <p className="font-mono text-[10px] text-petanque-bois uppercase tracking-[0.16em] mb-1.5">03</p>
                   <h2 className="text-lg md:text-xl font-medium text-petanque-vert-fonce mb-5 tracking-tight">
-                    {isMeleeTournante ? 'Top 3 joueurs' : 'Podium provisoire'}
+                    {isMeleeTournante ? 'Top 3 joueurs' : finalPodium ? 'Podium' : 'Podium provisoire'}
                   </h2>
                   <div className="divide-y divide-petanque-sable-bord/40">
-                    {rankings.slice(0, 3).map((item: any, index: number) => (
+                    {(finalPodium || rankings.slice(0, 3)).map((item: any, index: number) => (
                       <PodiumRow key={index} index={index} item={item} />
                     ))}
                   </div>
