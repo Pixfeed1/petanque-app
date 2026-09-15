@@ -62,7 +62,7 @@ export default function ExportTournamentPage() {
                     tournament?.mode === 'melee_tournante' ? 'Mêlée tournante' : '—'
   const formatLabel = tournament?.format === 'doublette' ? 'Doublettes' :
                       tournament?.format === 'triplette' ? 'Triplettes' :
-                      tournament?.format === 'tete_a_tete' ? 'Tête à tête' : '—'
+                      tournament?.format === 'tete_a_tete' ? 'Tête-à-tête' : '—'
 
   const optionsList: { key: keyof ExportOptions; label: string }[] = [
     { key: 'includeMatches', label: 'Les matchs' },

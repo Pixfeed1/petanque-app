@@ -26,7 +26,7 @@ interface TournoiHistorique {
 }
 
 const formatLabels: Record<string, string> = {
-  tete_a_tete: 'Tête à tête',
+  tete_a_tete: 'Tête-à-tête',
   doublette: 'Doublettes',
   triplette: 'Triplettes',
 }

@@ -14,6 +14,7 @@ import { Loader, Plus, X, Check } from '@/components/Icons'
 import { computePouleDistributions } from '@/lib/tournament/pouleDistributions'
 import { parseTournamentDescription } from '@/lib/tournament/describeParser'
 import { SUGGESTED_TERRAINS } from '@/lib/tournament/terrains'
+import { modeLabel, formatLabel } from '@/lib/labels'
 
 export default function CreateTournamentPage() {
   const router = useRouter()
@@ -418,7 +419,7 @@ function Step2({ formData, updateFormField }: any) {
     { value: 'personnalise', title: 'Personnalisé', desc: 'Tu composes tes propres règles (moteur libre).', variant: 'acier' as const }
   ]
   const formats = [
-    { value: 'tete_a_tete', num: '1', title: 'Tête à tête', desc: '1 joueur' },
+    { value: 'tete_a_tete', num: '1', title: 'Tête-à-tête', desc: '1 joueur' },
     { value: 'doublette', num: '2', title: 'Doublette', desc: '2 joueurs' },
     { value: 'triplette', num: '3', title: 'Triplette', desc: '3 joueurs' }
   ]
@@ -955,8 +956,8 @@ function Step5({ formData, getTotalPlayers, getEstimatedTeams, getEstimatedPools
     { label: 'Nom', value: formData.name || '—' },
     { label: 'Date', value: formData.date || '—' },
     { label: 'Lieu', value: formData.location || '—' },
-    { label: 'Mode', value: formData.mode === 'choisi' ? 'Choisi' : formData.mode === 'melee_fixe' ? 'Mêlée fixe' : formData.mode === 'personnalise' ? 'Personnalisé' : 'Mêlée tournante' },
-    { label: 'Format', value: formData.format === 'tete_a_tete' ? 'Tête à tête' : formData.format === 'doublette' ? 'Doublette' : 'Triplette' },
+    { label: 'Mode', value: modeLabel(formData.mode) },
+    { label: 'Format', value: formatLabel(formData.format) },
     { label: 'Points max', value: formData.maxPoints },
     { label: 'Joueurs', value: getTotalPlayers() },
     { label: 'Équipes', value: getEstimatedTeams() },
