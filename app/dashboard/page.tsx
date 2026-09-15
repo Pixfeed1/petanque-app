@@ -11,6 +11,7 @@ import { Users, Plus, Logout, Settings, Archive } from '@/components/Icons'
 import { Button, Badge, Section, Stat, Boule, BouleSvg, useToast, useConfirm } from '@/components/ui'
 import type { ActionItem } from '@/lib/types'
 import { NativeBanner } from '@/components/NativeBanner'
+import { modeLabel, formatLabel, statusLabel } from '@/lib/labels'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -111,7 +112,7 @@ export default function Dashboard() {
     )
   }
 
-  const firstName = user?.email?.split('@')[0] || 'champion'
+  const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'champion'
   const totalActifs = (stats.tournoiEnCours || 0)
   const totalAVenir = filteredTournois.filter((t) => t.status === 'preparation').length
 
@@ -135,7 +136,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <span className="hidden sm:block text-base font-medium text-petanque-vert-fonce tracking-tight group-hover:text-petanque-vert transition-colors">
-                Petanque Pro
+                Pétanque Pro
               </span>
             </div>
 
@@ -222,7 +223,7 @@ export default function Dashboard() {
                           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-petanque-bois hover:text-petanque-vert-fonce hover:bg-petanque-sable-pale rounded-lg transition text-left"
                         >
                           <Logout />
-                          Deconnexion
+                          Déconnexion
                         </button>
                       </div>
                     </div>
@@ -248,12 +249,12 @@ export default function Dashboard() {
                     {totalActifs} tournoi{totalActifs > 1 ? 's' : ''} en cours
                     {totalAVenir > 0 && (
                       <>
-                        ,<br className="hidden md:block" /> {totalAVenir} a venir.
+                        ,<br className="hidden md:block" /> {totalAVenir} à venir.
                       </>
                     )}
                   </>
                 ) : (
-                  <>L'<span className="accent-italic">art</span> du tournoi, prêt a l'emploi.</>
+                  <>L'<span className="accent-italic">art</span> du tournoi, prêt à l'emploi.</>
                 )}
               </h1>
             </div>
@@ -268,7 +269,7 @@ export default function Dashboard() {
               className="text-left group"
             >
               <Stat
-                label="Tournois crees"
+                label="Tournois créés"
                 value={stats.totalTournois}
                 size="lg"
               />
@@ -298,7 +299,7 @@ export default function Dashboard() {
               className="text-left group"
             >
               <Stat
-                label="Matchs joues"
+                label="Matchs joués"
                 value={stats.totalMatchs}
                 size="lg"
               />
@@ -357,7 +358,7 @@ export default function Dashboard() {
                           {tournoi.name}
                         </h3>
                         <p className="text-xs text-petanque-bois mb-2 uppercase tracking-wider">
-                          {tournoi.format} · {tournoi.mode}
+                          {formatLabel(tournoi.format)} · {modeLabel(tournoi.mode)}
                         </p>
                         <p className="text-sm font-mono text-petanque-bois">
                           {tournoi.nb_matchs_joues || 0}
@@ -384,7 +385,7 @@ export default function Dashboard() {
 
           {recentMatches.length > 0 && (
             <div id="recent-matches" className="mb-12">
-              <h2 className="text-base font-medium text-petanque-vert-fonce mb-4">Activite recente</h2>
+              <h2 className="text-base font-medium text-petanque-vert-fonce mb-4">Activité récente</h2>
               <div className="divide-y divide-petanque-sable-bord/40">
                 {recentMatches.slice(0, 5).map((match) => (
                   <div
@@ -393,9 +394,9 @@ export default function Dashboard() {
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-petanque-vert-fonce">
-                        <span className="font-medium">{match.equipe_a?.name || 'Equipe A'}</span>
+                        <span className="font-medium">{match.equipe_a?.name || 'Équipe A'}</span>
                         <span className="text-petanque-bois mx-2">vs</span>
-                        <span className="font-medium">{match.equipe_b?.name || 'Equipe B'}</span>
+                        <span className="font-medium">{match.equipe_b?.name || 'Équipe B'}</span>
                       </p>
                       <p className="text-xs text-petanque-bois mt-0.5">
                         Tour {match.tour}{match.terrain ? ` · Terrain ${match.terrain}` : ''}
@@ -406,7 +407,7 @@ export default function Dashboard() {
                         {match.score_a}<span className="opacity-30 mx-1">-</span>{match.score_b}
                       </p>
                       <p className="text-[11px] text-petanque-bois mt-0.5">
-                        {match.status === 'termine' ? 'Termine' : 'En cours'}
+                        {match.status === 'termine' ? 'Terminé' : 'En cours'}
                       </p>
                     </div>
                   </div>
@@ -443,7 +444,7 @@ export default function Dashboard() {
                           : 'text-petanque-bois hover:text-petanque-vert-fonce'
                       }`}
                     >
-                      {status === 'all' ? 'Tous' : status === 'preparation' ? 'Prep.' : 'Finis'}
+                      {status === 'all' ? 'Tous' : status === 'preparation' ? 'Prep.' : 'Terminés'}
                     </button>
                   ))}
                 </div>
@@ -457,12 +458,12 @@ export default function Dashboard() {
             {filteredTournois.length === 0 ? (
               <div className="py-16 text-center">
                 <BouleSvg size={48} variant="acier" stries className="mx-auto mb-3 opacity-40" />
-                <p className="text-sm text-petanque-bois">Aucun tournoi trouve</p>
+                <p className="text-sm text-petanque-bois">Aucun tournoi trouvé</p>
                 <button
                   onClick={() => router.push('/tournoi/nouveau')}
                   className="mt-3 text-sm text-petanque-vert hover:text-petanque-vert-fonce font-medium underline-offset-4 hover:underline"
                 >
-                  Creer mon premier tournoi
+                  Créer mon premier tournoi
                 </button>
               </div>
             ) : (
@@ -486,7 +487,7 @@ export default function Dashboard() {
                             {tournoi.name}
                           </h3>
                           <p className="text-xs text-petanque-bois uppercase tracking-wider mb-2">
-                            {tournoi.format} · {tournoi.mode}
+                            {formatLabel(tournoi.format)} · {modeLabel(tournoi.mode)}
                           </p>
                           {(tournoi.nb_matchs_total || 0) > 0 && (
                             <p className="text-sm font-mono text-petanque-bois">
@@ -506,11 +507,7 @@ export default function Dashboard() {
                           }
                           withBoule={false}
                         >
-                          {tournoi.status === 'en_cours'
-                            ? 'En cours'
-                            : tournoi.status === 'termine'
-                            ? 'Termine'
-                            : 'Preparation'}
+                          {statusLabel(tournoi.status)}
                         </Badge>
                         <button
                           onClick={() => handleDeleteTournament(tournoi.id)}
