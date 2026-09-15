@@ -37,6 +37,9 @@ export interface DEBracketView {
   wbRounds: DERound[]
   lbRounds: DERound[]
   gf: BracketMatch | null
+  // GF2 (« bracket reset ») : jouée seulement si le sortant des repêchages
+  // gagne la grande finale. Reste en_attente sinon.
+  gf2: BracketMatch | null
 }
 
 export interface Tournament {
@@ -92,7 +95,7 @@ export function useBracket({ tournoiId }: UseBracketProps): UseBracketReturn {
     finale: null,
     petiteFinale: null
   })
-  const [doubleElim, setDoubleElim] = useState<DEBracketView>({ wbRounds: [], lbRounds: [], gf: null })
+  const [doubleElim, setDoubleElim] = useState<DEBracketView>({ wbRounds: [], lbRounds: [], gf: null, gf2: null })
 
   useEffect(() => {
     if (tournoiId) {
@@ -125,9 +128,11 @@ export function useBracket({ tournoiId }: UseBracketProps): UseBracketReturn {
         const wbMap = new Map<number, BracketMatch[]>()
         const lbMap = new Map<number, BracketMatch[]>()
         let gf: BracketMatch | null = null
+        let gf2: BracketMatch | null = null
         for (const m of deRaw) {
-          const slot = m.type.slice(3) // "W1-0" | "L2-1" | "GF"
+          const slot = m.type.slice(3) // "W1-0" | "L2-1" | "GF" | "GF2"
           if (slot === 'GF') { gf = m; continue }
+          if (slot === 'GF2') { gf2 = m; continue }
           const mm = /^([WL])(\d+)-(\d+)$/.exec(slot)
           if (!mm) continue
           const round = parseInt(mm[2], 10)
@@ -140,7 +145,7 @@ export function useBracket({ tournoiId }: UseBracketProps): UseBracketReturn {
           [...map.entries()]
             .sort((a, b) => a[0] - b[0])
             .map(([round, ms]) => ({ round, matches: ms.sort((a, b) => idxOf(a) - idxOf(b)) }))
-        setDoubleElim({ wbRounds: toRounds(wbMap), lbRounds: toRounds(lbMap), gf })
+        setDoubleElim({ wbRounds: toRounds(wbMap), lbRounds: toRounds(lbMap), gf, gf2 })
       }
 
       // Filtrer pour garder seulement les phases finales (élim simple)

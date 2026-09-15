@@ -176,7 +176,13 @@ export default function BracketPage() {
               </button>
               <span className="font-mono text-xs text-petanque-bois truncate max-w-[300px]">{tournament?.name}</span>
               <span className="font-mono text-xs uppercase tracking-[0.16em] font-medium">
-                {doubleElim.gf?.status === 'termine' ? <span>Terminé</span> : <span>Double élim.</span>}
+                {/* Terminé seulement si la GF est jouée ET que la GF2 (bracket
+                    reset) n'est pas en cours : si le sortant des repêchages
+                    gagne la GF, la GF2 décide du champion. */}
+                {doubleElim.gf?.status === 'termine' &&
+                 (!doubleElim.gf2 || doubleElim.gf2.status === 'en_attente' || doubleElim.gf2.status === 'termine')
+                  ? <span>Terminé</span>
+                  : <span>Double élim.</span>}
               </span>
             </div>
           </div>
@@ -571,6 +577,21 @@ function DoubleEliminationView({ de, onMatchClick }: { de: DEBracketView; onMatc
             Grande finale
           </p>
           <DEMatchCard match={de.gf} onMatchClick={onMatchClick} />
+          {/* GF2 (bracket reset) : ne s'affiche que si elle est réellement
+              déclenchée — le sortant des repêchages a gagné la GF, chacun
+              compte une défaite, ce match décide du champion. */}
+          {de.gf2 && de.gf2.status !== 'en_attente' && (
+            <div className="mt-6">
+              <p className="font-mono text-[11px] uppercase tracking-[0.18em] font-medium text-petanque-vert mb-2 flex items-center gap-2.5">
+                <BouleSvg size={16} variant="cochonnet" stries />
+                Grande finale 2 · la revanche
+              </p>
+              <p className="text-xs text-petanque-bois mb-4">
+                Le sortant des repêchages a gagné la grande finale : une défaite partout, ce match décide du champion.
+              </p>
+              <DEMatchCard match={de.gf2} onMatchClick={onMatchClick} />
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -26,6 +26,7 @@ import {
 
 import { useEffectiveRole, type ViewRole } from '@/hooks/useEffectiveRole'
 import TournamentSubNav from '@/components/tournament/TournamentSubNav'
+import { thirdPlaceTeamId } from '@/lib/services/doubleEliminationIntegration'
 type ActiveSection = 'apercu' | 'matchs' | 'classement' | 'equipes' | 'stats'
 
 // Nombre minimum d'équipes pour démarrer un tournoi. Abaissé de 4 à 3 : de
@@ -176,6 +177,19 @@ export default function TournamentDetailPage() {
         const pfWin = (pf as { winner_id?: string }).winner_id
           || ((pf.score_a ?? 0) > (pf.score_b ?? 0) ? pf.equipe_a_id : pf.equipe_b_id)
         podium.push(byId.get(pfWin as string))
+      } else {
+        // Double élimination : 3e = perdant de la finale des repêchages.
+        const deMatches = matches.filter(m => typeof m.type === 'string' && (m.type as string).startsWith('de:'))
+        if (deMatches.length > 0) {
+          const thirdId = thirdPlaceTeamId(deMatches.map(m => ({
+            type: m.type as string,
+            equipe_a_id: m.equipe_a_id ?? null,
+            equipe_b_id: m.equipe_b_id ?? null,
+            status: m.status,
+            winner_id: (m as { winner_id?: string | null }).winner_id ?? null
+          })))
+          if (thirdId) podium.push(byId.get(thirdId))
+        }
       }
       return podium.filter((t): t is NonNullable<typeof t> => !!t)
     }
@@ -1016,6 +1030,11 @@ export default function TournamentDetailPage() {
                         if (m.type === 'demi') return 'Demi-finale'
                         if (m.type === 'finale') return 'Finale'
                         if (m.type === 'petite_finale') return 'Petite finale'
+                        if (typeof m.type === 'string' && m.type.startsWith('de:')) {
+                          if (m.type === 'de:GF2') return 'Grande finale 2'
+                          if (m.type === 'de:GF') return 'Grande finale'
+                          return m.type.startsWith('de:L') ? 'Repêchages' : 'Tableau principal'
+                        }
                         return `Tour ${m.tour}`
                       })()
                       return (
