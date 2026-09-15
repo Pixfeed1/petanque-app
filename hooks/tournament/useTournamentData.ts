@@ -124,7 +124,7 @@ interface UseTournamentDataReturn {
 }
 
 export function useTournamentData({ tournamentId }: UseTournamentDataProps): UseTournamentDataReturn {
-  const { user, organization } = useAuth()
+  const { user, organization, orgRole } = useAuth()
 
   // States principaux
   const [tournament, setTournament] = useState<Tournament | null>(null)
@@ -312,8 +312,11 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
         // Vérifier et mettre à jour le statut du tournoi si nécessaire
         const finalTournamentData = await checkAndUpdateTournamentStatus(tournamentData, matchesData)
 
-        // Vérifier si l'utilisateur est organisateur
-        if (user && organization && finalTournamentData.org_id === organization.id) {
+        // Vérifier si l'utilisateur est organisateur : il faut être owner ou
+        // admin du club, pas simple membre — sinon tout joueur avec un compte
+        // verrait les contrôles d'organisation (démarrer, phases finales…).
+        if (user && organization && finalTournamentData.org_id === organization.id &&
+            (orgRole === 'owner' || orgRole === 'admin')) {
           setIsOrganizer(true)
         } else {
           setIsOrganizer(false)
@@ -325,7 +328,7 @@ export function useTournamentData({ tournamentId }: UseTournamentDataProps): Use
     } finally {
       setLoading(false)
     }
-  }, [tournamentId, user, organization, checkAndUpdateTournamentStatus])
+  }, [tournamentId, user, organization, orgRole, checkAndUpdateTournamentStatus])
 
   // Charger les données au montage
   useEffect(() => {

@@ -27,6 +27,8 @@ interface User {
 interface AuthContextType {
   user: User | null
   organization: Organization | null
+  /** Rôle dans l'organisation : 'owner' | 'admin' | 'member' (null si déconnecté). */
+  orgRole: string | null
   loading: boolean
   signOut: () => Promise<void>
   updateUserPlan: (plan: 'free' | 'essentiel' | 'club') => Promise<boolean>
@@ -38,6 +40,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   organization: null,
+  orgRole: null,
   loading: true,
   signOut: async () => {},
   updateUserPlan: async () => false,
@@ -66,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [organization, setOrganization] = useState<Organization | null>(null)
+  const [orgRole, setOrgRole] = useState<string | null>(null)
 
   useEffect(() => {
     checkUser()
@@ -103,15 +107,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('✅ Session récupérée:', data.user.email)
         setUser(data.user)
         setOrganization(data.organization)
+        setOrgRole(data.role || null)
       } else {
         console.log('ℹ️ Aucune session active')
         setUser(null)
         setOrganization(null)
+      setOrgRole(null)
+        setOrgRole(null)
       }
     } catch (error) {
       console.error('❌ Erreur vérification session:', error)
       setUser(null)
       setOrganization(null)
+      setOrgRole(null)
     } finally {
       setLoading(false)
     }
@@ -128,6 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const data = await response.json()
         setOrganization(data.organization)
+        setOrgRole(data.role || null)
         console.log('🔄 Organisation rafraîchie')
       }
     } catch (error) {
@@ -144,6 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(null)
       setOrganization(null)
+      setOrgRole(null)
       router.push('/login')
       console.log('👋 Déconnexion réussie')
     } catch (error) {
@@ -190,6 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value: AuthContextType = {
     user,
     organization,
+    orgRole,
     loading,
     signOut,
     updateUserPlan,
