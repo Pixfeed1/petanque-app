@@ -994,13 +994,23 @@ export default function TournamentDetailPage() {
                   <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-4">Activité récente</p>
                   <div className="flex flex-col">
                     {recentActivity.map((m: any, i) => {
-                      const eqA = teams.find(t => t.id === m.equipe_a_id)?.name || 'Équipe A'
-                      const eqB = teams.find(t => t.id === m.equipe_b_id)?.name || 'Équipe B'
+                      // Mêlée tournante : le nom technique (« R2-Équipe 3 ») ne parle à
+                      // personne — on affiche le(s) joueur(s) de l'équipe éphémère.
+                      const teamLabel = (teamId: string, fallback: string) => {
+                        const t = teams.find(tt => tt.id === teamId)
+                        if (!t) return fallback
+                        if (isMelee && t.equipes_joueurs?.length) {
+                          return t.equipes_joueurs.map(ej => ej.joueur?.name).filter(Boolean).join(' & ') || t.name
+                        }
+                        return t.name
+                      }
+                      const eqA = teamLabel(m.equipe_a_id, 'Équipe A')
+                      const eqB = teamLabel(m.equipe_b_id, 'Équipe B')
                       const winner = m.score_a > m.score_b ? eqA : eqB
                       const score = m.score_a > m.score_b ? `${m.score_a}–${m.score_b}` : `${m.score_b}–${m.score_a}`
                       const loser = m.score_a > m.score_b ? eqB : eqA
                       const phaseLabel = (() => {
-                        if (m.type === 'poule') return m.poule ? `Poule ${m.poule}` : (engineRounds ? `Manche ${m.tour}` : 'Poule')
+                        if (m.type === 'poule') return m.poule ? `Poule ${m.poule}` : (engineRounds ? `Manche ${m.tour}` : isMelee ? `Partie ${m.tour}` : 'Poule')
                         if (m.type === 'huitieme') return '8e de finale'
                         if (m.type === 'quart') return 'Quart de finale'
                         if (m.type === 'demi') return 'Demi-finale'
