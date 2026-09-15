@@ -107,9 +107,9 @@ export default function MatchCard({
             }
             return null
           })()}
-          {match.status === 'termine' && (
+          {(match.status === 'termine' || match.status === 'en_cours') && (
             <div className="flex items-center justify-center gap-1 mt-1">
-              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{match.score_a ?? 0}</p>
+              <p className={`text-2xl sm:text-3xl font-bold ${match.status === 'en_cours' ? 'text-green-700' : 'text-gray-900'}`}>{match.score_a ?? 0}</p>
               {isFanny && match.score_a === maxPoints && (
                 <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
               )}
@@ -144,9 +144,9 @@ export default function MatchCard({
             }
             return null
           })()}
-          {match.status === 'termine' && (
+          {(match.status === 'termine' || match.status === 'en_cours') && (
             <div className="flex items-center justify-center gap-1 mt-1">
-              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{match.score_b ?? 0}</p>
+              <p className={`text-2xl sm:text-3xl font-bold ${match.status === 'en_cours' ? 'text-green-700' : 'text-gray-900'}`}>{match.score_b ?? 0}</p>
               {isFanny && match.score_b === maxPoints && (
                 <span className="text-lg sm:text-2xl animate-bounce" title="FANNY !">🍑</span>
               )}
