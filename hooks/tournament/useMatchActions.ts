@@ -405,6 +405,10 @@ export function useMatchActions({
     }
 
     const qualified: Array<{ team: Team; poule: string }> = []
+    // Candidats à la petite finale quand la phase finale démarre directement
+    // par une finale sèche (2 qualifiés → pas de demi-finales) : les équipes
+    // classées juste derrière les qualifiées.
+    const thirdPlaceCandidates: Team[] = []
 
     for (const pouleName of pouleNames) {
       if (!pouleName) continue
@@ -505,6 +509,13 @@ export function useMatchActions({
         team: r.team,
         poule: pouleName
       })))
+
+      // Une seule poule → les 3e et 4e jouent la petite finale ; plusieurs
+      // poules → le premier non-qualifié de chaque poule est candidat.
+      const nextBestCount = pouleNames.length === 1 ? 2 : 1
+      thirdPlaceCandidates.push(
+        ...rankings.slice(qualifiedPerPoule, qualifiedPerPoule + nextBestCount).map(r => r.team)
+      )
     }
 
     if (qualified.length === 0) {
@@ -583,7 +594,21 @@ export function useMatchActions({
         .map(pair => pair.isBye
           ? { equipe_a_id: pair.teamA!.id, equipe_b_id: null, tour: 1, type: 'bye', status: 'termine', score_a: 0, score_b: 0 }
           : { equipe_a_id: pair.teamA!.id, equipe_b_id: pair.teamB!.id, tour: 1, type: matchType, status: 'a_jouer' })
-        .filter(m => m.type === 'bye' || m.equipe_b_id)
+        .filter(m => m.type === 'bye' || m.equipe_b_id) as Array<Record<string, unknown>>
+
+      // Finale directe (2 qualifiés) : il n'y aura jamais de demi-finales, donc
+      // la petite finale doit être créée maintenant, entre les équipes classées
+      // juste derrière les qualifiées. Sans ça, l'option « Petite finale »
+      // restait lettre morte et la 3e place n'était jamais attribuée.
+      if (matchType === 'finale' && tournament.settings.consolante && thirdPlaceCandidates.length >= 2) {
+        elimMatches.push({
+          equipe_a_id: thirdPlaceCandidates[0].id,
+          equipe_b_id: thirdPlaceCandidates[1].id,
+          tour: 1,
+          type: 'petite_finale',
+          status: 'a_jouer'
+        })
+      }
 
       const elimResp = await fetch(`/api/tournois/${tournament.id}/elimination`, {
         method: 'POST',

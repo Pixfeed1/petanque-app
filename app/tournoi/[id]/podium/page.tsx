@@ -162,7 +162,7 @@ export default function PodiumPage() {
                 <div>
                   <p className="text-[10px] text-petanque-bois uppercase tracking-[0.14em] mb-1.5 font-medium">Différence</p>
                   <p className="font-mono text-2xl md:text-3xl font-medium text-petanque-vert leading-none">
-                    +{champion.stats.pointsFor - champion.stats.pointsAgainst}
+                    {champion.stats.pointsFor - champion.stats.pointsAgainst >= 0 ? '+' : ''}{champion.stats.pointsFor - champion.stats.pointsAgainst}
                   </p>
                 </div>
                 <div>
@@ -318,7 +318,7 @@ function PodiumSpot({ position, team, animationStep, generatingCertificate, onGe
         <div className={`pt-2 border-t border-petanque-sable-bord/50 w-full max-w-[140px] font-mono ${
           isFirst ? 'text-sm text-petanque-vert font-medium' : 'text-xs text-petanque-bois'
         }`}>
-          {team.stats.victories}V · +{team.stats.pointsFor - team.stats.pointsAgainst}
+          {team.stats.victories}V · {team.stats.pointsFor - team.stats.pointsAgainst >= 0 ? '+' : ''}{team.stats.pointsFor - team.stats.pointsAgainst}
         </div>
       )}
 

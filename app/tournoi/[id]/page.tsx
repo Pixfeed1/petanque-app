@@ -155,6 +155,39 @@ export default function TournamentDetailPage() {
     }).filter(x => x.leader)
   }, [teamsByPoule, matches])
 
+  // Podium de l'Aperçu (tournoi terminé) : basé sur les RÉSULTATS des phases
+  // finales, pas sur l'ordre de création des équipes. Champion = vainqueur de
+  // la finale (ou grande finale en double élim), 2e = finaliste, 3e = vainqueur
+  // de la petite finale. Sans phase finale : repli sur le classement de poule.
+  const finalPodium = useMemo(() => {
+    if (tournament?.status !== 'termine') return []
+    const byId = new Map(teamsWithStats.map(t => [(t as { id: string }).id, t]))
+    const findDone = (types: string[]) => matches.find(m =>
+      types.includes(m.type as string) && m.status === 'termine' && m.equipe_a_id && m.equipe_b_id)
+    const gf2 = findDone(['de:GF2'])
+    const finale = gf2 || findDone(['de:GF']) || findDone(['finale'])
+    if (finale) {
+      const winId = (finale as { winner_id?: string }).winner_id
+        || ((finale.score_a ?? 0) > (finale.score_b ?? 0) ? finale.equipe_a_id : finale.equipe_b_id)
+      const loseId = winId === finale.equipe_a_id ? finale.equipe_b_id : finale.equipe_a_id
+      const podium = [byId.get(winId as string), byId.get(loseId as string)]
+      const pf = findDone(['petite_finale'])
+      if (pf) {
+        const pfWin = (pf as { winner_id?: string }).winner_id
+          || ((pf.score_a ?? 0) > (pf.score_b ?? 0) ? pf.equipe_a_id : pf.equipe_b_id)
+        podium.push(byId.get(pfWin as string))
+      }
+      return podium.filter((t): t is NonNullable<typeof t> => !!t)
+    }
+    // Repli : premiers de chaque poule (classement FIPJP), rang par rang
+    const poules = Object.keys(teamsByPoule || {}).sort().map(p => teamsByPoule[p])
+    const flat: typeof teamsWithStats = []
+    for (let r = 0; r < 4 && flat.length < 3; r++) {
+      for (const arr of poules) if (arr[r]) flat.push(arr[r])
+    }
+    return flat.slice(0, 3)
+  }, [tournament?.status, teamsWithStats, teamsByPoule, matches])
+
   const liveMatches = useMemo(() =>
     matches.filter(m => m.status === 'en_cours').slice(0, 6),
   [matches])
@@ -927,7 +960,7 @@ export default function TournamentDetailPage() {
                     { rank: 2, label: '2e place', boule: 'cochonnet' as const },
                     { rank: 3, label: '3e place', boule: 'vert' as const },
                   ].map((p, i) => {
-                    const winner = (isMelee || engineRemixed) ? individualRankings[i] : teamsWithStats[i]
+                    const winner = (isMelee || engineRemixed) ? individualRankings[i] : finalPodium[i]
                     if (!winner) return null
                     return (
                       <div key={p.rank} className="bg-white border border-petanque-sable-bord/60 rounded-xl p-5 text-center">
