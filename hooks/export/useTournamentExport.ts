@@ -389,7 +389,7 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
 
         autoTable(pdf, {
           startY: yPosition,
-          head: [['#', 'Nom', 'Genre', 'Email', 'Telephone']],
+          head: [['#', 'Nom', 'Genre', 'Email', 'Téléphone']],
           body: playerRows,
           theme: 'grid',
           headStyles: { fillColor: [74, 124, 89] }
@@ -573,7 +573,7 @@ export function useTournamentExport({ tournoiId }: UseTournamentExportProps): Us
       // Feuille Joueurs/Équipes
       if (tournament.mode === 'melee_tournante') {
         const playersData = [
-          ['Nom', 'Genre', 'Email', 'Telephone'],
+          ['Nom', 'Genre', 'Email', 'Téléphone'],
           ...players.map(p => [
             sanitizeForExcel(p.name),
             p.gender === 'H' ? 'Homme' : 'Femme',

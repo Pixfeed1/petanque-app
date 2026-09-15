@@ -299,7 +299,7 @@ export function usePlayersManagement(props?: UsePlayersManagementProps): UsePlay
       : filteredPlayers
 
     const csv = [
-      ['Nom', 'Genre', 'Email', 'Telephone'].join(','),
+      ['Nom', 'Genre', 'Email', 'Téléphone'].join(','),
       ...dataToExport.map(p =>
         sanitizeRowForCSV([p.name, p.gender || '', p.email || '', p.phone || '']).join(',')
       )

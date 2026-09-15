@@ -177,7 +177,7 @@ export default function Dashboard() {
               <button
                 onClick={() => router.push('/parametres')}
                 className="p-2 text-petanque-bois hover:text-petanque-vert-fonce hover:bg-petanque-vert-pale/40 rounded-lg transition"
-                aria-label="Parametres"
+                aria-label="Paramètres"
               >
                 <Settings />
               </button>

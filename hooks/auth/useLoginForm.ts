@@ -225,7 +225,7 @@ export function useLoginForm(): UseLoginFormReturn {
         return
       }
 
-      setSuccess('Compte cree avec succes !')
+      setSuccess('Compte créé avec succès !')
       await new Promise(resolve => setTimeout(resolve, 1000))
       window.location.href = '/dashboard'
     } catch {

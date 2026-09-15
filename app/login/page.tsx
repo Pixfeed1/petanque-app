@@ -56,7 +56,7 @@ export default function LoginPage() {
                 className="flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
               >
                 {Icons.arrowLeft}
-                <span className="ml-2">Retour a la connexion</span>
+                <span className="ml-2">Retour à la connexion</span>
               </button>
             )}
 
@@ -98,14 +98,14 @@ export default function LoginPage() {
                   onClick={() => form.setActiveTab('signup')}
                   className="font-medium text-green-600 hover:text-green-700 transition-colors underline-offset-2 hover:underline"
                 >
-                  Creer un compte gratuitement
+                  Créer un compte gratuitement
                 </button>
               </p>
             )}
 
             {form.activeTab === 'signup' && (
               <p className="mt-8 text-center text-sm text-gray-600">
-                Deja un compte ?{' '}
+                Déjà un compte ?{' '}
                 <button
                   onClick={() => form.setActiveTab('login')}
                   className="font-medium text-green-600 hover:text-green-700 transition-colors underline-offset-2 hover:underline"
@@ -119,7 +119,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div className={`mt-12 text-center text-sm text-gray-500 transition-all duration-700 delay-200 ${form.mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <p>© 2025 Petanque Pro - Fait avec ❤️ par <a href="https://pixfeed.net" rel="follow" className="text-green-600 hover:text-green-700 transition-colors">Pixfeed</a> pour les passionnes</p>
+          <p>© {new Date().getFullYear()} Pétanque Pro - Fait avec ❤️ par <a href="https://pixfeed.net" rel="follow" className="text-green-600 hover:text-green-700 transition-colors">Pixfeed</a> pour les passionnés</p>
         </div>
       </div>
 
@@ -171,9 +171,9 @@ interface LogoHeaderProps {
 
 function LogoHeader({ mounted, activeTab, onLogoClick }: LogoHeaderProps) {
   const subtitle = {
-    login: 'Gerez vos tournois comme un champion',
-    signup: 'Creez votre compte gratuitement',
-    forgot: 'Reinitialisez votre mot de passe'
+    login: 'Gérez vos tournois comme un champion',
+    signup: 'Créez votre compte gratuitement',
+    forgot: 'Réinitialisez votre mot de passe'
   }
 
   return (
@@ -184,7 +184,7 @@ function LogoHeader({ mounted, activeTab, onLogoClick }: LogoHeaderProps) {
             {Icons.boule}
           </div>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">Petanque Pro</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">Pétanque Pro</h1>
       </div>
       <p className="text-gray-600">{subtitle[activeTab]}</p>
     </div>
@@ -283,7 +283,7 @@ function LoginForm({ form }: FormProps) {
           onClick={() => form.setActiveTab('forgot')}
           className="text-sm text-green-600 hover:text-green-700 font-medium transition-colors"
         >
-          Mot de passe oublie ?
+          Mot de passe oublié ?
         </button>
       </div>
 
@@ -293,7 +293,7 @@ function LoginForm({ form }: FormProps) {
         loading={form.loading}
         success={form.successAnimation}
         loadingText="Connexion en cours..."
-        successText="Connexion reussie !"
+        successText="Connexion réussie !"
         defaultText="Se connecter"
       />
     </div>
@@ -393,7 +393,7 @@ function SignupForm({ form }: FormProps) {
             className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer mt-1"
           />
           <span className="ml-2 text-sm text-gray-600">
-            J'accepte les <a href="/legal/terms" className="text-green-600 hover:text-green-700">conditions d'utilisation</a> et la <a href="/legal/privacy" className="text-green-600 hover:text-green-700">politique de confidentialite</a>
+            J'accepte les <a href="/legal/terms" className="text-green-600 hover:text-green-700">conditions d'utilisation</a> et la <a href="/legal/privacy" className="text-green-600 hover:text-green-700">politique de confidentialité</a>
           </span>
         </label>
       </div>
@@ -402,8 +402,8 @@ function SignupForm({ form }: FormProps) {
         onClick={form.handleSignup}
         disabled={form.loading || !form.name || !form.email || !form.password || !form.confirmPassword || !form.organizationName || !form.acceptTerms}
         loading={form.loading}
-        loadingText="Creation du compte..."
-        defaultText="Creer mon compte"
+        loadingText="Création du compte…"
+        defaultText="Créer mon compte"
       />
     </div>
   )
@@ -413,9 +413,9 @@ function ForgotPasswordForm({ form }: FormProps) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Mot de passe oublie ?</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Mot de passe oublié ?</h2>
         <p className="text-sm text-gray-600 mb-6">
-          Entrez votre adresse email et nous vous enverrons un lien pour reinitialiser votre mot de passe.
+          Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
         </p>
       </div>
 
@@ -432,7 +432,7 @@ function ForgotPasswordForm({ form }: FormProps) {
         disabled={form.loading || !form.email}
         loading={form.loading}
         loadingText="Envoi en cours..."
-        defaultText="Envoyer le lien de reinitialisation"
+        defaultText="Envoyer le lien de réinitialisation"
       />
     </div>
   )
