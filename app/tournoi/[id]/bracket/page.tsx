@@ -560,9 +560,9 @@ function DoubleEliminationView({ de, onMatchClick }: { de: DEBracketView; onMatc
   const lbTotal = de.lbRounds.length
   return (
     <div className="space-y-12">
-      <DESection title="Tableau principal" subtitle="Winners bracket" rounds={de.wbRounds} kind="W" total={wbTotal} onMatchClick={onMatchClick} />
+      <DESection title="Tableau principal" subtitle="Tableau des gagnants" rounds={de.wbRounds} kind="W" total={wbTotal} onMatchClick={onMatchClick} />
       {de.lbRounds.length > 0 && (
-        <DESection title="Repêchages" subtitle="Losers bracket · le perdant de la finale termine 3e" rounds={de.lbRounds} kind="L" total={lbTotal} onMatchClick={onMatchClick} />
+        <DESection title="Repêchages" subtitle="Tableau des perdants · le perdant de la finale termine 3e" rounds={de.lbRounds} kind="L" total={lbTotal} onMatchClick={onMatchClick} />
       )}
       {de.gf && (
         <div className="pt-8 border-t border-petanque-sable-bord/50 max-w-md">
@@ -682,7 +682,7 @@ function PetiteFinaleCard({ match, onClick }: PetiteFinaleCardProps) {
   if (!match) {
     return (
       <div className="rounded-lg bg-white border-[0.5px] border-petanque-sable-bord p-4">
-        <p className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em] mb-2">Match consolante</p>
+        <p className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em] mb-2">Petite finale</p>
         <p className="text-sm text-petanque-bois italic">En attente des perdants des demi-finales.</p>
       </div>
     )
@@ -703,7 +703,7 @@ function PetiteFinaleCard({ match, onClick }: PetiteFinaleCardProps) {
       }`}
     >
       <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em]">Match consolante</span>
+        <span className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em]">Petite finale</span>
         {isLive && <span className="font-mono text-[9px] text-petanque-vert uppercase tracking-[0.14em] font-medium flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-petanque-vert animate-pulse"></span>En direct</span>}
         {isDone && <span className="font-mono text-[9px] text-petanque-bois uppercase tracking-[0.14em]">Terminé</span>}
         {!isDone && !isLive && <span className="font-mono text-[9px] text-petanque-cochonnet uppercase tracking-[0.14em]">À jouer</span>}

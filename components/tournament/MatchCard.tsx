@@ -56,7 +56,7 @@ export default function MatchCard({
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200">
             <div className="flex items-center justify-center gap-2 mb-1">
               <span className="text-2xl">🎟️</span>
-              <p className="text-lg font-bold text-blue-900">BYE</p>
+              <p className="text-lg font-bold text-blue-900">Exempt</p>
             </div>
             <p className="text-sm text-blue-700">Qualification automatique</p>
           </div>
