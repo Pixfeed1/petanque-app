@@ -82,6 +82,27 @@ export async function GET(
       manchesData = matchRaw.manches_json ?? null
     }
 
+    // Noms des joueurs des deux équipes : la page match les affiche sous le nom
+    // d'équipe (indispensable en mêlée tournante où « R2-Équipe 3 » ne dit rien).
+    const allJoueurIds = [
+      ...(matchRaw.equipe_a_joueur_ids || []),
+      ...(matchRaw.equipe_b_joueur_ids || [])
+    ]
+    const joueursById = new Map<string, { id: string; name: string }>()
+    if (allJoueurIds.length > 0) {
+      const { query } = await import('@/lib/db')
+      const joueursRes = await query<{ id: string; name: string }>(
+        'SELECT id, name FROM joueurs WHERE id = ANY($1)',
+        [allJoueurIds]
+      )
+      for (const j of joueursRes.rows) joueursById.set(String(j.id), j)
+    }
+    const toEquipesJoueurs = (ids: unknown[] | null | undefined) =>
+      (ids || [])
+        .map(jid => joueursById.get(String(jid)))
+        .filter((j): j is { id: string; name: string } => !!j)
+        .map(joueur => ({ joueur, role: 'joueur' }))
+
     // Transform to nested format
     const match: MatchWithEquipes = {
       id: matchRaw.id,
@@ -97,12 +118,14 @@ export async function GET(
       equipe_a: matchRaw.equipe_a_id ? {
         id: matchRaw.equipe_a_id,
         name: matchRaw.equipe_a_name || '',
-        joueur_ids: matchRaw.equipe_a_joueur_ids || []
+        joueur_ids: matchRaw.equipe_a_joueur_ids || [],
+        equipes_joueurs: toEquipesJoueurs(matchRaw.equipe_a_joueur_ids)
       } : null,
       equipe_b: matchRaw.equipe_b_id ? {
         id: matchRaw.equipe_b_id,
         name: matchRaw.equipe_b_name || '',
-        joueur_ids: matchRaw.equipe_b_joueur_ids || []
+        joueur_ids: matchRaw.equipe_b_joueur_ids || [],
+        equipes_joueurs: toEquipesJoueurs(matchRaw.equipe_b_joueur_ids)
       } : null,
       score_a: matchRaw.score_a,
       score_b: matchRaw.score_b,

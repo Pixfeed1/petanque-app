@@ -71,6 +71,9 @@ export interface EquipeSimple {
   id: string
   name: string
   joueur_ids: string[]
+  // Joueurs enrichis (id + nom) pour l'affichage — optionnel, fourni par
+  // GET /api/matches/[id] pour montrer qui joue sous le nom d'équipe.
+  equipes_joueurs?: { joueur: { id: string; name: string }; role: string }[]
 }
 
 export interface EquipeJoueur {

@@ -117,7 +117,7 @@ export default function MatchScorePage() {
   } else if (scoreA > 0 || scoreB > 0) {
     heroContent = <>Première à {maxPoints} gagne, <span className="accent-italic text-petanque-vert">à égalité.</span></>
   } else {
-    heroContent = <>Match prêt à démarrer, <span className="accent-italic text-petanque-vert">la mène 1 t’attend.</span></>
+    heroContent = <>Match prêt à démarrer, <span className="accent-italic text-petanque-vert">la mène {currentManche} t’attend.</span></>
   }
 
   return (
