@@ -73,7 +73,10 @@ export default function TournamentSubNav({
     <nav className="sticky top-14 z-40 bg-petanque-sable border-b border-petanque-sable-bord/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4 h-10">
-          <div className="flex gap-6 overflow-x-auto">
+          {/* Mobile : les onglets défilent — le dégradé à droite signale la suite
+              au lieu d'une coupure sèche. */}
+          <div className="relative min-w-0 flex-1">
+          <div className="flex gap-4 sm:gap-6 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pr-6">
             {tabs.map((tab) => {
               const active = isActive(tab)
               return (
@@ -93,6 +96,8 @@ export default function TournamentSubNav({
                 </button>
               )
             })}
+          </div>
+          <span className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-petanque-sable to-transparent sm:hidden"></span>
           </div>
           {baseRole === 'organisateur' && setViewRole && (
             <div className="relative flex-shrink-0">

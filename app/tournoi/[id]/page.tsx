@@ -605,7 +605,8 @@ export default function TournamentDetailPage() {
             {/* Stepper de phases (en_cours et termine seulement, pas mêlée tournante) */}
             {tournament.status !== 'preparation' && tournament.mode !== 'melee_tournante' && !noPouleStructure && phasesSteps.length > 0 && (
               <FadeIn delay={80}>
-                <div className="my-8 py-5 border-y border-petanque-sable-bord/50 flex items-center overflow-x-auto">
+                <div className="relative my-8 border-y border-petanque-sable-bord/50">
+                <div className="py-5 flex items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pr-4">
                   {phasesSteps.map((step, i) => (
                     <div
                       key={step.id}
@@ -622,16 +623,18 @@ export default function TournamentDetailPage() {
                       }`}>
                         {step.done ? '✓' : i + 1}
                       </div>
-                      <span className={`text-[11px] uppercase tracking-wider ml-2.5 ${
+                      <span className={`text-[10px] sm:text-[11px] uppercase tracking-wider ml-2 sm:ml-2.5 ${
                         step.current ? 'text-petanque-vert-fonce font-medium' : 'text-petanque-bois'
                       }`}>
                         {step.label}
                       </span>
                       {i < phasesSteps.length - 1 && (
-                        <div className={`w-12 md:w-16 h-px mx-3 ${step.done ? 'bg-petanque-vert' : 'bg-petanque-sable-bord'}`}></div>
+                        <div className={`w-5 sm:w-12 md:w-16 h-px mx-2 sm:mx-3 ${step.done ? 'bg-petanque-vert' : 'bg-petanque-sable-bord'}`}></div>
                       )}
                     </div>
                   ))}
+                </div>
+                <span className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-petanque-sable-pale to-transparent sm:hidden"></span>
                 </div>
               </FadeIn>
             )}
