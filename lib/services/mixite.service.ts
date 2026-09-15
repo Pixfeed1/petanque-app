@@ -46,7 +46,7 @@ export class MixiteService {
     if (missingGenderPlayers.length > 0) {
       return {
         valid: false,
-        error: `${missingGenderPlayers.length} joueur(s) n'ont pas de genre défini (H/F).\n\nLa mixité obligatoire nécessite que tous les joueurs aient un genre défini.\n\nVeuillez compléter les profils des joueurs avant de créer le tournoi.`,
+        error: `${missingGenderPlayers.length} joueur(s) n'ont pas de genre défini (H/F).\n\nLa mixité obligatoire nécessite que tous les joueurs aient un genre défini.\n\nComplète les profils des joueurs avant de créer le tournoi.`,
         missingGenderPlayerIds: missingGenderPlayers.map(p => p.id)
       }
     }
@@ -68,7 +68,7 @@ export class MixiteService {
     if (mixiteObligatoire && format === 'tete_a_tete') {
       return {
         valid: false,
-        error: '⚠️ Incompatibilité format / mixité\n\nLa mixité obligatoire nécessite au moins 2 joueurs par équipe (H+F dans la même équipe).\n\nElle n\'est pas compatible avec le format tête-à-tête (1 joueur par équipe).\n\nVeuillez choisir doublette ou triplette, ou désactiver la mixité obligatoire.'
+        error: '⚠️ Incompatibilité format / mixité\n\nLa mixité obligatoire nécessite au moins 2 joueurs par équipe (H+F dans la même équipe).\n\nElle n\'est pas compatible avec le format tête-à-tête (1 joueur par équipe).\n\nChoisis doublette ou triplette, ou désactive la mixité obligatoire.'
       }
     }
 

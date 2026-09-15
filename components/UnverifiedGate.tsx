@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/Toast'
 import { FadeIn, BouleSvg } from '@/components/ui'
 
 // Routes accessibles sans compte activé (auth, activation, pages publiques).
-const EXEMPT_EXACT = ['/', '/login', '/signup', '/verify-email', '/modes', '/features', '/guide', '/faq', '/contact', '/rejoindre']
+const EXEMPT_EXACT = ['/', '/login', '/signup', '/verify-email', '/reset-password', '/avis', '/modes', '/features', '/guide', '/faq', '/contact', '/rejoindre']
 function isExempt(pathname: string): boolean {
   return EXEMPT_EXACT.includes(pathname)
     || pathname.startsWith('/legal/')

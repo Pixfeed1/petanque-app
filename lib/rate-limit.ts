@@ -103,7 +103,7 @@ export function rateLimit(
     return NextResponse.json(
       {
         success: false,
-        error: config.message || 'Trop de tentatives. Veuillez réessayer plus tard.',
+        error: config.message || 'Trop de tentatives. Réessaie plus tard.',
         retryAfter: resetInSeconds
       },
       {
@@ -136,7 +136,7 @@ export const RATE_LIMITS = {
   login: {
     maxRequests: 5,
     windowMs: 15 * 60 * 1000, // 15 minutes
-    message: 'Trop de tentatives de connexion. Veuillez réessayer dans 15 minutes.'
+    message: 'Trop de tentatives de connexion. Réessaie dans 15 minutes.'
   } as RateLimitConfig,
 
   /**
@@ -146,7 +146,7 @@ export const RATE_LIMITS = {
   signup: {
     maxRequests: 3,
     windowMs: 60 * 60 * 1000, // 60 minutes
-    message: 'Trop de créations de compte. Veuillez réessayer dans 1 heure.'
+    message: 'Trop de créations de compte. Réessaie dans 1 heure.'
   } as RateLimitConfig,
 
   /**
@@ -156,7 +156,7 @@ export const RATE_LIMITS = {
   resetPassword: {
     maxRequests: 3,
     windowMs: 60 * 60 * 1000, // 60 minutes
-    message: 'Trop de demandes de réinitialisation. Veuillez réessayer dans 1 heure.'
+    message: 'Trop de demandes de réinitialisation. Réessaie dans 1 heure.'
   } as RateLimitConfig,
 
   /**
@@ -166,7 +166,7 @@ export const RATE_LIMITS = {
   resetVerify: {
     maxRequests: 5,
     windowMs: 15 * 60 * 1000, // 15 minutes
-    message: 'Trop de tentatives. Veuillez réessayer dans 15 minutes.'
+    message: 'Trop de tentatives. Réessaie dans 15 minutes.'
   } as RateLimitConfig,
 
   /**
@@ -176,7 +176,7 @@ export const RATE_LIMITS = {
   api: {
     maxRequests: 100,
     windowMs: 15 * 60 * 1000, // 15 minutes
-    message: 'Trop de requêtes. Veuillez réessayer plus tard.'
+    message: 'Trop de requêtes. Réessaie plus tard.'
   } as RateLimitConfig,
 
   /**
@@ -186,7 +186,7 @@ export const RATE_LIMITS = {
   write: {
     maxRequests: 60,
     windowMs: 15 * 60 * 1000,
-    message: 'Trop de modifications. Veuillez réessayer dans quelques minutes.'
+    message: 'Trop de modifications. Réessaie dans quelques minutes.'
   } as RateLimitConfig,
 
   /**
@@ -196,7 +196,7 @@ export const RATE_LIMITS = {
   batch: {
     maxRequests: 10,
     windowMs: 15 * 60 * 1000,
-    message: 'Trop d\'opérations en lot. Veuillez patienter.'
+    message: 'Trop d\'opérations en lot. Patiente un instant.'
   } as RateLimitConfig,
 
   /**
@@ -205,7 +205,7 @@ export const RATE_LIMITS = {
   review: {
     maxRequests: 5,
     windowMs: 24 * 60 * 60 * 1000,
-    message: 'Trop d\'avis soumis. Veuillez réessayer demain.'
+    message: 'Trop d\'avis soumis. Réessaie demain.'
   } as RateLimitConfig
 }
 

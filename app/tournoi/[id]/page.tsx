@@ -138,13 +138,22 @@ export default function TournamentDetailPage() {
         const pA = (a.victories || 0) * 3 + (a.draws || 0)
         const pB = (b.victories || 0) * 3 + (b.draws || 0)
         if (pB !== pA) return pB - pA
+        // Égalité de points : confrontation directe (FIPJP), comme le classement officiel.
+        const direct = matches.find((m: any) => m.type === 'poule' && m.status === 'termine'
+          && ((m.equipe_a_id === (a as any).id && m.equipe_b_id === (b as any).id)
+           || (m.equipe_a_id === (b as any).id && m.equipe_b_id === (a as any).id)))
+        if (direct && direct.score_a !== null && direct.score_b !== null && direct.score_a !== direct.score_b) {
+          const winnerId = direct.score_a! > direct.score_b! ? direct.equipe_a_id : direct.equipe_b_id
+          if (winnerId === (a as any).id) return -1
+          if (winnerId === (b as any).id) return 1
+        }
         const dA = (a.pointsFor || 0) - (a.pointsAgainst || 0)
         const dB = (b.pointsFor || 0) - (b.pointsAgainst || 0)
         return dB - dA
       })
       return { poule, leader: sorted[0] }
     }).filter(x => x.leader)
-  }, [teamsByPoule])
+  }, [teamsByPoule, matches])
 
   const liveMatches = useMemo(() =>
     matches.filter(m => m.status === 'en_cours').slice(0, 6),
@@ -427,7 +436,7 @@ export default function TournamentDetailPage() {
               {tournament.status === 'en_cours' && realtimeConnected ? (
                 <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-petanque-vert font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-petanque-vert animate-pulse"></span>
-                  Live
+                  En direct
                 </span>
               ) : (
                 <span className="text-[10px] uppercase tracking-wider text-petanque-bois font-medium">

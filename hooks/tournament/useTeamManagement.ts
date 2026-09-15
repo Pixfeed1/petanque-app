@@ -175,7 +175,7 @@ export function useTeamManagement({
     const teamName = newTeamNameForCreation.trim() || nextDefaultTeamName(teams)
     const existingTeam = teams.find(t => t.name.toLowerCase() === teamName.toLowerCase())
     if (existingTeam) {
-      notify.error(`Une équipe nommée "${teamName}" existe déjà. Veuillez choisir un autre nom.`)
+      notify.error(`Une équipe nommée "${teamName}" existe déjà. Choisis un autre nom.`)
       return
     }
 
@@ -316,7 +316,7 @@ export function useTeamManagement({
     )
 
     if (existingTeam) {
-      notify.error(`Une équipe nommée "${trimmedName}" existe déjà. Veuillez choisir un autre nom.`)
+      notify.error(`Une équipe nommée "${trimmedName}" existe déjà. Choisis un autre nom.`)
       return
     }
 

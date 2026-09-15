@@ -113,7 +113,7 @@ export default function MatchScorePage() {
     heroContent = <>Match point, <span className="accent-italic text-petanque-vert">{team} à un point.</span></>
   } else if (isLeaderA || isLeaderB) {
     const leader = isLeaderA ? teamAName : teamBName
-    heroContent = <>Première à {maxPoints} gagne, <span className="accent-italic text-petanque-vert">{leader} mènent.</span></>
+    heroContent = <>Première à {maxPoints} gagne, <span className="accent-italic text-petanque-vert">{leader} mène.</span></>
   } else if (scoreA > 0 || scoreB > 0) {
     heroContent = <>Première à {maxPoints} gagne, <span className="accent-italic text-petanque-vert">à égalité.</span></>
   } else {

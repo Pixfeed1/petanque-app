@@ -54,7 +54,7 @@ export default function ReviewPrompt({ userName, tournoisCount, onClose }: Revie
 
   const handleSubmit = async () => {
     if (!rating || !comment || !name) {
-      showWarning('Veuillez remplir tous les champs obligatoires')
+      showWarning('Remplis tous les champs obligatoires')
       return
     }
 

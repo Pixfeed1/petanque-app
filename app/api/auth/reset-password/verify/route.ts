@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     if (now > expires) {
       return NextResponse.json(
-        { error: 'Token expiré. Veuillez demander un nouveau lien de réinitialisation.' },
+        { error: 'Token expiré. Demande un nouveau lien de réinitialisation.' },
         { status: 400 }
       )
     }

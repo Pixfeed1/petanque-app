@@ -171,7 +171,7 @@ export function useLoginForm(): UseLoginFormReturn {
         window.location.href = '/dashboard'
       }
     } catch {
-      setError('Une erreur est survenue. Veuillez reessayer.')
+      setError('Une erreur est survenue. Réessaie.')
     } finally {
       setLoading(false)
       setSuccessAnimation(false)
@@ -183,7 +183,7 @@ export function useLoginForm(): UseLoginFormReturn {
     setError('')
 
     if (!name || !email || !password || !confirmPassword || !organizationName) {
-      setError('Veuillez remplir tous les champs')
+      setError('Remplis tous les champs')
       return
     }
 
@@ -198,7 +198,7 @@ export function useLoginForm(): UseLoginFormReturn {
     }
 
     if (!acceptTerms) {
-      setError("Veuillez accepter les conditions d'utilisation")
+      setError("Accepte les conditions d'utilisation")
       return
     }
 
@@ -243,7 +243,7 @@ export function useLoginForm(): UseLoginFormReturn {
     }
 
     if (!isEmailValid) {
-      setError('Veuillez entrer une adresse email valide')
+      setError('Entre une adresse email valide')
       return
     }
 

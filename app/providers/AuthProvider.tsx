@@ -48,6 +48,18 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext)
 
+
+// Routes publiques : rendues immédiatement (pas d'écran de chargement bloquant)
+// et accessibles sans authentification.
+const PUBLIC_ROUTES = [
+  '/', '/login', '/signup', '/modes', '/features', '/guide', '/faq',
+  '/contact', '/rejoindre', '/verify-email', '/reset-password', '/avis',
+]
+function isPublicPath(pathname: string | null): boolean {
+  const p = pathname ?? ''
+  return PUBLIC_ROUTES.includes(p) || p.startsWith('/legal/') || p.startsWith('/rejoindre/')
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -61,24 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading) {
-      // Liste des routes publiques (accessibles sans authentification)
-      const publicRoutes = [
-        '/',
-        '/login',
-        '/signup',
-        '/modes',
-        '/features',
-        '/guide',
-        '/faq',
-        '/contact',
-        '/rejoindre',
-        '/verify-email',
-      ]
-
-      // Vérifier si la route est publique (exact match ou wildcard pour /legal/* et /rejoindre/*)
-      const isPublicRoute = publicRoutes.includes(pathname ?? '')
-        || (pathname?.startsWith('/legal/') ?? false)
-        || (pathname?.startsWith('/rejoindre/') ?? false)
+      const isPublicRoute = isPublicPath(pathname)
 
       if (user) {
         // Si l'utilisateur est connecté et tente d'accéder à login/signup, rediriger vers dashboard
@@ -219,7 +214,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading ? children : (
+      {(!loading || isPublicPath(pathname)) ? children : (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30 flex items-center justify-center">
           <div className="text-center">
             <div className="relative">

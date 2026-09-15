@@ -43,3 +43,35 @@ describe('terrains nommés (saisie libre)', () => {
     })
   })
 })
+
+// --- Non-régression : pas de double-booking d'un terrain dans un même tour ---
+import { TirageService } from '@/lib/services/tirage.service'
+
+describe('smartTerrainAssignment — pas de double-booking par tour', () => {
+  it("n'assigne jamais deux matchs du même tour au même terrain quand il y a assez de terrains", () => {
+    // 3 tours de 4 matchs (2 poules de 4 équipes), 5 terrains — cas réel constaté bugué.
+    const matches: Array<{ id: string; equipe_a_id: string; equipe_b_id: string | null; tour: number }> = []
+    let i = 0
+    for (const poule of ['A', 'B']) {
+      const t = poule === 'A' ? ['1', '2', '3', '4'] : ['5', '6', '7', '8']
+      const rounds = [ [[0,1],[2,3]], [[0,2],[1,3]], [[0,3],[1,2]] ]
+      rounds.forEach((round, tour) => {
+        for (const [a, b] of round) {
+          matches.push({ id: `m${i++}`, equipe_a_id: t[a], equipe_b_id: t[b], tour: tour + 1 })
+        }
+      })
+    }
+    const assignment = TirageService.smartTerrainAssignment(matches, 5)
+    for (const tour of [1, 2, 3]) {
+      const terrains = matches.filter(m => m.tour === tour).map(m => assignment.get(m.id))
+      expect(new Set(terrains).size).toBe(terrains.length) // tous distincts dans le tour
+    }
+  })
+
+  it('réutilise un terrain seulement en pénurie (plus de matchs que de terrains)', () => {
+    const matches = [0, 1, 2, 3].map(i => ({ id: `m${i}`, equipe_a_id: String(i * 2), equipe_b_id: String(i * 2 + 1), tour: 1 }))
+    const assignment = TirageService.smartTerrainAssignment(matches, 2)
+    const used = matches.map(m => assignment.get(m.id))
+    expect(used.every(t => t === 1 || t === 2)).toBe(true) // reste dans les terrains existants
+  })
+})

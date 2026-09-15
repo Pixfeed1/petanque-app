@@ -129,7 +129,7 @@ export default function StartTournamentModal({
                   Configuration invalide : répartition déséquilibrée
                 </p>
                 <p className="text-xs text-petanque-bois">
-                  Cette configuration créerait des poules avec trop peu d&apos;équipes. Veuillez choisir une autre taille de poule.
+                  Cette configuration créerait des poules avec trop peu d&apos;équipes. Choisis une autre taille de poule.
                 </p>
               </div>
             )

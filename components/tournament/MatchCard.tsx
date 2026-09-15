@@ -172,7 +172,7 @@ export default function MatchCard({
             onClick={() => {
               if (!match.terrain) {
                 if (onWarning) {
-                  onWarning('Veuillez d\'abord assigner un terrain au match avant de le démarrer')
+                  onWarning('Assigne d\'abord un terrain au match avant de le démarrer')
                 }
                 return
               }

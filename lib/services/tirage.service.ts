@@ -429,7 +429,16 @@ export function smartTerrainAssignment(
   // Trier matchs par tour
   const sorted = [...matches].sort((a, b) => a.tour - b.tour)
 
+  // Terrains déjà pris dans le tour courant : deux matchs d'un même tour se jouent
+  // en simultané, ils ne peuvent PAS partager un terrain (double-booking).
+  let currentTour: number | null = null
+  let usedThisTour = new Set<number>()
+
   for (const match of sorted) {
+    if (match.tour !== currentTour) {
+      currentTour = match.tour
+      usedThisTour = new Set()
+    }
     let bestTerrain = 1
     let bestScore = Infinity
 
@@ -437,6 +446,9 @@ export function smartTerrainAssignment(
       if (occupiedTerrains.includes(t)) continue
 
       let score = terrainUsage[t - 1] * 10 // Pénalité pour surutilisation
+
+      // Interdit (sauf pénurie) : terrain déjà assigné dans CE tour → simultanéité impossible.
+      if (usedThisTour.has(t)) score += 1000
 
       // Pénalité si même terrain que le dernier match d'une des équipes
       if (lastTerrainByTeam.get(match.equipe_a_id) === t) score += 5
@@ -450,6 +462,7 @@ export function smartTerrainAssignment(
 
     assignment.set(match.id, bestTerrain)
     terrainUsage[bestTerrain - 1]++
+    usedThisTour.add(bestTerrain)
     lastTerrainByTeam.set(match.equipe_a_id, bestTerrain)
     if (match.equipe_b_id) {
       lastTerrainByTeam.set(match.equipe_b_id, bestTerrain)

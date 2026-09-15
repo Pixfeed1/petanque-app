@@ -173,7 +173,7 @@ export function validateMatchStart(match: {
   if (!match.terrain) {
     return {
       valid: false,
-      error: '⚠️ Veuillez d\'abord assigner un terrain au match avant de le démarrer.'
+      error: '⚠️ Assigne d\'abord un terrain au match avant de le démarrer.'
     }
   }
 
