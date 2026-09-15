@@ -64,13 +64,13 @@ export function useTournamentCreation({
 
   const handleSubmit = useCallback(async () => {
     if (!user) {
-      notify.error('Vous devez être connecté')
+      notify.error('Tu dois être connecté')
       router.push('/login')
       return
     }
 
     if (!organization?.id || organization.id.startsWith('temp-')) {
-      notify.error('Organisation invalide. Veuillez vous reconnecter.')
+      notify.error('Organisation invalide. Reconnecte-toi.')
       if (refreshOrganization) {
         try {
           await refreshOrganization()

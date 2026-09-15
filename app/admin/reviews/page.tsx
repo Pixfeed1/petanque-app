@@ -88,7 +88,7 @@ export default function AdminReviews() {
   const handleModerate = async (reviewId: number, action: 'approve' | 'reject') => {
     const confirmed = await confirm({
       title: action === 'approve' ? 'Approuver cet avis' : 'Refuser cet avis',
-      message: 'Êtes-vous sûr de vouloir ' + (action === 'approve' ? 'approuver' : 'refuser') + ' cet avis ?',
+      message: 'Tu es sûr de vouloir ' + (action === 'approve' ? 'approuver' : 'refuser') + ' cet avis ?',
       confirmText: action === 'approve' ? 'Approuver' : 'Refuser',
       variant: action === 'approve' ? 'default' : 'danger'
     })

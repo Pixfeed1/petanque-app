@@ -56,7 +56,7 @@ export default function MentionsLegales() {
 
       <LegalSection num="05" title="Médiation de la consommation">
         <LegalP>
-          Conformément à l'article L.612-1 du Code de la consommation, en cas de litige non résolu à l'amiable, vous pouvez recourir gratuitement au médiateur de la consommation référencé par PixFeed :
+          Conformément à l'article L.612-1 du Code de la consommation, en cas de litige non résolu à l'amiable, tu peux recourir gratuitement au médiateur de la consommation référencé par PixFeed :
         </LegalP>
         <Callout label="Médiateur conso">
           Plateforme européenne de règlement en ligne des litiges (RLL) : <LegalLink href="https://ec.europa.eu/consumers/odr" external>ec.europa.eu/consumers/odr</LegalLink>

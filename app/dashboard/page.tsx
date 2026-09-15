@@ -82,7 +82,7 @@ export default function Dashboard() {
     const confirmed = await confirm({
       title: 'Supprimer le tournoi',
       message:
-        'Etes-vous sur de vouloir supprimer ce tournoi ? Cette action est irreversible.',
+        'Tu es sûr de vouloir supprimer ce tournoi ? Cette action est irréversible.',
       confirmText: 'Supprimer',
       variant: 'danger',
     })

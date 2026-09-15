@@ -25,12 +25,12 @@ const cormorant = localFont({
 
 export const metadata: Metadata = {
   title: "Pétanque Pro - Gestion de Tournois",
-  description: "L'application de référence pour organiser vos tournois de pétanque",
+  description: "L'application de référence pour organiser tes tournois de pétanque",
   keywords: "pétanque, tournoi, gestion, sport, boules, compétition",
   authors: [{ name: "Pixfeed", url: "https://pixfeed.net" }],
   openGraph: {
     title: "Pétanque Pro",
-    description: "Organisez vos tournois de pétanque comme un pro",
+    description: "Organise tes tournois de pétanque comme un pro",
     type: "website",
     locale: "fr_FR",
     siteName: "Pétanque Pro",

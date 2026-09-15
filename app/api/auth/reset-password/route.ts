@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     // même si l'email n'existe pas (éviter l'énumération d'emails)
     if (!user) {
       return NextResponse.json({
-        message: 'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.'
+        message: 'Si un compte existe avec cet email, tu recevras un lien de réinitialisation.'
       })
     }
 
@@ -101,15 +101,15 @@ export async function POST(request: NextRequest) {
           <div class="content">
             <p>Bonjour ${user.full_name || 'Utilisateur'},</p>
 
-            <p>Vous avez demandé à réinitialiser votre mot de passe pour votre compte Pétanque Pro.</p>
+            <p>Tu as demandé à réinitialiser ton mot de passe pour ton compte Pétanque Pro.</p>
 
-            <p>Cliquez sur le bouton ci-dessous pour définir un nouveau mot de passe :</p>
+            <p>Clique sur le bouton ci-dessous pour définir un nouveau mot de passe :</p>
 
             <p style="text-align: center;">
               <a href="${resetUrl}" class="button">Réinitialiser mon mot de passe</a>
             </p>
 
-            <p>Ou copiez ce lien dans votre navigateur :</p>
+            <p>Ou copie ce lien dans ton navigateur :</p>
             <p style="word-break: break-all; background: white; padding: 10px; border-radius: 5px; font-size: 12px;">
               ${resetUrl}
             </p>
@@ -119,8 +119,8 @@ export async function POST(request: NextRequest) {
             </div>
 
             <p style="color: #666; font-size: 14px; margin-top: 30px;">
-              Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.
-              Votre mot de passe actuel restera inchangé.
+              Si tu n'as pas demandé cette réinitialisation, ignore cet email.
+              Ton mot de passe actuel restera inchangé.
             </p>
           </div>
           <div class="footer">
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
     transporter.sendMail({
       from: process.env.SMTP_FROM || 'noreply@petanquepro.fr',
       to: email,
-      subject: '🔐 Réinitialisation de votre mot de passe - Pétanque Pro',
+      subject: '🔐 Réinitialisation de ton mot de passe - Pétanque Pro',
       html: emailHtml,
       // Version texte pour clients email sans HTML
       text: `
@@ -148,14 +148,14 @@ Réinitialisation de mot de passe - Pétanque Pro
 
 Bonjour ${user.full_name || 'Utilisateur'},
 
-Vous avez demandé à réinitialiser votre mot de passe.
+Tu as demandé à réinitialiser ton mot de passe.
 
-Cliquez sur ce lien pour définir un nouveau mot de passe :
+Clique sur ce lien pour définir un nouveau mot de passe :
 ${resetUrl}
 
 ⏰ Important : Ce lien expirera dans 1 heure.
 
-Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.
+Si tu n'as pas demandé cette réinitialisation, ignore cet email.
 
 ---
 © ${new Date().getFullYear()} Pétanque Pro
@@ -165,7 +165,7 @@ Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.
     })
 
     return NextResponse.json({
-      message: 'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.',
+      message: 'Si un compte existe avec cet email, tu recevras un lien de réinitialisation.',
       // En dev: retourner le token pour faciliter les tests
       ...(process.env.NODE_ENV === 'development' && { resetToken, resetUrl })
     })

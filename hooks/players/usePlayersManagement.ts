@@ -216,8 +216,8 @@ export function usePlayersManagement(props?: UsePlayersManagementProps): UsePlay
    */
   const deletePlayer = useCallback(async (playerId: string) => {
     const confirmed = onConfirm
-      ? await onConfirm({ title: 'Supprimer le joueur', message: 'Êtes-vous sûr de vouloir supprimer ce joueur ?', variant: 'danger' })
-      : window.confirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')
+      ? await onConfirm({ title: 'Supprimer le joueur', message: 'Tu es sûr de vouloir supprimer ce joueur ?', variant: 'danger' })
+      : window.confirm('Tu es sûr de vouloir supprimer ce joueur ?')
 
     if (!confirmed) return
 

@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Pétanque Pro',
     short_name: 'Pétanque Pro',
-    description: 'Organisez et gérez vos tournois de pétanque comme un pro.',
+    description: 'Organise et gère tes tournois de pétanque comme un pro.',
     start_url: '/',
     scope: '/',
     display: 'standalone',

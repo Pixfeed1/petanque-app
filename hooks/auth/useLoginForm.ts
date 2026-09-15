@@ -238,7 +238,7 @@ export function useLoginForm(): UseLoginFormReturn {
   // Forgot password handler
   const handleForgotPassword = useCallback(async () => {
     if (!email) {
-      setError('Veuillez entrer votre adresse email')
+      setError('Entre ton adresse email')
       return
     }
 
@@ -263,7 +263,7 @@ export function useLoginForm(): UseLoginFormReturn {
         throw new Error(data.error || "Erreur lors de l'envoi")
       }
 
-      setSuccess(data.message || 'Email envoyé ! Vérifiez votre boîte de réception.')
+      setSuccess(data.message || 'Email envoyé ! Vérifie ta boîte de réception.')
 
       setActiveTab('login')
       setEmail('')

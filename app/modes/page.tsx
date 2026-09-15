@@ -134,7 +134,7 @@ const modeDetails: Record<ModeType, ModeDetail> = {
     howItWorks: [
       'Inscription individuelle des joueurs',
       'Choix de rotation : par tour (recommandé) ou par match',
-      'Nouveau tirage selon votre paramétrage',
+      'Nouveau tirage selon ton paramétrage',
       'Classement individuel final',
     ],
     idealFor: 'Animations, tournois découverte, événements festifs',

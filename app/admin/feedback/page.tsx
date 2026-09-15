@@ -242,7 +242,7 @@ export default function AdminFeedback() {
             <textarea
               value={replyText}
               onChange={e => setReplyText(e.target.value)}
-              placeholder="Votre réponse…"
+              placeholder="Ta réponse…"
               rows={4}
               className="w-full px-3 py-2 border border-petanque-sable-bord rounded-lg text-sm resize-none focus:ring-2 focus:ring-petanque-vert/30 focus:border-petanque-vert mb-4 bg-white"
               autoFocus
@@ -324,7 +324,7 @@ function FeedbackRow({ fb, onMarkRead, onReply, onViewConversation }: {
 
       {fb.admin_reply && (
         <div className="bg-petanque-vert-pale/15 border-l-2 border-petanque-vert rounded-r-md p-3 mb-3">
-          <p className="text-[10px] font-mono text-petanque-vert uppercase tracking-[0.12em] mb-1">Votre réponse</p>
+          <p className="text-[10px] font-mono text-petanque-vert uppercase tracking-[0.12em] mb-1">Ta réponse</p>
           <p className="text-sm text-petanque-vert-fonce/90 whitespace-pre-wrap">{fb.admin_reply}</p>
           {fb.admin_replied_at && (
             <p className="text-[10px] font-mono text-petanque-bois mt-2">

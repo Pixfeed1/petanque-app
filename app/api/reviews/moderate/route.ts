@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim())
 
     if (!adminEmails.includes(userEmail)) {
-      return apiError('Accès refusé - Vous n\'êtes pas administrateur', 403)
+      return apiError('Accès refusé - Tu n\'es pas administrateur', 403)
     }
 
     // Récupérer l'avis
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
     const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim())
 
     if (!adminEmails.includes(userEmail)) {
-      return apiError('Accès refusé - Vous n\'êtes pas administrateur', 403)
+      return apiError('Accès refusé - Tu n\'es pas administrateur', 403)
     }
 
     // Récupérer tous les avis (approuvés et non approuvés)

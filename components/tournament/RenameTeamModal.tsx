@@ -54,7 +54,7 @@ export default function RenameTeamModal({
 
           <div className="bg-blue-50 rounded-xl p-4 mb-6">
             <p className="text-sm text-gray-600">
-              💡 <strong>Astuce :</strong> Choisissez un nom unique et amusant pour votre équipe !
+              💡 <strong>Astuce :</strong> Choisis un nom unique et amusant pour ton équipe !
             </p>
             <p className="text-xs text-gray-500 mt-2">
               Exemples : &quot;Les Champions&quot;, &quot;Team Rocket&quot;, &quot;Les Invincibles&quot;

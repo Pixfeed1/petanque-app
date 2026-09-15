@@ -202,7 +202,7 @@ export function useMatchActions({
         notify.warning('Impossible de régénérer les poules : des matchs ont déjà été joués.')
         return false
       }
-      const message = 'Des poules existent déjà. Voulez-vous les supprimer et en régénérer de nouvelles ?'
+      const message = 'Des poules existent déjà. Tu veux les supprimer et en régénérer de nouvelles ?'
       const confirmed = onConfirmTerrainConflict
         ? await onConfirmTerrainConflict(message)
         : window.confirm(message)

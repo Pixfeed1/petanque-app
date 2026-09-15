@@ -75,7 +75,7 @@ export function FeedbackWidget() {
   }
 
   const statusLabel = (status: string) => {
-    if (status === 'replied') return 'On vous a répondu'
+    if (status === 'replied') return "On t'a répondu"
     if (status === 'read') return "Lu par l'équipe"
     return 'Envoyé'
   }
@@ -89,7 +89,7 @@ export function FeedbackWidget() {
           className="fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-petanque-vert text-white px-3 py-6 rounded-l-lg hover:bg-petanque-vert-fonce hover:px-4 transition-all"
           style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
         >
-          <span className="text-sm font-medium tracking-wide">Donnez votre avis</span>
+          <span className="text-sm font-medium tracking-wide">Donne ton avis</span>
         </button>
       )}
 
@@ -105,8 +105,8 @@ export function FeedbackWidget() {
           <div className="bg-petanque-vert px-5 py-5 text-white">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-medium">Donnez votre avis</h3>
-                <p className="text-sm text-white/80 mt-0.5">Aidez-nous à améliorer l&apos;appli</p>
+                <h3 className="text-lg font-medium">Donne ton avis</h3>
+                <p className="text-sm text-white/80 mt-0.5">Aide-nous à améliorer l&apos;appli</p>
               </div>
               <button onClick={() => setIsOpen(false)} className="rounded-md p-1.5 transition-colors hover:bg-white/15 -mr-1 -mt-1">
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,7 +119,7 @@ export function FeedbackWidget() {
           {/* Contact direct */}
           <div className="border-b border-petanque-sable-bord bg-petanque-vert-pale px-5 py-4">
             <p className="text-xs text-petanque-bois">
-              Une question ? Écrivez-nous : <a href="mailto:hello@petanquepro.fr" className="font-medium text-petanque-vert underline">hello@petanquepro.fr</a>
+              Une question ? Écris-nous : <a href="mailto:hello@petanquepro.fr" className="font-medium text-petanque-vert underline">hello@petanquepro.fr</a>
             </p>
           </div>
 
@@ -165,11 +165,11 @@ export function FeedbackWidget() {
 
                 {/* Message */}
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-petanque-vert-fonce">Votre message</label>
+                  <label className="mb-2 block text-sm font-medium text-petanque-vert-fonce">Ton message</label>
                   <textarea
                     value={message}
                     onChange={e => setMessage(e.target.value)}
-                    placeholder="Dites-nous ce qui vous plaît, ce qui manque, ce qui ne marche pas bien…"
+                    placeholder="Dis-nous ce qui te plaît, ce qui manque, ce qui ne marche pas bien…"
                     rows={6}
                     maxLength={2000}
                     className="w-full resize-none rounded-lg border border-petanque-sable-bord bg-white px-4 py-3 text-sm text-petanque-vert-fonce placeholder:text-petanque-bois/60 focus:border-petanque-vert focus:outline-none transition-colors"
@@ -198,7 +198,7 @@ export function FeedbackWidget() {
             ) : (
               <div className="space-y-3">
                 {myFeedbacks.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-petanque-bois">Vous n&apos;avez pas encore envoyé de message</p>
+                  <p className="py-8 text-center text-sm text-petanque-bois">Tu n&apos;as pas encore envoyé de message</p>
                 ) : (
                   myFeedbacks.map(fb => (
                     <div key={fb.id} className="space-y-2 rounded-lg bg-white border border-petanque-sable-bord p-4">

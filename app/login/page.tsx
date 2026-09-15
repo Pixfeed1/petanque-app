@@ -171,9 +171,9 @@ interface LogoHeaderProps {
 
 function LogoHeader({ mounted, activeTab, onLogoClick }: LogoHeaderProps) {
   const subtitle = {
-    login: 'Gérez vos tournois comme un champion',
-    signup: 'Créez votre compte gratuitement',
-    forgot: 'Réinitialisez votre mot de passe'
+    login: 'Gère tes tournois comme un champion',
+    signup: 'Crée ton compte gratuitement',
+    forgot: 'Réinitialise ton mot de passe'
   }
 
   return (
@@ -356,7 +356,7 @@ function SignupForm({ form }: FormProps) {
       />
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Confirmer le mot de passe</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Confirme ton mot de passe</label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
             {Icons.lock}
@@ -369,7 +369,7 @@ function SignupForm({ form }: FormProps) {
             className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
               form.confirmPassword && form.password !== form.confirmPassword ? 'border-red-300' : 'border-gray-300'
             }`}
-            placeholder="Confirmez votre mot de passe"
+            placeholder="Confirme ton mot de passe"
           />
           <button
             type="button"
@@ -415,7 +415,7 @@ function ForgotPasswordForm({ form }: FormProps) {
       <div>
         <h2 className="text-xl font-bold text-gray-900 mb-2">Mot de passe oublié ?</h2>
         <p className="text-sm text-gray-600 mb-6">
-          Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+          Entre ton adresse email et on t'enverra un lien pour réinitialiser ton mot de passe.
         </p>
       </div>
 

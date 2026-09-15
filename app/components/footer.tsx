@@ -47,7 +47,7 @@ export default function Footer({ scrollToSection }: FooterProps) {
               </span>
             </Link>
             <p className="text-sm">
-              L'application de référence pour organiser vos tournois de pétanque.
+              L'application de référence pour organiser tes tournois de pétanque.
             </p>
           </div>
           

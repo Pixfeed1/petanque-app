@@ -82,7 +82,7 @@ export default function ReviewPrompt({ userName, tournoisCount, onClose }: Revie
       setStep('success')
     } catch (error: any) {
       console.error('Erreur:', error)
-      showError('Erreur lors de l\'envoi de votre avis')
+      showError('Erreur lors de l\'envoi de ton avis')
     } finally {
       setSubmitting(false)
     }
@@ -207,7 +207,7 @@ export default function ReviewPrompt({ userName, tournoisCount, onClose }: Revie
                 <textarea
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  placeholder="Qu'est-ce que vous aimez dans Pétanque Pro ?"
+                  placeholder="Qu'est-ce que tu aimes dans Pétanque Pro ?"
                   rows={4}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
                   maxLength={500}

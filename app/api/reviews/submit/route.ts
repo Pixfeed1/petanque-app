@@ -50,13 +50,13 @@ export async function POST(request: NextRequest) {
 
     // Si aucune ligne retournée, l'utilisateur a déjà un avis
     if (result.rows.length === 0) {
-      return apiError('Vous avez déjà soumis un avis', 409)
+      return apiError('Tu as déjà soumis un avis', 409)
     }
 
     const review = result.rows[0]
 
     return apiSuccess({
-      message: 'Merci pour votre avis ! Il sera publié après modération.',
+      message: 'Merci pour ton avis ! Il sera publié après modération.',
       review
     }, 201)
   } catch (error) {
