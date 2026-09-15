@@ -297,14 +297,18 @@ export function calculateAllPlayersStats(
 export function resolveMultiWayTie(
   tiedTeams: TeamStats[],
   matches: Match[],
-  poule: string
+  poule: string | null
 ): TeamStats[] {
   const tiedIds = new Set(tiedTeams.map(t => t.id))
 
-  // Matchs entre les équipes à égalité uniquement
+  // Matchs entre les équipes à égalité uniquement. `poule === null` = contexte
+  // sans poules nommées (mêlée à N parties : les matchs ont poule NULL) — on
+  // prend alors tous les matchs de type « poule » entre les équipes à égalité.
+  // Le filtre sur le type écarte dans tous les cas les matchs d'élimination.
   const directMatches = matches.filter(m =>
     m.status === 'termine' &&
-    m.poule === poule &&
+    (!m.type || m.type === 'poule') &&
+    (poule === null ? true : m.poule === poule) &&
     m.equipe_a_id && m.equipe_b_id &&
     tiedIds.has(m.equipe_a_id) &&
     tiedIds.has(m.equipe_b_id)
@@ -353,10 +357,12 @@ export function resolveMultiWayTie(
 export function sortTeamsByFIPJPRules(
   teams: TeamStats[],
   matches?: Match[],
-  poule?: string
+  poule?: string | null
 ): TeamStats[] {
-  // Hors contexte de poule : pas de confrontation directe possible
-  if (!matches || !poule) {
+  // Sans matchs : pas de confrontation directe possible.
+  // (`poule` null ou absent AVEC matchs = contexte sans poules nommées :
+  // la confrontation directe se fait sur tous les matchs de type poule.)
+  if (!matches) {
     return [...teams].sort((a, b) =>
       (b.points - a.points) ||
       (b.difference - a.difference) ||
@@ -374,7 +380,7 @@ export function sortTeamsByFIPJPRules(
     while (j < byPoints.length && byPoints[j].points === byPoints[i].points) j++
     const group = byPoints.slice(i, j)
     if (group.length === 1) result.push(group[0])
-    else result.push(...resolveMultiWayTie(group, matches, poule))
+    else result.push(...resolveMultiWayTie(group, matches, poule ?? null))
     i = j
   }
 

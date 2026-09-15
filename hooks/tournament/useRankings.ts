@@ -129,9 +129,14 @@ export function useRankings({
       // (sinon le classement affiché ignorerait la règle perso). Sinon : FIPJP standard.
       const engineTiebreakers = tournament?.settings?.ruleEngine?.tiebreakers as
         StatsService.SortCriterion[] | undefined
+      // « A » peut être une vraie poule… ou la clé par défaut quand les matchs
+      // n'ont pas de poule (mêlée à N parties). Dans ce cas, passer null pour
+      // que la confrontation directe se fasse sur les matchs sans poule.
+      const isRealPoule = matches.some((m: any) => m.poule === poule)
+      const pouleCtx = isRealPoule ? poule : null
       const sorted = engineTiebreakers && engineTiebreakers.length > 0
-        ? StatsService.sortTeamsByCriteria(teamsStats, matches as unknown as MatchType[], engineTiebreakers, poule)
-        : StatsService.sortTeamsByFIPJPRules(teamsStats, matches as unknown as MatchType[], poule)
+        ? StatsService.sortTeamsByCriteria(teamsStats, matches as unknown as MatchType[], engineTiebreakers, pouleCtx ?? undefined)
+        : StatsService.sortTeamsByFIPJPRules(teamsStats, matches as unknown as MatchType[], pouleCtx)
 
       // Remplacer la poule triée en gardant les propriétés complètes
       const originalPouleTeams = poules[poule]

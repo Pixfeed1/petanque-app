@@ -79,3 +79,26 @@ describe('Départage poule — confrontation directe avant la différence', () =
     expect(r).toEqual(['Ana', 'Zoe', 'Cyril'])
   })
 })
+
+describe('Départage sans poules nommées (mêlée à N parties : poule NULL)', () => {
+  it('la confrontation directe s\'applique aussi quand les matchs n\'ont pas de poule', () => {
+    MID = 0
+    const A = { id: 'A', name: 'A' }, B = { id: 'B', name: 'B' }, C = { id: 'C', name: 'C' }, D = { id: 'D', name: 'D' }
+    // Matchs SANS poule (poule null), comme en mêlée à N parties.
+    const mk = (a: Team, b: Team, sa: number, sb: number): Match => ({
+      id: `m${MID++}`, tournoi_id: 't', poule: null, type: 'poule', status: 'termine',
+      equipe_a_id: a.id, equipe_b_id: b.id, equipe_a: a, equipe_b: b,
+      score_a: sa, score_b: sb, tour: 1,
+    } as unknown as Match)
+    const m = [
+      mk(A, B, 11, 10), mk(C, D, 7, 5),   // partie 1 : C bat D en direct
+      mk(A, C, 13, 9), mk(B, D, 8, 13),   // partie 2
+    ]
+    const stats = [A, B, C, D].map(t => calculateTeamStats(t.id, t.name, m))
+    // Contexte sans poule : on passe null → la confrontation directe doit primer.
+    const r = sortTeamsByFIPJPRules(stats, m, null).map(s => s.name)
+    // C et D à 1 victoire ; D a une meilleure diff générale (+3 vs -2)
+    // mais C a battu D en direct → C devant D.
+    expect(r).toEqual(['A', 'C', 'D', 'B'])
+  })
+})
