@@ -7,6 +7,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { validateQualifiedPerPoule } from '@/lib/services/validation.service'
+import { formatLabel } from '@/lib/labels'
 
 export interface TournamentFormData {
   // Étape 1 - Informations
@@ -251,18 +252,18 @@ export function useCreateTournament(): UseCreateTournamentReturn {
           return
         }
         if (totalPlayers > 0 && totalPlayers < minPlayers) {
-          setValidationError(`Si vous sélectionnez des joueurs, minimum ${minPlayers} requis pour une ${formData.format}`)
+          setValidationError(`Si tu sélectionnes des joueurs, il en faut au minimum ${minPlayers} pour un tournoi en ${formatLabel(formData.format).toLowerCase()}`)
           return
         }
       } else {
         if (totalPlayers < minPlayers) {
-          setValidationError(`Minimum ${minPlayers} joueurs requis pour une ${formData.format}`)
+          setValidationError(`Minimum ${minPlayers} joueurs requis pour un tournoi en ${formatLabel(formData.format).toLowerCase()}`)
           return
         }
 
         const playersPerTeam = getPlayersPerTeam()
         if (totalPlayers % playersPerTeam !== 0) {
-          setValidationError(`Pour une ${formData.format} en mêlée, il faut un multiple de ${playersPerTeam} joueurs. Vous avez ${totalPlayers} joueurs.`)
+          setValidationError(`Pour une mêlée en ${formatLabel(formData.format).toLowerCase()}, il faut un multiple de ${playersPerTeam} joueurs. Tu en as ${totalPlayers}.`)
           return
         }
       }

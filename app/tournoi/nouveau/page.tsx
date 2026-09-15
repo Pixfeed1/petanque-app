@@ -521,9 +521,21 @@ function Step3({
   const min = getMinPlayers()
   const teams = getEstimatedTeams()
   const pools = getEstimatedPools()
+  // En mêlée, les équipes sont tirées au sort : il faut un compte exact
+  // (multiple de 2 en doublette, de 3 en triplette). On l'affiche ICI, en
+  // direct — le bouton Continuer est désactivé sinon, sans autre explication.
+  const ppt = formData.format === 'tete_a_tete' ? 1 : formData.format === 'doublette' ? 2 : 3
+  const badMultiple = formData.mode !== 'choisi' && total >= min && ppt > 1 && total % ppt !== 0
+  const lowerOk = total - (total % ppt)
+  const upperOk = lowerOk + ppt
 
   return (
     <div className="space-y-7">
+      {formData.mode === 'choisi' && (
+        <div className="bg-petanque-vert-pale/25 border border-petanque-vert/25 rounded-xl px-4 py-3 text-sm text-petanque-vert-fonce">
+          Mode choisi : après la création, tu composeras les équipes librement avec <strong>tous les joueurs du club</strong> — la sélection ci-dessous sert surtout à estimer le nombre d'équipes.
+        </div>
+      )}
       <div className="bg-white border border-petanque-sable-bord rounded-xl p-4 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <p className="text-[10px] font-medium text-petanque-bois uppercase tracking-[0.16em] mb-1">Total sélectionné</p>
@@ -532,9 +544,16 @@ function Step3({
           </p>
         </div>
         <div className="text-right">
-          <p className="font-mono text-xs text-petanque-bois">≈ {teams} équipe{teams > 1 ? 's' : ''} · {pools} poule{pools > 1 ? 's' : ''}</p>
+          {!badMultiple && (
+            <p className="font-mono text-xs text-petanque-bois">≈ {teams} équipe{teams > 1 ? 's' : ''} · {pools} poule{pools > 1 ? 's' : ''}</p>
+          )}
           {formData.mode !== 'choisi' && total < min && (
             <p className="text-xs text-petanque-cochonnet mt-1">Minimum {min} requis</p>
+          )}
+          {badMultiple && (
+            <p className="text-xs text-petanque-cochonnet mt-1 max-w-[240px]">
+              En {formData.format === 'doublette' ? 'doublette' : 'triplette'} mêlée, il faut un multiple de {ppt} joueurs — vise {lowerOk} ou {upperOk}.
+            </p>
           )}
         </div>
       </div>
