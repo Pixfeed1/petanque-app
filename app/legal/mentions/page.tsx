@@ -17,7 +17,7 @@ export default function MentionsLegales() {
     >
       <LegalSection num="01" title="Éditeur du site">
         <LegalKV label="Raison sociale" value="PixFeed" />
-        <LegalKV label="Forme juridique" value="Entreprise individuelle (micro-entrepreneur)" />
+        <LegalKV label="Forme juridique" value="Entreprise individuelle" />
         <LegalKV label="SIRET" value="852 393 735 00018" />
         <LegalKV label="Directeur de la publication" value="PixFeed" />
         <LegalKV label="Adresse" value="Franconville (95130), France" />
