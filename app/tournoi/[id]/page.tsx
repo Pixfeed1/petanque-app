@@ -1199,7 +1199,7 @@ export default function TournamentDetailPage() {
                   <StandingsTable
                     key={poule}
                     poule={poule}
-                    title={tournament.settings.nombreParties ? 'Classement général' : undefined}
+                    title={(tournament.settings.nombreParties || engineRounds) ? 'Classement général' : undefined}
                     teams={teamsByPoule[poule].map((t: any) => ({
                       id: t.id, name: t.name, played: t.played || 0,
                       victories: t.victories || 0, defeats: t.defeats || 0, draws: t.draws || 0,
@@ -1207,7 +1207,7 @@ export default function TournamentDetailPage() {
                       difference: t.difference || 0,
                       points: (t.victories || 0) * 3 + (t.draws || 0)
                     }))}
-                    qualifiedCount={tournament.settings.nombreParties ? 0 : (tournament.settings.qualifiedPerPoule || 2)}
+                    qualifiedCount={(tournament.settings.nombreParties || engineRounds) ? 0 : (tournament.settings.qualifiedPerPoule || 2)}
                   />
                 ))}
                 <div className="text-center pt-2">
