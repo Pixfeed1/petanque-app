@@ -6,6 +6,7 @@ import { useAuth } from '@/app/providers/AuthProvider'
 import { AdminLayout } from '@/components/admin'
 import { FadeIn, PillToggle } from '@/components/ui'
 import { Loader } from '@/components/Icons'
+import { modeLabel, formatLabel } from '@/lib/labels'
 
 const planLabels: Record<string, string> = {
   free: 'Gratuit',
@@ -342,7 +343,7 @@ function TournoisTable({ tournois }: { tournois: any[] }) {
                 <p className="text-xs text-petanque-bois mt-0.5">{t.created_by_email || '—'}</p>
               </td>
               <td className="px-4 py-3 text-petanque-vert-fonce/80">{t.org_name || '—'}</td>
-              <td className="px-4 py-3 text-petanque-vert-fonce/80 font-mono text-xs">{t.format} · {t.mode}</td>
+              <td className="px-4 py-3 text-petanque-vert-fonce/80 font-mono text-xs">{formatLabel(t.format)} · {modeLabel(t.mode)}</td>
               <td className="px-4 py-3">
                 <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-petanque-vert font-medium">
                   {statusLabels[t.status] || t.status}
