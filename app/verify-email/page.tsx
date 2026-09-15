@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { FadeIn, BouleSvg } from '@/components/ui'
 import { Check } from '@/components/Icons'
 
 // Résultat de l'activation de compte (après clic sur le lien de l'email).
-export default function VerifyEmailPage() {
+// useSearchParams impose une frontière Suspense pour le prérendu (page publique).
+function VerifyEmailContent() {
   const router = useRouter()
   const params = useSearchParams()
   const status = params?.get('status') || 'invalid'
@@ -42,5 +43,17 @@ export default function VerifyEmailPage() {
         </div>
       </FadeIn>
     </div>
+  )
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-petanque-sable-pale flex items-center justify-center">
+        <BouleSvg className="w-12 h-12 animate-pulse" />
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   )
 }
