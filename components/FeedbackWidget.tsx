@@ -86,7 +86,7 @@ export function FeedbackWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-petanque-vert text-white px-3 py-6 rounded-l-lg hover:bg-petanque-vert-fonce hover:px-4 transition-all"
+          className="fixed right-0 bottom-16 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 z-50 bg-petanque-vert text-white px-2.5 py-4 sm:px-3 sm:py-6 rounded-l-lg hover:bg-petanque-vert-fonce hover:px-4 transition-all"
           style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
         >
           <span className="text-sm font-medium tracking-wide">Donne ton avis</span>
