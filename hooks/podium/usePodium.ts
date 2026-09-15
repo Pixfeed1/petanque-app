@@ -311,7 +311,7 @@ export function usePodium({ tournoiId, onSuccess }: UsePodiumProps): UsePodiumRe
     )
 
     // Tri FIPJP officiel (points, différence, confrontation directe, multi-way ties)
-    const classement = StatsService.sortTeamsByFIPJPRules(teamStats, pouleMatches)
+    const classement = StatsService.sortTeamsByFIPJPRules(teamStats, pouleMatches, null, !!t?.settings?.fairPlay)
 
     if (classement[0]) podiumData.push({ position: 1, team: { id: classement[0].id, name: classement[0].name }, score: classement[0].pointsFor })
     if (classement[1]) podiumData.push({ position: 2, team: { id: classement[1].id, name: classement[1].name }, score: classement[1].pointsFor })

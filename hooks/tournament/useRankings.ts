@@ -136,7 +136,7 @@ export function useRankings({
       const pouleCtx = isRealPoule ? poule : null
       const sorted = engineTiebreakers && engineTiebreakers.length > 0
         ? StatsService.sortTeamsByCriteria(teamsStats, matches as unknown as MatchType[], engineTiebreakers, pouleCtx ?? undefined)
-        : StatsService.sortTeamsByFIPJPRules(teamsStats, matches as unknown as MatchType[], pouleCtx)
+        : StatsService.sortTeamsByFIPJPRules(teamsStats, matches as unknown as MatchType[], pouleCtx, !!tournament?.settings?.fairPlay)
 
       // Remplacer la poule triée en gardant les propriétés complètes
       const originalPouleTeams = poules[poule]

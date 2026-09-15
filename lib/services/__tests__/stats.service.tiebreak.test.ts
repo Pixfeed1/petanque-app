@@ -102,3 +102,21 @@ describe('Départage sans poules nommées (mêlée à N parties : poule NULL)', 
     expect(r).toEqual(['A', 'C', 'D', 'B'])
   })
 })
+
+describe('Fair-play : le départage direct utilise aussi les écarts plafonnés', () => {
+  it('un 13-0 ne pèse pas plus que ±5 dans le mini-classement du cycle', () => {
+    MID = 0
+    const A = { id: 'A', name: 'A' }, B = { id: 'B', name: 'B' }, C = { id: 'C', name: 'C' }
+    const P = 'FP'
+    const m = [
+      mkMatch(P, A, B, 13, 0),   // A écrase B (brut +13, capé +5)
+      mkMatch(P, C, A, 13, 9),   // C bat A (+4)
+      mkMatch(P, B, C, 13, 12),  // B bat C (+1)
+    ]
+    const stats = [A, B, C].map(t => calculateTeamStats(t.id, t.name, m, true))
+    const r = sortTeamsByFIPJPRules(stats, m, P, true).map(s => s.name)
+    // Cycle à 1V chacun. Diffs capés : A = +5-4 = +1 ; C = +4-1 = +3 ; B = -5+1 = -4.
+    // Sans le cap, A serait premier (+9). Avec : C, A, B.
+    expect(r).toEqual(['C', 'A', 'B'])
+  })
+})

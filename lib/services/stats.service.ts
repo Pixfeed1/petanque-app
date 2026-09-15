@@ -297,7 +297,8 @@ export function calculateAllPlayersStats(
 export function resolveMultiWayTie(
   tiedTeams: TeamStats[],
   matches: Match[],
-  poule: string | null
+  poule: string | null,
+  fairPlay: boolean = false
 ): TeamStats[] {
   const tiedIds = new Set(tiedTeams.map(t => t.id))
 
@@ -323,8 +324,10 @@ export function resolveMultiWayTie(
     const sb = m.score_b ?? 0
     const statsA = mini.get(m.equipe_a_id!)!
     const statsB = mini.get(m.equipe_b_id!)!
-    statsA.diff += sa - sb
-    statsB.diff += sb - sa
+    // Fair-play : le goal-average particulier est plafonné comme le général,
+    // sinon l'ordre du classement contredirait la colonne DIFF affichée.
+    statsA.diff += clampDiff(sa - sb, fairPlay)
+    statsB.diff += clampDiff(sb - sa, fairPlay)
     if (sa > sb) statsA.points += 3
     else if (sb > sa) statsB.points += 3
     else { statsA.points += 1; statsB.points += 1 }
@@ -357,7 +360,8 @@ export function resolveMultiWayTie(
 export function sortTeamsByFIPJPRules(
   teams: TeamStats[],
   matches?: Match[],
-  poule?: string | null
+  poule?: string | null,
+  fairPlay: boolean = false
 ): TeamStats[] {
   // Sans matchs : pas de confrontation directe possible.
   // (`poule` null ou absent AVEC matchs = contexte sans poules nommées :
@@ -380,7 +384,7 @@ export function sortTeamsByFIPJPRules(
     while (j < byPoints.length && byPoints[j].points === byPoints[i].points) j++
     const group = byPoints.slice(i, j)
     if (group.length === 1) result.push(group[0])
-    else result.push(...resolveMultiWayTie(group, matches, poule ?? null))
+    else result.push(...resolveMultiWayTie(group, matches, poule ?? null, fairPlay))
     i = j
   }
 

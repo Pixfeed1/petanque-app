@@ -500,7 +500,8 @@ export function useMatchActions({
           points: t.stats.points
         })),
         pouleMatchesForRanking,
-        pouleName
+        pouleName,
+        !!tournament?.settings?.fairPlay
       ).map(stats => teamStatsForPoule.find(t => t.team.id === stats.id))
         .filter((teamStat): teamStat is typeof teamStatsForPoule[number] => teamStat !== undefined)
 
