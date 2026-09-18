@@ -94,10 +94,20 @@ function getEmptyTeamLabel(phaseIdx: number, matchIdx: number, side: 'a' | 'b', 
   if (phaseIdx === 0) return 'À déterminer'
   const prevPhase = phases[phaseIdx - 1]
   const prevIdx = matchIdx * 2 + (side === 'a' ? 0 : 1)
+  // Le match nourricier est déjà connu → projection parlante : « Antoine ou Bernard »
+  // (voire directement le vainqueur si le match est fini mais le tour suivant pas encore lancé).
+  const feeder = prevPhase.matches[prevIdx]
+  if (feeder?.equipe_a?.name && feeder?.equipe_b?.name) {
+    if (feeder.status === 'termine') {
+      const winner = feeder.score_a > feeder.score_b ? feeder.equipe_a : feeder.equipe_b
+      if (winner?.name) return winner.name
+    }
+    return `${feeder.equipe_a.name} ou ${feeder.equipe_b.name}`
+  }
   const phaseShort = prevPhase.shortLabel
-  if (phaseShort === '1/8') return `Vainqueur 8e ${prevIdx + 1}`
-  if (phaseShort === '1/4') return `Vainqueur Q${prevIdx + 1}`
-  if (phaseShort === '1/2') return `Vainqueur D${prevIdx + 1}`
+  if (phaseShort === '1/8') return `Vainqueur du 8e n°${prevIdx + 1}`
+  if (phaseShort === '1/4') return `Vainqueur du quart n°${prevIdx + 1}`
+  if (phaseShort === '1/2') return `Vainqueur de la demi n°${prevIdx + 1}`
   return 'Vainqueur'
 }
 
@@ -396,6 +406,7 @@ export default function BracketPage() {
               </p>
               <PetiteFinaleCard
                 match={bracketData.petiteFinale}
+                demis={bracketData.demis || []}
                 onClick={() => handleMatchClick(bracketData.petiteFinale)}
               />
             </div>
@@ -696,10 +707,22 @@ function DEMatchCard({ match, onMatchClick }: { match: BracketMatch; onMatchClic
 
 interface PetiteFinaleCardProps {
   match: BracketMatch | null
+  demis: (BracketMatch | null | undefined)[]
   onClick: () => void
 }
 
-function PetiteFinaleCard({ match, onClick }: PetiteFinaleCardProps) {
+// Projection du perdant d'une demi : « Antoine ou Bernard » tant qu'elle n'est
+// pas jouée, le nom du perdant dès qu'elle l'est.
+function loserProjection(demi: BracketMatch | null | undefined, fallback: string): string {
+  if (!demi?.equipe_a?.name || !demi?.equipe_b?.name) return fallback
+  if (demi.status === 'termine') {
+    const loser = demi.score_a > demi.score_b ? demi.equipe_b : demi.equipe_a
+    if (loser?.name) return loser.name
+  }
+  return `${demi.equipe_a.name} ou ${demi.equipe_b.name}`
+}
+
+function PetiteFinaleCard({ match, demis, onClick }: PetiteFinaleCardProps) {
   if (!match) {
     return (
       <div className="rounded-lg bg-white border-[0.5px] border-petanque-sable-bord p-4">
@@ -730,7 +753,7 @@ function PetiteFinaleCard({ match, onClick }: PetiteFinaleCardProps) {
         {!isDone && !isLive && <span className="font-mono text-[9px] text-petanque-cochonnet uppercase tracking-[0.14em]">À jouer</span>}
       </div>
       <TeamRow
-        label={match.equipe_a?.name || 'Perdant Demi 1'}
+        label={match.equipe_a?.name || loserProjection(demis[0], 'Perdant Demi 1')}
         score={match.score_a}
         isWinner={winnerA}
         isLiveLeader={liveA}
@@ -739,7 +762,7 @@ function PetiteFinaleCard({ match, onClick }: PetiteFinaleCardProps) {
         isPlaceholder={!match.equipe_a}
       />
       <TeamRow
-        label={match.equipe_b?.name || 'Perdant Demi 2'}
+        label={match.equipe_b?.name || loserProjection(demis[1], 'Perdant Demi 2')}
         score={match.score_b}
         isWinner={winnerB}
         isLiveLeader={liveB}

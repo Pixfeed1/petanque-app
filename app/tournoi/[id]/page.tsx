@@ -217,6 +217,28 @@ export default function TournamentDetailPage() {
   }, [matches])
 
   const phasesSteps = useMemo(() => {
+    // Double élimination : la frise standard (8e→finale) ne correspond pas —
+    // on affiche les vraies étapes : Poules → Tableau → Repêchages → Grande finale.
+    const deMatches = matches.filter(m => typeof m.type === 'string' && (m.type as string).startsWith('de:')) as unknown as { type: string; status: string }[]
+    if (deMatches.length > 0) {
+      const pouleMatchesDE = matches.filter(m => m.type === 'poule')
+      const poulesDoneDE = pouleMatchesDE.length > 0 && pouleMatchesDE.every(m => m.status === 'termine')
+      const wMatches = deMatches.filter(m => (m.type as string).startsWith('de:W'))
+      const lMatches = deMatches.filter(m => (m.type as string).startsWith('de:L'))
+      const gf = deMatches.find(m => m.type === 'de:GF')
+      const gf2 = deMatches.find(m => m.type === 'de:GF2')
+      const wDone = wMatches.length > 0 && wMatches.every(m => m.status === 'termine')
+      const lDone = lMatches.length > 0 && lMatches.every(m => m.status === 'termine')
+      // GF2 en_attente = revanche jamais activée (le favori a gagné la GF du premier coup)
+      const gfDone = !!gf && gf.status === 'termine' && (!gf2 || gf2.status === 'en_attente' || gf2.status === 'termine')
+      const steps = []
+      if (pouleMatchesDE.length > 0) steps.push({ id: 'poules', label: 'Poules', done: poulesDoneDE, current: !poulesDoneDE })
+      if (wMatches.length > 0) steps.push({ id: 'de-tableau', label: 'Tableau', done: wDone, current: (poulesDoneDE || pouleMatchesDE.length === 0) && !wDone })
+      if (lMatches.length > 0) steps.push({ id: 'de-repechages', label: 'Repêchages', done: lDone, current: lMatches.some(m => m.status !== 'en_attente') && !lDone })
+      if (gf) steps.push({ id: 'de-gf', label: gf2 && gf2.status !== 'en_attente' ? 'Grandes finales' : 'Grande finale', done: gfDone, current: !gfDone && wDone })
+      return steps
+    }
+
     const has8 = matches.some(m => m.type === 'huitieme')
     const hasQ = matches.some(m => m.type === 'quart')
     const hasD = matches.some(m => m.type === 'demi')
