@@ -28,12 +28,10 @@
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- AdMob App ID. Valeur de TEST officielle Google (sans revenu, ne crashe pas).
-             ⚠️ En production : remplacer par ton vrai App ID AdMob (ca-app-pub-XXXX~YYYY).
-             Voir docs/ADMOB.md. -->
+        <!-- AdMob App ID du compte Pétanque Pro (voir docs/ADMOB.md). -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-7977336597476261~5605868206" />
     </application>
 
     <!-- Permissions -->
