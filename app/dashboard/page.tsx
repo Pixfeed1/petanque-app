@@ -67,8 +67,10 @@ export default function Dashboard() {
 
   const tournoisEnCours = tournois.filter((t) => t.status === 'en_cours')
 
+  // « Tous » inclut aussi les tournois en cours (même s'ils sont déjà mis en
+  // avant plus haut) : une liste qui dit « Aucun tournoi trouvé » sous deux
+  // tournois en cours est déroutante.
   const filteredTournois = tournois.filter((tournoi) => {
-    if (tournoi.status === 'en_cours') return false
     const matchesSearch =
       searchQuery === '' || tournoi.name.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === 'all' || tournoi.status === statusFilter
@@ -458,13 +460,17 @@ export default function Dashboard() {
             {filteredTournois.length === 0 ? (
               <div className="py-16 text-center">
                 <BouleSvg size={48} variant="acier" stries className="mx-auto mb-3 opacity-40" />
-                <p className="text-sm text-petanque-bois">Aucun tournoi trouvé</p>
-                <button
-                  onClick={() => router.push('/tournoi/nouveau')}
-                  className="mt-3 text-sm text-petanque-vert hover:text-petanque-vert-fonce font-medium underline-offset-4 hover:underline"
-                >
-                  Créer mon premier tournoi
-                </button>
+                <p className="text-sm text-petanque-bois">
+                  {tournois.length > 0 ? 'Aucun tournoi ne correspond à ta recherche' : 'Aucun tournoi trouvé'}
+                </p>
+                {tournois.length === 0 && (
+                  <button
+                    onClick={() => router.push('/tournoi/nouveau')}
+                    className="mt-3 text-sm text-petanque-vert hover:text-petanque-vert-fonce font-medium underline-offset-4 hover:underline"
+                  >
+                    Créer mon premier tournoi
+                  </button>
+                )}
               </div>
             ) : (
               <div className="space-y-2">

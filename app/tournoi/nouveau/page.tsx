@@ -196,6 +196,13 @@ export default function CreateTournamentPage() {
           </FadeIn>
         )}
 
+        {/* Erreur de validation (le Step 3 affiche déjà la sienne en ligne) */}
+        {validationError && currentStep !== 3 && (
+          <div className="mt-6 p-3 bg-petanque-cochonnet-pale/30 border border-petanque-cochonnet/40 rounded-lg text-sm text-petanque-cochonnet-fonce">
+            {validationError}
+          </div>
+        )}
+
         <div className="mt-12 pt-6 border-t border-petanque-sable-bord/50 flex items-center justify-between gap-3">
           {currentStep > 1 ? (
             <button
@@ -683,7 +690,13 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
       <div className="space-y-3">
         <label className="block text-[11px] font-medium text-petanque-bois uppercase tracking-[0.16em]">Répartition des poules</label>
         {nbEquipes < 3 ? (
-          <p className="text-sm text-petanque-bois italic">Sélectionne d'abord tes joueurs à l'étape précédente pour voir les répartitions possibles.</p>
+          totalPlayers === 0 ? (
+            <p className="text-sm text-petanque-bois italic">Sélectionne d'abord tes joueurs à l'étape précédente pour voir les répartitions possibles.</p>
+          ) : (
+            <p className="text-sm text-petanque-bois italic">
+              Avec {totalPlayers} joueur{totalPlayers > 1 ? 's' : ''} ({nbEquipes} équipe{nbEquipes > 1 ? 's' : ''}), tout le monde joue dans une poule unique — rien à régler ici.
+            </p>
+          )
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {distributions.map((d) => {

@@ -146,6 +146,10 @@ export function useLoginForm(): UseLoginFormReturn {
   // Login handler
   const handleLogin = useCallback(async () => {
     if (!email || !password) return
+    if (!isEmailValid) {
+      setError('Adresse email invalide — vérifie le format (ex. nom@exemple.fr)')
+      return
+    }
 
     setLoading(true)
     setError('')
@@ -176,7 +180,7 @@ export function useLoginForm(): UseLoginFormReturn {
       setLoading(false)
       setSuccessAnimation(false)
     }
-  }, [email, password, rememberMe, router])
+  }, [email, password, rememberMe, isEmailValid, router])
 
   // Signup handler
   const handleSignup = useCallback(async () => {

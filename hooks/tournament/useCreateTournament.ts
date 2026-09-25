@@ -237,7 +237,7 @@ export function useCreateTournament(): UseCreateTournamentReturn {
     if (validationError) {
       setValidationError('')
     }
-  }, [formData.selectedPlayers.length, formData.newPlayers, formData.qualifiedPerPoule, formData.pouleSize])
+  }, [formData.selectedPlayers.length, formData.newPlayers, formData.qualifiedPerPoule, formData.pouleSize, formData.maxPoints])
 
   const handleContinue = useCallback(() => {
     setValidationError('')
@@ -270,6 +270,11 @@ export function useCreateTournament(): UseCreateTournamentReturn {
     }
 
     if (currentStep === 4) {
+      // Points de victoire : bornés 7–25 (comme l'indique le libellé du champ)
+      if (!Number.isFinite(formData.maxPoints) || formData.maxPoints < 7 || formData.maxPoints > 25) {
+        setValidationError(`Les points de victoire doivent être entre 7 et 25 — tu as mis ${formData.maxPoints || 'une valeur vide'}.`)
+        return
+      }
       // Validation config poules : qualifiés < taille de poule (et >= 1)
       const qualValidation = validateQualifiedPerPoule(
         formData.qualifiedPerPoule,

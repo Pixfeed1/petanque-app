@@ -25,6 +25,18 @@ export function FeedbackWidget() {
   const [sent, setSent] = useState(false)
   const [myFeedbacks, setMyFeedbacks] = useState<FeedbackEntry[]>([])
   const [showHistory, setShowHistory] = useState(false)
+  // L'onglet peut recouvrir des boutons en bord d'écran (mobile) → il est
+  // masquable, et le choix est mémorisé sur l'appareil.
+  const [collapsed, setCollapsed] = useState(false)
+
+  useEffect(() => {
+    try { setCollapsed(localStorage.getItem('pp_feedback_tab') === 'hidden') } catch { /* stockage indisponible */ }
+  }, [])
+
+  const toggleCollapsed = (value: boolean) => {
+    setCollapsed(value)
+    try { localStorage.setItem('pp_feedback_tab', value ? 'hidden' : 'shown') } catch { /* stockage indisponible */ }
+  }
 
   useEffect(() => {
     if (isOpen && isAuthenticated && showHistory) {
@@ -82,14 +94,36 @@ export function FeedbackWidget() {
 
   return (
     <>
-      {/* Bouton flottant */}
-      {!isOpen && (
+      {/* Bouton flottant (avec un × pour le replier hors du chemin) */}
+      {!isOpen && !collapsed && (
+        <div className="fixed right-0 bottom-16 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 z-50 flex flex-col items-end gap-1">
+          <button
+            aria-label="Masquer l'onglet d'avis"
+            onClick={() => toggleCollapsed(true)}
+            className="mr-1 w-5 h-5 rounded-full bg-petanque-bois/50 text-white text-xs leading-none flex items-center justify-center hover:bg-petanque-bois transition-colors"
+          >
+            ×
+          </button>
+          <button
+            onClick={() => setIsOpen(true)}
+            className="bg-petanque-vert text-white px-2.5 py-4 sm:px-3 sm:py-6 rounded-l-lg hover:bg-petanque-vert-fonce transition-all"
+            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+          >
+            <span className="text-sm font-medium tracking-wide">Donne ton avis</span>
+          </button>
+        </div>
+      )}
+
+      {/* Version repliée : fine languette pour le faire revenir */}
+      {!isOpen && collapsed && (
         <button
-          onClick={() => setIsOpen(true)}
-          className="fixed right-0 bottom-16 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 z-50 bg-petanque-vert text-white px-2.5 py-4 sm:px-3 sm:py-6 rounded-l-lg hover:bg-petanque-vert-fonce hover:px-4 transition-all"
-          style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+          aria-label="Afficher l'onglet d'avis"
+          onClick={() => toggleCollapsed(false)}
+          className="fixed right-0 bottom-16 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 z-50 bg-petanque-vert/50 hover:bg-petanque-vert text-white pl-1 pr-0.5 py-3 rounded-l-md transition-colors"
         >
-          <span className="text-sm font-medium tracking-wide">Donne ton avis</span>
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+          </svg>
         </button>
       )}
 

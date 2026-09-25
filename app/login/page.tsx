@@ -471,6 +471,9 @@ function EmailInput({ value, onChange, onKeyPress, isValid, autoFocus }: EmailIn
           </div>
         )}
       </div>
+      {value && !isValid && (
+        <p className="mt-1.5 text-xs text-red-600">Adresse email invalide (ex. : nom@exemple.fr)</p>
+      )}
     </div>
   )
 }
