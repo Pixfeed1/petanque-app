@@ -1,5 +1,6 @@
 ext {
-    minSdkVersion = 23
+    // 24 minimum : requis par la protection automatique « Protégé avec Play ».
+    minSdkVersion = 24
     compileSdkVersion = 36
     targetSdkVersion = 36
     androidxActivityVersion = '1.8.0'

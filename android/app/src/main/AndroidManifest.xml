@@ -37,4 +37,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Requis par Play pour les applis qui utilisent l'identifiant publicitaire (AdMob). -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 </manifest>
