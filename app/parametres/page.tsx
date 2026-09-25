@@ -9,6 +9,7 @@ import { Loader, Check, X } from '@/components/Icons'
 import { NotificationsCard } from '@/components/NotificationsCard'
 import { JoinCodeCard } from '@/components/JoinCodeCard'
 import { reopenConsent } from '@/lib/consent'
+import { getThemePref, setThemePref, type ThemePref } from '@/lib/theme'
 
 export default function Parametres() {
   const router = useRouter()
@@ -18,6 +19,14 @@ export default function Parametres() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
   const [exportingData, setExportingData] = useState(false)
+
+  // Thème (préférence par appareil)
+  const [theme, setTheme] = useState<ThemePref>('system')
+  useEffect(() => { setTheme(getThemePref()) }, [])
+  const chooseTheme = (pref: ThemePref) => {
+    setTheme(pref)
+    setThemePref(pref)
+  }
 
   // Club customization state
   const [clubName, setClubName] = useState('')
@@ -327,6 +336,34 @@ export default function Parametres() {
         {/* === Section Notifications === */}
         <FadeIn delay={isClub ? 240 : 180}>
           <NotificationsCard />
+        </FadeIn>
+
+        {/* === Section Apparence === */}
+        <FadeIn delay={isClub ? 250 : 190}>
+          <section className="mb-10 pb-10 border-b border-petanque-sable-bord/50">
+            <p className="font-mono text-[11px] text-petanque-bois uppercase tracking-[0.18em] font-medium mb-2">Apparence</p>
+            <p className="text-sm text-petanque-bois mb-5">Le thème sombre repose les yeux pour les longs concours en soirée. Réglage propre à cet appareil.</p>
+            <div className="grid grid-cols-3 gap-2 max-w-md">
+              {([
+                { value: 'light' as const, label: 'Clair', icon: '☀️' },
+                { value: 'dark' as const, label: 'Sombre', icon: '🌙' },
+                { value: 'system' as const, label: 'Système', icon: '⚙️' },
+              ]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => chooseTheme(opt.value)}
+                  className={`rounded-xl px-3 py-3 text-sm font-medium border transition-colors ${
+                    theme === opt.value
+                      ? 'border-petanque-vert bg-petanque-vert-pale/40 text-petanque-vert-fonce'
+                      : 'border-petanque-sable-bord bg-white text-petanque-bois hover:border-petanque-vert/40'
+                  }`}
+                >
+                  <span className="block text-lg mb-1" aria-hidden>{opt.icon}</span>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </section>
         </FadeIn>
 
         {/* === Section Données === */}

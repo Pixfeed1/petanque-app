@@ -45,7 +45,12 @@ export default function EspaceJoueur() {
             <BouleSvg className="w-6 h-6" />
             <span className="font-medium text-petanque-vert-fonce">Mon espace joueur</span>
           </div>
-          <button onClick={signOut} className="text-sm text-petanque-bois hover:text-petanque-vert-fonce">Déconnexion</button>
+          <button
+            onClick={() => { if (window.confirm('Tu veux vraiment te déconnecter ?')) signOut() }}
+            className="text-sm text-petanque-bois hover:text-petanque-vert-fonce"
+          >
+            Déconnexion
+          </button>
         </div>
       </header>
 

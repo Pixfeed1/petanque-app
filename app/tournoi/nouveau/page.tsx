@@ -59,6 +59,44 @@ export default function CreateTournamentPage() {
     }
   }, [user, organization, authLoading, loadPlayers, router])
 
+  // Le wizard contient du travail en cours dès que quelque chose est saisi :
+  // on protège contre la sortie accidentelle (Annuler, bouton Retour du téléphone,
+  // fermeture d'onglet) tant que le tournoi n'est pas créé.
+  const wizardDirty =
+    !savingTournament && !successAnimation &&
+    (formData.name.trim().length > 0 || formData.selectedPlayers.length > 0 ||
+      (formData.newPlayers || []).some((p: { name?: string }) => p.name?.trim()))
+
+  const leaveWizard = () => {
+    if (!wizardDirty || window.confirm('Quitter sans enregistrer ? Les réglages saisis seront perdus.')) {
+      router.push('/dashboard')
+    }
+  }
+
+  useEffect(() => {
+    if (!wizardDirty) return
+    const onBeforeUnload = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    // Bouton Retour (téléphone/navigateur) : on ré-empile l'entrée d'historique
+    // et on demande confirmation avant de vraiment partir.
+    const onPopState = () => {
+      if (window.confirm('Quitter sans enregistrer ? Les réglages saisis seront perdus.')) {
+        window.removeEventListener('popstate', onPopState)
+        window.removeEventListener('beforeunload', onBeforeUnload)
+        window.history.back()
+      } else {
+        window.history.pushState(null, '', window.location.href)
+      }
+    }
+    window.history.pushState(null, '', window.location.href)
+    window.addEventListener('popstate', onPopState)
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => {
+      window.removeEventListener('popstate', onPopState)
+      window.removeEventListener('beforeunload', onBeforeUnload)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wizardDirty])
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-petanque-sable-pale flex items-center justify-center">
@@ -90,7 +128,7 @@ export default function CreateTournamentPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4 h-14">
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={leaveWizard}
               className="text-sm text-petanque-bois hover:text-petanque-vert-fonce font-medium flex items-center gap-1.5"
             >
               <span>←</span>
@@ -98,7 +136,7 @@ export default function CreateTournamentPage() {
             </button>
             <span className="font-mono text-xs text-petanque-bois">Nouveau tournoi</span>
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={leaveWizard}
               className="text-sm text-petanque-bois hover:text-petanque-vert-fonce font-medium"
             >
               Annuler

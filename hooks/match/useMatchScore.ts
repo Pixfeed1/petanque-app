@@ -55,6 +55,7 @@ interface UseMatchScoreReturn {
   mancheScoreB: number
   winner: 'A' | 'B' | null
   elapsedTime: number
+  lastSavedAt: Date | null
 
   // Computed
   maxPoints: number
@@ -91,6 +92,7 @@ export function useMatchScore({
   const [match, setMatch] = useState<Match | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [scoreA, setScoreA] = useState(0)
   const [scoreB, setScoreB] = useState(0)
   const [manches, setManches] = useState<Manche[]>([])
@@ -212,14 +214,21 @@ export function useMatchScore({
         updateData.validated_at = new Date().toISOString()
       }
 
-      await fetch(`/api/matches/${matchId}`, {
+      const response = await fetch(`/api/matches/${matchId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(updateData)
       })
+      if (response.ok) {
+        // Preuve durable pour l'organisateur que la mise à jour a bien été enregistrée.
+        setLastSavedAt(new Date())
+      } else {
+        notify.error('Score non enregistré — réessaie (connexion ?)')
+      }
     } catch (error) {
       console.error('Erreur sauvegarde:', error)
+      notify.error('Score non enregistré — réessaie (connexion ?)')
     } finally {
       setSaving(false)
     }
@@ -340,6 +349,7 @@ export function useMatchScore({
     mancheScoreB,
     winner,
     elapsedTime,
+    lastSavedAt,
     maxPoints,
     maxPointsPerManche,
     updateScore,

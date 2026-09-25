@@ -47,17 +47,83 @@
   --color-info-bg: #e6f1fb;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0d1612;
-    --foreground: #f4ead0;
-    --surface-public: #131e18;
-    --surface-interne: #1a2620;
-    --text-primary: #f4ead0;
-    --text-secondary: #c0b89e;
-    --text-muted: #8a7d60;
-  }
+/* ============================================================
+   Thème sombre — activé par la classe .dark sur <html>.
+   Choisi dans Paramètres (clair / sombre / système) ; le mode
+   « système » suit prefers-color-scheme via lib/theme.ts.
+   Toute la palette étant en variables, les utilitaires
+   bg-petanque-* / text-petanque-* se remappent d'un coup.
+   ============================================================ */
+html.dark {
+  /* Palette remappée : le vert foncé devient le texte clair,
+     les sables deviennent des fonds sombres chauds. */
+  --petanque-vert: #4f8556;
+  --petanque-vert-fonce: #e9f0e0;   /* texte principal */
+  --petanque-vert-pale: #24331f;
+  --petanque-vert-clair: #8fbe72;
+  --petanque-sable: #262218;        /* surfaces */
+  --petanque-sable-pale: #1c1913;   /* fond principal */
+  --petanque-sable-fonce: #35301f;
+  --petanque-sable-bord: #4a4230;
+  --petanque-acier: #8d949e;
+  --petanque-acier-clair: #59616d;
+  --petanque-acier-fonce: #b3bdcb;
+  --petanque-cochonnet: #e0a866;
+  --petanque-cochonnet-pale: #3a2f1c;
+  --petanque-rouge: #e07070;
+  --petanque-rouge-pale: #3d2323;
+  --petanque-bois: #c2ab85;         /* texte secondaire */
+
+  --background: #141310;
+  --foreground: var(--petanque-vert-fonce);
+  --surface-public: #191712;
+  --surface-interne: var(--petanque-sable-pale);
+  --text-primary: var(--petanque-vert-fonce);
+  --text-secondary: #d8c7a8;
+  --text-muted: var(--petanque-bois);
+  --color-info: #7ab2e8;
+  --color-info-bg: #16283a;
+  color-scheme: dark;
 }
+
+/* Les cartes utilisent bg-white en clair → surface sombre dédiée.
+   (text-white n'est pas touché : les boutons gardent leur libellé clair.) */
+html.dark .bg-white { background-color: #221f17; }
+html.dark .bg-white\/95 { background-color: rgb(34 31 23 / 0.95); }
+html.dark .bg-white\/85 { background-color: rgb(34 31 23 / 0.85); }
+html.dark .bg-white\/80 { background-color: rgb(34 31 23 / 0.8); }
+html.dark .bg-white\/70 { background-color: rgb(34 31 23 / 0.7); }
+html.dark .bg-white\/40 { background-color: rgb(34 31 23 / 0.4); }
+html.dark .bg-white\/20 { background-color: rgb(255 255 255 / 0.08); }
+html.dark .bg-white\/15 { background-color: rgb(255 255 255 / 0.07); }
+html.dark .hover\:bg-white:hover { background-color: #2a2620; }
+
+/* Fond dégradé de la page de connexion → version sombre */
+html.dark .from-green-50 { --tw-gradient-from: #181d14; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+html.dark .via-white { --tw-gradient-stops: var(--tw-gradient-from), #171512, var(--tw-gradient-to); }
+html.dark .to-amber-50 { --tw-gradient-to: #1d1912; }
+
+/* Neutres génériques (page de connexion, badges, messages) */
+html.dark .bg-gray-100 { background-color: #2a2620; }
+html.dark .bg-gray-50 { background-color: #221f17; }
+html.dark .bg-red-50 { background-color: #3d2323; }
+html.dark .bg-green-50 { background-color: #22331f; }
+html.dark .bg-amber-100 { background-color: #3a2f1c; }
+html.dark .text-amber-700 { color: #e0a866; }
+html.dark .text-gray-900 { color: #ede5d2; }
+html.dark .text-gray-800 { color: #e0d7c2; }
+html.dark .text-gray-700 { color: #d6ccb6; }
+html.dark .text-gray-600 { color: #bdb096; }
+html.dark .text-gray-500 { color: #a29676; }
+html.dark .text-gray-400 { color: #8a7d60; }
+html.dark .border-gray-300 { border-color: #4a4230; }
+html.dark .border-red-200 { border-color: #5c3434; }
+html.dark .border-green-200 { border-color: #3a5232; }
+html.dark .text-red-700 { color: #e07070; }
+html.dark .text-red-600 { color: #e07070; }
+html.dark .text-green-700 { color: #8fbe72; }
+html.dark .text-green-600 { color: #8fbe72; }
+html.dark .text-green-500 { color: #8fbe72; }
 
 /* ============================================================
    Tailwind v4 — exposition des tokens en classes utilitaires

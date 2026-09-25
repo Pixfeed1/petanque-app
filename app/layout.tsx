@@ -11,6 +11,8 @@ import { NativeBridge } from "@/components/NativeBridge"
 import { ConsentBanner } from "@/components/ConsentBanner"
 import { ConsentedScripts } from "@/components/ConsentedScripts"
 import { UnverifiedGate } from "@/components/UnverifiedGate"
+import { ThemeWatcher } from "@/components/ThemeWatcher"
+import { THEME_INIT_SCRIPT } from "@/lib/theme"
 
 // Polices servies localement (zéro appel réseau au build).
 // Geist + Geist Mono : fournis bundlés par le package "geist".
@@ -60,10 +62,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="fr" className={`${GeistSans.variable} ${GeistMono.variable} ${cormorant.variable}`}>
+    <html lang="fr" className={`${GeistSans.variable} ${GeistMono.variable} ${cormorant.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Applique le thème (clair/sombre/système) avant l'hydratation — évite le flash clair. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="antialiased text-petanque-vert-fonce font-sans overflow-x-hidden">
         {/* Accessibilité : lien d'évitement pour aller directement au contenu (clavier). */}
         <a href="#contenu" className="skip-link">Aller au contenu</a>
+        <ThemeWatcher />
         <AuthProvider>
           <ToastProvider>
             <div id="contenu"><UnverifiedGate>{children}</UnverifiedGate></div>

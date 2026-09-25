@@ -27,7 +27,7 @@ export default function MatchScorePage() {
   const {
     match, loading, saving, scoreA, scoreB, manches,
     currentManche, mancheScoreA, mancheScoreB, winner,
-    elapsedTime, maxPoints, maxPointsPerManche,
+    elapsedTime, lastSavedAt, maxPoints, maxPointsPerManche,
     updateScore, finishMatch, finishManche, undoLastManche,
     saveProgress, formatTime
   } = useMatchScore({
@@ -309,6 +309,12 @@ export default function MatchScorePage() {
               </div>
               {mancheScoreA === 0 && mancheScoreB === 0 && (
                 <p className="text-center mt-4 text-xs text-petanque-bois italic">Mène annulée si validée à 0–0 (cochonnet sorti).</p>
+              )}
+              {/* Preuve durable que la dernière validation a bien atteint le serveur */}
+              {lastSavedAt && (
+                <p className="text-center mt-3 text-xs text-petanque-vert font-medium">
+                  ✓ Score enregistré à {lastSavedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                </p>
               )}
               <div className="mt-6 pt-5 border-t border-petanque-sable-bord/50 flex items-center justify-between gap-3 flex-wrap">
                 <button

@@ -78,6 +78,14 @@ export default function Dashboard() {
   })
 
   const handleLogout = async () => {
+    // Un clic accidentel ne doit pas interrompre la gestion d'un tournoi en direct.
+    const ok = await confirm({
+      title: 'Se déconnecter',
+      message: 'Tu veux vraiment te déconnecter ?',
+      confirmText: 'Me déconnecter',
+      variant: 'warning',
+    })
+    if (!ok) return
     await signOut()
   }
 
