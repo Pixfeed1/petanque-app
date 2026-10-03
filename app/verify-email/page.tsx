@@ -36,7 +36,8 @@ function VerifyEmailContent() {
           ) : (
             <>
               <h1 className="text-xl font-medium text-petanque-vert-fonce mb-2">Lien invalide ou expiré</h1>
-              <p className="text-sm text-petanque-bois mb-5">Ce lien d&apos;activation n&apos;est plus valable. Connecte-toi et demande un nouvel email depuis le bandeau d&apos;activation.</p>
+              <p className="text-sm text-petanque-bois mb-2">Bonne nouvelle possible : ton compte est peut-être <strong>déjà activé</strong> (certaines messageries vérifient les liens à ta place). Essaie d&apos;abord de te connecter.</p>
+              <p className="text-sm text-petanque-bois mb-5">Si la connexion te redemande l&apos;activation, demande un nouvel email depuis le bandeau d&apos;activation.</p>
               <button onClick={() => router.push('/login')} className="px-5 py-2.5 rounded-lg bg-petanque-vert text-petanque-sable font-medium hover:bg-petanque-vert-fonce transition-colors">Se connecter</button>
             </>
           )}

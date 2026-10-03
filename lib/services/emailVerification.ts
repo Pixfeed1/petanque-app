@@ -31,8 +31,15 @@ export async function issueVerificationToken(userId: string): Promise<string> {
 }
 
 /**
- * Valide un jeton : marque l'email vérifié et efface le jeton. Idempotent-friendly.
- * Retourne true si un compte a été activé, false si le jeton est inconnu/expiré.
+ * Valide un jeton : marque l'email vérifié. Retourne true si le jeton est
+ * valide, false s'il est inconnu/expiré.
+ *
+ * IDEMPOTENT par conception : le jeton n'est PAS effacé à la première
+ * utilisation (il expire naturellement au bout de 7 jours). Les scanners
+ * d'emails (Outlook SafeLinks, antivirus…) « pré-cliquent » les liens avant
+ * l'utilisateur ; si le jeton était à usage unique, le vrai clic de
+ * l'utilisateur tomberait sur « lien invalide » alors que son compte vient
+ * d'être activé. Ici, tous les clics dans la fenêtre de validité réussissent.
  */
 export async function consumeVerificationToken(token: string): Promise<boolean> {
   if (!token) return false
@@ -42,7 +49,7 @@ export async function consumeVerificationToken(token: string): Promise<boolean> 
   )
   if (!row || !isTokenStillValid(row.verification_token_expires)) return false
   await query(
-    'UPDATE users SET email_verified = true, email_verified_at = NOW(), verification_token = NULL, verification_token_expires = NULL WHERE id = $1',
+    'UPDATE users SET email_verified = true, email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = $1',
     [row.id]
   )
   return true
