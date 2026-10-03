@@ -57,7 +57,8 @@ export interface TournamentFormData {
 
 export interface NewPlayer {
   name: string
-  gender: 'H' | 'F'
+  // '' = non précisé (le genre ne sert qu'aux options de mixité)
+  gender: 'H' | 'F' | ''
   email?: string
   phone?: string
 }
@@ -183,10 +184,10 @@ export function useCreateTournament(): UseCreateTournamentReturn {
   const canProceed = useCallback(() => {
     switch (currentStep) {
       case 1:
-        // Nom minimum 3 caractères
+        // Nom minimum 3 caractères. Les terrains sont OPTIONNELS : sans
+        // terrain, les matchs s'affichent simplement sans assignation.
         return formData.name.trim().length >= 3 &&
-          formData.name.trim().length <= 100 &&
-          formData.terrains > 0
+          formData.name.trim().length <= 100
 
       case 2:
         return true

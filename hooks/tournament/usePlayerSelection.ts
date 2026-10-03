@@ -97,7 +97,7 @@ export function usePlayerSelection({
    * Ajoute un nouveau joueur vide
    */
   const addNewPlayer = useCallback(() => {
-    onUpdateNewPlayers([...newPlayers, { name: '', gender: 'H', email: '', phone: '' }])
+    onUpdateNewPlayers([...newPlayers, { name: '', gender: '', email: '', phone: '' }])
 
     // Auto-scroll vers le bas
     if (scrollTimeoutRef.current) {

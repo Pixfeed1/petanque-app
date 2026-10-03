@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { useToast } from '@/components/ui/Toast'
@@ -219,7 +219,7 @@ export default function CreateTournamentPage() {
         )}
         {currentStep === 4 && (
           <FadeIn delay={120} key="s4">
-            <Step4 formData={formData} updateFormField={updateFormField} isClubPlan={isClubPlan} />
+            <Step4 formData={formData} updateFormField={updateFormField} isClubPlan={isClubPlan} availablePlayers={availablePlayers} />
           </FadeIn>
         )}
         {currentStep === 5 && (
@@ -572,6 +572,19 @@ function Step3({
   const ppt = formData.format === 'tete_a_tete' ? 1 : formData.format === 'doublette' ? 2 : 3
   const leftover = formData.mode !== 'choisi' && total >= min && ppt > 1 ? total % ppt : 0
 
+  // Ajout fluide : quand une ligne joueur est ajoutée (bouton ou touche Entrée),
+  // le curseur saute automatiquement dans le nouveau champ Nom.
+  const prevNewCount = useRef(formData.newPlayers.length)
+  useEffect(() => {
+    if (formData.newPlayers.length > prevNewCount.current) {
+      const inputs = newPlayersRef?.current?.querySelectorAll('[data-newplayer-name]')
+      const last = inputs?.[inputs.length - 1] as HTMLInputElement | undefined
+      last?.focus()
+    }
+    prevNewCount.current = formData.newPlayers.length
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.newPlayers.length])
+
   return (
     <div className="space-y-7">
       {formData.mode === 'choisi' && (
@@ -656,17 +669,30 @@ function Step3({
                   type="text"
                   value={player.name}
                   onChange={(e) => updateNewPlayer(i, 'name', e.target.value)}
-                  placeholder="Nom"
+                  onKeyDown={(e) => {
+                    // Entrée = valider ce joueur et enchaîner sur le suivant
+                    if (e.key === 'Enter' && player.name.trim()) {
+                      e.preventDefault()
+                      addNewPlayer()
+                    }
+                  }}
+                  placeholder="Nom, puis Entrée"
+                  data-newplayer-name
                   className="flex-1 h-9 px-3 text-base bg-transparent border border-petanque-sable-bord rounded focus:border-petanque-vert focus:outline-none"
                 />
-                <select
-                  value={player.gender}
-                  onChange={(e) => updateNewPlayer(i, 'gender', e.target.value)}
-                  className="h-9 px-2 text-sm bg-transparent border border-petanque-sable-bord rounded focus:border-petanque-vert focus:outline-none"
-                >
-                  <option value="H">H</option>
-                  <option value="F">F</option>
-                </select>
+                {/* Le genre n'apparaît que si une option de mixité est activée
+                    (étape Options) — inutile pour les concours sans mixité. */}
+                {(formData.mixiteObligatoire || formData.mixiteAdversaire) && (
+                  <select
+                    value={player.gender || ''}
+                    onChange={(e) => updateNewPlayer(i, 'gender', e.target.value)}
+                    className="h-9 px-2 text-sm bg-transparent border border-petanque-sable-bord rounded focus:border-petanque-vert focus:outline-none"
+                  >
+                    <option value="">Genre ?</option>
+                    <option value="H">H</option>
+                    <option value="F">F</option>
+                  </select>
+                )}
                 <button
                   onClick={() => removeNewPlayer(i)}
                   className="w-9 h-9 flex items-center justify-center text-petanque-bois hover:text-petanque-cochonnet rounded"
@@ -692,7 +718,7 @@ function Step3({
 // =============================================================
 // Étape 4 — Options avancées
 // =============================================================
-function Step4({ formData, updateFormField, isClubPlan }: any) {
+function Step4({ formData, updateFormField, isClubPlan, availablePlayers }: any) {
   const advancedOptions = [
     { key: 'mixiteObligatoire', label: 'Mixité obligatoire', desc: 'H et F dans chaque équipe' },
     { key: 'consolante', label: 'Petite finale', desc: 'Match pour la 3e place' },
@@ -951,6 +977,23 @@ function Step4({ formData, updateFormField, isClubPlan }: any) {
         ))}
       </div>
 
+      {/* Mixité activée mais joueurs sans genre : le sélecteur H/F n'apparaît à
+          l'étape Joueurs QUE quand une mixité est cochée — on invite à y revenir. */}
+      {(formData.mixiteObligatoire || formData.mixiteAdversaire) && (() => {
+        const selectedUngendered = (formData.selectedPlayers || [])
+          .map((id: string) => (availablePlayers || []).find((p: any) => p.id === id))
+          .filter((p: any) => p && p.gender !== 'H' && p.gender !== 'F').length
+        const newUngendered = (formData.newPlayers || [])
+          .filter((p: any) => p.name?.trim() && p.gender !== 'H' && p.gender !== 'F').length
+        const n = selectedUngendered + newUngendered
+        if (n === 0) return null
+        return (
+          <div className="bg-petanque-cochonnet-pale/30 border border-petanque-cochonnet/40 rounded-xl px-4 py-3 text-sm text-petanque-cochonnet-fonce">
+            La mixité utilise le genre des joueurs, et {n} joueur{n > 1 ? 's' : ''} n'en {n > 1 ? 'ont' : 'a'} pas. Reviens à l'étape « Les joueurs » : le choix Homme/Femme y est maintenant affiché. Sans précision, un joueur compte comme homme.
+          </div>
+        )
+      })()}
+
       <div className="border-t border-petanque-sable-bord/50 pt-6">
         <div className="flex items-center gap-2 mb-4">
           <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-petanque-bois font-medium">Options avancées</span>
@@ -1030,7 +1073,7 @@ function Step5({ formData, getTotalPlayers, getEstimatedTeams, getEstimatedPools
     { label: 'Joueurs', value: getTotalPlayers() },
     { label: 'Équipes', value: getEstimatedTeams() },
     { label: 'Poules', value: getEstimatedPools() },
-    { label: 'Terrains', value: formData.terrains }
+    { label: 'Terrains', value: formData.terrains > 0 ? formData.terrains : 'Aucun' }
   ]
 
   return (

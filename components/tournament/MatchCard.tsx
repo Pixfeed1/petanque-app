@@ -178,19 +178,22 @@ export default function MatchCard({
       {/* Actions pour match à jouer */}
       {match.status === 'a_jouer' && isOrganizer && onAssignTerrain && (
         <div className="mt-3 flex space-x-2">
-          <select
-            value={match.terrain || ''}
-            onChange={(e) => onAssignTerrain(match.id, parseInt(e.target.value))}
-            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:border-green-500"
-          >
-            <option value="">Terrain...</option>
-            {Array.from({ length: availableTerrains }, (_, i) => (
-              <option key={i + 1} value={i + 1}>Terrain {terrainLabel(i + 1, terrainNames)}</option>
-            ))}
-          </select>
+          {availableTerrains > 0 && (
+            <select
+              value={match.terrain || ''}
+              onChange={(e) => onAssignTerrain(match.id, parseInt(e.target.value))}
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:border-green-500"
+            >
+              <option value="">Terrain...</option>
+              {Array.from({ length: availableTerrains }, (_, i) => (
+                <option key={i + 1} value={i + 1}>Terrain {terrainLabel(i + 1, terrainNames)}</option>
+              ))}
+            </select>
+          )}
           <button
             onClick={() => {
-              if (!match.terrain) {
+              // Sans terrains déclarés sur le tournoi, on démarre directement.
+              if (availableTerrains > 0 && !match.terrain) {
                 if (onWarning) {
                   onWarning('Assigne d\'abord un terrain au match avant de le démarrer')
                 }
@@ -198,7 +201,7 @@ export default function MatchCard({
               }
               router.push(`/match/${match.id}`)
             }}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
+            className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all ${availableTerrains > 0 ? '' : 'flex-1'}`}
           >
             Démarrer
           </button>

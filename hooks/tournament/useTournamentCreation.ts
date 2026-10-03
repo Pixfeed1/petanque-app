@@ -92,10 +92,12 @@ export function useTournamentCreation({
       return
     }
 
-    // Nouveaux joueurs (avec jetons "new:<index>")
+    // Nouveaux joueurs (avec jetons "new:<index>").
+    // Genre masqué hors mixité : '' → undefined (stocké NULL, jamais supposé).
     const newPlayerInputs = formData.newPlayers.filter(np => np.name.trim())
     const newPlayerRefs: PlayerRef[] = newPlayerInputs.map((np, i) => ({
-      id: `new:${i}`, name: np.name.trim(), gender: np.gender
+      id: `new:${i}`, name: np.name.trim(),
+      gender: np.gender === 'H' || np.gender === 'F' ? np.gender : undefined
     }))
 
     // Joueurs existants sélectionnés
