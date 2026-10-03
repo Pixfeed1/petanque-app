@@ -23,6 +23,9 @@ interface MatchInput {
   type?: string
   poule?: string | null
   status?: string
+  // Matchs d'exemption (équipe sans adversaire) : victoire fictive 13-7
+  score_a?: number
+  score_b?: number
 }
 
 export async function POST(
@@ -128,8 +131,8 @@ export async function POST(
         const equipeAId = createdTeams[m.team_a_index].id
         const equipeBId = m.team_b_index !== null ? createdTeams[m.team_b_index].id : null
 
-        const b = i * 8
-        matchValueStrings.push(`($${b+1}, $${b+2}, $${b+3}, $${b+4}, $${b+5}, $${b+6}, $${b+7}, $${b+8})`)
+        const b = i * 10
+        matchValueStrings.push(`($${b+1}, $${b+2}, $${b+3}, $${b+4}, $${b+5}, $${b+6}, $${b+7}, $${b+8}, $${b+9}, $${b+10})`)
         matchValues.push(
           tournoiId,
           m.tour || rotation_number,
@@ -138,13 +141,15 @@ export async function POST(
           equipeBId,
           m.type || 'poule',
           m.poule,
-          m.status || 'a_jouer'
+          m.status || 'a_jouer',
+          m.score_a ?? 0,
+          m.score_b ?? 0
         )
       })
 
       // 4. Insertion bulk des matchs
       const matchesInsertResult = await client.query(
-        `INSERT INTO matches (tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status)
+        `INSERT INTO matches (tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status, score_a, score_b)
          VALUES ${matchValueStrings.join(', ')}
          RETURNING *`,
         matchValues

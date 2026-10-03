@@ -33,6 +33,9 @@ interface MatchInput {
   type?: string
   poule?: string | null
   status?: string
+  // Matchs d'exemption (équipe sans adversaire) : victoire fictive 13-7
+  score_a?: number
+  score_b?: number
 }
 
 const VALID_FORMATS = ['tete_a_tete', 'doublette', 'triplette']
@@ -175,8 +178,8 @@ export async function POST(request: NextRequest) {
           if (m.team_b_index !== null && m.team_b_index !== undefined && m.team_a_index === m.team_b_index) {
             throw new Error(`Match ${i}: les deux équipes doivent être différentes`)
           }
-          const b = i * 8
-          rows.push(`($${b + 1}, $${b + 2}, $${b + 3}, $${b + 4}, $${b + 5}, $${b + 6}, $${b + 7}, $${b + 8})`)
+          const b = i * 10
+          rows.push(`($${b + 1}, $${b + 2}, $${b + 3}, $${b + 4}, $${b + 5}, $${b + 6}, $${b + 7}, $${b + 8}, $${b + 9}, $${b + 10})`)
           values.push(
             tournoiId,
             m.tour || 1,
@@ -185,11 +188,13 @@ export async function POST(request: NextRequest) {
             (m.team_b_index !== null && m.team_b_index !== undefined) ? teamIds[m.team_b_index] : null,
             m.type || 'poule',
             m.poule ?? null,
-            m.status || 'a_jouer'
+            m.status || 'a_jouer',
+            m.score_a ?? 0,
+            m.score_b ?? 0
           )
         })
         const mRes = await client.query(
-          `INSERT INTO matches (tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status)
+          `INSERT INTO matches (tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status, score_a, score_b)
            VALUES ${rows.join(', ')} RETURNING id`,
           values
         )

@@ -23,7 +23,7 @@ interface MatchCardProps {
     status: 'a_jouer' | 'en_cours' | 'termine' | 'en_attente_validation'
     score_a: number | null
     score_b: number | null
-    type?: 'poule' | 'elimination' | 'demi' | 'finale' | 'petite_finale' | 'bye' | 'quart' | 'huitieme'
+    type?: 'poule' | 'elimination' | 'demi' | 'finale' | 'petite_finale' | 'bye' | 'quart' | 'huitieme' | 'exempt'
     poule?: string
   }
   maxPoints?: number
@@ -46,6 +46,26 @@ export default function MatchCard({
   onWarning
 }: MatchCardProps) {
   const router = useRouter()
+
+  // Équipe exempte (nombre impair d'équipes) : victoire fictive 13-7, pas de match à jouer
+  if (match.type === 'exempt') {
+    return (
+      <div className="bg-white rounded-xl p-4 shadow-md border border-petanque-vert/30">
+        <div className="text-center py-2">
+          <p className="font-medium text-gray-900 text-base mb-1">{match.equipe_a?.name}</p>
+          {(() => {
+            const players = match.equipe_a ? getTeamPlayers(match.equipe_a.id) : []
+            return players.length > 0
+              ? <p className="text-sm text-gray-600 mb-2 truncate">{players.join(', ')}</p>
+              : null
+          })()}
+          <div className="bg-petanque-vert-pale/40 rounded-lg px-4 py-2 inline-block">
+            <p className="text-sm font-medium text-petanque-vert-fonce">💤 Exempte cette partie · victoire 13 à 7</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Match BYE - Affichage spécial
   if (match.type === 'bye') {

@@ -281,6 +281,8 @@ export function useRotation({
     type: string
     poule: string | null
     status: string
+    score_a?: number
+    score_b?: number
   }> => {
     if (!tournament || newTeams.length === 0) return []
 
@@ -302,20 +304,29 @@ export function useRotation({
       const profiles = useMixite
         ? newTeams.map(t => teamGenderProfile(t.joueur_ids, genderById!))
         : newTeams.map(() => 'N' as const)
-      // NB : nombre impair d'équipes → politique d'exemption à décider (produit).
-      const { pairs } = pairRoundByMixite(profiles)
+      // Règle A+2 : nombre impair d'équipes → l'exempt tourne avec le numéro
+      // de partie et marque une victoire fictive 13-7 (convention concours).
+      const byeIdx = newTeams.length % 2 === 1 ? (rotationNumber - 1) % newTeams.length : null
+      const { pairs } = pairRoundByMixite(profiles, byeIdx)
       const forTerrain = pairs.map(([a, b], idx) => ({ id: `rot_${idx}`, equipe_a_id: String(a), equipe_b_id: String(b), tour: rotationNumber }))
       const terrains = tournament.settings.terrains || 0
       const tMap = terrains > 0 ? TirageService.smartTerrainAssignment(forTerrain, terrains) : null
-      return pairs.map(([a, b], idx) => ({
+      const rows = pairs.map(([a, b], idx) => ({
         tour: rotationNumber,
         terrain: tMap?.get(`rot_${idx}`) || null,
         team_a_index: a,
-        team_b_index: b,
+        team_b_index: b as number | null,
         type: 'poule',
         poule: null,
         status: 'a_jouer'
-      }))
+      })) as Array<{
+        tour: number; terrain: number | null; team_a_index: number; team_b_index: number | null
+        type: string; poule: string | null; status: string; score_a?: number; score_b?: number
+      }>
+      if (byeIdx !== null) {
+        rows.push({ tour: rotationNumber, terrain: null, team_a_index: byeIdx, team_b_index: null, type: 'exempt', poule: null, status: 'termine', score_a: 13, score_b: 7 })
+      }
+      return rows
     }
 
     // Tête-à-tête : une rotation = UNE ronde de Berger (chaque joueur un nouvel adversaire).
@@ -336,15 +347,28 @@ export function useRotation({
       terrainMap = TirageService.smartTerrainAssignment(matchesForTerrain, terrains)
     }
 
-    return bergerMatches.map((m, idx) => ({
+    const rows = bergerMatches.map((m, idx) => ({
       tour: rotationNumber,
       terrain: terrainMap?.get(`rot_${idx}`) || null,
       team_a_index: parseInt(m.teamA.id, 10),
-      team_b_index: parseInt(m.teamB.id, 10),
+      team_b_index: parseInt(m.teamB.id, 10) as number | null,
       type: 'poule',
       poule: null,
       status: 'a_jouer'
-    }))
+    })) as Array<{
+      tour: number; terrain: number | null; team_a_index: number; team_b_index: number | null
+      type: string; poule: string | null; status: string; score_a?: number; score_b?: number
+    }>
+    // Règle A+2 (tête-à-tête, effectif impair) : le joueur sans adversaire de
+    // cette ronde de Berger reçoit un match d'exemption 13-7.
+    if (tournament.format === 'tete_a_tete' && virtualTeams.length % 2 === 1) {
+      const used = new Set(rows.flatMap(r => [r.team_a_index, r.team_b_index]))
+      const resting = virtualTeams.findIndex((_, i) => !used.has(i))
+      if (resting >= 0) {
+        rows.push({ tour: rotationNumber, terrain: null, team_a_index: resting, team_b_index: null, type: 'exempt', poule: null, status: 'termine', score_a: 13, score_b: 7 })
+      }
+    }
+    return rows
   }, [tournament])
 
   /**

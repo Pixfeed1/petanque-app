@@ -1065,6 +1065,18 @@ export default function TournamentDetailPage() {
                         }
                         return `Tour ${m.tour}`
                       })()
+                      // Exemption (nombre impair d'équipes) : affichage dédié
+                      if (m.type === 'exempt') {
+                        return (
+                          <div key={m.id} className="flex items-center justify-between py-3 border-b border-petanque-sable-bord/40 last:border-b-0 text-sm">
+                            <span className="text-petanque-vert-fonce">
+                              <span className="text-petanque-bois">Exempte · </span>
+                              <span className="font-medium">{eqA}</span> victoire 13–7 (repos)
+                            </span>
+                            <span className="font-mono text-[11px] text-petanque-bois">{isMelee || engineRounds ? `Partie ${m.tour}` : `Tour ${m.tour}`}</span>
+                          </div>
+                        )
+                      }
                       return (
                         <div key={m.id} className="flex items-center justify-between py-3 border-b border-petanque-sable-bord/40 last:border-b-0 text-sm">
                           <span className="text-petanque-vert-fonce">
@@ -1180,17 +1192,18 @@ export default function TournamentDetailPage() {
                           </div>
                           {tourMatchs.map((match: any) => {
                             const eqA = teams.find(t => t.id === match.equipe_a_id)?.name || 'Équipe A'
-                            const eqB = teams.find(t => t.id === match.equipe_b_id)?.name || 'Équipe B'
+                            const isExempt = match.type === 'exempt'
+                            const eqB = isExempt ? '💤 Exempte (repos)' : (teams.find(t => t.id === match.equipe_b_id)?.name || 'Équipe B')
                             const hasScore = match.score_a !== null && match.score_b !== null
                             const aLead = hasScore && match.score_a > match.score_b
                             const bLead = hasScore && match.score_b > match.score_a
-                            const statusLabel = match.status === 'en_cours' ? 'En cours' : match.status === 'termine' ? 'Terminé' : 'À venir'
+                            const statusLabel = isExempt ? 'Exempte' : match.status === 'en_cours' ? 'En cours' : match.status === 'termine' ? 'Terminé' : 'À venir'
                             const statusColor = match.status === 'en_cours' ? 'text-petanque-vert' : match.status === 'termine' ? 'text-petanque-bois' : 'text-petanque-cochonnet'
                             return (
                               <button
                                 key={match.id}
-                                onClick={() => router.push(`/match/${match.id}`)}
-                                className="w-full px-6 py-5 flex items-center gap-5 border-t border-petanque-sable-bord/40 hover:bg-petanque-sable-pale/40 transition-colors text-left group"
+                                onClick={() => { if (!isExempt) router.push(`/match/${match.id}`) }}
+                                className={`w-full px-6 py-5 flex items-center gap-5 border-t border-petanque-sable-bord/40 transition-colors text-left group ${isExempt ? 'cursor-default' : 'hover:bg-petanque-sable-pale/40'}`}
                               >
                                 <div className="font-mono text-sm text-petanque-bois w-12 flex-shrink-0">
                                   {match.terrain ? `T${match.terrain}` : '—'}
@@ -1215,7 +1228,7 @@ export default function TournamentDetailPage() {
                                     {statusLabel}
                                   </span>
                                 </div>
-                                <span className="text-petanque-bois/30 flex-shrink-0 group-hover:text-petanque-vert transition-colors text-lg">→</span>
+                                <span className="text-petanque-bois/30 flex-shrink-0 group-hover:text-petanque-vert transition-colors text-lg">{isExempt ? '' : '→'}</span>
                               </button>
                             )
                           })}

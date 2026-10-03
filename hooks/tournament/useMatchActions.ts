@@ -332,8 +332,10 @@ export function useMatchActions({
       } catch { /* pas de genre → appariement sans contrainte de mixité */ }
     }
 
-    // NB : nombre impair d'équipes → politique d'exemption à décider (produit).
-    const { pairs, repeats } = pairRound(profiles, (i, j) => played.has(pairKey(teams[i].id, teams[j].id)))
+    // Règle A+2 : nombre impair d'équipes → l'exempt tourne avec le numéro de
+    // partie et marque une victoire fictive 13-7 (convention concours).
+    const byeIdx = teams.length % 2 === 1 ? (partieNum - 1) % teams.length : null
+    const { pairs, repeats } = pairRound(profiles, (i, j) => played.has(pairKey(teams[i].id, teams[j].id)), byeIdx)
     if (pairs.length === 0) {
       notify.error('Impossible de former des matchs pour cette partie.')
       return false
@@ -346,13 +348,31 @@ export function useMatchActions({
     const newMatches = pairs.map(([a, b], idx) => ({
       tournoi_id: tournament.id,
       equipe_a_id: teams[a].id,
-      equipe_b_id: teams[b].id,
+      equipe_b_id: teams[b].id as string | null,
       tour: partieNum,
       terrain: tMap?.get(`p_${idx}`) || null,
-      type: 'poule' as const,
+      type: 'poule' as string,
       poule: null,
-      status: 'a_jouer' as const,
+      status: 'a_jouer' as string,
+      score_a: undefined as number | undefined,
+      score_b: undefined as number | undefined,
     }))
+    if (byeIdx !== null && teams[byeIdx]) {
+      // Match d'exemption : victoire fictive 13-7 pour l'équipe au repos.
+      newMatches.push({
+        tournoi_id: tournament.id,
+        equipe_a_id: teams[byeIdx].id,
+        equipe_b_id: null,
+        tour: partieNum,
+        terrain: null,
+        type: 'exempt',
+        poule: null,
+        status: 'termine',
+        score_a: 13,
+        score_b: 7,
+      })
+      notify.warning(`${teams[byeIdx].name} est exempte cette partie : victoire 13 à 7 (nombre impair d'équipes).`)
+    }
 
     try {
       const res = await fetch('/api/matches/batch', {

@@ -182,12 +182,32 @@ describe('buildTeamsAndMatches — effectifs non multiples', () => {
     expect(r.unassignedCount).toBe(1) // signalé, jamais perdu en silence
   })
 
-  it('tête-à-tête tournante, 7 joueurs → ronde de Berger avec un exempt', () => {
+  it('tête-à-tête tournante, 7 joueurs → 3 matchs + 1 exemption 13-7 (règle A+2)', () => {
     const cfg: CreationComposition = { format: 'tete_a_tete', mode: 'melee_tournante', mixiteObligatoire: false, pouleSize: 4, terrains: 0 }
     const r = buildTeamsAndMatches(cfg, players(7))
     expect(r.teams).toHaveLength(7)
-    expect(r.matches).toHaveLength(3) // 3 matchs, 1 joueur au repos (fantôme de Berger)
-    const used = r.matches.flatMap(m => [m.team_a_index, m.team_b_index])
-    expect(new Set(used).size).toBe(6)
+    const normaux = r.matches.filter(m => m.type !== 'exempt')
+    const exempts = r.matches.filter(m => m.type === 'exempt')
+    expect(normaux).toHaveLength(3)
+    expect(exempts).toHaveLength(1)
+    expect(exempts[0].team_b_index).toBeNull()
+    expect(exempts[0].status).toBe('termine')
+    expect(exempts[0].score_a).toBe(13)
+    expect(exempts[0].score_b).toBe(7)
+    // Les 7 joueurs ont tous un résultat : 6 en match + 1 exempt
+    const used = r.matches.flatMap(m => [m.team_a_index, m.team_b_index]).filter(x => x !== null)
+    expect(new Set(used).size).toBe(7)
+  })
+
+  it('mêlée fixe doublette N parties, 5 équipes → 2 matchs + exemption pour l\'équipe 1 (rotation A)', () => {
+    const cfg: CreationComposition = { format: 'doublette', mode: 'melee_fixe', mixiteObligatoire: false, pouleSize: 4, terrains: 0, nombreParties: 3 }
+    const r = buildTeamsAndMatches(cfg, players(10))
+    expect(r.teams).toHaveLength(5)
+    const exempts = r.matches.filter(m => m.type === 'exempt')
+    expect(exempts).toHaveLength(1)
+    expect(exempts[0].team_a_index).toBe(0) // partie 1 → équipe 1 exempte
+    expect(exempts[0].score_a).toBe(13)
+    expect(exempts[0].score_b).toBe(7)
+    expect(r.matches.filter(m => m.type !== 'exempt')).toHaveLength(2)
   })
 })

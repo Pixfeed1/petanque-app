@@ -23,6 +23,21 @@ export interface FullMatchInput {
   type: string
   poule: string | null
   status: string
+  score_a?: number
+  score_b?: number
+}
+
+/**
+ * Match d'exemption (décision produit A+2, oct. 2026) : avec un nombre impair
+ * d'équipes en mode « une partie = un match par équipe », l'équipe sans
+ * adversaire marque une victoire fictive 13 à 7 (convention des concours) et
+ * l'exempt tourne dans l'ordre des équipes au fil des parties.
+ */
+export function exemptionMatch(teamIndex: number, tour: number): FullMatchInput {
+  return {
+    team_a_index: teamIndex, team_b_index: null, tour, terrain: null,
+    type: 'exempt', poule: null, status: 'termine', score_a: 13, score_b: 7,
+  }
 }
 export interface PlayerRef { id: string; name: string; gender?: 'H' | 'F'; email?: string; niveau?: number }
 
@@ -132,6 +147,13 @@ export function buildTeamsAndMatches(
     for (const m of withTerrain) {
       matches.push({ team_a_index: m.a, team_b_index: m.b, tour: m.tour, terrain: m.terrain, type: 'poule', poule: m.poule, status: 'a_jouer' })
     }
+    // Nombre impair de joueurs : le joueur sans adversaire (fantôme de Berger)
+    // reçoit un match d'exemption 13-7 (règle A+2).
+    if (teamsForDraw.length % 2 === 1) {
+      const used = new Set(withTerrain.flatMap(m => [m.a, m.b]))
+      const resting = teamsForDraw.findIndex((_, i) => !used.has(i))
+      if (resting >= 0) matches.push(exemptionMatch(resting, 1))
+    }
   } else if (
     (cfg.mode === 'melee_tournante' && (cfg.mixiteAdversaire || cfg.nombreParties)) ||
     (cfg.mode === 'melee_fixe' && cfg.nombreParties)
@@ -146,10 +168,10 @@ export function buildTeamsAndMatches(
     const profiles = cfg.mixiteAdversaire
       ? teams.map(t => teamGenderProfile(t.joueur_ids, genderById))
       : teams.map(() => 'N' as const)
-    // NB : avec un nombre impair d'équipes, la POLITIQUE d'exemption (qui se
-    // repose, et si le repos compte au classement) est en attente de décision
-    // produit — en attendant, l'appariement glouton laisse l'exempt par défaut.
-    const { pairs } = pairRoundByMixite(profiles)
+    // Nombre impair d'équipes (règle A+2) : l'exempt tourne dans l'ordre des
+    // équipes (partie 1 → équipe 1, etc.) et marque une victoire fictive 13-7.
+    const byeIdx = profiles.length % 2 === 1 ? 0 : null
+    const { pairs } = pairRoundByMixite(profiles, byeIdx)
     const withTerrain = assignTerrains(
       pairs.map(([a, b]) => ({ a, b, tour: 1, poule: null as string | null })),
       cfg.terrains
@@ -157,6 +179,7 @@ export function buildTeamsAndMatches(
     for (const m of withTerrain) {
       matches.push({ team_a_index: m.a, team_b_index: m.b, tour: m.tour, terrain: m.terrain, type: 'poule', poule: m.poule, status: 'a_jouer' })
     }
+    if (byeIdx !== null) matches.push(exemptionMatch(byeIdx, 1))
   } else {
     // Poules : distribution serpentin + planning Berger par poule.
     // Équilibrage par niveau : on ensemence les équipes par force décroissante puis on

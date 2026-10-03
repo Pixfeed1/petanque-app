@@ -16,6 +16,9 @@ interface MatchInput {
   type?: string
   poule?: string | null
   status?: string
+  // Matchs d'exemption : victoire fictive (13-7 par convention)
+  score_a?: number
+  score_b?: number
 }
 
 // POST - Créer plusieurs matches en une seule requête
@@ -74,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     // FIX : valider type/status en amont (400 propre au lieu d'un 500 via la
     // contrainte CHECK ; en batch, évite qu'un seul mauvais type fasse échouer tout le lot).
-    const VALID_TYPES = ['poule', 'bye', 'elimination', 'huitieme', 'quart', 'demi', 'finale', 'petite_finale']
+    const VALID_TYPES = ['poule', 'bye', 'exempt', 'elimination', 'huitieme', 'quart', 'demi', 'finale', 'petite_finale']
     const VALID_STATUSES = ['a_jouer', 'en_cours', 'termine', 'en_attente', 'en_attente_validation', 'valide']
 
     // Valider chaque match
@@ -117,9 +120,10 @@ export async function POST(request: NextRequest) {
 
     matches.forEach((match, i) => {
       const isByeMatch = match.type === 'bye' || match.equipe_b_id === null
-      const baseIndex = i * 9
+      const isExempt = match.type === 'exempt'
+      const baseIndex = i * 11
       valueStrings.push(
-        `($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6}, $${baseIndex + 7}, $${baseIndex + 8}, $${baseIndex + 9})`
+        `($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6}, $${baseIndex + 7}, $${baseIndex + 8}, $${baseIndex + 9}, $${baseIndex + 10}, $${baseIndex + 11})`
       )
       values.push(
         match.tournoi_id,
@@ -130,12 +134,15 @@ export async function POST(request: NextRequest) {
         match.type || 'poule',
         match.poule,
         isByeMatch ? 'termine' : (match.status || 'a_jouer'),
-        isByeMatch ? match.equipe_a_id : null
+        isByeMatch ? match.equipe_a_id : null,
+        // Exemption : victoire fictive 13-7 par convention (sinon 0-0)
+        match.score_a ?? (isExempt ? 13 : 0),
+        match.score_b ?? (isExempt ? 7 : 0)
       )
     })
 
     const insertQuery = `
-      INSERT INTO matches (tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status, winner_id)
+      INSERT INTO matches (tournoi_id, tour, terrain, equipe_a_id, equipe_b_id, type, poule, status, winner_id, score_a, score_b)
       VALUES ${valueStrings.join(', ')}
       RETURNING *
     `
