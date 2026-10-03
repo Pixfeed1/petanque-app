@@ -19,8 +19,21 @@ export function isTokenStillValid(expires: Date | string | null | undefined, now
   return e.getTime() > now.getTime()
 }
 
-/** Crée et stocke un jeton d'activation pour un utilisateur. Renvoie le jeton. */
+/**
+ * Crée et stocke un jeton d'activation pour un utilisateur. Renvoie le jeton.
+ *
+ * Si un jeton encore valide existe, il est RÉUTILISÉ : « Renvoyer l'email »
+ * ne doit pas invalider les liens des emails précédents (l'utilisateur clique
+ * souvent un ancien email de sa boîte → « lien invalide » incompréhensible).
+ */
 export async function issueVerificationToken(userId: string): Promise<string> {
+  const existing = await queryOne<{ verification_token: string | null; verification_token_expires: string | null }>(
+    'SELECT verification_token, verification_token_expires FROM users WHERE id = $1',
+    [userId]
+  )
+  if (existing?.verification_token && isTokenStillValid(existing.verification_token_expires)) {
+    return existing.verification_token
+  }
   const token = generateVerificationToken()
   const expires = new Date(Date.now() + TTL_MS).toISOString()
   await query(
