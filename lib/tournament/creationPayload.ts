@@ -60,6 +60,7 @@ export function buildTeamsAndMatches(
 
   let teams: FullTeamInput[] = []
   let unassignedCount = 0
+  let unassignedIds: string[] = []
 
   // Niveau cumulé par joueur (défaut neutre) pour l'équilibrage optionnel.
   const niveauById = new Map<string, number>()
@@ -83,6 +84,7 @@ export function buildTeamsAndMatches(
       playersPerTeam
     )
     unassignedCount = balanced.unassigned.length
+    unassignedIds = balanced.unassigned
     const prefix = cfg.mode === 'melee_tournante' ? 'R1-' : ''
     teams = balanced.teams.map((t, i) => ({
       name: prefix ? `${prefix}Équipe ${i + 1}` : `Équipe ${i + 1}`,
@@ -97,11 +99,23 @@ export function buildTeamsAndMatches(
       cfg.mixiteObligatoire
     )
     unassignedCount = mixiteResult.unassignedPlayerIds.length
+    unassignedIds = mixiteResult.unassignedPlayerIds
     const prefix = cfg.mode === 'melee_tournante' ? 'R1-' : ''
     teams = mixiteResult.teams.map((t, i) => ({
       name: prefix ? `${prefix}Équipe ${i + 1}` : `Équipe ${i + 1}`,
       joueur_ids: t.joueur_ids,
     }))
+  }
+
+  // Effectif non multiple de la taille d'équipe :
+  // - MÊLÉE FIXE : les joueurs restants forment une dernière équipe INCOMPLÈTE
+  //   (pratique amicale courante : une doublette dans un concours triplette).
+  // - MÊLÉE TOURNANTE : ils restent exempts sur cette partie — la rotation
+  //   suivante les fera tourner équitablement (antiRematchTeamFormation).
+  if (cfg.mode !== 'melee_tournante' && unassignedIds.length > 0) {
+    teams.push({ name: `Équipe ${teams.length + 1}`, joueur_ids: unassignedIds })
+    unassignedCount = 0
+    unassignedIds = []
   }
 
   // Équipes pour le tirage : id = index dans le tableau teams
@@ -132,6 +146,9 @@ export function buildTeamsAndMatches(
     const profiles = cfg.mixiteAdversaire
       ? teams.map(t => teamGenderProfile(t.joueur_ids, genderById))
       : teams.map(() => 'N' as const)
+    // NB : avec un nombre impair d'équipes, la POLITIQUE d'exemption (qui se
+    // repose, et si le repos compte au classement) est en attente de décision
+    // produit — en attendant, l'appariement glouton laisse l'exempt par défaut.
     const { pairs } = pairRoundByMixite(profiles)
     const withTerrain = assignTerrains(
       pairs.map(([a, b]) => ({ a, b, tour: 1, poule: null as string | null })),

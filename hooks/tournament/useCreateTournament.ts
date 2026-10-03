@@ -211,8 +211,9 @@ export function useCreateTournament(): UseCreateTournamentReturn {
         // MODES MÊLÉE : Joueurs obligatoires
         if (totalPlayers < minPlayers) return false
 
-        const playersPerTeam = getPlayersPerTeam()
-        if (totalPlayers % playersPerTeam !== 0) return false
+        // Effectif non multiple de la taille d'équipe : accepté (exempts).
+        // En tournante, les joueurs en trop se reposent à tour de rôle ;
+        // en fixe, la dernière équipe est incomplète. Le Step3 l'explique.
 
         // Validation emails
         for (const player of formData.newPlayers) {
@@ -260,12 +261,8 @@ export function useCreateTournament(): UseCreateTournamentReturn {
           setValidationError(`Minimum ${minPlayers} joueurs requis pour un tournoi en ${formatLabel(formData.format).toLowerCase()}`)
           return
         }
-
-        const playersPerTeam = getPlayersPerTeam()
-        if (totalPlayers % playersPerTeam !== 0) {
-          setValidationError(`Pour une mêlée en ${formatLabel(formData.format).toLowerCase()}, il faut un multiple de ${playersPerTeam} joueurs. Tu en as ${totalPlayers}.`)
-          return
-        }
+        // Effectif non multiple de la taille d'équipe : accepté (exempts tournants
+        // en tournante, dernière équipe incomplète en fixe — expliqué au Step3).
       }
     }
 

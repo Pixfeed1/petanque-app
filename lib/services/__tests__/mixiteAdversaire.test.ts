@@ -138,3 +138,21 @@ describe('mixiteAdversaire', () => {
     })
   })
 })
+
+describe('pairRound — exempt imposé (rotation équitable du bye)', () => {
+  it('byeIndex imposé : la bonne équipe est exempte et les autres toutes appariées', () => {
+    const profiles = ['N', 'N', 'N', 'N', 'N'] as const
+    const { pairs, bye } = pairRoundByMixite([...profiles], 2)
+    expect(bye).toBe(2)
+    expect(pairs).toHaveLength(2)
+    const used = pairs.flat()
+    expect(used).not.toContain(2)
+    expect(new Set(used).size).toBe(4)
+  })
+
+  it('byeIndex ignoré quand le nombre est pair', () => {
+    const { pairs, bye } = pairRoundByMixite(['N', 'N', 'N', 'N'], 1)
+    expect(bye).toBeNull()
+    expect(pairs).toHaveLength(2)
+  })
+})

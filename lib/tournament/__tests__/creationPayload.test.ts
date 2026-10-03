@@ -149,3 +149,45 @@ describe('buildTeamsAndMatches', () => {
     assertValid(r.teams, r.matches)
   })
 })
+
+// ============================================================
+// Effectifs non multiples (exempts / équipe incomplète)
+// ============================================================
+describe('buildTeamsAndMatches — effectifs non multiples', () => {
+  it('mêlée fixe doublette, 13 joueurs → 7 équipes dont une incomplète, personne de perdu', () => {
+    const cfg: CreationComposition = { format: 'doublette', mode: 'melee_fixe', mixiteObligatoire: false, pouleSize: 4, terrains: 0 }
+    const r = buildTeamsAndMatches(cfg, players(13))
+    expect(r.teams).toHaveLength(7)
+    expect(r.unassignedCount).toBe(0)
+    const assigned = r.teams.flatMap(t => t.joueur_ids)
+    expect(new Set(assigned).size).toBe(13) // tous les joueurs placés, sans doublon
+    const sizes = r.teams.map(t => t.joueur_ids.length).sort()
+    expect(sizes).toEqual([1, 2, 2, 2, 2, 2, 2]) // une équipe incomplète
+    expect(r.matches.length).toBeGreaterThan(0)
+  })
+
+  it('mêlée fixe triplette, 13 joueurs → 5 équipes dont une incomplète (1 joueur)', () => {
+    const cfg: CreationComposition = { format: 'triplette', mode: 'melee_fixe', mixiteObligatoire: false, pouleSize: 5, terrains: 0 }
+    const r = buildTeamsAndMatches(cfg, players(13))
+    expect(r.teams).toHaveLength(5)
+    expect(r.unassignedCount).toBe(0)
+    expect(new Set(r.teams.flatMap(t => t.joueur_ids)).size).toBe(13)
+  })
+
+  it('mêlée tournante doublette, 13 joueurs → 6 équipes pleines + 1 exempt (qui tournera)', () => {
+    const cfg: CreationComposition = { format: 'doublette', mode: 'melee_tournante', mixiteObligatoire: false, pouleSize: 4, terrains: 0 }
+    const r = buildTeamsAndMatches(cfg, players(13))
+    expect(r.teams).toHaveLength(6)
+    expect(r.teams.every(t => t.joueur_ids.length === 2)).toBe(true)
+    expect(r.unassignedCount).toBe(1) // signalé, jamais perdu en silence
+  })
+
+  it('tête-à-tête tournante, 7 joueurs → ronde de Berger avec un exempt', () => {
+    const cfg: CreationComposition = { format: 'tete_a_tete', mode: 'melee_tournante', mixiteObligatoire: false, pouleSize: 4, terrains: 0 }
+    const r = buildTeamsAndMatches(cfg, players(7))
+    expect(r.teams).toHaveLength(7)
+    expect(r.matches).toHaveLength(3) // 3 matchs, 1 joueur au repos (fantôme de Berger)
+    const used = r.matches.flatMap(m => [m.team_a_index, m.team_b_index])
+    expect(new Set(used).size).toBe(6)
+  })
+})

@@ -332,6 +332,7 @@ export function useMatchActions({
       } catch { /* pas de genre → appariement sans contrainte de mixité */ }
     }
 
+    // NB : nombre impair d'équipes → politique d'exemption à décider (produit).
     const { pairs, repeats } = pairRound(profiles, (i, j) => played.has(pairKey(teams[i].id, teams[j].id)))
     if (pairs.length === 0) {
       notify.error('Impossible de former des matchs pour cette partie.')

@@ -302,6 +302,7 @@ export function useRotation({
       const profiles = useMixite
         ? newTeams.map(t => teamGenderProfile(t.joueur_ids, genderById!))
         : newTeams.map(() => 'N' as const)
+      // NB : nombre impair d'équipes → politique d'exemption à décider (produit).
       const { pairs } = pairRoundByMixite(profiles)
       const forTerrain = pairs.map(([a, b], idx) => ({ id: `rot_${idx}`, equipe_a_id: String(a), equipe_b_id: String(b), tour: rotationNumber }))
       const terrains = tournament.settings.terrains || 0

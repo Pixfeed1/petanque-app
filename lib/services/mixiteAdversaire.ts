@@ -63,10 +63,13 @@ export interface MixitePairing {
  * compte une dérogation (exception « impossibilité de faire autrement »).
  *
  * @param profiles profils de genre des équipes, indexés comme le tableau d'équipes
+ * @param byeIndex avec un nombre IMPAIR d'équipes : index de l'équipe exempte
+ *   imposée pour cette ronde (permet de faire tourner l'exempt équitablement,
+ *   ex. `(rotation - 1) % n`). Ignoré si l'effectif est pair.
  * @returns paires d'index, bye éventuel, et nombre de dérogations
  */
-export function pairRoundByMixite(profiles: GenderProfile[]): MixitePairing {
-  return pairRound(profiles)
+export function pairRoundByMixite(profiles: GenderProfile[], byeIndex?: number | null): MixitePairing {
+  return pairRound(profiles, undefined, byeIndex)
 }
 
 /**
@@ -83,9 +86,18 @@ export function pairRoundByMixite(profiles: GenderProfile[]): MixitePairing {
  */
 export function pairRound(
   profiles: GenderProfile[],
-  avoid?: (i: number, j: number) => boolean
+  avoid?: (i: number, j: number) => boolean,
+  byeIndex?: number | null
 ): MixitePairing & { repeats: number } {
-  const remaining = profiles.map((_, i) => i)
+  // Nombre impair : l'exempt est choisi AVANT l'appariement, soit imposé par
+  // l'appelant (rotation équitable), soit par défaut le dernier index.
+  let forcedBye: number | null = null
+  if (profiles.length % 2 === 1) {
+    forcedBye = byeIndex != null && byeIndex >= 0 && byeIndex < profiles.length
+      ? byeIndex
+      : null
+  }
+  const remaining = profiles.map((_, i) => i).filter(i => i !== forcedBye)
   const pairs: Array<[number, number]> = []
   let forced = 0
   let repeats = 0
@@ -110,6 +122,6 @@ export function pairRound(
     pairs.push([a, b])
   }
 
-  const bye = remaining.length === 1 ? remaining[0] : null
+  const bye = forcedBye !== null ? forcedBye : (remaining.length === 1 ? remaining[0] : null)
   return { pairs, bye, forced, repeats }
 }

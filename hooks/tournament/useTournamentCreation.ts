@@ -224,7 +224,13 @@ export function useTournamentCreation({
         unassignedCount = built.unassignedCount
       }
       if (unassignedCount > 0) {
-        notify.warning(`${unassignedCount} joueur(s) non assigné(s) en raison de la mixité`)
+        // En tournante, les surnuméraires ne sont pas perdus : ils se reposent
+        // sur cette partie et la rotation suivante les fera jouer (exempts).
+        notify.warning(
+          formData.mode === 'melee_tournante'
+            ? `${unassignedCount} joueur(s) au repos sur la 1re partie — l'exempt tourne à chaque partie`
+            : `${unassignedCount} joueur(s) non assigné(s)`
+        )
       }
 
       const isMeleeTournante = formData.mode === 'melee_tournante'

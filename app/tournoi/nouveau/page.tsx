@@ -566,13 +566,11 @@ function Step3({
   const min = getMinPlayers()
   const teams = getEstimatedTeams()
   const pools = getEstimatedPools()
-  // En mêlée, les équipes sont tirées au sort : il faut un compte exact
-  // (multiple de 2 en doublette, de 3 en triplette). On l'affiche ICI, en
-  // direct — le bouton Continuer est désactivé sinon, sans autre explication.
+  // En mêlée, un effectif non multiple de la taille d'équipe est ACCEPTÉ :
+  // en tournante, le(s) joueur(s) en trop se reposent à tour de rôle (exempts) ;
+  // en fixe, la dernière équipe est simplement incomplète. On l'explique ici.
   const ppt = formData.format === 'tete_a_tete' ? 1 : formData.format === 'doublette' ? 2 : 3
-  const badMultiple = formData.mode !== 'choisi' && total >= min && ppt > 1 && total % ppt !== 0
-  const lowerOk = total - (total % ppt)
-  const upperOk = lowerOk + ppt
+  const leftover = formData.mode !== 'choisi' && total >= min && ppt > 1 ? total % ppt : 0
 
   return (
     <div className="space-y-7">
@@ -589,15 +587,15 @@ function Step3({
           </p>
         </div>
         <div className="text-right">
-          {!badMultiple && (
-            <p className="font-mono text-xs text-petanque-bois">≈ {teams} équipe{teams > 1 ? 's' : ''} · {pools} poule{pools > 1 ? 's' : ''}</p>
-          )}
+          <p className="font-mono text-xs text-petanque-bois">≈ {teams} équipe{teams > 1 ? 's' : ''} · {pools} poule{pools > 1 ? 's' : ''}</p>
           {formData.mode !== 'choisi' && total < min && (
             <p className="text-xs text-petanque-cochonnet mt-1">Minimum {min} requis</p>
           )}
-          {badMultiple && (
-            <p className="text-xs text-petanque-cochonnet mt-1 max-w-[240px]">
-              En {formData.format === 'doublette' ? 'doublette' : 'triplette'} mêlée, il faut un multiple de {ppt} joueurs — vise {lowerOk} ou {upperOk}.
+          {leftover > 0 && (
+            <p className="text-xs text-petanque-bois mt-1 max-w-[260px]">
+              {formData.mode === 'melee_tournante'
+                ? `${leftover} joueur${leftover > 1 ? 's' : ''} se reposera${leftover > 1 ? 'ont' : ''} à tour de rôle à chaque partie (exempt).`
+                : `La dernière équipe jouera à ${leftover} joueur${leftover > 1 ? 's' : ''} (équipe incomplète).`}
             </p>
           )}
         </div>
